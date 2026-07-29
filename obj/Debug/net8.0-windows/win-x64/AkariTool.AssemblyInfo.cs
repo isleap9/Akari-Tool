@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("AkariTool")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.1.4.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.1.4+300c3099e5259f2a246f9a874884d5895110b455")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.1.4+ef406ebacf3def19dc4fa8210a30351d44cddc2e")]
 [assembly: System.Reflection.AssemblyProductAttribute("AkariTool")]
 [assembly: System.Reflection.AssemblyTitleAttribute("AkariTool")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.1.4.0")]
