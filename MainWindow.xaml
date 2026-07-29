@@ -156,20 +156,20 @@
 
                         <ui:NavigationView.MenuItems>
                             <ui:NavigationViewItem x:Name="NavHome" Tag="Home" Click="NavItem_Click" Style="{StaticResource AkariNavItem}" ToolTip="Home">
-                                <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xE80F;"/><TextBlock Style="{StaticResource NavLabel}" Text="Home"/></StackPanel>
+                                <StackPanel Orientation="Horizontal"><Image Style="{StaticResource NavImageIcon}" Source="{StaticResource NavIco_Home}"/><TextBlock Style="{StaticResource NavLabel}" Text="Home"/></StackPanel>
                             </ui:NavigationViewItem>
 
                             <!-- ═══ SOFTWARE group ═══ -->
                             <ui:NavigationViewItem x:Name="SoftwareGroup" Content="SOFTWARE" IsExpanded="True" Style="{StaticResource AkariNavGroup}">
                                 <ui:NavigationViewItem.MenuItems>
                                     <ui:NavigationViewItem x:Name="NavBloatware" Tag="Bloatware" Click="NavItem_Click" Style="{StaticResource AkariNavItem}" ToolTip="Windows Apps">
-                                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xE8A9;"/><TextBlock Style="{StaticResource NavLabel}" Text="Windows Apps"/></StackPanel>
+                                        <StackPanel Orientation="Horizontal"><Image Style="{StaticResource NavImageIcon}" Source="{StaticResource NavIco_Bloatware}"/><TextBlock Style="{StaticResource NavLabel}" Text="Windows Apps"/></StackPanel>
                                     </ui:NavigationViewItem>
                                     <ui:NavigationViewItem x:Name="NavAppInstaller" Tag="AppInstaller" Click="NavItem_Click" Style="{StaticResource AkariNavItem}" ToolTip="External Apps">
-                                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xE896;"/><TextBlock Style="{StaticResource NavLabel}" Text="External Apps"/></StackPanel>
+                                        <StackPanel Orientation="Horizontal"><Image Style="{StaticResource NavImageIcon}" Source="{StaticResource NavIco_AppInstaller}"/><TextBlock Style="{StaticResource NavLabel}" Text="External Apps"/></StackPanel>
                                     </ui:NavigationViewItem>
                                     <ui:NavigationViewItem x:Name="NavDebloat" Tag="Debloat" Click="NavItem_Click" Style="{StaticResource AkariNavItem}" ToolTip="Debloat">
-                                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xE74D;"/><TextBlock Style="{StaticResource NavLabel}" Text="Debloat"/></StackPanel>
+                                        <StackPanel Orientation="Horizontal"><Image Style="{StaticResource NavImageIcon}" Source="{StaticResource NavIco_Debloat}"/><TextBlock Style="{StaticResource NavLabel}" Text="Debloat"/></StackPanel>
                                     </ui:NavigationViewItem>
                                 </ui:NavigationViewItem.MenuItems>
                             </ui:NavigationViewItem>
@@ -178,22 +178,22 @@
                             <ui:NavigationViewItem x:Name="OptimizeGroup" Content="OPTIMIZE" IsExpanded="True" Style="{StaticResource AkariNavGroup}">
                                 <ui:NavigationViewItem.MenuItems>
                                     <ui:NavigationViewItem x:Name="NavAkariOS" Tag="AkariOS" Click="NavItem_Click" Style="{StaticResource AkariNavItem}" ToolTip="AkariOS">
-                                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xE734;"/><TextBlock Style="{StaticResource NavLabel}" Text="AkariOS"/></StackPanel>
+                                        <StackPanel Orientation="Horizontal"><Image x:Name="AkariOsNavIcon" Style="{StaticResource NavImageIcon}" Source="{StaticResource NavIco_AkariOS}"/><TextBlock Style="{StaticResource NavLabel}" Text="AkariOS"/></StackPanel>
                                     </ui:NavigationViewItem>
                                     <ui:NavigationViewItem x:Name="NavGaming" Tag="Gaming" Click="NavItem_Click" Style="{StaticResource AkariNavItem}" ToolTip="Gaming">
-                                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xE7FC;"/><TextBlock Style="{StaticResource NavLabel}" Text="Gaming"/></StackPanel>
+                                        <StackPanel Orientation="Horizontal"><Image Style="{StaticResource NavImageIcon}" Source="{StaticResource NavIco_Gaming}"/><TextBlock Style="{StaticResource NavLabel}" Text="Gaming"/></StackPanel>
                                     </ui:NavigationViewItem>
                                     <ui:NavigationViewItem x:Name="NavPrivacy" Tag="Privacy" Click="NavItem_Click" Style="{StaticResource AkariNavItem}" ToolTip="Privacy">
-                                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xE72E;"/><TextBlock Style="{StaticResource NavLabel}" Text="Privacy"/></StackPanel>
+                                        <StackPanel Orientation="Horizontal"><Image Style="{StaticResource NavImageIcon}" Source="{StaticResource NavIco_Privacy}"/><TextBlock Style="{StaticResource NavLabel}" Text="Privacy"/></StackPanel>
                                     </ui:NavigationViewItem>
                                     <ui:NavigationViewItem x:Name="NavUpdate" Tag="Update" Click="NavItem_Click" Style="{StaticResource AkariNavItem}" ToolTip="Update">
-                                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xE895;"/><TextBlock Style="{StaticResource NavLabel}" Text="Update"/></StackPanel>
+                                        <StackPanel Orientation="Horizontal"><Image Style="{StaticResource NavImageIcon}" Source="{StaticResource NavIco_Update}"/><TextBlock Style="{StaticResource NavLabel}" Text="Update"/></StackPanel>
                                     </ui:NavigationViewItem>
                                     <ui:NavigationViewItem x:Name="NavNotifications" Tag="Notifications" Click="NavItem_Click" Style="{StaticResource AkariNavItem}" ToolTip="Notifications">
-                                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xEA8F;"/><TextBlock Style="{StaticResource NavLabel}" Text="Notifications"/></StackPanel>
+                                        <StackPanel Orientation="Horizontal"><Image Style="{StaticResource NavImageIcon}" Source="{StaticResource NavIco_Notifications}"/><TextBlock Style="{StaticResource NavLabel}" Text="Notifications"/></StackPanel>
                                     </ui:NavigationViewItem>
                                     <ui:NavigationViewItem x:Name="NavPower" Tag="Power" Click="NavItem_Click" Style="{StaticResource AkariNavItem}" ToolTip="Power">
-                                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xE945;"/><TextBlock Style="{StaticResource NavLabel}" Text="Power"/></StackPanel>
+                                        <StackPanel Orientation="Horizontal"><Image Style="{StaticResource NavImageIcon}" Source="{StaticResource NavIco_Power}"/><TextBlock Style="{StaticResource NavLabel}" Text="Power"/></StackPanel>
                                     </ui:NavigationViewItem>
                                     <ui:NavigationViewItem x:Name="NavCustomize" Tag="Customize" Click="NavItem_Click" Style="{StaticResource AkariNavItem}" ToolTip="Customize">
                                         <ui:NavigationViewItem.MenuItems>
@@ -204,10 +204,10 @@
                                             <ui:NavigationViewItem x:Name="NavStartMenu" Tag="StartMenu" Click="NavItem_Click" Style="{StaticResource AkariNavSubItem}" Content="Start Menu"/>
                                             <ui:NavigationViewItem x:Name="NavDesktop" Tag="Desktop" Click="NavItem_Click" Style="{StaticResource AkariNavSubItem}" Content="Desktop"/>
                                         </ui:NavigationViewItem.MenuItems>
-                                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xE771;"/><TextBlock Style="{StaticResource NavLabel}" Text="Customize"/></StackPanel>
+                                        <StackPanel Orientation="Horizontal"><Image Style="{StaticResource NavImageIcon}" Source="{StaticResource NavIco_Customize}"/><TextBlock Style="{StaticResource NavLabel}" Text="Customize"/></StackPanel>
                                     </ui:NavigationViewItem>
                                     <ui:NavigationViewItem x:Name="NavTools" Tag="Tools" Click="NavItem_Click" Style="{StaticResource AkariNavItem}" ToolTip="Tools">
-                                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xE90F;"/><TextBlock Style="{StaticResource NavLabel}" Text="Tools"/></StackPanel>
+                                        <StackPanel Orientation="Horizontal"><Image Style="{StaticResource NavImageIcon}" Source="{StaticResource NavIco_Tools}"/><TextBlock Style="{StaticResource NavLabel}" Text="Tools"/></StackPanel>
                                     </ui:NavigationViewItem>
                                 </ui:NavigationViewItem.MenuItems>
                             </ui:NavigationViewItem>
@@ -216,13 +216,13 @@
                             <ui:NavigationViewItem x:Name="AdvancedGroup" Content="ADVANCED" IsExpanded="True" Style="{StaticResource AkariNavGroup}">
                                 <ui:NavigationViewItem.MenuItems>
                                     <ui:NavigationViewItem x:Name="NavAdvanced" Tag="Advanced" Click="NavItem_Click" Style="{StaticResource AkariNavItem}" ToolTip="Advanced Tools">
-                                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xEC7A;"/><TextBlock Style="{StaticResource NavLabel}" Text="Advanced Tools"/></StackPanel>
+                                        <StackPanel Orientation="Horizontal"><Image Style="{StaticResource NavImageIcon}" Source="{StaticResource NavIco_Advanced}"/><TextBlock Style="{StaticResource NavLabel}" Text="Advanced Tools"/></StackPanel>
                                     </ui:NavigationViewItem>
                                     <ui:NavigationViewItem x:Name="NavBackup" Tag="Backup" Click="NavItem_Click" Style="{StaticResource AkariNavItem}" ToolTip="Backup &amp; Restore">
-                                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xE8C8;"/><TextBlock Style="{StaticResource NavLabel}" Text="Backup &amp; Restore"/></StackPanel>
+                                        <StackPanel Orientation="Horizontal"><Image Style="{StaticResource NavImageIcon}" Source="{StaticResource NavIco_Backup}"/><TextBlock Style="{StaticResource NavLabel}" Text="Backup &amp; Restore"/></StackPanel>
                                     </ui:NavigationViewItem>
                                     <ui:NavigationViewItem x:Name="NavVerify" Tag="Verify" Click="NavItem_Click" Style="{StaticResource AkariNavItem}" ToolTip="Verify">
-                                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xE9D9;"/><TextBlock Style="{StaticResource NavLabel}" Text="Verify"/></StackPanel>
+                                        <StackPanel Orientation="Horizontal"><Image Style="{StaticResource NavImageIcon}" Source="{StaticResource NavIco_Verify}"/><TextBlock Style="{StaticResource NavLabel}" Text="Verify"/></StackPanel>
                                     </ui:NavigationViewItem>
                                 </ui:NavigationViewItem.MenuItems>
                             </ui:NavigationViewItem>
@@ -232,10 +232,10 @@
                         <ui:NavigationView.FooterMenuItems>
                             <Border Height="1" Margin="9,6" Background="{DynamicResource AkariOverlayMedium}"/>
                             <ui:NavigationViewItem x:Name="NavAppUpdate" Tag="AppUpdate" Click="NavItem_Click" Style="{StaticResource AkariNavItem}" ToolTip="Update">
-                                <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xE777;"/><TextBlock Style="{StaticResource NavLabel}" Text="Update"/></StackPanel>
+                                <StackPanel Orientation="Horizontal"><Image x:Name="AppUpdateNavIcon" Style="{StaticResource NavImageIcon}" Source="{StaticResource NavIco_AppUpdate}"/><TextBlock Style="{StaticResource NavLabel}" Text="Update"/></StackPanel>
                             </ui:NavigationViewItem>
                             <ui:NavigationViewItem x:Name="NavAbout" Tag="About" Click="NavItem_Click" Style="{StaticResource AkariNavItem}" ToolTip="About">
-                                <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xE946;"/><TextBlock Style="{StaticResource NavLabel}" Text="About"/></StackPanel>
+                                <StackPanel Orientation="Horizontal"><Image Style="{StaticResource NavImageIcon}" Source="{StaticResource NavIco_About}"/><TextBlock Style="{StaticResource NavLabel}" Text="About"/></StackPanel>
                             </ui:NavigationViewItem>
                         </ui:NavigationView.FooterMenuItems>
                     </ui:NavigationView>
@@ -394,7 +394,11 @@
                                     <Ellipse x:Name="ThemeThumb" Grid.Column="0"
                                              Width="15" Height="15"
                                              Fill="{DynamicResource AkariTextPrimary}"
-                                             HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                             HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Ellipse.RenderTransform>
+                                            <TranslateTransform x:Name="ThemeThumbShift"/>
+                                        </Ellipse.RenderTransform>
+                                    </Ellipse>
 
                                     <!-- moon (dark) -->
                                     <Viewbox Grid.Column="0" Width="9" Height="9"

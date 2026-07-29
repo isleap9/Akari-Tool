@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media.Animation;
 using AkariTool.Services;
 using AkariTool.Tabs;
 using AkariTool.Tabs.Gaming;
@@ -426,7 +427,7 @@ namespace AkariTool
                 Content = new TextBlock
                 {
                     Text = $"Akari Tool {result.LatestTag} is available " +
-                           $"(you have v{UpdateService.CurrentVersionDisplay}).\n\n" +
+                           $"(you have {UpdateService.CurrentVersionDisplay}).\n\n" +
                            "Update now?",
                     TextWrapping = TextWrapping.Wrap,
                     MaxWidth = 440,
@@ -541,19 +542,42 @@ namespace AkariTool
         private void HamburgerBtn_Click(object sender, RoutedEventArgs e) => IsPaneCompact = !IsPaneCompact;
 
         // ── Theme switch (title-bar icon button) ──
+        // Center-to-center distance between the two pill columns (38px pill / 2 columns).
+        private const double ThemeThumbTravel = 19;
+
         private void ThemeToggle_Click(object sender, RoutedEventArgs e)
         {
             e.Handled = true;
+
+            // Capture the thumb's resting position BEFORE toggling: ThemeService.Toggle()
+            // fires ThemeChanged synchronously, and OnThemeChanged snaps the thumb to the
+            // new side. We then override that snap with a slide from the old position.
+            double fromX = ThemeThumbShift.X;
             ThemeService.Toggle();
-            UpdateThemeToggleLabel();
+
+            double toX = ThemeService.Current == AkariTheme.Dark ? 0 : ThemeThumbTravel;
+            if (fromX != toX)
+            {
+                ThemeThumbShift.BeginAnimation(System.Windows.Media.TranslateTransform.XProperty,
+                    new DoubleAnimation
+                    {
+                        From = fromX,
+                        To = toX,
+                        Duration = System.TimeSpan.FromMilliseconds(180),
+                        EasingFunction = new CubicEase { EasingMode = EasingMode.EaseInOut },
+                    });
+            }
         }
 
         // Both icons stay visible; the thumb marks the ACTIVE theme.
+        // Snaps the thumb into place (startup / external change); clicks animate separately.
         private void UpdateThemeToggleLabel()
         {
             bool dark = ThemeService.Current == AkariTheme.Dark;
 
-            Grid.SetColumn(ThemeThumb, dark ? 0 : 1);
+            // Release any running click animation before setting the resting value.
+            ThemeThumbShift.BeginAnimation(System.Windows.Media.TranslateTransform.XProperty, null);
+            ThemeThumbShift.X = dark ? 0 : ThemeThumbTravel;
 
             // The glyph sitting on the thumb must contrast against it (thumb is AkariTextPrimary).
             var active   = (System.Windows.Media.Brush)FindResource("AkariSidebarBackground");
@@ -581,6 +605,10 @@ namespace AkariTool
             Icon = logo;
             HomeWatermark.Source = logo;
             HomeWatermark.Opacity = ThemeService.Current == AkariTheme.Light ? 0.05 : 0.10;
+            AkariOsNavIcon.Source = (System.Windows.Media.ImageSource)FindResource(
+                ThemeService.Current == AkariTheme.Light ? "NavIco_AkariOS_Light" : "NavIco_AkariOS");
+            AppUpdateNavIcon.Source = (System.Windows.Media.ImageSource)FindResource(
+                ThemeService.Current == AkariTheme.Light ? "NavIco_AppUpdate_Light" : "NavIco_AppUpdate");
         }
 
         // ── Navigation ──

@@ -1,6 +1,8 @@
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
+using System.Windows.Navigation;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
@@ -155,6 +157,15 @@ namespace AkariTool.Tabs.About
             body.Inlines.Add(new Run(". Advanced Tools ISO flow ported from Winhance. " +
                                      "NVIDIA profile applied with nvidiaProfileInspector by Orbmu2k (MIT). " +
                                      "Made for the AkariOS ecosystem."));
+            body.Inlines.Add(new Run(" Sidebar icons by "));
+            var icons8 = new Hyperlink(new Run("Icons8")) { NavigateUri = new System.Uri("https://icons8.com") };
+            icons8.RequestNavigate += (_, e) =>
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
+                e.Handled = true;
+            };
+            body.Inlines.Add(icons8);
+            body.Inlines.Add(new Run("."));
             creditsStack.Children.Add(body);
             credits.Child = creditsStack;
             Grid.SetColumn(credits, 2);

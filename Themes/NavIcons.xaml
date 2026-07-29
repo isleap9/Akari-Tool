@@ -1,0 +1,22 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <BitmapImage x:Key="NavIco_Home"          UriSource="pack://application:,,,/Resource/NavIcons/home.png"          CacheOption="OnLoad"/>
+    <BitmapImage x:Key="NavIco_Bloatware"     UriSource="pack://application:,,,/Resource/NavIcons/bloatware.png"     CacheOption="OnLoad"/>
+    <BitmapImage x:Key="NavIco_AppInstaller"  UriSource="pack://application:,,,/Resource/NavIcons/appinstaller.png"  CacheOption="OnLoad"/>
+    <BitmapImage x:Key="NavIco_Debloat"       UriSource="pack://application:,,,/Resource/NavIcons/debloat.png"       CacheOption="OnLoad"/>
+    <BitmapImage x:Key="NavIco_AkariOS"       UriSource="pack://application:,,,/Resource/NavIcons/akarios.png"       CacheOption="OnLoad"/>
+    <BitmapImage x:Key="NavIco_AkariOS_Light" UriSource="pack://application:,,,/Resource/NavIcons/akarios_light.png" CacheOption="OnLoad"/>
+    <BitmapImage x:Key="NavIco_Gaming"        UriSource="pack://application:,,,/Resource/NavIcons/gaming.png"        CacheOption="OnLoad"/>
+    <BitmapImage x:Key="NavIco_Privacy"       UriSource="pack://application:,,,/Resource/NavIcons/privacy.png"       CacheOption="OnLoad"/>
+    <BitmapImage x:Key="NavIco_Update"        UriSource="pack://application:,,,/Resource/NavIcons/update.png"        CacheOption="OnLoad"/>
+    <BitmapImage x:Key="NavIco_Notifications" UriSource="pack://application:,,,/Resource/NavIcons/notifications.png" CacheOption="OnLoad"/>
+    <BitmapImage x:Key="NavIco_Power"         UriSource="pack://application:,,,/Resource/NavIcons/power.png"         CacheOption="OnLoad"/>
+    <BitmapImage x:Key="NavIco_Customize"     UriSource="pack://application:,,,/Resource/NavIcons/customize.png"     CacheOption="OnLoad"/>
+    <BitmapImage x:Key="NavIco_Tools"         UriSource="pack://application:,,,/Resource/NavIcons/tools.png"         CacheOption="OnLoad"/>
+    <BitmapImage x:Key="NavIco_Advanced"      UriSource="pack://application:,,,/Resource/NavIcons/advanced.png"      CacheOption="OnLoad"/>
+    <BitmapImage x:Key="NavIco_Backup"        UriSource="pack://application:,,,/Resource/NavIcons/backup.png"        CacheOption="OnLoad"/>
+    <BitmapImage x:Key="NavIco_Verify"        UriSource="pack://application:,,,/Resource/NavIcons/verify.png"        CacheOption="OnLoad"/>
+    <BitmapImage x:Key="NavIco_AppUpdate"     UriSource="pack://application:,,,/Resource/NavIcons/appupdate.png"     CacheOption="OnLoad"/>
+    <BitmapImage x:Key="NavIco_AppUpdate_Light" UriSource="pack://application:,,,/Resource/NavIcons/appupdate_light.png" CacheOption="OnLoad"/>
+    <BitmapImage x:Key="NavIco_About"         UriSource="pack://application:,,,/Resource/NavIcons/about.png"         CacheOption="OnLoad"/>
+</ResourceDictionary>

@@ -82,3 +82,4 @@ C:\Users\isleap\AppData\Local\Temp\claude\C--Users-isleap-Documents-GitHub-Akari
 C:\Users\isleap\AppData\Local\Temp\claude\C--Users-isleap-Documents-GitHub-Akari-Tool\0a74b857-9032-4dfe-a837-8ac53b5e81c6\scratchpad\vb\Debug\net8.0-windows\win-x64\AkariTool.runtimeconfig.json
 C:\Users\isleap\AppData\Local\Temp\claude\C--Users-isleap-Documents-GitHub-Akari-Tool\0a74b857-9032-4dfe-a837-8ac53b5e81c6\scratchpad\vb\Debug\net8.0-windows\win-x64\AkariTool.dll
 C:\Users\isleap\AppData\Local\Temp\claude\C--Users-isleap-Documents-GitHub-Akari-Tool\0a74b857-9032-4dfe-a837-8ac53b5e81c6\scratchpad\vb\Debug\net8.0-windows\win-x64\AkariTool.pdb
+C:\Users\isleap\Documents\GitHub\Akari-Tool\obj\Debug\net8.0-windows\win-x64\Themes\NavIcons.baml

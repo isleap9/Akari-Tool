@@ -60,7 +60,7 @@ namespace AkariTool.Tabs.Gaming {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/AkariTool;V1.1.2.0;component/tabs/gaming/gamingtab.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/AkariTool;component/tabs/gaming/gamingtab.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\..\..\..\Tabs\Gaming\GamingTab.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);
