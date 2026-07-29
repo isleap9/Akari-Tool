@@ -1,0 +1,425 @@
+<ui:FluentWindow x:Class="AkariTool.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        xmlns:tabs="clr-namespace:AkariTool.Tabs"
+        xmlns:tabsgaming="clr-namespace:AkariTool.Tabs.Gaming"
+        xmlns:tabsakarios="clr-namespace:AkariTool.Tabs.AkariOS"
+        xmlns:tabsprivacy="clr-namespace:AkariTool.Tabs.Privacy"
+        xmlns:tabsupdate="clr-namespace:AkariTool.Tabs.Update"
+        xmlns:tabsnotifications="clr-namespace:AkariTool.Tabs.Notifications"
+        xmlns:tabspower="clr-namespace:AkariTool.Tabs.Power"
+        xmlns:tabsadvanced="clr-namespace:AkariTool.Tabs.AdvancedTools"
+        xmlns:tabsabout="clr-namespace:AkariTool.Tabs.About"
+        xmlns:tabsbackup="clr-namespace:AkariTool.Tabs.Backup"
+        xmlns:tabsverify="clr-namespace:AkariTool.Tabs.Verify"
+        xmlns:tabsappupdate="clr-namespace:AkariTool.Tabs.AppUpdate"
+        Title="Akari Tool"
+        Height="900" Width="1360"
+        MinHeight="600" MinWidth="800"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="CanResize"
+        ExtendsContentIntoTitleBar="True"
+        WindowBackdropType="None"
+        WindowCornerPreference="Round"
+        FontFamily="{StaticResource BodyFont}"
+        Background="{DynamicResource AkariCanvasBottomBrush}">
+
+    <!-- Flat premium canvas: the single, always-on window background. -->
+    <Border CornerRadius="0" BorderThickness="0" ClipToBounds="True"
+            Background="{DynamicResource AkariFlatBackdrop}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="40"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="28"/>
+            </Grid.RowDefinitions>
+
+
+            <!-- ══ Title bar (transparent, over the flat window background) ══
+                 Branding is overlaid (not in TitleBar.Header) so its Margin actually
+                 controls the horizontal offset — WPF-UI positions Header content itself. -->
+            <Grid Grid.Row="0" Panel.ZIndex="2">
+                <ui:TitleBar x:Name="AppTitleBar" Height="40"
+                             Title="" ShowMaximize="True" ShowMinimize="True" ShowClose="True"
+                             ButtonsForeground="{DynamicResource AkariTextPrimary}"
+                             Background="{DynamicResource AkariSidebarBackground}"/>
+
+                <!-- logo · glow dot · AKARI TOOL — Margin controls the left offset -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center"
+                            Margin="10,0,0,0" IsHitTestVisible="False">
+                    <!-- Source set in code from ThemeService.Logo; Uniform + height-only avoids
+                         squashing (the two PNGs have different aspect ratios). -->
+                    <Image x:Name="TitleBarLogo" Height="30" Stretch="Uniform" VerticalAlignment="Center"
+                           RenderOptions.BitmapScalingMode="HighQuality"/>
+                    <Ellipse Width="5" Height="5" VerticalAlignment="Center" Margin="9,0,20,0">
+                        <Ellipse.Fill><SolidColorBrush Color="#E01424"/></Ellipse.Fill>
+                        <Ellipse.Effect><DropShadowEffect Color="#E0142A" BlurRadius="8" ShadowDepth="0" Opacity="0.9"/></Ellipse.Effect>
+                    </Ellipse>
+                    <TextBlock FontFamily="{StaticResource MonoFont}" FontSize="10.5"
+                               FontWeight="Bold" VerticalAlignment="Center"
+                               UseLayoutRounding="True" SnapsToDevicePixels="True"
+                               TextOptions.TextFormattingMode="Display"
+                               TextOptions.TextRenderingMode="ClearType">
+                        <Run Text="AKARI " Foreground="{DynamicResource AkariTextPrimary}"/><Run Text="TOOL" Foreground="#E0142A"/>
+                    </TextBlock>
+                </StackPanel>
+
+            </Grid>
+
+            <!-- ══ Drift banner (collapsed until a scan finds drift) ══ -->
+            <ContentControl x:Name="DriftBannerHost" Grid.Row="1" Panel.ZIndex="2"
+                            Visibility="Collapsed"/>
+
+            <!-- ══ Main: sidebar + content ══ -->
+            <Grid Grid.Row="2" Panel.ZIndex="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition x:Name="NavCol" Width="234"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Sidebar: flat neutral pane (opaque, no frosted backdrop / red tint). -->
+                <!-- No right border: the content frame's left border is the divider now,
+                     and both would render a double hairline. -->
+                <Border Grid.Column="0" BorderThickness="0"
+                        Background="{DynamicResource AkariSidebarBackground}" ClipToBounds="True">
+                    <Grid>
+                        <!-- Neutral pane surface (was a live blurred backdrop copy) -->
+                        <Rectangle Panel.ZIndex="0" Fill="{DynamicResource AkariSidebarBackground}"/>
+                        <!-- Reserved overlay slot — transparent (was a warm translucent tint) -->
+                        <Rectangle Panel.ZIndex="1" Fill="Transparent"/>
+                    <!-- Real WPF-UI NavigationView, restyled to the Akari rail skin.
+                         Background stays transparent so the frosted layers behind show through.
+                         Group parents (SOFTWARE/OPTIMIZE/ADVANCED) are non-navigating: no Tag,
+                         NavigationView's built-in click toggles their IsExpanded. -->
+                    <ui:NavigationView x:Name="RootNav" Panel.ZIndex="2"
+                                       Style="{StaticResource AkariNavView}">
+                        <ui:NavigationView.PaneHeader>
+                            <StackPanel>
+                                <Button x:Name="NavHamburger" Click="HamburgerBtn_Click" Style="{StaticResource HamburgerBtn}" ToolTip="Toggle menu">
+                                    <TextBlock Style="{StaticResource NavIcon}" Margin="0" Text="&#xE700;"/>
+                                </Button>
+
+                                <!-- Global "find a setting" search across every tab's tweaks.
+                                     Exactly one child is visible: the full box when the rail is
+                                     expanded, a search icon when it is compact. -->
+                                <Grid x:Name="GlobalSearchHost" Margin="12,8,12,10">
+                                    <ui:TextBox x:Name="GlobalSearch" PlaceholderText="Find a setting"
+                                                Icon="{ui:SymbolIcon Search24}" ClearButtonEnabled="True"
+                                                Height="34" FontSize="13"
+                                                TextChanged="GlobalSearch_TextChanged"
+                                                PreviewKeyDown="GlobalSearch_PreviewKeyDown"/>
+
+                                    <!-- Same style as the hamburger so the hover/press highlight
+                                         and compact centring match the rest of the rail. -->
+                                    <Button x:Name="GlobalSearchIcon" Visibility="Collapsed"
+                                            Click="GlobalSearchIcon_Click"
+                                            Style="{StaticResource HamburgerBtn}"
+                                            ToolTip="Find a setting">
+                                        <TextBlock Style="{StaticResource NavIcon}" Margin="0" Text="&#xE721;"/>
+                                    </Button>
+                                </Grid>
+
+                                <Popup x:Name="GlobalSearchResults" StaysOpen="False"
+                                       Placement="Bottom" AllowsTransparency="True"
+                                       PlacementTarget="{Binding ElementName=GlobalSearch}">
+                                    <!-- Margin gives the popup window room so the drop
+                                         shadow is not clipped at its own edges. -->
+                                    <Border Background="{DynamicResource AkariCardBackground}"
+                                            BorderBrush="{DynamicResource AkariHairline}"
+                                            BorderThickness="1" CornerRadius="{StaticResource AkariControlRadius}"
+                                            Width="210" Margin="10,4,10,14"
+                                            Effect="{DynamicResource AkariFloatingShadow}">
+                                        <ListBox x:Name="GlobalSearchList" MaxHeight="320"
+                                                 Background="Transparent" BorderThickness="0"
+                                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                                 SelectionChanged="GlobalSearchList_SelectionChanged">
+                                            <ListBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel Margin="2,3,2,3">
+                                                        <TextBlock Text="{Binding Name}" FontSize="13"
+                                                                   TextTrimming="CharacterEllipsis"
+                                                                   Foreground="{DynamicResource AkariTextPrimary}"/>
+                                                        <TextBlock Text="{Binding TabLabel}" FontSize="11"
+                                                                   TextTrimming="CharacterEllipsis"
+                                                                   Foreground="{DynamicResource AkariTextSecondary}"/>
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </ListBox.ItemTemplate>
+                                        </ListBox>
+                                    </Border>
+                                </Popup>
+                            </StackPanel>
+                        </ui:NavigationView.PaneHeader>
+
+                        <ui:NavigationView.MenuItems>
+                            <ui:NavigationViewItem x:Name="NavHome" Tag="Home" Click="NavItem_Click" Style="{StaticResource AkariNavItem}" ToolTip="Home">
+                                <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xE80F;"/><TextBlock Style="{StaticResource NavLabel}" Text="Home"/></StackPanel>
+                            </ui:NavigationViewItem>
+
+                            <!-- ═══ SOFTWARE group ═══ -->
+                            <ui:NavigationViewItem x:Name="SoftwareGroup" Content="SOFTWARE" IsExpanded="True" Style="{StaticResource AkariNavGroup}">
+                                <ui:NavigationViewItem.MenuItems>
+                                    <ui:NavigationViewItem x:Name="NavBloatware" Tag="Bloatware" Click="NavItem_Click" Style="{StaticResource AkariNavItem}" ToolTip="Windows Apps">
+                                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xE8A9;"/><TextBlock Style="{StaticResource NavLabel}" Text="Windows Apps"/></StackPanel>
+                                    </ui:NavigationViewItem>
+                                    <ui:NavigationViewItem x:Name="NavAppInstaller" Tag="AppInstaller" Click="NavItem_Click" Style="{StaticResource AkariNavItem}" ToolTip="External Apps">
+                                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xE896;"/><TextBlock Style="{StaticResource NavLabel}" Text="External Apps"/></StackPanel>
+                                    </ui:NavigationViewItem>
+                                    <ui:NavigationViewItem x:Name="NavDebloat" Tag="Debloat" Click="NavItem_Click" Style="{StaticResource AkariNavItem}" ToolTip="Debloat">
+                                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xE74D;"/><TextBlock Style="{StaticResource NavLabel}" Text="Debloat"/></StackPanel>
+                                    </ui:NavigationViewItem>
+                                </ui:NavigationViewItem.MenuItems>
+                            </ui:NavigationViewItem>
+
+                            <!-- ═══ OPTIMIZE group ═══ -->
+                            <ui:NavigationViewItem x:Name="OptimizeGroup" Content="OPTIMIZE" IsExpanded="True" Style="{StaticResource AkariNavGroup}">
+                                <ui:NavigationViewItem.MenuItems>
+                                    <ui:NavigationViewItem x:Name="NavAkariOS" Tag="AkariOS" Click="NavItem_Click" Style="{StaticResource AkariNavItem}" ToolTip="AkariOS">
+                                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xE734;"/><TextBlock Style="{StaticResource NavLabel}" Text="AkariOS"/></StackPanel>
+                                    </ui:NavigationViewItem>
+                                    <ui:NavigationViewItem x:Name="NavGaming" Tag="Gaming" Click="NavItem_Click" Style="{StaticResource AkariNavItem}" ToolTip="Gaming">
+                                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xE7FC;"/><TextBlock Style="{StaticResource NavLabel}" Text="Gaming"/></StackPanel>
+                                    </ui:NavigationViewItem>
+                                    <ui:NavigationViewItem x:Name="NavPrivacy" Tag="Privacy" Click="NavItem_Click" Style="{StaticResource AkariNavItem}" ToolTip="Privacy">
+                                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xE72E;"/><TextBlock Style="{StaticResource NavLabel}" Text="Privacy"/></StackPanel>
+                                    </ui:NavigationViewItem>
+                                    <ui:NavigationViewItem x:Name="NavUpdate" Tag="Update" Click="NavItem_Click" Style="{StaticResource AkariNavItem}" ToolTip="Update">
+                                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xE895;"/><TextBlock Style="{StaticResource NavLabel}" Text="Update"/></StackPanel>
+                                    </ui:NavigationViewItem>
+                                    <ui:NavigationViewItem x:Name="NavNotifications" Tag="Notifications" Click="NavItem_Click" Style="{StaticResource AkariNavItem}" ToolTip="Notifications">
+                                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xEA8F;"/><TextBlock Style="{StaticResource NavLabel}" Text="Notifications"/></StackPanel>
+                                    </ui:NavigationViewItem>
+                                    <ui:NavigationViewItem x:Name="NavPower" Tag="Power" Click="NavItem_Click" Style="{StaticResource AkariNavItem}" ToolTip="Power">
+                                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xE945;"/><TextBlock Style="{StaticResource NavLabel}" Text="Power"/></StackPanel>
+                                    </ui:NavigationViewItem>
+                                    <ui:NavigationViewItem x:Name="NavCustomize" Tag="Customize" Click="NavItem_Click" Style="{StaticResource AkariNavItem}" ToolTip="Customize">
+                                        <ui:NavigationViewItem.MenuItems>
+                                            <ui:NavigationViewItem x:Name="NavTaskbar" Tag="Taskbar" Click="NavItem_Click" Style="{StaticResource AkariNavSubItem}" Content="Taskbar"/>
+                                            <ui:NavigationViewItem x:Name="NavExplorer" Tag="Explorer" Click="NavItem_Click" Style="{StaticResource AkariNavSubItem}" Content="Explorer"/>
+                                            <ui:NavigationViewItem x:Name="NavContextMenu" Tag="ContextMenu" Click="NavItem_Click" Style="{StaticResource AkariNavSubItem}" Content="Context Menu"/>
+                                            <ui:NavigationViewItem x:Name="NavAppearance" Tag="Appearance" Click="NavItem_Click" Style="{StaticResource AkariNavSubItem}" Content="Appearance"/>
+                                            <ui:NavigationViewItem x:Name="NavStartMenu" Tag="StartMenu" Click="NavItem_Click" Style="{StaticResource AkariNavSubItem}" Content="Start Menu"/>
+                                            <ui:NavigationViewItem x:Name="NavDesktop" Tag="Desktop" Click="NavItem_Click" Style="{StaticResource AkariNavSubItem}" Content="Desktop"/>
+                                        </ui:NavigationViewItem.MenuItems>
+                                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xE771;"/><TextBlock Style="{StaticResource NavLabel}" Text="Customize"/></StackPanel>
+                                    </ui:NavigationViewItem>
+                                    <ui:NavigationViewItem x:Name="NavTools" Tag="Tools" Click="NavItem_Click" Style="{StaticResource AkariNavItem}" ToolTip="Tools">
+                                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xE90F;"/><TextBlock Style="{StaticResource NavLabel}" Text="Tools"/></StackPanel>
+                                    </ui:NavigationViewItem>
+                                </ui:NavigationViewItem.MenuItems>
+                            </ui:NavigationViewItem>
+
+                            <!-- ═══ ADVANCED group ═══ -->
+                            <ui:NavigationViewItem x:Name="AdvancedGroup" Content="ADVANCED" IsExpanded="True" Style="{StaticResource AkariNavGroup}">
+                                <ui:NavigationViewItem.MenuItems>
+                                    <ui:NavigationViewItem x:Name="NavAdvanced" Tag="Advanced" Click="NavItem_Click" Style="{StaticResource AkariNavItem}" ToolTip="Advanced Tools">
+                                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xEC7A;"/><TextBlock Style="{StaticResource NavLabel}" Text="Advanced Tools"/></StackPanel>
+                                    </ui:NavigationViewItem>
+                                    <ui:NavigationViewItem x:Name="NavBackup" Tag="Backup" Click="NavItem_Click" Style="{StaticResource AkariNavItem}" ToolTip="Backup &amp; Restore">
+                                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xE8C8;"/><TextBlock Style="{StaticResource NavLabel}" Text="Backup &amp; Restore"/></StackPanel>
+                                    </ui:NavigationViewItem>
+                                    <ui:NavigationViewItem x:Name="NavVerify" Tag="Verify" Click="NavItem_Click" Style="{StaticResource AkariNavItem}" ToolTip="Verify">
+                                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xE9D9;"/><TextBlock Style="{StaticResource NavLabel}" Text="Verify"/></StackPanel>
+                                    </ui:NavigationViewItem>
+                                </ui:NavigationViewItem.MenuItems>
+                            </ui:NavigationViewItem>
+                        </ui:NavigationView.MenuItems>
+
+                        <!-- Footer (pinned bottom): app self-updater + About -->
+                        <ui:NavigationView.FooterMenuItems>
+                            <Border Height="1" Margin="9,6" Background="{DynamicResource AkariOverlayMedium}"/>
+                            <ui:NavigationViewItem x:Name="NavAppUpdate" Tag="AppUpdate" Click="NavItem_Click" Style="{StaticResource AkariNavItem}" ToolTip="Update">
+                                <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xE777;"/><TextBlock Style="{StaticResource NavLabel}" Text="Update"/></StackPanel>
+                            </ui:NavigationViewItem>
+                            <ui:NavigationViewItem x:Name="NavAbout" Tag="About" Click="NavItem_Click" Style="{StaticResource AkariNavItem}" ToolTip="About">
+                                <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xE946;"/><TextBlock Style="{StaticResource NavLabel}" Text="About"/></StackPanel>
+                            </ui:NavigationViewItem>
+                        </ui:NavigationView.FooterMenuItems>
+                    </ui:NavigationView>
+                    </Grid>
+                </Border>
+
+                <!-- ══ Content frame ══
+                     WinUI NavigationView's inset content plane: one layer above the
+                     canvas, rounded at the top-left only (the other three sides run to
+                     the window edge). The nav pane and title bar stay on the canvas, so
+                     the rounded corner reads as the content surface being lifted.
+                     ClipToBounds so the watermark and scrollbar are clipped by the
+                     corner instead of overrunning it. -->
+                <!-- No fill, border or radius: nav pane, title bar and content share
+                     one continuous background, as Settings does — only cards float
+                     above it. The Border is retained solely for ClipToBounds, which
+                     keeps the watermark inside the content region. -->
+                <Border Grid.Column="1" ClipToBounds="True">
+                <Grid ClipToBounds="True">
+                    <!-- Brand chevron watermark — window-level, behind every tab's content,
+                         clipped to the content region so it never touches the sidebar or footer. -->
+                    <!-- Source + Opacity set in code from ThemeService (theme-aware). Uniform +
+                         height-only avoids distortion across the two differently-shaped PNGs. -->
+                    <Image x:Name="HomeWatermark"
+                           Height="420"
+                           Stretch="Uniform"
+                           Opacity="0.10"
+                           IsHitTestVisible="False"
+                           HorizontalAlignment="Right"
+                           VerticalAlignment="Bottom"
+                           Margin="0,0,-60,-60"
+                           RenderOptions.BitmapScalingMode="HighQuality"/>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Background="Transparent" Style="{StaticResource AppScrollViewer}">
+                        <StackPanel Margin="40,34,40,30">
+                            <tabs:HomeTab        x:Name="TabHome"          Visibility="Collapsed"/>
+                            <tabs:SoftwareTab    x:Name="TabSoftware"      Visibility="Collapsed"/>
+                            <tabsgaming:GamingTab         x:Name="TabGaming"        Visibility="Collapsed"/>
+                            <tabsakarios:AkariOSTab       x:Name="TabAkariOS"       Visibility="Collapsed"/>
+                            <tabsprivacy:PrivacyTab       x:Name="TabPrivacy"       Visibility="Collapsed"/>
+                            <tabsupdate:UpdateTab         x:Name="TabUpdate"        Visibility="Collapsed"/>
+                            <tabsnotifications:NotificationsTab x:Name="TabNotifications" Visibility="Collapsed"/>
+                            <tabspower:PowerTab           x:Name="TabPower"         Visibility="Collapsed"/>
+                            <tabs:CustomizeTab   x:Name="TabCustomize"     Visibility="Collapsed"/>
+                            <tabs:ToolsTab       x:Name="TabTools"         Visibility="Collapsed"/>
+                            <tabsadvanced:AdvancedToolsTab x:Name="TabAdvanced" Visibility="Collapsed"/>
+                            <tabsbackup:BackupTab x:Name="TabBackup" Visibility="Collapsed"/>
+                            <tabsverify:VerifyTab x:Name="TabVerify" Visibility="Collapsed"/>
+                            <tabsabout:AboutTab            x:Name="TabAbout"         Visibility="Collapsed"/>
+                            <tabsappupdate:AppUpdateTab    x:Name="TabAppUpdate"     Visibility="Collapsed"/>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+                </Border>
+            </Grid>
+
+            <!-- ══ Log / terminal panel (shown only when it has output) ══ -->
+            <!-- Floating console card. Two layers for the same reason the tab cards
+                 use two: the shadow must sit on an unclipped outer element, or the
+                 effect silhouette turns square at the corners. Margin matches the
+                 content gutter (40) and leaves 8px above the status bar. -->
+            <Border x:Name="LogPanel" Grid.Row="3" Panel.ZIndex="2" Visibility="Collapsed"
+                    Margin="40,0,40,8"
+                    Effect="{DynamicResource AkariCardShadow}" CacheMode="BitmapCache">
+            <Border Padding="16,10,16,10" CornerRadius="8" BorderThickness="1"
+                    Background="{DynamicResource AkariLogSurface}"
+                    BorderBrush="{DynamicResource AkariCardElevationBorder}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,4">
+                        <TextBlock x:Name="TxtProgressStatus" Foreground="{DynamicResource AkariTextSecondary}" FontSize="12" Margin="0,0,8,0" VerticalAlignment="Center" Visibility="Collapsed"/>
+                        <ProgressBar x:Name="LogProgress" Height="6" Width="200" Minimum="0" Maximum="100" Value="0" Foreground="#e0142a" Background="{DynamicResource AkariHairline}" Visibility="Collapsed"/>
+                    </StackPanel>
+                    <!-- MaxLines, not MaxHeight: the TextBox then sizes to a whole
+                         number of line boxes by construction, so no partial line can
+                         render clipped. A pixel MaxHeight left a fractional line
+                         (56px - 18px chrome = 38px = 2.97 lines at 12.783px). -->
+                    <TextBox x:Name="TxtLog" Grid.Row="1" Style="{StaticResource AkariLogBox}" MaxLines="4"/>
+                </Grid>
+            </Border>
+            </Border>
+
+            <!-- ══ Status bar ══ -->
+            <!-- No top border: the footer shares the window fill and reads as
+                 continuous with it, as Windows 11 does. -->
+            <Border Grid.Row="4" Panel.ZIndex="2" BorderThickness="0" Padding="16,0"
+                    Background="{DynamicResource AkariSidebarBackground}">
+                <Grid VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                        <Ellipse Width="6" Height="6" VerticalAlignment="Center" Margin="0,0,7,0"
+                                 Fill="{DynamicResource AkariSuccess}">
+                            <Ellipse.Effect><DropShadowEffect Color="{DynamicResource AkariSuccessColor}" BlurRadius="7" ShadowDepth="0" Opacity="0.7"/></Ellipse.Effect>
+                        </Ellipse>
+                        <TextBlock Text="Ready" FontSize="11.5" Foreground="{DynamicResource AkariNavText}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <!-- Log panel toggle. Status-bar chrome, not a tab control, because
+                             the panel is app-global. Styling matches the status bar's own
+                             text rather than introducing a control style. -->
+                        <Button x:Name="LogToggleBtn" Click="LogToggle_Click"
+                                Background="Transparent" BorderThickness="0" Padding="6,2"
+                                Cursor="Hand" FocusVisualStyle="{x:Null}"
+                                Margin="0,0,14,0" VerticalAlignment="Center"
+                                ToolTip="Show or hide the log panel">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="Transparent" Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter VerticalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Button.Template>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <!-- Unread dot: shown only when output arrived while closed. -->
+                                <Ellipse x:Name="LogUnreadDot" Width="5" Height="5" Margin="0,0,5,0"
+                                         VerticalAlignment="Center" Visibility="Collapsed"
+                                         Fill="{DynamicResource AkariAccent}"/>
+                                <TextBlock x:Name="LogToggleLabel" Text="Log" FontSize="11.5"
+                                           Foreground="{DynamicResource AkariNavText}"
+                                           VerticalAlignment="Center"/>
+                                <TextBlock x:Name="LogToggleChevron" Text="▴" FontSize="10"
+                                           Margin="5,0,0,0"
+                                           Foreground="{DynamicResource AkariNavText}"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Theme switch — segmented pill, both icons always visible with a
+                             circular thumb over the ACTIVE theme. Lives in the status bar so it
+                             is always visible: never scrolls, overlaps no tab header, and avoids
+                             the ui:TitleBar drag region that swallows clicks.
+                             The visual tree is the Button's CONTENT, not its template, so the
+                             named parts stay reachable from code-behind; the template is a bare
+                             ContentPresenter so no default chrome paints over the pill. -->
+                        <Button x:Name="ThemeToggleBtn" Click="ThemeToggle_Click"
+                                Background="Transparent" BorderThickness="0" Padding="0"
+                                Cursor="Hand" FocusVisualStyle="{x:Null}"
+                                VerticalAlignment="Center"
+                                Margin="0,0,12,0" ToolTip="Toggle light / dark theme">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <ContentPresenter/>
+                                </ControlTemplate>
+                            </Button.Template>
+                            <Border Background="{DynamicResource AkariOverlayFaint}"
+                                    CornerRadius="9" Height="18" Width="38"
+                                    SnapsToDevicePixels="True">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- active-side highlight; moved in code, not by a trigger -->
+                                    <Ellipse x:Name="ThemeThumb" Grid.Column="0"
+                                             Width="15" Height="15"
+                                             Fill="{DynamicResource AkariTextPrimary}"
+                                             HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                                    <!-- moon (dark) -->
+                                    <Viewbox Grid.Column="0" Width="9" Height="9"
+                                             HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Canvas Width="8" Height="8">
+                                            <Path x:Name="ThemeMoonPath" Data="{StaticResource IconMoon}"/>
+                                        </Canvas>
+                                    </Viewbox>
+
+                                    <!-- sun (light) -->
+                                    <Viewbox Grid.Column="1" Width="11" Height="11"
+                                             HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Canvas Width="24" Height="24">
+                                            <Path x:Name="ThemeSunCorePath" Data="{StaticResource IconSunCore}"/>
+                                            <Path x:Name="ThemeSunRaysPath" Data="{StaticResource IconSunRays}"/>
+                                        </Canvas>
+                                    </Viewbox>
+                                </Grid>
+                            </Border>
+                        </Button>
+                        <TextBlock Text="WPF-UI 4.1 · .NET 8 · v3.0" VerticalAlignment="Center"
+                                   FontFamily="{StaticResource MonoFont}" FontSize="10" Foreground="{DynamicResource AkariTextMuted}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</ui:FluentWindow>

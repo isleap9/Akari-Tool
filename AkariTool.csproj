@@ -1,0 +1,74 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Version>1.1.1</Version>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+    <PublishSingleFile>false</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <AssemblyName>AkariTool</AssemblyName>
+    <RootNamespace>AkariTool</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Resource\AkariLogo.ico</ApplicationIcon>
+  </PropertyGroup>
+
+
+
+  <ItemGroup>
+    <Compile         Remove="webview2-app\**" />
+    <Page            Remove="webview2-app\**" />
+    <Resource        Remove="webview2-app\**" />
+    <EmbeddedResource Remove="webview2-app\**" />
+    <None            Remove="webview2-app\**" />
+    <Content         Remove="webview2-app\**" />
+  </ItemGroup>
+
+  <!-- Design handoff bundle lives inside the repo as reference only; keep its
+       dropin/navview .xaml + .cs out of the SDK globs so they don't compile. -->
+  <ItemGroup>
+    <Compile          Remove="design_handoff_akari_wpfui_redesign\**" />
+    <Page             Remove="design_handoff_akari_wpfui_redesign\**" />
+    <Resource         Remove="design_handoff_akari_wpfui_redesign\**" />
+    <EmbeddedResource Remove="design_handoff_akari_wpfui_redesign\**" />
+    <None             Remove="design_handoff_akari_wpfui_redesign\**" />
+    <Content          Remove="design_handoff_akari_wpfui_redesign\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Scripts\*.ps1" />
+    <EmbeddedResource Include="Scripts\Network\*.bat" />
+    <EmbeddedResource Include="Defender\NoDefender.cab" />
+    <EmbeddedResource Include="Defender\DisableDefender.ps1" />
+    <!-- AkariOS NVIDIA profile. Conditioned because the payload is added separately:
+         an unconditional Include on a missing file breaks the WPF markup-compile pass.
+         Drop Nvidia\Settings.nip in and it is embedded automatically; until then
+         NvidiaProfileService logs that the profile is missing. -->
+    <EmbeddedResource Include="Nvidia\Settings.nip" Condition="Exists('Nvidia\Settings.nip')" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Tabs\OSTweaks\OSTweaksTab.xaml.cs">
+      <DependentUpon>OSTweaksTab.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resource\AkariLogo.ico" />
+    <Resource Include="Resource\AkariLogo.png" />
+    <Resource Include="Resource\AkariLogoLight.png" />
+    <Resource Include="Fonts\*.ttf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Management" Version="8.0.0" />
+    <PackageReference Include="System.ServiceProcess.ServiceController" Version="8.0.1" />
+    <PackageReference Include="WPF-UI" Version="4.1.0" />
+  </ItemGroup>
+
+</Project>

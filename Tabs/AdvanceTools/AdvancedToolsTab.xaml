@@ -1,0 +1,6 @@
+<local:BaseTab x:Class="AkariTool.Tabs.AdvancedTools.AdvancedToolsTab"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:AkariTool.Tabs">
+    <StackPanel x:Name="RootPanel"/>
+</local:BaseTab>

@@ -1,0 +1,107 @@
+// Ported 1:1 from Winhance (Winhance.Core/Features/SoftwareApps/Models).
+// Data catalog — keep in sync with upstream when updating.
+
+namespace AkariTool.Tabs;
+
+public static partial class ExternalAppCatalog
+{
+    public static class PrivacySecurity
+    {
+        public static AppGroup GetPrivacySecurity()
+        {
+            return new AppGroup
+            {
+                Name = "Privacy & Security",
+                FeatureId = "ExternalApps",
+                Items = new List<AppDefinition>
+                {
+                    new AppDefinition
+                    {
+                        Id = "external-app-malwarebytes",
+                        Name = "Malwarebytes",
+                        Description = "Anti-malware software for Windows",
+                        RegistryDisplayName = "Malwarebytes version {version}",
+                        GroupName = "Privacy & Security",
+                        WinGetPackageId = ["Malwarebytes.Malwarebytes"],
+                        ChocoPackageId = "malwarebytes",
+                        WebsiteUrl = "https://www.malwarebytes.com/",
+                    },
+                    new AppDefinition
+                    {
+                        Id = "external-app-malwarebytes-adwcleaner",
+                        Name = "Malwarebytes AdwCleaner",
+                        Description = "Adware removal tool for Windows",
+                        GroupName = "Privacy & Security",
+                        WinGetPackageId = ["Malwarebytes.AdwCleaner"],
+                        ChocoPackageId = "adwcleaner",
+                        WebsiteUrl = "https://www.malwarebytes.com/adwcleaner",
+                    },
+                    new AppDefinition
+                    {
+                        Id = "external-app-malwarebytes-firewall-control",
+                        Name = "Windows Firewall Control",
+                        Description = "Friendly UI on top of Windows Firewall by Malwarebytes",
+                        GroupName = "Privacy & Security",
+                        WinGetPackageId = ["BiniSoft.WindowsFirewallControl"],
+                        ChocoPackageId = "windowsfirewallcontrol",
+                        // Upstream winget manifest passes `-run -close -install -update`, which causes the
+                        // installer to dump files into a `-update` subfolder of CWD when no prior install exists.
+                        WinGetInstallerOverride = "-run -close -install",
+                        WebsiteUrl = "https://www.binisoft.org/wfc",
+                    },
+                    new AppDefinition
+                    {
+                        Id = "external-app-onionshare",
+                        Name = "OnionShare",
+                        Description = "Securely and anonymously share files, host websites, and chat via Tor network",
+                        GroupName = "Privacy & Security",
+                        WinGetPackageId = ["OnionShare.OnionShare"],
+                        ChocoPackageId = "onionshare",
+                        WebsiteUrl = "https://onionshare.org/",
+                    },
+                    new AppDefinition
+                    {
+                        Id = "external-app-sniffnet",
+                        Name = "Sniffnet",
+                        Description = "Network monitoring tool to analyze your internet traffic",
+                        GroupName = "Privacy & Security",
+                        WebsiteUrl = "https://sniffnet.net/",
+                        ExternalApp = new ExternalAppMetadata
+                        {
+                            DownloadUrlArm64 = "https://github.com/GyulyVGC/sniffnet/releases/latest/download/Sniffnet_Windows_arm64.msi",
+                            DownloadUrlX64 = "https://github.com/GyulyVGC/sniffnet/releases/latest/download/Sniffnet_Windows_x64.msi",
+                            DownloadUrlX86 = "https://github.com/GyulyVGC/sniffnet/releases/latest/download/Sniffnet_Windows_x86.msi",
+                            RequiresDirectDownload = true,
+                        },
+                    },
+                    new AppDefinition
+                    {
+                        Id = "external-app-teleguard",
+                        Name = "TeleGuard",
+                        Description = "Secure messaging app with end-to-end encryption",
+                        GroupName = "Privacy & Security",
+                        WebsiteUrl = "https://teleguard.com/en",
+                        ExternalApp = new ExternalAppMetadata
+                        {
+                            DownloadUrl = "https://pub.teleguard.com/teleguard-desktop-latest.exe",
+                            RequiresDirectDownload = true,
+                        },
+                        // Vendor doesn't expose a stable raw logo URL — the on-page logo is
+                        // a base64 data URI on teleguard.com. Embed it directly here so the
+                        // resolver can decode it at first run (Layer 2b's data: branch).
+                    },
+                    new AppDefinition
+                    {
+                        Id = "external-app-shutup10",
+                        Name = "O&O ShutUp10++",
+                        Description = "Free antispy tool for Windows 10 and 11",
+                        GroupName = "Privacy & Security",
+                        WinGetPackageId = ["OO-Software.ShutUp10"],
+                        ChocoPackageId = "shutup10",
+                        WebsiteUrl = "https://www.oo-software.com/en/shutup10",
+                    }
+                }
+            };
+        }
+    }
+}

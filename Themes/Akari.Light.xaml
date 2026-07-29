@@ -1,0 +1,189 @@
+<!--
+  Akari.Light.xaml  —  LIGHT theme token dictionary.
+  Identical key set to Akari.Dark.xaml, light values. Swapped in at runtime by
+  ThemeService. Overlay washes flip to black-alpha; semantic colours darken so
+  they stay readable on white. Crimson accent is identical in both themes.
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <!-- ════════════════ LEGACY PALETTE ════════════════ -->
+  <Color x:Key="AkariRed">#FFE0142A</Color>
+  <Color x:Key="AkariRedHot">#FFFF4150</Color>
+  <Color x:Key="AkariRedSoft">#FFFF6373</Color>
+  <Color x:Key="AkariBg">#FFF7F7F9</Color>
+  <Color x:Key="AkariPanel">#FFFFFFFF</Color>
+  <Color x:Key="AkariText">#FF1A1A1E</Color>
+  <Color x:Key="AkariTextMutedLegacy">#FF5A5A62</Color>
+
+  <SolidColorBrush x:Key="AkariRedBrush"       Color="{StaticResource AkariRed}"/>
+  <SolidColorBrush x:Key="AkariTextBrush"      Color="{StaticResource AkariText}"/>
+  <SolidColorBrush x:Key="AkariTextMutedBrush" Color="{StaticResource AkariTextMutedLegacy}"/>
+
+  <!-- ════════════════ V3 DESIGN TOKENS — COLOURS ════════════════ -->
+  <Color x:Key="AkariCanvasTop">#FFE4E4E4</Color>
+  <Color x:Key="AkariCanvasBottom">#FFE4E4E4</Color>
+  <Color x:Key="AkariContentSurfaceColor">#FFF0F0F0</Color>
+  <Color x:Key="AkariCardBackgroundColor">#FFFAFAFA</Color>
+  <Color x:Key="AkariCardBackgroundHoverColor">#FFFFFFFF</Color>
+  <Color x:Key="AkariSidebarBackgroundColor">#FFE4E4E4</Color>
+  <Color x:Key="AkariHairlineColor">#FFD0D0D0</Color>
+  <Color x:Key="AkariHairlineHoverColor">#FFBDBDBD</Color>
+  <!-- Card elevation stroke stops: soft lit top, darker shadow bottom (reads as a
+       shadow beneath the raised surface). Grey/hairline family. -->
+  <Color x:Key="AkariCardElevationLitColor">#FFD8D8D8</Color>
+  <Color x:Key="AkariCardElevationShadowColor">#FFB0B0B0</Color>
+  <Color x:Key="AkariTextPrimaryColor">#FF1A1A1A</Color>
+  <Color x:Key="AkariTextSecondaryColor">#FF5C5C5C</Color>
+  <Color x:Key="AkariTextMutedColor">#FF646464</Color>
+  <Color x:Key="AkariIconNeutralColor">#FF6B6B6B</Color>
+  <Color x:Key="AkariAccentColor">#FFE0142A</Color>
+  <Color x:Key="AkariAccentHotColor">#FFFF2438</Color>
+  <Color x:Key="AkariLogSurfaceColor">#FFD8D8D8</Color>
+
+  <!-- Semantic colours (light — darkened for white surfaces) -->
+  <Color x:Key="AkariSuccessColor">#FF1E9E5A</Color>
+  <Color x:Key="AkariWarnColor">#FFB98900</Color>
+  <Color x:Key="AkariWinBlueColor">#FF0A7AC4</Color>
+  <Color x:Key="StarGold">#FFB98900</Color>
+  <Color x:Key="WinBlue">#FF0A7AC4</Color>
+
+  <!-- Banner / status roles — darkened Fg + pale tints for white surfaces -->
+  <Color x:Key="AkariSuccessFgColor">#FF1B6E36</Color>
+  <Color x:Key="AkariSuccessBgColor">#FFE9F6EC</Color>
+  <Color x:Key="AkariSuccessBorderColor">#FFB6DEC1</Color>
+  <Color x:Key="AkariInfoFgColor">#FF0A6DAE</Color>
+  <Color x:Key="AkariInfoBgColor">#FFE8F3FB</Color>
+  <Color x:Key="AkariInfoBorderColor">#FFBFDDF0</Color>
+  <Color x:Key="AkariWarnFgColor">#FF7E5E00</Color>
+  <Color x:Key="AkariWarnBgColor">#FFFBF3DC</Color>
+  <Color x:Key="AkariWarnBorderColor">#FFEAD9A0</Color>
+  <Color x:Key="AkariDangerFgColor">#FFC01122</Color>
+  <Color x:Key="AkariDangerBgColor">#FFFDEBEC</Color>
+  <Color x:Key="AkariDangerBorderColor">#FFF3C0C5</Color>
+
+  <!-- Card-header pill buttons (bulk actions) — neutral + accent sets -->
+  <Color x:Key="AkariPillNeutralBgColor">#FFF1F1F4</Color>
+  <Color x:Key="AkariPillNeutralBorderColor">#FFD6D6DD</Color>
+  <Color x:Key="AkariPillNeutralFgColor">#FF4A4A52</Color>
+  <Color x:Key="AkariPillAccentBgColor">#00000000</Color>
+  <Color x:Key="AkariPillAccentBorderColor">#FFE0142A</Color>
+  <Color x:Key="AkariPillAccentFgColor">#FFE0142A</Color>
+
+  <!-- Muted red for body-size text (links, counts, inline emphasis). NOT the brand
+       accent: crimson at body size fails AA, these are darkened to clear it. -->
+  <Color x:Key="AkariAccentTextColor">#FFB01020</Color>
+  <Color x:Key="AkariAccentTextMutedColor">#FFB0424D</Color>
+
+  <!-- Icon fills (brighter than the darkened banner-text variants) -->
+  <Color x:Key="AkariStarGoldColor">#FFDBA400</Color>
+  <Color x:Key="AkariWinBlueIconColor">#FF0F82CE</Color>
+
+  <!-- Per-row badge pill colours — darkened so border + text read on white -->
+  <Color x:Key="AkariPillPreferenceColor">#FF7E5BC0</Color>
+  <Color x:Key="AkariPillRecommendedColor">#FFE0142A</Color>
+  <Color x:Key="AkariPillDefaultColor">#FF8E8E96</Color>
+  <Color x:Key="AkariPillCustomColor">#FFAAAAB2</Color>
+  <Color x:Key="AkariPillGenericColor">#FF6A6A72</Color>
+
+  <!-- ════════════════ V3 DESIGN TOKENS — BRUSHES ════════════════ -->
+  <SolidColorBrush x:Key="AkariCanvasTopBrush"      Color="{StaticResource AkariCanvasTop}"/>
+  <SolidColorBrush x:Key="AkariCanvasBottomBrush"   Color="{StaticResource AkariCanvasBottom}"/>
+  <SolidColorBrush x:Key="AkariContentSurface"      Color="{StaticResource AkariContentSurfaceColor}"/>
+  <SolidColorBrush x:Key="AkariCardBackground"      Color="{StaticResource AkariCardBackgroundColor}"/>
+  <!-- Gradient elevation stroke for card + frame edges (NOT for dividers/lines).
+       Vertical, lit top to shadow bottom; the flat AkariHairline stays for lines. -->
+  <LinearGradientBrush x:Key="AkariCardElevationBorder" StartPoint="0,0" EndPoint="0,1">
+    <GradientStop Color="{StaticResource AkariCardElevationLitColor}" Offset="0"/>
+    <GradientStop Color="{StaticResource AkariCardElevationShadowColor}" Offset="1"/>
+  </LinearGradientBrush>
+  <SolidColorBrush x:Key="AkariCardBackgroundHover" Color="{StaticResource AkariCardBackgroundHoverColor}"/>
+  <SolidColorBrush x:Key="AkariSidebarBackground"   Color="{StaticResource AkariSidebarBackgroundColor}"/>
+  <SolidColorBrush x:Key="AkariHairline"            Color="{StaticResource AkariHairlineColor}"/>
+  <SolidColorBrush x:Key="AkariHairlineHover"       Color="{StaticResource AkariHairlineHoverColor}"/>
+  <SolidColorBrush x:Key="AkariTextPrimary"         Color="{StaticResource AkariTextPrimaryColor}"/>
+  <SolidColorBrush x:Key="AkariTextSecondary"       Color="{StaticResource AkariTextSecondaryColor}"/>
+  <SolidColorBrush x:Key="AkariTextMuted"           Color="{StaticResource AkariTextMutedColor}"/>
+  <SolidColorBrush x:Key="AkariIconNeutral"         Color="{StaticResource AkariIconNeutralColor}"/>
+  <SolidColorBrush x:Key="AkariAccent"              Color="{StaticResource AkariAccentColor}"/>
+  <SolidColorBrush x:Key="AkariLogSurface"          Color="{StaticResource AkariLogSurfaceColor}"/>
+  <SolidColorBrush x:Key="AkariAccentText"          Color="{StaticResource AkariAccentTextColor}"/>
+  <SolidColorBrush x:Key="AkariAccentTextMuted"     Color="{StaticResource AkariAccentTextMutedColor}"/>
+
+  <!-- Semantic brushes -->
+  <SolidColorBrush x:Key="AkariSuccess"  Color="{StaticResource AkariSuccessColor}"/>
+  <SolidColorBrush x:Key="AkariWarn"     Color="{StaticResource AkariWarnColor}"/>
+  <SolidColorBrush x:Key="AkariWinBlue"  Color="{StaticResource AkariWinBlueColor}"/>
+  <SolidColorBrush x:Key="StarGoldBrush" Color="{StaticResource StarGold}"/>
+  <SolidColorBrush x:Key="WinBlueBrush"  Color="{StaticResource WinBlue}"/>
+
+  <!-- ════════════════ OVERLAY WASHES (black-alpha in light) ════════════════ -->
+  <SolidColorBrush x:Key="AkariOverlayFaint"  Color="#0A000000"/>
+  <SolidColorBrush x:Key="AkariOverlaySoft"   Color="#0F000000"/>
+  <SolidColorBrush x:Key="AkariOverlayMedium" Color="#14000000"/>
+  <SolidColorBrush x:Key="AkariOverlayStrong" Color="#1A000000"/>
+
+  <!-- Nav rail text (idle / active) -->
+  <SolidColorBrush x:Key="AkariNavText"       Color="#99000000"/>
+  <SolidColorBrush x:Key="AkariNavTextActive" Color="#FF1A1A1E"/>
+
+  <!-- Window background -->
+  <LinearGradientBrush x:Key="AkariFlatBackdrop" StartPoint="0,0" EndPoint="0,1">
+    <GradientStop Color="{StaticResource AkariCanvasTop}" Offset="0"/>
+    <GradientStop Color="{StaticResource AkariCanvasBottom}" Offset="1"/>
+  </LinearGradientBrush>
+
+  <!-- ════════════════ WPF-UI ACCENT KEYS (same crimson both themes) ════════════════ -->
+  <Color x:Key="SystemAccentColor">#FFE0142A</Color>
+  <Color x:Key="SystemAccentColorPrimary">#FFE0142A</Color>
+  <Color x:Key="SystemAccentColorSecondary">#FFFF2438</Color>
+  <Color x:Key="SystemAccentColorTertiary">#FFFF4150</Color>
+
+  <SolidColorBrush x:Key="SystemAccentColorBrush"          Color="#FFE0142A"/>
+  <SolidColorBrush x:Key="SystemAccentColorPrimaryBrush"   Color="#FFE0142A"/>
+  <SolidColorBrush x:Key="SystemAccentColorSecondaryBrush" Color="#FFFF2438"/>
+  <SolidColorBrush x:Key="SystemAccentColorTertiaryBrush"  Color="#FFFF4150"/>
+
+  <SolidColorBrush x:Key="AccentFillColorDefaultBrush"   Color="#FFE0142A"/>
+  <SolidColorBrush x:Key="AccentFillColorSecondaryBrush" Color="#E6E0142A"/>
+  <SolidColorBrush x:Key="AccentFillColorTertiaryBrush"  Color="#CCE0142A"/>
+  <SolidColorBrush x:Key="TextOnAccentFillColorPrimaryBrush"   Color="#FF0B0B0D"/>
+  <SolidColorBrush x:Key="TextOnAccentFillColorSecondaryBrush" Color="#FF0B0B0D"/>
+
+  <!-- ToggleSwitch on-state (crimson, both themes) -->
+  <SolidColorBrush x:Key="ToggleSwitchFillOn"            Color="#FFE0142A"/>
+  <SolidColorBrush x:Key="ToggleSwitchFillOnPointerOver" Color="#FFFF2438"/>
+  <SolidColorBrush x:Key="ToggleSwitchFillOnPressed"     Color="#FFCC1226"/>
+  <SolidColorBrush x:Key="ToggleSwitchStrokeOn"          Color="#FFE0142A"/>
+  <SolidColorBrush x:Key="ToggleSwitchStrokeOnPointerOver" Color="#FFFF2438"/>
+  <SolidColorBrush x:Key="ToggleSwitchStrokeOnPressed"   Color="#FFCC1226"/>
+  <SolidColorBrush x:Key="ToggleSwitchKnobFillOn"        Color="#FFFFFFFF"/>
+
+  <!-- TextBox / search fields — focused accent underline & caret -->
+  <SolidColorBrush x:Key="TextControlBorderBrushFocused"     Color="#FFE0142A"/>
+  <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="#47E0142A"/>
+  <SolidColorBrush x:Key="TextControlSelectionHighlightColor" Color="#66E0142A"/>
+
+  <!-- ════════════════ NAVIGATIONVIEW PANE OVERRIDES ════════════════ -->
+  <SolidColorBrush x:Key="NavigationViewContentBackground"                   Color="#00000000"/>
+  <SolidColorBrush x:Key="NavigationViewContentGridBorderBrush"              Color="#00000000"/>
+  <SolidColorBrush x:Key="NavigationViewItemBackground"                      Color="#00000000"/>
+  <SolidColorBrush x:Key="NavigationViewItemBackgroundPointerOver"           Color="#0F000000"/>
+  <SolidColorBrush x:Key="NavigationViewItemBackgroundPressed"               Color="#1A000000"/>
+  <SolidColorBrush x:Key="NavigationViewItemBackgroundSelected"              Color="#F6F6F8"/>
+  <SolidColorBrush x:Key="NavigationViewItemBackgroundSelectedLeftFluent"    Color="#F6F6F8"/>
+  <SolidColorBrush x:Key="NavigationViewItemForeground"                      Color="#FF1A1A1E"/>
+  <SolidColorBrush x:Key="NavigationViewItemForegroundLeftFluent"            Color="#FF1A1A1E"/>
+  <SolidColorBrush x:Key="NavigationViewItemForegroundPointerOver"           Color="#FF000000"/>
+  <SolidColorBrush x:Key="NavigationViewItemForegroundPointerOverLeftFluent" Color="#FF000000"/>
+  <SolidColorBrush x:Key="NavigationViewItemForegroundPressed"               Color="#FF000000"/>
+  <SolidColorBrush x:Key="NavigationViewItemSeparatorForeground"             Color="#E4E4E9"/>
+  <SolidColorBrush x:Key="NavigationViewSelectionIndicatorForeground"        Color="#FFE0142A"/>
+
+  <!-- Real shadow for FLOATING surfaces only (popups, flyouts, dialogs). Never on
+       cards/rows — WPF DropShadowEffect on many elements causes scroll/resize lag. -->
+  <DropShadowEffect x:Key="AkariFloatingShadow" Color="#000000" BlurRadius="16" ShadowDepth="4" Direction="270" Opacity="0.16"/>
+  <!-- Card-face shadow (TRIAL: Home + AkariOS only). Every consumer must also set
+       CacheMode=BitmapCache; the WPF effect pipeline is the scroll-latency cost. -->
+  <DropShadowEffect x:Key="AkariCardShadow" Color="#000000" BlurRadius="12" ShadowDepth="2" Direction="270" Opacity="0.18"/>
+</ResourceDictionary>
