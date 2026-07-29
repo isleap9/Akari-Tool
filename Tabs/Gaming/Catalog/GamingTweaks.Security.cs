@@ -87,28 +87,6 @@ namespace AkariTool.Tabs.Gaming
                         Log($"Windows Defender {(on ? "disable" : "re-enable")} requested — restart required.");
                     }
                 },
-                new TweakDefinition
-                {
-                    Id               = "boot-menu-policy-standard",
-                    Name             = "Standard Boot Menu Policy",
-                    Description      = "Use the modern graphical boot menu instead of the legacy text-mode menu. Standard enables the Windows recovery UI and advanced startup options",
-                    RequiresRestart  = true,
-                    RecommendedState = false,
-                    DefaultState     = false,
-                    // bcdedit state cannot be read from a registry key, so this row keeps a
-                    // HasState-based ReadState — the same intentional exception the Defender
-                    // row above uses. BcdBackup covers the undo path (BCD is not in System Restore).
-                    ReadState        = () => TweakHelpers.HasState("BootMenuPolicy"),
-                    Apply = on =>
-                    {
-                        BcdBackup.EnsureBackup();
-                        TweakHelpers.RunCommand("bcdedit.exe",
-                            on ? "/set bootmenupolicy Standard" : "/set bootmenupolicy legacy");
-                        if (on) TweakHelpers.SaveState("BootMenuPolicy");
-                        else    TweakHelpers.ClearState("BootMenuPolicy");
-                        Log($"Boot menu policy set to {(on ? "Standard" : "Legacy")}.");
-                    }
-                },
             };
     }
 }

@@ -34,6 +34,8 @@ namespace AkariTool.Tabs.AkariOS
             try
             {
                 const string gpuClass = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000";
+                bool ok = ElevationService.RunAsSystem(() =>
+                {
                 Registry.SetValue(gpuClass, "RmDisableHwFaultBuffer",     1,          RegistryValueKind.DWord);
                 Registry.SetValue(gpuClass, "RMD3Feature",                1,          RegistryValueKind.DWord);
                 Registry.SetValue(gpuClass, "RMDisableGpuASPMFlags",      3,          RegistryValueKind.DWord);
@@ -69,7 +71,10 @@ namespace AkariTool.Tabs.AkariOS
                 Registry.SetValue(@"HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\nvlddmkm", "LogEventEntries",              0, RegistryValueKind.DWord);
                 Registry.SetValue(@"HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\nvlddmkm", "LogErrorEntries",              0, RegistryValueKind.DWord);
                 Registry.SetValue(@"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\GraphicsDrivers", "PlatformSupportMiracast", 0, RegistryValueKind.DWord);
-                Service?.Log("NVIDIA Miscellaneous tweaks applied. Restart to apply.");
+                }, Service!.Log);
+
+                if (ok) Service?.Log("NVIDIA Miscellaneous tweaks applied. Restart to apply.");
+                else    Service?.Log("NVIDIA Miscellaneous: SYSTEM elevation failed — no values written.");
             }
             catch (Exception ex) { Service?.Log($"ERROR ApplyNvidiaMisc: {ex.Message}"); }
         }
@@ -84,22 +89,142 @@ namespace AkariTool.Tabs.AkariOS
                 ("RSS",                   () => _ = ToolFetchService.LaunchAsync("RadeonSlimmer",   Service!)),
                 ("Driver Download",       () => RunShellProcess("https://www.amd.com/en/support/download/drivers.html", "")),
                 ("Disable DXNAVI",        () => _ = ToolFetchService.LaunchAsync("DisableDx11Navi", Service!)),
-                ("Shader Cache AlwaysON", () => ApplyAmdShaderCache(true)),
-                ("Shader Cache Default",  () => ApplyAmdShaderCache(false)),
             });
+
+            // Shader Cache is a genuine two-state setting, so it renders as a stateful
+            // segmented control that reads the live value on build rather than a pair of
+            // fire-and-forget buttons.
+            BuildAmdShaderCacheControl(panel);
         }
 
-        private void ApplyAmdShaderCache(bool alwaysOn)
+        // ── AMD Shader Cache: stateful segmented control ──────────────────
+        //
+        // 0x32 => AlwaysON, 0x31 => Default, absent => unset. The read path uses
+        // Registry.GetValue (no elevation needed); only the write goes through SYSTEM.
+        private const string AmdShaderCacheKey =
+            @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000\UMD";
+
+        private enum ShaderCacheState { Unset, Default, AlwaysOn }
+
+        private static ShaderCacheState ReadAmdShaderCache()
         {
             try
             {
-                const string umdKey = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000\UMD";
-                Registry.SetValue(umdKey, "ShaderCache",
-                    alwaysOn ? new byte[] { 0x32, 0x00 } : new byte[] { 0x31, 0x00 },
-                    RegistryValueKind.Binary);
-                Service?.Log($"AMD Shader Cache set to {(alwaysOn ? "AlwaysON" : "Default")}.");
+                if (Registry.GetValue(AmdShaderCacheKey, "ShaderCache", null) is byte[] b && b.Length > 0)
+                    return b[0] switch
+                    {
+                        0x32 => ShaderCacheState.AlwaysOn,
+                        0x31 => ShaderCacheState.Default,
+                        _    => ShaderCacheState.Unset
+                    };
             }
-            catch (Exception ex) { Service?.Log($"ERROR ApplyAmdShaderCache: {ex.Message}"); }
+            catch { /* unreadable key reads as Unset, never throws */ }
+            return ShaderCacheState.Unset;
+        }
+
+        /// <returns>true when the value was written under SYSTEM elevation.</returns>
+        private bool ApplyAmdShaderCache(bool alwaysOn)
+        {
+            try
+            {
+                bool ok = ElevationService.RunAsSystem(() =>
+                {
+                    Registry.SetValue(AmdShaderCacheKey, "ShaderCache",
+                        alwaysOn ? new byte[] { 0x32, 0x00 } : new byte[] { 0x31, 0x00 },
+                        RegistryValueKind.Binary);
+                }, Service!.Log);
+
+                if (ok) Service?.Log($"AMD Shader Cache set to {(alwaysOn ? "AlwaysON" : "Default")}.");
+                else    Service?.Log("AMD Shader Cache: SYSTEM elevation failed — nothing written.");
+                return ok;
+            }
+            catch (Exception ex)
+            {
+                Service?.Log($"ERROR ApplyAmdShaderCache: {ex.Message}");
+                return false;
+            }
+        }
+
+        private void BuildAmdShaderCacheControl(StackPanel panel)
+        {
+            var caption = new TextBlock
+            {
+                Text = "Shader Cache",
+                FontSize = 12,
+                Foreground = TweakHelpers.TextSecondary,
+                Margin = new Thickness(4, 8, 4, 6)
+            };
+            panel.Children.Add(caption);
+
+            // Two segments sharing one hairline track; each rounds only its outer corners.
+            var track = new Grid { Margin = new Thickness(4, 0, 4, 4) };
+            track.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            track.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+            var (onSeg,  onText)  = MakeSegment("AlwaysON", new CornerRadius(8, 0, 0, 8), new Thickness(1));
+            var (offSeg, offText) = MakeSegment("Default",  new CornerRadius(0, 8, 8, 0), new Thickness(0, 1, 1, 1));
+            Grid.SetColumn(onSeg, 0);
+            Grid.SetColumn(offSeg, 1);
+            track.Children.Add(onSeg);
+            track.Children.Add(offSeg);
+            panel.Children.Add(track);
+
+            void Paint(Border seg, TextBlock txt, bool active)
+            {
+                seg.Background  = active ? TweakHelpers.Accent : Brushes.Transparent;
+                txt.Foreground  = active ? TweakHelpers.AccentText : TweakHelpers.TextSecondary;
+                txt.FontWeight  = active ? FontWeights.SemiBold : FontWeights.Normal;
+                seg.Tag         = active;   // remembered so hover doesn't fight the active fill
+            }
+
+            void Refresh()
+            {
+                var s = ReadAmdShaderCache();
+                Paint(onSeg,  onText,  s == ShaderCacheState.AlwaysOn);
+                Paint(offSeg, offText, s == ShaderCacheState.Default);
+            }
+
+            void Wire(Border seg, TextBlock txt, bool alwaysOn)
+            {
+                seg.MouseEnter += (_, _) =>
+                {
+                    if (seg.Tag is bool active && !active) seg.Background = TweakHelpers.CardBgHover;
+                };
+                seg.MouseLeave += (_, _) =>
+                {
+                    if (seg.Tag is bool active && !active) seg.Background = Brushes.Transparent;
+                };
+                seg.MouseLeftButtonUp += (_, _) =>
+                {
+                    if (ApplyAmdShaderCache(alwaysOn)) Refresh();
+                };
+            }
+
+            Wire(onSeg,  onText,  true);
+            Wire(offSeg, offText, false);
+            Refresh();
+        }
+
+        private static (Border seg, TextBlock text) MakeSegment(string label, CornerRadius radius, Thickness border)
+        {
+            var text = new TextBlock
+            {
+                Text = label,
+                FontSize = 13,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            var seg = new Border
+            {
+                Child = text,
+                Padding = new Thickness(0, 10, 0, 10),
+                CornerRadius = radius,
+                BorderThickness = border,
+                BorderBrush = TweakHelpers.CardElevationBorder,
+                Background = Brushes.Transparent,
+                Cursor = System.Windows.Input.Cursors.Hand
+            };
+            return (seg, text);
         }
 
         // ── Useful Tools ──────────────────────────────────────────────────

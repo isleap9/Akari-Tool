@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "pxwep0BMCfA=",
+  "dgSpecHash": "CWYDBeGb180=",
   "success": true,
-  "projectFilePath": "C:\\Users\\isleap\\Documents\\GitHub\\Akari-Tool\\AkariTool.csproj",
+  "projectFilePath": "c:\\Users\\isleap\\Documents\\GitHub\\Akari-Tool\\AkariTool_30d1d4ax_wpftmp.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\isleap\\.nuget\\packages\\system.codedom\\8.0.0\\system.codedom.8.0.0.nupkg.sha512",
     "C:\\Users\\isleap\\.nuget\\packages\\system.diagnostics.eventlog\\8.0.1\\system.diagnostics.eventlog.8.0.1.nupkg.sha512",
@@ -11,12 +11,8 @@
     "C:\\Users\\isleap\\.nuget\\packages\\wpf-ui\\4.1.0\\wpf-ui.4.1.0.nupkg.sha512",
     "C:\\Users\\isleap\\.nuget\\packages\\wpf-ui.abstractions\\4.1.0\\wpf-ui.abstractions.4.1.0.nupkg.sha512",
     "C:\\Users\\isleap\\.nuget\\packages\\microsoft.netcore.app.ref\\8.0.29\\microsoft.netcore.app.ref.8.0.29.nupkg.sha512",
-    "C:\\Users\\isleap\\.nuget\\packages\\microsoft.netcore.app.runtime.win-x64\\8.0.29\\microsoft.netcore.app.runtime.win-x64.8.0.29.nupkg.sha512",
     "C:\\Users\\isleap\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\8.0.29\\microsoft.windowsdesktop.app.ref.8.0.29.nupkg.sha512",
-    "C:\\Users\\isleap\\.nuget\\packages\\microsoft.windowsdesktop.app.runtime.win-x64\\8.0.29\\microsoft.windowsdesktop.app.runtime.win-x64.8.0.29.nupkg.sha512",
     "C:\\Users\\isleap\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\8.0.29\\microsoft.aspnetcore.app.ref.8.0.29.nupkg.sha512",
-    "C:\\Users\\isleap\\.nuget\\packages\\microsoft.aspnetcore.app.runtime.win-x64\\8.0.29\\microsoft.aspnetcore.app.runtime.win-x64.8.0.29.nupkg.sha512",
-    "C:\\Users\\isleap\\.nuget\\packages\\microsoft.netcore.app.crossgen2.win-x64\\8.0.29\\microsoft.netcore.app.crossgen2.win-x64.8.0.29.nupkg.sha512",
     "C:\\Users\\isleap\\.nuget\\packages\\microsoft.netcore.app.host.win-x64\\8.0.29\\microsoft.netcore.app.host.win-x64.8.0.29.nupkg.sha512"
   ],
   "logs": []
