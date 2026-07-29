@@ -15,6 +15,8 @@
 **[Website](https://isleap9.github.io/Akari-Tool/)** · **[Download](https://github.com/isleap9/Akari-Tool/releases/latest)** · **[Docs](https://isleap9.github.io/Akari-Tool/docs.html)** · **[Discord](https://discord.gg/UjjmYM6ytj)**
 
 ![Akari Tool Screenshot](Screenshots/AkariTool.png)
+![Akari Tool Screenshot](Screenshots/AkariTool-Dark.png)
+![Akari Tool Screenshot](Screenshots/AkariTool-Light.png)
 
 </div>
 
