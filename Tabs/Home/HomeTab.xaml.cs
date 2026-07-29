@@ -399,6 +399,25 @@ namespace AkariTool.Tabs
         private static HomeCardDef CardDef(string title, string icon, string desc, string tag)
             => new(title, icon, desc, tag);
 
+        // Maps each Home card (by its nav Tag) to the same PNG icon the sidebar uses.
+        private static readonly Dictionary<string, string> _cardNavIcon = new()
+        {
+            ["Bloatware"]     = "NavIco_Bloatware",
+            ["AppInstaller"]  = "NavIco_AppInstaller",
+            ["Debloat"]       = "NavIco_Debloat",
+            ["AkariOS"]       = "NavIco_AkariOS",
+            ["Gaming"]        = "NavIco_Gaming",
+            ["Privacy"]       = "NavIco_Privacy",
+            ["Update"]        = "NavIco_Update",
+            ["Notifications"] = "NavIco_Notifications",
+            ["Power"]         = "NavIco_Power",
+            ["Taskbar"]       = "NavIco_Customize",
+            ["Tools"]         = "NavIco_Tools",
+            ["Advanced"]      = "NavIco_Advanced",
+            ["Backup"]        = "NavIco_Backup",
+            ["Verify"]        = "NavIco_Verify",
+        };
+
         private void AddCardSection(StackPanel host, string label, bool isFirst, HomeCardDef[] defs)
         {
             host.Children.Add(new TextBlock
@@ -463,17 +482,38 @@ namespace AkariTool.Tabs
                 Margin            = new Thickness(0, 0, 13, 0),
                 VerticalAlignment = VerticalAlignment.Center
             };
-            var iconGlyphBlock = new TextBlock
+            // Prefer the sidebar's PNG nav icon; fall back to the Segoe glyph if unmapped.
+            TextBlock? iconGlyphBlock = null;
+            if (_cardNavIcon.TryGetValue(tabTarget, out var icoKey))
             {
-                Text                = iconGlyph,
-                FontFamily          = new FontFamily("Segoe MDL2 Assets"),
-                FontSize            = 16,
-                Foreground          = TweakHelpers.IconNeutral,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment   = VerticalAlignment.Center
-            };
-            iconBox.Child = iconGlyphBlock;
-            Grid.SetColumn(iconBox, 0);
+                if (tabTarget == "AkariOS" && ThemeService.Current == AkariTheme.Light)
+                    icoKey = "NavIco_AkariOS_Light";
+
+                var iconImg = new Image
+                {
+                    Source              = (ImageSource)Application.Current.FindResource(icoKey),
+                    Width               = 20,
+                    Height              = 20,
+                    Stretch             = Stretch.Uniform,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment   = VerticalAlignment.Center
+                };
+                RenderOptions.SetBitmapScalingMode(iconImg, BitmapScalingMode.HighQuality);
+                iconBox.Child = iconImg;
+            }
+            else
+            {
+                iconGlyphBlock = new TextBlock
+                {
+                    Text                = iconGlyph,
+                    FontFamily          = new FontFamily("Segoe MDL2 Assets"),
+                    FontSize            = 16,
+                    Foreground          = TweakHelpers.IconNeutral,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment   = VerticalAlignment.Center
+                };
+                iconBox.Child = iconGlyphBlock;
+            }
 
             var text = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 12, 0) };
             text.Children.Add(new TextBlock
@@ -525,13 +565,13 @@ namespace AkariTool.Tabs
             {
                 card.Background   = TweakHelpers.CardBgHover;
                 card.BorderBrush  = TweakHelpers.HairlineHover;
-                iconGlyphBlock.Foreground = TweakHelpers.Accent;
+                if (iconGlyphBlock != null) iconGlyphBlock.Foreground = TweakHelpers.Accent;
             };
             card.MouseLeave += (_, _) =>
             {
                 card.Background   = TweakHelpers.CardBackground();
                 card.BorderBrush  = TweakHelpers.Hairline;
-                iconGlyphBlock.Foreground = TweakHelpers.IconNeutral;
+                if (iconGlyphBlock != null) iconGlyphBlock.Foreground = TweakHelpers.IconNeutral;
             };
             card.MouseLeftButtonUp += (_, _) => _navigate?.Invoke(tabTarget);
 

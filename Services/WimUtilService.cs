@@ -81,7 +81,7 @@ namespace AkariTool.Services
             p.BeginOutputReadLine();
             p.BeginErrorReadLine();
 
-            using var reg = ct.Register(() => { try { if (!p.HasExited) p.Kill(entireProcessTree: true); } catch { } });
+            using var reg = ct.Register(() => { try { if (!p.HasExited) p.Kill(entireProcessTree: true); } catch (Exception ex) { ToolService.Current?.Log($"[WimUtilService] Process kill failed: {ex.Message}"); } });
             await p.WaitForExitAsync(ct);
 
             return (p.ExitCode, stdout.ToString(), stderr.ToString());
@@ -136,7 +136,7 @@ namespace AkariTool.Services
 
             using var reg = ct.Register(() =>
             {
-                try { if (!p.HasExited) p.Kill(entireProcessTree: true); } catch { }
+                try { if (!p.HasExited) p.Kill(entireProcessTree: true); } catch (Exception ex) { ToolService.Current?.Log($"[WimUtilService] Process kill failed: {ex.Message}"); }
             });
 
             await p.WaitForExitAsync(ct);
@@ -156,7 +156,8 @@ namespace AkariTool.Services
                         $"but only {drive.AvailableFreeSpace / (1024.0 * 1024 * 1024):F1} GB is available.");
             }
             catch (IOException) { throw; }
-            catch { /* drive query failed (UNC etc.) — let the operation try */ }
+            catch (Exception ex) { /* drive query failed (UNC etc.) — let the operation try */ 
+                ToolService.Current?.Log($"[WimUtilService] Disk space check failed: {ex.Message}"); }
         }
 
         // ── Step 1: ISO validation / extraction ────────────────────────────
@@ -435,7 +436,7 @@ namespace AkariTool.Services
 
         private static void TryDeleteQuiet(string file)
         {
-            try { if (!string.IsNullOrEmpty(file) && File.Exists(file)) File.Delete(file); } catch { }
+            try { if (!string.IsNullOrEmpty(file) && File.Exists(file)) File.Delete(file); } catch (Exception ex) { ToolService.Current?.Log($"[WimUtilService] File deletion failed: {ex.Message}"); }
         }
 
         // ── Step 2: autounattend.xml ────────────────────────────────────────

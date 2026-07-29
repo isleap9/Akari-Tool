@@ -46,6 +46,7 @@ namespace AkariTool.Tabs.AkariOS
         private DispatcherTimer? _cmElapsedTimer;
 
         private bool _cmBusy;
+        private CancellationTokenSource? _cmCts;
 
         // ── Build ─────────────────────────────────────────────────────────────
 
@@ -632,8 +633,10 @@ namespace AkariTool.Tabs.AkariOS
 
             if (_cmPrimaryBtn is not null)
             {
-                _cmPrimaryBtn.Content   = active ? "End Session" : "Start Competitive Mode";
-                _cmPrimaryBtn.IsEnabled = !_cmBusy;
+                _cmPrimaryBtn.Content   = active ? "End Session"
+                                          : _cmBusy ? "Cancel"
+                                          : "Start Competitive Mode";
+                _cmPrimaryBtn.IsEnabled = true;
             }
 
             if (_cmGameCombo   is not null) _cmGameCombo.IsEnabled   = !locked;
@@ -662,7 +665,14 @@ namespace AkariTool.Tabs.AkariOS
         private async Task OnCompetitivePrimaryClickAsync()
         {
             if (CompetitiveService.IsSessionActive) { await EndCompetitiveSessionAsync(); return; }
+            if (_cmBusy) { CancelCompetitiveStart(); return; }
             await StartCompetitiveSessionAsync();
+        }
+
+        private void CancelCompetitiveStart()
+        {
+            _cmCts?.Cancel();
+            SetCompetitiveStatus("Cancelling…");
         }
 
         private async Task StartCompetitiveSessionAsync()
@@ -689,6 +699,7 @@ namespace AkariTool.Tabs.AkariOS
             }
 
             _cmBusy = true;
+            _cmCts = new CancellationTokenSource();
             SyncCompetitiveControlStates();
 
             try
@@ -697,7 +708,8 @@ namespace AkariTool.Tabs.AkariOS
                 CompetitivePrefs.SaveOptions(options);
 
                 var progress = new Progress<string>(SetCompetitiveStatus);
-                var result = await CompetitiveService.StartAsync(path, options, progress, CancellationToken.None);
+                var ct = _cmCts.Token;
+                var result = await CompetitiveService.StartAsync(path, options, progress, ct);
 
                 if (!result.Started)
                 {
@@ -725,6 +737,8 @@ namespace AkariTool.Tabs.AkariOS
             {
                 // finally, so a throw above cannot leave the section permanently
                 // disabled with no way back.
+                _cmCts?.Dispose();
+                _cmCts = null;
                 _cmBusy = false;
                 SyncCompetitiveControlStates();
             }
@@ -942,11 +956,13 @@ namespace AkariTool.Tabs.AkariOS
             }
 
             _cmBusy = true;
+            _cmCts = new CancellationTokenSource();
             SyncCompetitiveControlStates();
             try
             {
                 var progress = new Progress<string>(SetCompetitiveStatus);
-                var result = await CompetitiveService.StartAsync(exePath, options, progress, CancellationToken.None);
+                var ct = _cmCts.Token;
+                var result = await CompetitiveService.StartAsync(exePath, options, progress, ct);
 
                 if (!result.Started)
                 {
@@ -966,12 +982,18 @@ namespace AkariTool.Tabs.AkariOS
             }
             finally
             {
+                _cmCts?.Dispose();
+                _cmCts = null;
                 _cmBusy = false;
                 SyncCompetitiveControlStates();
             }
         }
 
         /// <summary>Used by MainWindow's Closing handler.</summary>
-        public Task EndCompetitiveSessionForShutdownAsync() => EndCompetitiveSessionAsync();
+        public async Task EndCompetitiveSessionForShutdownAsync()
+        {
+            _cmCts?.Cancel();
+            await EndCompetitiveSessionAsync();
+        }
     }
 }

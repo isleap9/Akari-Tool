@@ -253,7 +253,12 @@
                      one continuous background, as Settings does — only cards float
                      above it. The Border is retained solely for ClipToBounds, which
                      keeps the watermark inside the content region. -->
-                <Border Grid.Column="1" ClipToBounds="True">
+                <Border Grid.Column="1" ClipToBounds="True"
+                    Margin="10,0,0,0"
+                    Background="{DynamicResource AkariContentSurface}"
+                    CornerRadius="10,0,0,0"
+                    BorderBrush="{DynamicResource AkariHairline}"
+                    BorderThickness="1,1,0,0">
                 <Grid ClipToBounds="True">
                     <!-- Brand chevron watermark — window-level, behind every tab's content,
                          clipped to the content region so it never touches the sidebar or footer. -->

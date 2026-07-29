@@ -158,7 +158,7 @@ public partial class App : Application
                 return System.IO.File.Exists(path) ? path : null;
             }
         }
-        catch { }
+        catch (Exception ex) { Services.ToolService.Current?.Log($"[App] ParseCompetitiveArgument failed: {ex.Message}"); }
         return null;
     }
 
@@ -196,19 +196,52 @@ public partial class App : Application
     {
         DispatcherUnhandledException += (_, e) =>
         {
+            LogOrReport($"UI UNHANDLED EXCEPTION: {e.Exception}");
+            CrashReport.Write(e.Exception, "DispatcherUnhandledException");
             MessageBox.Show(e.Exception.ToString(), "Unhandled Exception", MessageBoxButton.OK, MessageBoxImage.Error);
             e.Handled = true;
         };
 
         AppDomain.CurrentDomain.UnhandledException += (_, e) =>
         {
+            var msg = $"AppDomain UNHANDLED EXCEPTION: {e.ExceptionObject}";
+            LogOrReport(msg);
+            CrashReport.Write(e.ExceptionObject as Exception ?? new Exception(msg), "AppDomainUnhandledException");
             MessageBox.Show(e.ExceptionObject.ToString(), "AppDomain Exception", MessageBoxButton.OK, MessageBoxImage.Error);
         };
 
         TaskScheduler.UnobservedTaskException += (_, e) =>
         {
+            LogOrReport($"Task UNOBSERVED EXCEPTION: {e.Exception}");
+            CrashReport.Write(e.Exception, "UnobservedTaskException");
             MessageBox.Show(e.Exception.ToString(), "Task Exception", MessageBoxButton.OK, MessageBoxImage.Error);
             e.SetObserved();
         };
+    }
+
+    private static void LogOrReport(string message)
+    {
+        System.Diagnostics.Debug.WriteLine(message);
+        try { Services.ToolService.Current?.Log(message); } catch { }
+    }
+
+    /// <summary>Writes a timestamped crash report file to %APPDATA%\AkariTool\.</summary>
+    private static class CrashReport
+    {
+        public static void Write(Exception? ex, string source)
+        {
+            try
+            {
+                var dir = System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AkariTool");
+                System.IO.Directory.CreateDirectory(dir);
+                var path = System.IO.Path.Combine(dir,
+                    $"AkariTool_crash_{DateTime.Now:yyyy-MM-dd}.log");
+                System.IO.File.AppendAllText(path,
+                    $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [{source}] {ex?.ToString() ?? "null"}{Environment.NewLine}" +
+                    $"---{Environment.NewLine}");
+            }
+            catch { }
+        }
     }
 }

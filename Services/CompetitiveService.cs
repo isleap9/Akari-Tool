@@ -281,8 +281,8 @@ namespace AkariTool.Services
                 // running game — timeout, cancellation or exception alike.
                 if (!confirmed)
                 {
-                    try { await EndAsync(state, progress); }
-                    catch { /* the failure path must not throw a second time */ }
+                    try { await EndAsync(state, progress); } catch (Exception ex) { ToolService.Current?.Log($"[CompetitiveService] Final undo failed: {ex.Message}"); /* the failure path must not throw a second time */ }
+
                 }
             }
         }
@@ -314,7 +314,7 @@ namespace AkariTool.Services
                         if (ProcessSuspender.Suspend(p.Id))
                             suspended.Add(new SuspendedProcess(p.Id, procName));
                     }
-                    catch { /* process vanished mid-loop — skip it */ }
+                    catch (Exception ex) { ToolService.Current?.Log($"[CompetitiveService] Process vanished: {ex.Message}"); /* process vanished mid-loop — skip it */ }
                     finally { try { p.Dispose(); } catch { } }
                 }
             }
@@ -340,17 +340,17 @@ namespace AkariTool.Services
 
                 // A process in another session belongs to another logged-in user (or
                 // to session 0's services); freezing it is never ours to do.
-                if (p.SessionId != ownSessionId) return false;
+                    if (p.SessionId != ownSessionId) return false;
 
                 return true;
             }
-            catch { return false; }
+            catch (Exception ex) { ToolService.Current?.Log($"[CompetitiveService] IsSuspendable check failed: {ex.Message}"); return false; }
         }
 
         private static int GetOwnSessionId()
         {
             try { using var self = Process.GetCurrentProcess(); return self.SessionId; }
-            catch { return -1; }
+            catch (Exception ex) { ToolService.Current?.Log($"[CompetitiveService] GetOwnSessionId failed: {ex.Message}"); return -1; }
         }
 
         // ── Services ──────────────────────────────────────────────────────────
@@ -364,7 +364,11 @@ namespace AkariTool.Services
                 try
                 {
                     string? priorStart = ReadServiceStartType(name);
-                    if (priorStart is null) continue;   // not present on this machine
+                    if (priorStart is null)
+                    {
+                        ToolService.Current?.Log($"[CompetitiveService] Service {name} not found in registry");
+                        continue;   // not present on this machine
+                    }
 
                     bool wasRunning = false;
                     try
@@ -373,7 +377,7 @@ namespace AkariTool.Services
                         wasRunning = sc.Status is ServiceControllerStatus.Running
                                                 or ServiceControllerStatus.StartPending;
                     }
-                    catch { }
+                    catch (Exception ex) { ToolService.Current?.Log($"[CompetitiveService] Service status check failed: {ex.Message}"); }
 
                     // Record before mutating.
                     stopped.Add(new StoppedService(name, priorStart, wasRunning));
@@ -381,7 +385,7 @@ namespace AkariTool.Services
                     // Disable first: WSearch and SysMain are both restarted
                     // automatically by triggers, so stopping alone does not keep
                     // them down for the length of a match.
-                    WriteServiceStartType(name, ServiceDisabled);
+                    try { WriteServiceStartType(name, ServiceDisabled); } catch (Exception ex) { ToolService.Current?.Log($"[CompetitiveService] Service disable failed: {ex.Message}"); }
 
                     if (wasRunning)
                     {
@@ -394,10 +398,10 @@ namespace AkariTool.Services
                                 sc.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(15));
                             }
                         }
-                        catch { /* still recorded — restore will put the config back */ }
+                        catch (Exception ex) { ToolService.Current?.Log($"[CompetitiveService] Service stop failed: {ex.Message}"); /* still recorded — restore will put the config back */ }
                     }
                 }
-                catch { /* one bad service must not stop the rest */ }
+                catch (Exception ex) { ToolService.Current?.Log($"[CompetitiveService] Service iteration failed: {ex.Message}"); /* one bad service must not stop the rest */ }
             }
 
             return stopped;
@@ -411,7 +415,7 @@ namespace AkariTool.Services
                 if (key?.GetValue("Start") is int start) return start.ToString();
                 return null;
             }
-            catch { return null; }
+            catch (Exception ex) { ToolService.Current?.Log($"[CompetitiveService] Registry read failed: {ex.Message}"); return null; }
         }
 
         private static void WriteServiceStartType(string name, int start)
@@ -421,7 +425,7 @@ namespace AkariTool.Services
                 using var key = Registry.LocalMachine.OpenSubKey($@"{ServicesKeyRoot}\{name}", writable: true);
                 key?.SetValue("Start", start, RegistryValueKind.DWord);
             }
-            catch { }
+            catch (Exception ex) { ToolService.Current?.Log($"[CompetitiveService] Registry write failed: {ex.Message}"); }
         }
 
         // ── Power plan ────────────────────────────────────────────────────────
@@ -445,7 +449,7 @@ namespace AkariTool.Services
                 p.WaitForExit(10_000);
                 return output;
             }
-            catch { return ""; }
+            catch (Exception ex) { ToolService.Current?.Log($"[CompetitiveService] PowerCfg execution failed: {ex.Message}"); return ""; }
         }
 
         /// <summary>Active scheme GUID, parsed out of powercfg /GETACTIVESCHEME.</summary>
@@ -516,11 +520,11 @@ namespace AkariTool.Services
                     UseShellExecute = false,
                     CreateNoWindow  = true,
                 };
-                using var p = Process.Start(psi)!;
+                 using var p = Process.Start(psi)!;
                 p.WaitForExit(10_000);
                 return p.ExitCode == 0;
             }
-            catch { return false; }
+            catch (Exception ex) { ToolService.Current?.Log($"[CompetitiveService] PowerCfg set failed: {ex.Message}"); return false; }
         }
 
         /// <summary>Human-readable name of a scheme GUID, for the status list.</summary>
@@ -538,7 +542,7 @@ namespace AkariTool.Services
         private static Process? FindGameProcess(string processName)
         {
             try { return Process.GetProcessesByName(processName).FirstOrDefault(); }
-            catch { return null; }
+            catch (Exception ex) { ToolService.Current?.Log($"[CompetitiveService] Process retrieval failed: {ex.Message}"); return null; }
         }
 
         /// <summary>
@@ -617,7 +621,7 @@ namespace AkariTool.Services
         private static bool IsSteamClientRunning()
         {
             try { return Process.GetProcessesByName("steam").Length > 0; }
-            catch { return false; }
+            catch (Exception ex) { ToolService.Current?.Log($"[CompetitiveService] Steam client check failed: {ex.Message}"); return false; }
         }
 
         /// <summary>
@@ -668,7 +672,7 @@ namespace AkariTool.Services
                         // Gone for 30s straight — the session is over.
                         var ending = _current;
                         if (ending is not null) await EndAsync(ending, null);
-                        try { SessionEndedByGameExit?.Invoke(); } catch { }
+                        try { SessionEndedByGameExit?.Invoke(); } catch (Exception ex) { ToolService.Current?.Log($"[CompetitiveService] Game exit signal failed: {ex.Message}"); }
                         return;
                     }
                 }
@@ -697,9 +701,9 @@ namespace AkariTool.Services
                 {
                     progress?.Report("Resuming background apps…");
                     foreach (var sp in state.SuspendedProcesses)
-                        try { ProcessSuspender.Resume(sp.Pid); } catch { }
+                        try { ProcessSuspender.Resume(sp.Pid); } catch (Exception ex) { ToolService.Current?.Log($"[CompetitiveService] Process resume failed: {ex.Message}"); }
                 }
-                catch { }
+                catch (Exception ex) { ToolService.Current?.Log($"[CompetitiveService] Resume phase failed: {ex.Message}"); }
 
                 // 2. Restore services.
                 try
@@ -722,10 +726,10 @@ namespace AkariTool.Services
                                 }
                             }
                         }
-                        catch { /* next service */ }
+                        catch (Exception ex) { ToolService.Current?.Log($"[CompetitiveService] Service restore failed: {ex.Message}"); /* next service */ }
                     }
                 }
-                catch { }
+                catch (Exception ex) { ToolService.Current?.Log($"[CompetitiveService] Service phase failed: {ex.Message}"); }
 
                 // 3. Restore the power plan.
                 try
@@ -736,10 +740,10 @@ namespace AkariTool.Services
                         SetActiveScheme(state.PreviousPowerSchemeGuid!);
                     }
                 }
-                catch { }
+                catch (Exception ex) { ToolService.Current?.Log($"[CompetitiveService] Power plan restore failed: {ex.Message}"); }
 
                 // 4. Drop the record last — only once the undo has been attempted.
-                try { CompetitiveSessionStore.Clear(); } catch { }
+                try { CompetitiveSessionStore.Clear(); } catch (Exception ex) { ToolService.Current?.Log($"[CompetitiveService] Session store clear failed: {ex.Message}"); }
 
                 progress?.Report("Competitive Mode ended.");
             });

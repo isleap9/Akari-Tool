@@ -2,6 +2,7 @@ using System.IO;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.Win32;
+using AkariTool.Services;
 namespace AkariTool.Tabs
 {
     /// <summary>
@@ -57,7 +58,10 @@ namespace AkariTool.Tabs
                         ? "unknown"
                         : (ubr is int u ? $"{build}.{u}" : build);
                 }
-                catch { _osBuild = "unknown"; }
+                catch (Exception ex) { 
+                    _osBuild = "unknown";
+                    ToolService.Current?.Log($"[DriftBaseline] OS build retrieval failed: {ex.Message}");
+                }
                 return _osBuild;
             }
         }
@@ -88,7 +92,11 @@ namespace AkariTool.Tabs
                                   null, null, null, DateTime.UtcNow, CurrentOsBuild);
                 Put(e);
             }
-            catch { /* recording must never break an apply */ }
+            catch (Exception ex)
+            {
+                /* recording must never break an apply */
+                ToolService.Current?.Log($"[DriftBaseline] Record failed: {ex.Message}");
+            }
         }
         /// <summary>Records that <paramref name="def"/> was set to option <paramref name="index"/>.</summary>
         public static void Record(TweakDefinition def, int index)
@@ -103,7 +111,10 @@ namespace AkariTool.Tabs
                                   DateTime.UtcNow, CurrentOsBuild);
                 Put(e);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                ToolService.Current?.Log($"[DriftBaseline] Record dropdown failed: {ex.Message}");
+            }
         }
         private static void Put(Entry e)
         {
@@ -181,10 +192,10 @@ namespace AkariTool.Tabs
                             DateTime.TryParse((string?)o["appliedAt"], out var dt) ? dt : DateTime.UtcNow,
                             (string?)o["osBuild"] ?? "unknown");
                     }
-                    catch { /* skip malformed entry, keep the rest */ }
+                    catch (Exception ex) { ToolService.Current?.Log($"[DriftBaseline] Malformed entry skipped: {ex.Message}"); }
                 }
             }
-            catch { /* unreadable baseline = start fresh, never crash */ }
+            catch (Exception ex) { ToolService.Current?.Log($"[DriftBaseline] Baseline load failed, starting fresh: {ex.Message}"); }
         }
         private static void Flush()
         {
@@ -232,7 +243,10 @@ namespace AkariTool.Tabs
                 File.WriteAllText(tmp, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
                 File.Move(tmp, FilePath, overwrite: true);
             }
-            catch { /* disk full, locked file, roaming profile weirdness — never surface */ }
+            catch (Exception ex) { 
+                /* disk full, locked file, roaming profile weirdness — never surface */
+                ToolService.Current?.Log($"[DriftBaseline] Flush failed: {ex.Message}");
+            }
         }
     }
 }

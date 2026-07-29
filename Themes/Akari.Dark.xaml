@@ -23,18 +23,18 @@
   <SolidColorBrush x:Key="AkariTextMutedBrush" Color="{StaticResource AkariTextMutedLegacy}"/>
 
   <!-- ════════════════ V3 DESIGN TOKENS — COLOURS ════════════════ -->
-  <Color x:Key="AkariCanvasTop">#FF1B1B1B</Color>
-  <Color x:Key="AkariCanvasBottom">#FF1B1B1B</Color>
-  <Color x:Key="AkariContentSurfaceColor">#FF2B2B2B</Color>
-  <Color x:Key="AkariCardBackgroundColor">#FF3A3A3A</Color>
-  <Color x:Key="AkariCardBackgroundHoverColor">#FF414141</Color>
-  <Color x:Key="AkariSidebarBackgroundColor">#FF1B1B1B</Color>
-  <Color x:Key="AkariHairlineColor">#FF4A4A4A</Color>
-  <Color x:Key="AkariHairlineHoverColor">#FF5E5E5E</Color>
+  <Color x:Key="AkariCanvasTop">#202020</Color>
+  <Color x:Key="AkariCanvasBottom">#202020</Color>
+  <Color x:Key="AkariContentSurfaceColor">#262626</Color>
+  <Color x:Key="AkariCardBackgroundColor">#2D2D2D</Color>
+  <Color x:Key="AkariCardBackgroundHoverColor">#323232</Color>
+  <Color x:Key="AkariSidebarBackgroundColor">#202020</Color>
+  <Color x:Key="AkariHairlineColor">#383838</Color>
+  <Color x:Key="AkariHairlineHoverColor">#484848</Color>
   <!-- Card elevation stroke stops: lit top (brighter, catches light), shadow bottom
        (recedes toward the canvas). Grey/hairline family, widened for 1px legibility. -->
-  <Color x:Key="AkariCardElevationLitColor">#FF666666</Color>
-  <Color x:Key="AkariCardElevationShadowColor">#FF2E2E2E</Color>
+  <Color x:Key="AkariCardElevationLitColor">#3A3A3A</Color>
+  <Color x:Key="AkariCardElevationShadowColor">#242424</Color>
   <Color x:Key="AkariTextPrimaryColor">#FFFFFFFF</Color>
   <Color x:Key="AkariTextSecondaryColor">#FFCCCCCC</Color>
   <Color x:Key="AkariTextMutedColor">#FFA6A6A6</Color>
