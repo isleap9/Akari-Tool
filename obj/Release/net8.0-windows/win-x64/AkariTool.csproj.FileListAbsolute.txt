@@ -526,3 +526,5 @@ C:\Users\isleap\Documents\GitHub\Akari-Tool\obj\Release\net8.0-windows\win-x64\T
 C:\Users\isleap\Documents\GitHub\Akari-Tool\obj\Release\net8.0-windows\win-x64\Tabs\Verify\VerifyTab.baml
 C:\Users\isleap\Documents\GitHub\Akari-Tool\bin\Release\net8.0-windows\win-x64\System.ServiceProcess.ServiceController.dll
 C:\Users\isleap\Documents\GitHub\Akari-Tool\obj\Release\net8.0-windows\win-x64\Themes\NavIcons.baml
+C:\Users\isleap\Documents\GitHub\Akari-Tool\obj\Release\net8.0-windows\win-x64\Tabs\Sound\SoundTab.g.cs
+C:\Users\isleap\Documents\GitHub\Akari-Tool\obj\Release\net8.0-windows\win-x64\Tabs\Sound\SoundTab.baml

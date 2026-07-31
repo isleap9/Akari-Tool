@@ -60,7 +60,7 @@ namespace AkariTool.Tabs.AkariOS {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/AkariTool;component/tabs/akarios/akariostab.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/AkariTool;V1.1.5.0;component/tabs/akarios/akariostab.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\..\..\..\Tabs\AkariOS\AkariOSTab.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);
