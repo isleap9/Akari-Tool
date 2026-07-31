@@ -167,71 +167,79 @@ namespace AkariTool.Tabs
         private static async void RunTabBulk(
             string tabTitle, StackPanel scopeRoot, bool useRecommended, ToolService? service)
         {
-            var entries = GetEntriesUnder(scopeRoot);
-            var work = CollectPending(entries, useRecommended);
-            if (work.Count == 0) return;
-
-            // Warning callout replaces per-tweak prompts for the whole bulk run.
-            var warnedNames = work
-                .Where(w => (w.Def.InputKind == TweakInputKind.Toggle
-                    ? w.Def.GetToggleWarning(w.ToggleTarget)
-                    : w.Def.GetOptionWarning(w.OptionTarget)) != null)
-                .Select(w => w.Def.Name)
-                .ToList();
-
-            bool anyRestart = work.Any(w => w.Def.RequiresRestart);
-
-            var (confirmed, createRestorePoint) =
-                ShowBulkConfirmDialog(tabTitle, useRecommended, work.Count, warnedNames, anyRestart);
-            if (!confirmed) return;
-
-            if (createRestorePoint && service != null)
-            {
-                bool rpOk = await RestorePointHelper.EnsureRestorePointAsync(service);
-                if (!rpOk)
-                {
-                    // Never proceed silently past a failed restore point the user asked for.
-                    if (!ShowOwnedConfirm(
-                        "The restore point could not be created (System Restore may be disabled " +
-                        "or requires administrator rights).\n\nApply the tweaks anyway?",
-                        "Restore point failed", primaryText: "Continue anyway"))
-                        return;
-                }
-            }
-
-            int applied = 0, skipped = 0, failed = 0;
-            ExplorerRestart.BeginBatch();
-            DriftBaseline.BeginBatch();     // coalesce per-tweak baseline writes into one
-            bool restarted;
             try
             {
-                foreach (var (def, refresh, toggleTarget, optionTarget) in work)
+                var entries = GetEntriesUnder(scopeRoot);
+                var work = CollectPending(entries, useRecommended);
+                if (work.Count == 0) return;
+
+                // Warning callout replaces per-tweak prompts for the whole bulk run.
+                var warnedNames = work
+                    .Where(w => (w.Def.InputKind == TweakInputKind.Toggle
+                        ? w.Def.GetToggleWarning(w.ToggleTarget)
+                        : w.Def.GetOptionWarning(w.OptionTarget)) != null)
+                    .Select(w => w.Def.Name)
+                    .ToList();
+
+                bool anyRestart = work.Any(w => w.Def.RequiresRestart);
+
+                var (confirmed, createRestorePoint) =
+                    ShowBulkConfirmDialog(tabTitle, useRecommended, work.Count, warnedNames, anyRestart);
+                if (!confirmed) return;
+
+                if (createRestorePoint && service != null)
                 {
-                    try
+                    bool rpOk = await RestorePointHelper.EnsureRestorePointAsync(service);
+                    if (!rpOk)
                     {
-                        // Re-check right before applying — state may have drifted
-                        // between the dialog and the run (same guard as import).
-                        if (!IsMismatched(def, toggleTarget, optionTarget)) { skipped++; }
-                        else if (def.InputKind == TweakInputKind.Toggle) { ApplyToggle(def, toggleTarget); applied++; }
-                        else { ApplyOption(def, optionTarget); applied++; }
+                        // Never proceed silently past a failed restore point the user asked for.
+                        if (!ShowOwnedConfirm(
+                            "The restore point could not be created (System Restore may be disabled " +
+                            "or requires administrator rights).\n\nApply the tweaks anyway?",
+                            "Restore point failed", primaryText: "Continue anyway"))
+                            return;
                     }
-                    catch (Exception ex)
-                    {
-                        failed++;
-                        service?.Log($"[QUICK] FAILED {def.Name}: {ex.Message}");
-                    }
-                    try { refresh(); } catch { }
                 }
+
+                int applied = 0, skipped = 0, failed = 0;
+                ExplorerRestart.BeginBatch();
+                DriftBaseline.BeginBatch();     // coalesce per-tweak baseline writes into one
+                bool restarted;
+                try
+                {
+                    foreach (var (def, refresh, toggleTarget, optionTarget) in work)
+                    {
+                        try
+                        {
+                            // Re-check right before applying — state may have drifted
+                            // between the dialog and the run (same guard as import).
+                            if (!IsMismatched(def, toggleTarget, optionTarget)) { skipped++; }
+                            else if (def.InputKind == TweakInputKind.Toggle) { ApplyToggle(def, toggleTarget); applied++; }
+                            else { ApplyOption(def, optionTarget); applied++; }
+                        }
+                        catch (Exception ex)
+                        {
+                            failed++;
+                            service?.Log($"[QUICK] FAILED {def.Name}: {ex.Message}");
+                        }
+                        try { refresh(); } catch { }
+                    }
+                }
+                finally { DriftBaseline.EndBatch(); restarted = ExplorerRestart.EndBatch(); }
+
+                RefreshAllSectionPills();
+
+                string report = $"[QUICK] {tabTitle}: applied {applied} tweak{(applied == 1 ? "" : "s")}" +
+                                (skipped > 0 ? $" · {skipped} skipped (already set)" : "") +
+                                (failed > 0 ? $" · {failed} failed — see log" : "") +
+                                (restarted ? " · Explorer restarted" : "");
+                service?.Log(report);
             }
-            finally { DriftBaseline.EndBatch(); restarted = ExplorerRestart.EndBatch(); }
-
-            RefreshAllSectionPills();
-
-            string report = $"[QUICK] {tabTitle}: applied {applied} tweak{(applied == 1 ? "" : "s")}" +
-                            (skipped > 0 ? $" · {skipped} skipped (already set)" : "") +
-                            (failed > 0 ? $" · {failed} failed — see log" : "") +
-                            (restarted ? " · Explorer restarted" : "");
-            service?.Log(report);
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[QUICK] RunTabBulk crashed: {ex}");
+                service?.Log($"[QUICK] RunTabBulk crashed: {ex.Message}");
+            }
         }
 
         // ── Confirmation dialog ───────────────────────────────────────────────
@@ -307,13 +315,21 @@ namespace AkariTool.Tabs
 
         private static async void CreateRestorePointInteractive(ToolService? service)
         {
-            if (service == null) return;
-            service.Log("[RESTORE] Creating restore point (Quick actions)…");
-            bool ok = await RestorePointHelper.EnsureRestorePointAsync(service);
-            ShowOwnedInfo(
-                ok ? "Restore point created (or a recent one already exists)."
-                   : "Restore point creation failed — System Restore may be disabled for C:. See the log for details.",
-                ok ? "Restore point ready" : "Restore point failed");
+            try
+            {
+                if (service == null) return;
+                service.Log("[RESTORE] Creating restore point (Quick actions)…");
+                bool ok = await RestorePointHelper.EnsureRestorePointAsync(service);
+                ShowOwnedInfo(
+                    ok ? "Restore point created (or a recent one already exists)."
+                       : "Restore point creation failed — System Restore may be disabled for C:. See the log for details.",
+                    ok ? "Restore point ready" : "Restore point failed");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[QUICK] CreateRestorePointInteractive crashed: {ex}");
+                service?.Log($"[QUICK] CreateRestorePointInteractive crashed: {ex.Message}");
+            }
         }
 
         // ── Owned dialog helpers ──────────────────────────────────────────────

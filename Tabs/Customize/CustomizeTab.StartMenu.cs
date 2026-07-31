@@ -154,21 +154,80 @@ namespace AkariTool.Tabs
 
             TweakHelpers.AddTweakRow(layoutSection, new TweakDefinition
             {
-                Id          = "customize-start-disable-recently-added-apps",
-                Name        = "Disable Recently Added Apps",
-                Description = "Hides recently installed apps from the Start Menu",
+                Id          = "customize-start-show-recent-apps",
+                Name        = "Show Recently Added Apps",
                 Group       = "Layout",
-                // Winhance start-show-recently-added-apps (ShowRecentList): Recommended=0 → hidden,
-                // Default=1 → shown. Inverted here. NOTE: Winhance drives the per-user
-                // ShowRecentList value; this row drives the HideRecentlyAddedApps policy.
-                RecommendedState = true,
-                DefaultState     = false,
-                ReadState   = SystemStateReader.ReadRecentlyAddedAppsHidden,
-                Apply       = enable =>
+                Description = "Show a recently added apps list at the top of the Start menu",
+                RecommendedState = false,
+                DefaultState     = true,
+                ReadState   = () => ReadDwordCu(@"Software\Microsoft\Windows\CurrentVersion\Start", "ShowRecentList") is int v ? v != 0 : true,
+                Apply       = on =>
                 {
-                    const string path = @"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Explorer";
-                    Registry.SetValue(path, "HideRecentlyAddedApps", enable ? 1 : 0, RegistryValueKind.DWord);
-                    Service?.Log($"[START] Recently added apps {(enable ? "hidden" : "shown")}.");
+                    Registry.SetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Start",
+                        "ShowRecentList", on ? 1 : 0, RegistryValueKind.DWord);
+                    Log($"Recently added apps {(on ? "shown" : "hidden")}.");
+                },
+            });
+
+            TweakHelpers.AddTweakRow(layoutSection, new TweakDefinition
+            {
+                Id          = "customize-start-show-most-used",
+                Name        = "Show Most Used Apps",
+                Group       = "Layout",
+                Description = "Show a most-used apps list in the Start menu",
+                RecommendedState = false,
+                DefaultState     = true,
+                ReadState   = () => ReadDwordCu(@"Software\Microsoft\Windows\CurrentVersion\Start", "ShowFrequentList") is int v ? v != 0 : true,
+                Apply       = on =>
+                {
+                    Registry.SetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Start",
+                        "ShowFrequentList", on ? 1 : 0, RegistryValueKind.DWord);
+                    Log($"Most used apps {(on ? "shown" : "hidden")}.");
+                },
+            });
+
+            TweakHelpers.AddTweakRow(layoutSection, new TweakDefinition
+            {
+                Id          = "customize-start-show-suggestions",
+                Name        = "Show Suggestions in Start",
+                Group       = "Layout",
+                Description = "Show occasional app and tip suggestions in the Start menu",
+                RecommendedState = false,
+                DefaultState     = true,
+                ReadState   = () => ReadDwordCu(@"Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager", "SubscribedContent-338388Enabled") is int v ? v != 0 : true,
+                Apply       = on =>
+                {
+                    Registry.SetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager",
+                        "SubscribedContent-338388Enabled", on ? 1 : 0, RegistryValueKind.DWord);
+                    Log($"Start suggestions {(on ? "enabled" : "disabled")}.");
+                },
+            });
+
+            TweakHelpers.AddTweakRow(layoutSection, new TweakDefinition
+            {
+                Id          = "customize-start-all-apps-view",
+                Name        = "All Apps View",
+                Group       = "Layout",
+                Description = "How the All apps list is displayed in the Start menu",
+                IsPreference = true,
+                InputKind   = TweakInputKind.Dropdown,
+                Options = new[]
+                {
+                    new TweakDropdownOption("Category", 0),
+                    new TweakDropdownOption("Grid",     1),
+                    new TweakDropdownOption("List",     2, IsDefault: true),
+                },
+                ReadCurrentIndex = () =>
+                {
+                    var v = ReadDwordCu(@"Software\Microsoft\Windows\CurrentVersion\Start", "AllAppsViewMode");
+                    return v switch { 0 => 0, 1 => 1, 2 => 2, _ => 2 };
+                },
+                ApplyIndex = idx =>
+                {
+                    if (idx < 0 || idx > 2) return;
+                    Registry.SetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Start",
+                        "AllAppsViewMode", idx, RegistryValueKind.DWord);
+                    Log($"All apps view set to option {idx}.");
                 },
             });
 
@@ -221,16 +280,13 @@ namespace AkariTool.Tabs
                 Name        = "Disable Web Suggestions in Search",
                 Description = "Prevents Windows Search from showing online/web suggestions",
                 Group       = "Behavior",
-                // Winhance BingSearchEnabled: Recommended=0 → OFF, Default=1 → ON. Inverted here.
-                // NOTE: this row and customize-start-disable-bing-search both write
-                // BingSearchEnabled, so they can fight each other — see the review notes.
+                // Owns CortanaConsent only. BingSearchEnabled is owned solely by
+                // customize-start-disable-bing-search — do not write it here.
                 RecommendedState = true,
                 DefaultState     = false,
                 ReadState   = SystemStateReader.ReadWebSuggestionsDisabled,
                 Apply       = enable =>
                 {
-                    Registry.SetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Search",
-                        "BingSearchEnabled", enable ? 0 : 1, RegistryValueKind.DWord);
                     Registry.SetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Search",
                         "CortanaConsent", enable ? 0 : 1, RegistryValueKind.DWord);
                     Service?.Log($"[START] Web search suggestions {(enable ? "disabled" : "enabled")}.");

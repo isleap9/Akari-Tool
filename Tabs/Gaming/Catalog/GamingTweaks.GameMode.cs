@@ -180,7 +180,6 @@ namespace AkariTool.Tabs.Gaming
                     Name             = "Menu Show Delay",
                     Description      = "Add a brief delay before displaying menus (400ms = Windows default), or show them instantly (0ms) for faster navigation",
                     IsPreference     = true,
-                    // EnabledValue=["400"], DisabledValue=["0"], DefaultValue="400" → toggle ON = delay enabled
                     RecommendedState = false,  // recommended = OFF (0ms instant)
                     DefaultState     = true,   // default = 400ms
                     ReadState        = () =>

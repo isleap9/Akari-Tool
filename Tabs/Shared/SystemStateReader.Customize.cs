@@ -91,12 +91,6 @@ namespace AkariTool.Tabs
             return val.HasValue ? val == 0 : null;
         }
 
-        public static bool? ReadRecentlyAddedAppsHidden()
-        {
-            var val = ReadDword(RegistryHive.LocalMachine, @"SOFTWARE\Policies\Microsoft\Windows\Explorer", "HideRecentlyAddedApps");
-            return val.HasValue ? val == 1 : null;
-        }
-
         public static bool? ReadBingSearchDisabled()
         {
             var policy = ReadHkcuDword(@"Software\Policies\Microsoft\Windows", "DisableSearchBoxSuggestions");
@@ -113,7 +107,7 @@ namespace AkariTool.Tabs
 
         public static bool? ReadWebSuggestionsDisabled()
         {
-            var val = ReadHkcuDword(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Search", "BingSearchEnabled");
+            var val = ReadHkcuDword(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Search", "CortanaConsent");
             return val.HasValue ? val == 0 : null;
         }
 

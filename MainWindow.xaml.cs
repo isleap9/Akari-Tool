@@ -8,6 +8,7 @@ using AkariTool.Tabs.AkariOS;
 using AkariTool.Tabs.Privacy;
 using AkariTool.Tabs.Update;
 using AkariTool.Tabs.Notifications;
+using AkariTool.Tabs.Sound;
 using AkariTool.Tabs.Power;
 using AkariTool.Tabs.AdvancedTools;
 using AkariTool.Tabs.About;
@@ -56,6 +57,7 @@ namespace AkariTool
             Init(TabPrivacy);
             Init(TabUpdate);
             Init(TabNotifications);
+            Init(TabSound);
             Init(TabPower);
             Init(TabCustomize);
             Init(TabTools);
@@ -73,6 +75,7 @@ namespace AkariTool
                 ("Privacy",       TabPrivacy.RootPanel,       () => SelectNavItem("Privacy")),
                 ("Update",        TabUpdate.RootPanel,        () => SelectNavItem("Update")),
                 ("Notifications", TabNotifications.RootPanel, () => SelectNavItem("Notifications")),
+                ("Sound",         TabSound.RootPanel,         () => SelectNavItem("Sound")),
                 ("Power",         TabPower.RootPanel,         () => SelectNavItem("Power")),
             };
             foreach (var (label, subPanel) in TabCustomize.SubPanels)
@@ -92,6 +95,7 @@ namespace AkariTool
                 ["Privacy"]       = TabPrivacy,
                 ["Update"]        = TabUpdate,
                 ["Notifications"] = TabNotifications,
+                ["Sound"]         = TabSound,
                 ["Power"]         = TabPower,
                 ["Customize"]     = TabCustomize,
                 ["Tools"]         = TabTools,
@@ -110,6 +114,7 @@ namespace AkariTool
                 ["Privacy"]       = NavPrivacy,
                 ["Update"]        = NavUpdate,
                 ["Notifications"] = NavNotifications,
+                ["Sound"]         = NavSound,
                 ["Power"]         = NavPower,
                 ["Customize"]     = NavCustomize,
                 ["Tools"]         = NavTools,
@@ -132,7 +137,7 @@ namespace AkariTool
             _topTags = new HashSet<string>
             {
                 "Home", "AkariOS", "Gaming", "Privacy",
-                "Update", "Notifications", "Power", "Customize", "Tools", "Advanced", "Backup", "Verify",
+                "Update", "Notifications", "Sound", "Power", "Customize", "Tools", "Advanced", "Backup", "Verify",
                 "About", "AppUpdate",
             };
 
@@ -143,7 +148,7 @@ namespace AkariTool
             {
                 ["Bloatware"] = SoftwareGroup, ["AppInstaller"] = SoftwareGroup, ["Debloat"] = SoftwareGroup,
                 ["AkariOS"] = OptimizeGroup, ["Gaming"] = OptimizeGroup, ["Privacy"] = OptimizeGroup,
-                ["Update"] = OptimizeGroup, ["Notifications"] = OptimizeGroup, ["Power"] = OptimizeGroup,
+                ["Update"] = OptimizeGroup, ["Notifications"] = OptimizeGroup, ["Sound"] = OptimizeGroup, ["Power"] = OptimizeGroup,
                 ["Customize"] = OptimizeGroup, ["Tools"] = OptimizeGroup,
                 ["Taskbar"] = OptimizeGroup, ["Explorer"] = OptimizeGroup, ["ContextMenu"] = OptimizeGroup,
                 ["Appearance"] = OptimizeGroup, ["StartMenu"] = OptimizeGroup, ["Desktop"] = OptimizeGroup,
@@ -274,42 +279,49 @@ namespace AkariTool
 
         private async void OnMainWindowClosing(object? sender, System.ComponentModel.CancelEventArgs e)
         {
-            if (_competitiveShutdownConfirmed) return;      // second pass — let it close
-            if (!CompetitiveService.IsSessionActive) return;
-
-            // Cancel first: the confirmation is async, and the close cannot be held
-            // open across an await. If the user confirms, we re-issue Close().
-            e.Cancel = true;
-
             try
             {
-                var box = new Wpf.Ui.Controls.MessageBox
+                if (_competitiveShutdownConfirmed) return;      // second pass — let it close
+                if (!CompetitiveService.IsSessionActive) return;
+
+                // Cancel first: the confirmation is async, and the close cannot be held
+                // open across an await. If the user confirms, we re-issue Close().
+                e.Cancel = true;
+
+                try
                 {
-                    Owner = this,
-                    Title = "Competitive Mode active",
-                    Content = new TextBlock
+                    var box = new Wpf.Ui.Controls.MessageBox
                     {
-                        Text = "A Competitive Mode session is active. End it and restore your settings " +
-                               "before closing?",
-                        TextWrapping = TextWrapping.Wrap,
-                        MaxWidth = 440,
-                    },
-                    PrimaryButtonText = "End and close",
-                    CloseButtonText = "Cancel",
-                };
+                        Owner = this,
+                        Title = "Competitive Mode active",
+                        Content = new TextBlock
+                        {
+                            Text = "A Competitive Mode session is active. End it and restore your settings " +
+                                   "before closing?",
+                            TextWrapping = TextWrapping.Wrap,
+                            MaxWidth = 440,
+                        },
+                        PrimaryButtonText = "End and close",
+                        CloseButtonText = "Cancel",
+                    };
 
-                if (await box.ShowDialogAsync() != Wpf.Ui.Controls.MessageBoxResult.Primary)
-                    return;   // user cancelled — the close stays aborted
+                    if (await box.ShowDialogAsync() != Wpf.Ui.Controls.MessageBoxResult.Primary)
+                        return;   // user cancelled — the close stays aborted
 
-                await TabAkariOS.EndCompetitiveSessionForShutdownAsync();
+                    await TabAkariOS.EndCompetitiveSessionForShutdownAsync();
+                }
+                catch (Exception ex)
+                {
+                    _service.Log($"ERROR ending Competitive Mode on close: {ex.Message}");
+                }
+
+                _competitiveShutdownConfirmed = true;
+                Close();
             }
             catch (Exception ex)
             {
-                _service.Log($"ERROR ending Competitive Mode on close: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[MainWindow] OnMainWindowClosing crashed: {ex}");
             }
-
-            _competitiveShutdownConfirmed = true;
-            Close();
         }
 
         // ── Log panel open/close ──────────────────────────────────────────────

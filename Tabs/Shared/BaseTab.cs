@@ -129,6 +129,7 @@ namespace AkariTool.Tabs
             ["Privacy & Security"] = new[] { "OPTIMIZE", "PRIVACY" },
             ["Windows Updates"] = new[] { "OPTIMIZE", "UPDATE" },
             ["Notifications"] = new[] { "OPTIMIZE", "NOTIFICATIONS" },
+            ["Sound"] = new[] { "OPTIMIZE", "SOUND" },
             ["Power"] = new[] { "OPTIMIZE", "POWER" },
             ["Taskbar"] = new[] { "CUSTOMIZE", "TASKBAR" },
             ["Explorer"] = new[] { "CUSTOMIZE", "EXPLORER" },

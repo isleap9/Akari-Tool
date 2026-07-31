@@ -75,6 +75,59 @@ namespace AkariTool.Tabs
 
             foreach (var def in sidebarToggles)
                 TweakHelpers.AddTweakRow(sidebarSection, def);
+
+            // ── Navigation Pane personal folders (Winhance parity) ────────────
+            foreach (var (id, name, guid) in new[]
+            {
+                ("customize-navpane-desktop",   "Show Desktop Folder",   "{B4BFCC3A-DB2C-424C-B029-7FE99A87C641}"),
+                ("customize-navpane-documents", "Show Documents Folder", "{A8CDFF1C-4878-43be-B5FD-F8091C1C60D0}"),
+                ("customize-navpane-downloads", "Show Downloads Folder", "{374DE290-123F-4565-9164-39C4925E467B}"),
+                ("customize-navpane-music",     "Show Music Folder",     "{1CF1260C-4DD0-4ebb-811F-33C572699FDE}"),
+                ("customize-navpane-pictures",  "Show Pictures Folder",  "{3ADD1653-EB32-4cb0-BBD7-DFA0ABB5ACCA}"),
+                ("customize-navpane-videos",    "Show Videos Folder",    "{A0953C92-50DC-43bf-BE83-3742FED03C9C}"),
+            })
+                TweakHelpers.AddTweakRow(sidebarSection, NavPaneFolder(id, name, guid));
+
+            TweakHelpers.AddTweakRow(sidebarSection, new TweakDefinition
+            {
+                Id = "customize-navpane-libraries", Name = "Show Libraries in Navigation Pane", Group = "Navigation Pane",
+                Description = "Pin the Libraries node to the File Explorer navigation pane",
+                IsPreference = true, RecommendedState = false, DefaultState = false,
+                ReadState = () => { var v = Registry.GetValue(@"HKEY_CURRENT_USER\Software\Classes\CLSID\{031E4825-7B94-4dc3-B131-E946B44C8DD5}", "System.IsPinnedToNameSpaceTree", null) as int?; return v == 1; },
+                Apply = on =>
+                {
+                    const string guid = "{031E4825-7B94-4dc3-B131-E946B44C8DD5}";
+                    const string nonEnum = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\NonEnum";
+                    string ns = $@"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace\{guid}";
+                    using (var k = Registry.CurrentUser.CreateSubKey($@"Software\Classes\CLSID\{guid}")) k?.SetValue("System.IsPinnedToNameSpaceTree", on ? 1 : 0, RegistryValueKind.DWord);
+                    if (on) { using (var k = Registry.LocalMachine.OpenSubKey(nonEnum, true)) k?.DeleteValue(guid, false);
+                              using (var k = Registry.LocalMachine.OpenSubKey(ns, true)) k?.DeleteValue("HiddenByDefault", false); }
+                    else    { using (var k = Registry.LocalMachine.CreateSubKey(nonEnum)) k?.SetValue(guid, 1, RegistryValueKind.DWord);
+                              using (var k = Registry.LocalMachine.CreateSubKey(ns)) k?.SetValue("HiddenByDefault", 1, RegistryValueKind.DWord); }
+                    Log($"Libraries in nav pane {(on ? "shown" : "hidden")}.");
+                },
+            });
         }
+
+        // Factory: one navigation-pane personal-folder toggle. Show = clear the
+        // NonEnum policy + HiddenByDefault; hide = set both. Distinct from the
+        // This-PC rows (MyComputer\NameSpace) and desktop-icon rows.
+        private TweakDefinition NavPaneFolder(string id, string name, string guid) => new TweakDefinition
+        {
+            Id = id, Name = name, Group = "Navigation Pane",
+            Description = "Show this personal folder in the File Explorer navigation pane",
+            IsPreference = true,
+            ReadState = () => { var v = Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\NonEnum", guid, null) as int?; return v != 1; },
+            Apply = on =>
+            {
+                const string nonEnum = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\NonEnum";
+                string ns = $@"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace\{guid}";
+                if (on) { using (var k = Registry.LocalMachine.OpenSubKey(nonEnum, true)) k?.DeleteValue(guid, false);
+                          using (var k = Registry.LocalMachine.OpenSubKey(ns, true)) k?.DeleteValue("HiddenByDefault", false); }
+                else    { using (var k = Registry.LocalMachine.CreateSubKey(nonEnum)) k?.SetValue(guid, 1, RegistryValueKind.DWord);
+                          using (var k = Registry.LocalMachine.CreateSubKey(ns)) k?.SetValue("HiddenByDefault", 1, RegistryValueKind.DWord); }
+                Log($"{name} {(on ? "shown" : "hidden")}.");
+            },
+        };
     }
 }

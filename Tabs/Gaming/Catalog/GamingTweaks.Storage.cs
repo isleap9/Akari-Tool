@@ -21,7 +21,7 @@ namespace AkariTool.Tabs.Gaming
                     ReadState        = () => SystemStateReader.ReadNvmeTweaks() ?? false,
                     Apply = on =>
                     {
-                        const string path = @"HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Services\stornvme\Parameters\Device";
+                        const string path = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\stornvme\Parameters\Device";
                         if (on)
                         {
                             Registry.SetValue(path, "ContiguousMemoryFromAnyNode", 1, RegistryValueKind.DWord);
@@ -32,7 +32,7 @@ namespace AkariTool.Tabs.Gaming
                         else
                         {
                             using var k = Registry.LocalMachine.OpenSubKey(
-                                @"SYSTEM\ControlSet001\Services\stornvme\Parameters\Device", true);
+                                @"SYSTEM\CurrentControlSet\Services\stornvme\Parameters\Device", true);
                             foreach (var v in new[] { "ContiguousMemoryFromAnyNode", "LogSize", "IdlePowerMode", "DiagnosticFlags" })
                                 k?.DeleteValue(v, false);
                         }

@@ -5,7 +5,7 @@
   },
   "projects": {
     "C:\\Users\\isleap\\Documents\\GitHub\\Akari-Tool\\AkariTool.csproj": {
-      "version": "1.1.4",
+      "version": "1.1.5",
       "restore": {
         "projectUniqueName": "C:\\Users\\isleap\\Documents\\GitHub\\Akari-Tool\\AkariTool.csproj",
         "projectName": "AkariTool",
@@ -76,14 +76,6 @@
               "version": "[8.0.29, 8.0.29]"
             },
             {
-              "name": "Microsoft.AspNetCore.App.Runtime.win-x64",
-              "version": "[8.0.29, 8.0.29]"
-            },
-            {
-              "name": "Microsoft.NETCore.App.Crossgen2.win-x64",
-              "version": "[8.0.29, 8.0.29]"
-            },
-            {
               "name": "Microsoft.NETCore.App.Host.win-x64",
               "version": "[8.0.29, 8.0.29]"
             },
@@ -92,15 +84,7 @@
               "version": "[8.0.29, 8.0.29]"
             },
             {
-              "name": "Microsoft.NETCore.App.Runtime.win-x64",
-              "version": "[8.0.29, 8.0.29]"
-            },
-            {
               "name": "Microsoft.WindowsDesktop.App.Ref",
-              "version": "[8.0.29, 8.0.29]"
-            },
-            {
-              "name": "Microsoft.WindowsDesktop.App.Runtime.win-x64",
               "version": "[8.0.29, 8.0.29]"
             }
           ],

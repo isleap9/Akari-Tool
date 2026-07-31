@@ -82,6 +82,34 @@ namespace AkariTool.Tabs
             catch { return null; }
         }
 
+        // Convenience log used by the Winhance-parity rows (Start Menu / Explorer /
+        // Taskbar). Routes to the shared Service, matching Service?.Log elsewhere.
+        private void Log(string msg) => Service?.Log(msg);
+
+        // ShellState blob (Explorer) — carries the single/double-click flag in bit 5
+        // of byte 4. Winhance-default template used when the value is absent.
+        private static readonly byte[] _shellStateDefault = {
+            0x24,0x00,0x00,0x00, 0x3E,0x28,0x00,0x00, 0x00,0x00,0x00,0x00,
+            0x01,0x00,0x00,0x00, 0x01,0x00,0x00,0x00, 0x00,0x00,0x00,0x00,
+            0x00,0x00,0x00,0x00, 0x80,0x00,0x00,0x00, 0x00,0x00,0x00,0x00 };
+
+        private static byte[] ReadShellState()
+        {
+            try {
+                using var k = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer");
+                if (k?.GetValue("ShellState") is byte[] d && d.Length >= 5) return (byte[])d.Clone();
+            } catch { }
+            return (byte[])_shellStateDefault.Clone();
+        }
+        private static bool ShellStateDoubleClick() { var s = ReadShellState(); return (s[4] & 0x20) != 0; }
+        private static void WriteShellStateDoubleClick(bool dbl)
+        {
+            var s = ReadShellState();
+            if (dbl) s[4] |= 0x20; else s[4] = (byte)(s[4] & ~0x20);
+            using var k = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer");
+            k?.SetValue("ShellState", s, RegistryValueKind.Binary);
+        }
+
         // Instance (not static) so it can log via the shared Service on failure. A denied
         // write degrades gracefully with a logged message instead of escaping to the WPF
         // dispatcher as an unhandled UnauthorizedAccessException. Shared by every Customize

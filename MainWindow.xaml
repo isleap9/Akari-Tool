@@ -8,6 +8,7 @@
         xmlns:tabsprivacy="clr-namespace:AkariTool.Tabs.Privacy"
         xmlns:tabsupdate="clr-namespace:AkariTool.Tabs.Update"
         xmlns:tabsnotifications="clr-namespace:AkariTool.Tabs.Notifications"
+        xmlns:tabssound="clr-namespace:AkariTool.Tabs.Sound"
         xmlns:tabspower="clr-namespace:AkariTool.Tabs.Power"
         xmlns:tabsadvanced="clr-namespace:AkariTool.Tabs.AdvancedTools"
         xmlns:tabsabout="clr-namespace:AkariTool.Tabs.About"
@@ -192,6 +193,9 @@
                                     <ui:NavigationViewItem x:Name="NavNotifications" Tag="Notifications" Click="NavItem_Click" Style="{StaticResource AkariNavItem}" ToolTip="Notifications">
                                         <StackPanel Orientation="Horizontal"><Image Style="{StaticResource NavImageIcon}" Source="{StaticResource NavIco_Notifications}"/><TextBlock Style="{StaticResource NavLabel}" Text="Notifications"/></StackPanel>
                                     </ui:NavigationViewItem>
+                                    <ui:NavigationViewItem x:Name="NavSound" Tag="Sound" Click="NavItem_Click" Style="{StaticResource AkariNavItem}" ToolTip="Sound">
+                                        <StackPanel Orientation="Horizontal"><Image Style="{StaticResource NavImageIcon}" Source="{StaticResource NavIco_Sound}"/><TextBlock Style="{StaticResource NavLabel}" Text="Sound"/></StackPanel>
+                                    </ui:NavigationViewItem>
                                     <ui:NavigationViewItem x:Name="NavPower" Tag="Power" Click="NavItem_Click" Style="{StaticResource AkariNavItem}" ToolTip="Power">
                                         <StackPanel Orientation="Horizontal"><Image Style="{StaticResource NavImageIcon}" Source="{StaticResource NavIco_Power}"/><TextBlock Style="{StaticResource NavLabel}" Text="Power"/></StackPanel>
                                     </ui:NavigationViewItem>
@@ -254,11 +258,11 @@
                      above it. The Border is retained solely for ClipToBounds, which
                      keeps the watermark inside the content region. -->
                 <Border Grid.Column="1" ClipToBounds="True"
-                    Margin="10,0,0,0"
+                    Margin="0"
                     Background="{DynamicResource AkariContentSurface}"
-                    CornerRadius="10,0,0,0"
+                    CornerRadius="0"
                     BorderBrush="{DynamicResource AkariHairline}"
-                    BorderThickness="1,1,0,0">
+                    BorderThickness="1,0,0,0">
                 <Grid ClipToBounds="True">
                     <!-- Brand chevron watermark — window-level, behind every tab's content,
                          clipped to the content region so it never touches the sidebar or footer. -->
@@ -282,6 +286,7 @@
                             <tabsprivacy:PrivacyTab       x:Name="TabPrivacy"       Visibility="Collapsed"/>
                             <tabsupdate:UpdateTab         x:Name="TabUpdate"        Visibility="Collapsed"/>
                             <tabsnotifications:NotificationsTab x:Name="TabNotifications" Visibility="Collapsed"/>
+                            <tabssound:SoundTab x:Name="TabSound" Visibility="Collapsed"/>
                             <tabspower:PowerTab           x:Name="TabPower"         Visibility="Collapsed"/>
                             <tabs:CustomizeTab   x:Name="TabCustomize"     Visibility="Collapsed"/>
                             <tabs:ToolsTab       x:Name="TabTools"         Visibility="Collapsed"/>

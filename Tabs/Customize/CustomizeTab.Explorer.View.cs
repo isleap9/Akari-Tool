@@ -137,6 +137,245 @@ namespace AkariTool.Tabs
             // Folder Options completion rows live in their own partial to keep
             // this file within the size conventions.
             BuildExplorerViewFolderOptions(viewSection);
+
+            // ── Winhance-parity View / Navigation Pane / device rows ─────────
+            TweakHelpers.AddTweakRow(viewSection, new TweakDefinition
+            {
+                Id          = "customize-explorer-always-show-menus",
+                Name        = "Always Show Menus",
+                Group       = "View",
+                Description = "Always show the classic File Explorer menu bar",
+                RecommendedState = false,
+                DefaultState     = false,
+                ReadState   = () => ReadDwordCu(@"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced", "AlwaysShowMenus") is int v ? v != 0 : false,
+                Apply       = on =>
+                {
+                    Registry.SetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced",
+                        "AlwaysShowMenus", on ? 1 : 0, RegistryValueKind.DWord);
+                    Log($"Always show menus {(on ? "on" : "off")}.");
+                },
+            });
+
+            TweakHelpers.AddTweakRow(viewSection, new TweakDefinition
+            {
+                Id          = "customize-explorer-preview-handlers",
+                Name        = "Show Preview Handlers in Preview Pane",
+                Group       = "View",
+                Description = "Render file contents in the preview pane",
+                RecommendedState = false,
+                DefaultState     = true,
+                ReadState   = () => ReadDwordCu(@"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced", "ShowPreviewHandlers") is int v ? v != 0 : true,
+                Apply       = on =>
+                {
+                    const string s = @"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced";
+                    if (on) { using var k = Registry.CurrentUser.OpenSubKey(s, true); k?.DeleteValue("ShowPreviewHandlers", false); }
+                    else Registry.SetValue(@"HKEY_CURRENT_USER\" + s, "ShowPreviewHandlers", 0, RegistryValueKind.DWord);
+                    Log($"Preview handlers {(on ? "on" : "off")}.");
+                },
+            });
+
+            TweakHelpers.AddTweakRow(viewSection, new TweakDefinition
+            {
+                Id          = "customize-explorer-icon-on-thumbnails",
+                Name        = "Display File Icon on Thumbnails",
+                Group       = "View",
+                Description = "Overlay the file-type icon on thumbnail previews",
+                RecommendedState = true,
+                DefaultState     = false,
+                ReadState   = () => ReadDwordCu(@"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced", "ShowTypeOverlay") is int v ? v != 0 : false,
+                Apply       = on =>
+                {
+                    Registry.SetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced",
+                        "ShowTypeOverlay", on ? 1 : 0, RegistryValueKind.DWord);
+                    Log($"Thumbnail type overlay {(on ? "on" : "off")}.");
+                },
+            });
+
+            TweakHelpers.AddTweakRow(viewSection, new TweakDefinition
+            {
+                Id          = "customize-explorer-office-files",
+                Name        = "Show Files from Office.com",
+                Group       = "View",
+                Description = "Show recent Office.com cloud files in Quick Access",
+                RecommendedState = false,
+                DefaultState     = true,
+                ReadState   = () => ReadDwordCu(@"Software\Microsoft\Windows\CurrentVersion\Explorer", "ShowCloudFilesInQuickAccess") is int v ? v != 0 : true,
+                Apply       = on =>
+                {
+                    Registry.SetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer",
+                        "ShowCloudFilesInQuickAccess", on ? 1 : 0, RegistryValueKind.DWord);
+                    Log($"Office.com files {(on ? "shown" : "hidden")}.");
+                },
+            });
+
+            TweakHelpers.AddTweakRow(viewSection, new TweakDefinition
+            {
+                Id          = "customize-explorer-recommendations",
+                Name        = "Show Recommendations",
+                Group       = "View",
+                Description = "Show the recommended files section in File Explorer Home",
+                RecommendedState = false,
+                DefaultState     = true,
+                ReadState   = () => ReadDwordCu(@"Software\Microsoft\Windows\CurrentVersion\Explorer", "ShowRecommendations") is int v ? v != 0 : true,
+                Apply       = on =>
+                {
+                    Registry.SetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer",
+                        "ShowRecommendations", on ? 1 : 0, RegistryValueKind.DWord);
+                    Log($"Explorer recommendations {(on ? "shown" : "hidden")}.");
+                },
+            });
+
+            TweakHelpers.AddTweakRow(viewSection, new TweakDefinition
+            {
+                Id          = "customize-explorer-nav-cloud-states",
+                Name        = "Always Show Availability Status",
+                Group       = "Navigation Pane",
+                Description = "Always show cloud sync availability icons in the navigation pane",
+                RecommendedState = false,
+                DefaultState     = false,
+                ReadState   = () => ReadDwordCu(@"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced", "NavPaneShowAllCloudStates") is int v ? v != 0 : false,
+                Apply       = on =>
+                {
+                    Registry.SetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced",
+                        "NavPaneShowAllCloudStates", on ? 1 : 0, RegistryValueKind.DWord);
+                    Log($"Nav availability status {(on ? "on" : "off")}.");
+                },
+            });
+
+            TweakHelpers.AddTweakRow(viewSection, new TweakDefinition
+            {
+                Id          = "customize-explorer-nav-expand-current",
+                Name        = "Expand to Open Folder",
+                Group       = "Navigation Pane",
+                Description = "Automatically expand the navigation pane to the current folder",
+                RecommendedState = false,
+                DefaultState     = true,
+                ReadState   = () => ReadDwordCu(@"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced", "NavPaneExpandToCurrentFolder") is int v ? v != 0 : true,
+                Apply       = on =>
+                {
+                    Registry.SetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced",
+                        "NavPaneExpandToCurrentFolder", on ? 1 : 0, RegistryValueKind.DWord);
+                    Log($"Nav expand to current {(on ? "on" : "off")}.");
+                },
+            });
+
+            TweakHelpers.AddTweakRow(viewSection, new TweakDefinition
+            {
+                Id          = "customize-explorer-nav-all-folders",
+                Name        = "Show All Folders",
+                Group       = "Navigation Pane",
+                Description = "Show all folders (including Desktop, Recycle Bin) in the navigation pane",
+                RecommendedState = false,
+                DefaultState     = false,
+                ReadState   = () => ReadDwordCu(@"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced", "NavPaneShowAllFolders") is int v ? v != 0 : false,
+                Apply       = on =>
+                {
+                    Registry.SetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced",
+                        "NavPaneShowAllFolders", on ? 1 : 0, RegistryValueKind.DWord);
+                    Log($"Nav show all folders {(on ? "on" : "off")}.");
+                },
+            });
+
+            TweakHelpers.AddTweakRow(viewSection, new TweakDefinition
+            {
+                Id          = "customize-devices-default-printer",
+                Name        = "Automatic Default Printer Management",
+                Group       = "View",
+                Description = "Let Windows manage which printer is the default (your last-used printer)",
+                RecommendedState = false,
+                DefaultState     = true,
+                ReadState   = () => ReadDwordCu(@"Software\Microsoft\Windows NT\CurrentVersion\Windows", "LegacyDefaultPrinterMode") is int v ? v == 0 : true,
+                Apply       = on =>
+                {
+                    Registry.SetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows NT\CurrentVersion\Windows",
+                        "LegacyDefaultPrinterMode", on ? 0 : 1, RegistryValueKind.DWord);
+                    Log($"Automatic default printer {(on ? "on" : "off")}.");
+                },
+            });
+
+            TweakHelpers.AddTweakRow(viewSection, new TweakDefinition
+            {
+                Id          = "customize-explorer-typing-behavior",
+                Name        = "When Typing into List View",
+                Group       = "View",
+                Description = "What File Explorer does when you type in a list view",
+                IsPreference = true,
+                InputKind   = TweakInputKind.Dropdown,
+                Options = new[]
+                {
+                    new TweakDropdownOption("Select the typed item in the view", 0, IsDefault: true),
+                    new TweakDropdownOption("Automatically type into the Search Box", 1),
+                },
+                ReadCurrentIndex = () =>
+                {
+                    var v = ReadDwordCu(@"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced", "TypeAhead");
+                    return v switch { 0 => 0, 1 => 1, _ => 0 };
+                },
+                ApplyIndex = idx =>
+                {
+                    if (idx < 0 || idx > 1) return;
+                    Registry.SetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced",
+                        "TypeAhead", idx, RegistryValueKind.DWord);
+                    Log($"List-view typing set to option {idx}.");
+                },
+            });
+
+            TweakHelpers.AddTweakRow(viewSection, new TweakDefinition
+            {
+                Id          = "customize-explorer-icon-cache-size",
+                Name        = "Icon Cache Size",
+                Group       = "View",
+                Description = "Maximum number of icons Windows caches (larger can reduce icon reload flicker)",
+                IsPreference = true,
+                InputKind   = TweakInputKind.Dropdown,
+                Options = new[]
+                {
+                    new TweakDropdownOption("Windows default",         "default", IsDefault: true),
+                    new TweakDropdownOption("Large (4,096 icons)",     "4096"),
+                    new TweakDropdownOption("Very large (8,192 icons)", "8192"),
+                },
+                ReadCurrentIndex = () =>
+                {
+                    var v = Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer", "MaxCachedIcons", null) as string;
+                    return v switch { "4096" => 1, "8192" => 2, _ => 0 };
+                },
+                ApplyIndex = idx =>
+                {
+                    const string sub = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer";
+                    if (idx == 0) { using var k = Registry.LocalMachine.OpenSubKey(sub, true); k?.DeleteValue("MaxCachedIcons", false); }
+                    else Registry.SetValue(@"HKEY_LOCAL_MACHINE\" + sub, "MaxCachedIcons", idx == 1 ? "4096" : "8192", RegistryValueKind.String);
+                    Log($"Icon cache size set to option {idx}.");
+                },
+            });
+
+            TweakHelpers.AddTweakRow(viewSection, new TweakDefinition
+            {
+                Id          = "customize-explorer-click-items",
+                Name        = "Click Items As Follows",
+                Group       = "General",
+                Description = "Open files and folders with a single click, or the traditional double-click",
+                IsPreference = true,
+                InputKind   = TweakInputKind.Dropdown,
+                Options = new[]
+                {
+                    new TweakDropdownOption("Double-click to open (single-click to select)", 0, IsDefault: true),
+                    new TweakDropdownOption("Single-click to open (underline titles like a browser)", 1),
+                    new TweakDropdownOption("Single-click to open (underline titles on hover)", 2),
+                },
+                ReadCurrentIndex = () =>
+                {
+                    if (ShellStateDoubleClick()) return 0;
+                    var u = ReadDwordCu(@"Software\Microsoft\Windows\CurrentVersion\Explorer", "IconUnderline");
+                    return u == 2 ? 2 : 1;
+                },
+                ApplyIndex = idx =>
+                {
+                    const string ek = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer";
+                    WriteShellStateDoubleClick(idx == 0);
+                    Registry.SetValue(ek, "IconUnderline", idx == 2 ? 2 : 3, RegistryValueKind.DWord);
+                    Log($"Click behavior set to option {idx}.");
+                },
+            });
         }
     }
 }

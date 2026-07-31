@@ -35,6 +35,9 @@ namespace AkariTool.Tabs
         [DllImport("advapi32.dll", SetLastError = true)]
         private static extern bool OpenProcessToken(IntPtr processHandle, uint desiredAccess, out IntPtr tokenHandle);
 
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool CloseHandle(IntPtr handle);
+
         private static string GetRealUserSid()
         {
             var explorer = System.Diagnostics.Process
@@ -45,8 +48,15 @@ namespace AkariTool.Tabs
             if (!OpenProcessToken(explorer.Handle, 8, out var token))
                 throw new InvalidOperationException("Could not open explorer process token.");
 
-            using var identity = new System.Security.Principal.WindowsIdentity(token);
-            return identity.User!.Value;
+            try
+            {
+                using var identity = new System.Security.Principal.WindowsIdentity(token);
+                return identity.User!.Value;
+            }
+            finally
+            {
+                CloseHandle(token);
+            }
         }
 
         public static RegistryKey CreateRealHkcuSubKey(string subKey)

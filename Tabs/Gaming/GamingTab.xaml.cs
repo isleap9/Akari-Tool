@@ -36,6 +36,7 @@ namespace AkariTool.Tabs.Gaming
             AddSection(RootPanel, "Security", GamingTweaks.Security(Log));
             BuildSystemServices(RootPanel);
             BuildScheduledTasks(RootPanel);
+            BuildSystemRestore(RootPanel);
             AddSection(RootPanel, "Accessibility", GamingTweaks.Accessibility(Log));
             AddSection(RootPanel, "Visual Effects", GamingTweaks.VisualEffects(Log));
             foreach (var refresh in _refreshActions)

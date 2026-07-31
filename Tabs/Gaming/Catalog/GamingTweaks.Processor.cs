@@ -239,7 +239,7 @@ namespace AkariTool.Tabs.Gaming
                     ReadState        = () => SystemStateReader.ReadTsx() ?? false,
                     Apply = on =>
                     {
-                        const string path = @"HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Control\Session Manager\kernel";
+                        const string path = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Session Manager\kernel";
                         Registry.SetValue(path, "DisableTsx", on ? 0 : 1, RegistryValueKind.DWord);
                         Log($"Intel TSX {(on ? "enabled" : "disabled")}. Restart to apply.");
                     }
@@ -359,7 +359,7 @@ namespace AkariTool.Tabs.Gaming
                 {
                     Id               = "gaming-mmcss-pro-audio-profile",
                     Name             = "Optimize Pro Audio MMCSS Task",
-                    Description      = "Raise priority and scheduling category for the Pro Audio multimedia task — reduces audio latency and dropouts for DAWs, voice chat, and audio interfaces",
+                    Description      = "Raise the Pro Audio multimedia task priority to reduce audio latency and dropouts for DAWs, voice chat, and audio interfaces",
                     RecommendedState = true,
                     DefaultState     = false,
                     ReadState        = () =>
@@ -373,7 +373,7 @@ namespace AkariTool.Tabs.Gaming
                     {
                         const string pro = @"HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Pro Audio";
                         Registry.SetValue(pro, "Priority", on ? 8 : 1, RegistryValueKind.DWord);
-                        Registry.SetValue(pro, "Scheduling Category", on ? "Medium" : "High", RegistryValueKind.String);
+                        Registry.SetValue(pro, "Scheduling Category", "High", RegistryValueKind.String);
                         Log($"Pro Audio MMCSS task {(on ? "optimized" : "reset to defaults")}.");
                     }
                 },

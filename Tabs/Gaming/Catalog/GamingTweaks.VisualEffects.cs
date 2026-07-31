@@ -61,7 +61,7 @@ namespace AkariTool.Tabs.Gaming
                     Id               = "drag-full-windows",
                     Name             = "Show window contents while dragging",
                     Description      = "Show the full window content while dragging instead of just an outline",
-                    IsPreference     = true, RecommendedState = false, DefaultState = true,
+                    IsPreference     = true, RecommendedState = true, DefaultState = true,
                     ReadState = () => ReadString(RegistryHive.CurrentUser, @"Control Panel\Desktop", "DragFullWindows") != "0",
                     Apply = on =>
                     {
@@ -158,68 +158,67 @@ namespace AkariTool.Tabs.Gaming
                 },
                 new TweakDefinition
                 {
+                    Id               = "taskbar-thumbnails",
+                    Name             = "Save taskbar thumbnail previews",
+                    Description      = "Cache taskbar thumbnail previews. Disabling saves a small amount of memory",
+                    IsPreference     = true,
+                    RecommendedState = false, // Winhance recommends off
+                    DefaultState     = false, // Windows default = off
+                    ReadState = () =>
+                    {
+                        var v = ReadDword(RegistryHive.CurrentUser,
+                            @"Software\Microsoft\Windows\DWM", "AlwaysHibernateThumbnails");
+                        return v.HasValue ? v == 1 : false;
+                    },
+                    Apply = on =>
+                    {
+                        Registry.SetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\DWM",
+                            "AlwaysHibernateThumbnails", on ? 1 : 0, RegistryValueKind.DWord);
+                        Log($"Taskbar thumbnail previews {(on ? "enabled" : "disabled")}.");
+                    }
+                },
+                new TweakDefinition
+                {
                     Id               = "enable-peek",
-                    Name             = "Peek at the desktop",
-                    Description      = "Temporarily view the desktop when hovering over the Show Desktop button at the taskbar corner",
-                    IsPreference     = true, RecommendedState = false, DefaultState = true,
+                    Name             = "Enable Peek",
+                    Description      = "Temporarily preview the desktop or a window when hovering over the Show Desktop button or a taskbar thumbnail",
+                    IsPreference     = true, RecommendedState = true, DefaultState = true,
                     ReadState = () =>
                     {
                         var v = ReadDword(RegistryHive.CurrentUser,
-                            @"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced", "DisablePreviewDesktop");
-                        return v.HasValue ? v != 1 : true;
-                    },
-                    Apply = on =>
-                    {
-                        Registry.SetValue(
-                            @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced",
-                            "DisablePreviewDesktop", on ? 0 : 1, RegistryValueKind.DWord);
-                        Log($"Peek at desktop {(on ? "enabled" : "disabled")}.");
-                    }
-                },
-                new TweakDefinition
-                {
-                    Id               = "window-shadows",
-                    Name             = "Show shadows under windows",
-                    Description      = "Display drop shadows under windows to create a layered depth effect on the desktop",
-                    IsPreference     = true, RecommendedState = false, DefaultState = true,
-                    ReadState = () =>
-                    {
-                        var v = ReadDword(RegistryHive.CurrentUser,
-                            @"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced", "ListviewShadow");
+                            @"Software\Microsoft\Windows\DWM", "EnableAeroPeek");
                         return v.HasValue ? v == 1 : true;
                     },
                     Apply = on =>
                     {
                         Registry.SetValue(
-                            @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced",
-                            "ListviewShadow", on ? 1 : 0, RegistryValueKind.DWord);
-                        Log($"Window shadows {(on ? "enabled" : "disabled")}.");
+                            @"HKEY_CURRENT_USER\Software\Microsoft\Windows\DWM",
+                            "EnableAeroPeek", on ? 1 : 0, RegistryValueKind.DWord);
+                        Log($"Peek {(on ? "enabled" : "disabled")}.");
                     }
                 },
-                new TweakDefinition
-                {
-                    Id               = "smooth-scroll-listboxes",
-                    Name             = "Smooth-scroll list boxes",
-                    Description      = "Scroll list boxes smoothly instead of jumping one item at a time",
-                    IsPreference     = true, RecommendedState = false, DefaultState = true,
-                    ReadState = () =>
-                    {
-                        var v = ReadDword(RegistryHive.CurrentUser,
-                            @"Control Panel\Desktop", "SmoothScroll");
-                        return v.HasValue ? v == 1 : true;
-                    },
-                    Apply = on =>
-                    {
-                        Registry.SetValue(@"HKEY_CURRENT_USER\Control Panel\Desktop", "SmoothScroll", on ? 1 : 0, RegistryValueKind.DWord);
-                        Log($"Smooth scroll list boxes {(on ? "enabled" : "disabled")}.");
-                    }
-                },
+                UiPrefBitTweak(Log, "ui-effects", "Animate controls and elements inside windows",
+                    "Fade/animate controls and elements inside windows", 4, 0x02),
+                UiPrefBitTweak(Log, "menu-animation", "Fade or slide menus into view",
+                    "Animate menus with a fade or slide when they open", 0, 0x02),
+                UiPrefBitTweak(Log, "combo-box-animation", "Slide open combo boxes",
+                    "Animate combo boxes with a sliding effect when opened", 0, 0x04),
+                UiPrefBitTweak(Log, "smooth-scroll-listboxes", "Smooth-scroll list boxes",
+                    "Smooth scrolling in list boxes instead of jumping", 0, 0x08),
+                UiPrefBitTweak(Log, "fade-menu-items", "Fade out menu items after clicking",
+                    "Fade menu items after selection before the menu closes", 1, 0x04),
+                UiPrefBitTweak(Log, "fade-tooltip", "Fade or slide ToolTips into view",
+                    "Animate tooltips with a fade or slide when they appear", 1, 0x08),
+                UiPrefBitTweak(Log, "mouse-shadow", "Show shadows under mouse pointer",
+                    "Display a shadow effect underneath the mouse cursor", 1, 0x20),
+                UiPrefBitTweak(Log, "window-shadows", "Show shadows under windows",
+                    "Display shadow effects underneath windows", 2, 0x04),
                 new TweakDefinition
                 {
                     Id               = "listview-alpha-select",
                     Name             = "Translucent selection rectangle",
                     Description      = "Show a semi-transparent rectangle when selecting multiple files in Explorer instead of a solid box",
-                    IsPreference     = true, RecommendedState = false, DefaultState = true,
+                    IsPreference     = true, RecommendedState = true, DefaultState = true,
                     ReadState = () =>
                     {
                         var v = ReadDword(RegistryHive.CurrentUser,
@@ -232,24 +231,6 @@ namespace AkariTool.Tabs.Gaming
                             @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced",
                             "ListviewAlphaSelect", on ? 1 : 0, RegistryValueKind.DWord);
                         Log($"Translucent selection rectangle {(on ? "enabled" : "disabled")}.");
-                    }
-                },
-                new TweakDefinition
-                {
-                    Id               = "menu-show-delay",
-                    Name             = "Reduce menu animation delay",
-                    Description      = "Reduces the delay before menus open from 400 ms to 200 ms for a snappier feel",
-                    IsPreference     = true, RecommendedState = true, DefaultState = false,
-                    ReadState = () =>
-                    {
-                        var v = ReadString(RegistryHive.CurrentUser, @"Control Panel\Desktop", "MenuShowDelay");
-                        return v == "200";
-                    },
-                    Apply = on =>
-                    {
-                        Registry.SetValue(@"HKEY_CURRENT_USER\Control Panel\Desktop", "MenuShowDelay",
-                            on ? "200" : "400", RegistryValueKind.String);
-                        Log($"Menu animation delay set to {(on ? "200 ms (reduced)" : "400 ms (default)")}.");
                     }
                 },
                 new TweakDefinition
@@ -268,58 +249,6 @@ namespace AkariTool.Tabs.Gaming
                         Registry.SetValue(@"HKEY_CURRENT_USER\Control Panel\Keyboard", "KeyboardDelay",
                             on ? 0 : 1, RegistryValueKind.DWord);
                         Log($"Keyboard repeat delay set to {(on ? "0 (shortest)" : "1 (default)")}.");
-                    }
-                },
-                new TweakDefinition
-                {
-                    Id               = "aero-peek-dwm",
-                    Name             = "Aero Peek (DWM)",
-                    Description      = "Enables the DWM-level Aero Peek glass preview effect — disable for a minor compositing performance gain",
-                    IsPreference     = true, RecommendedState = false, DefaultState = true,
-                    ReadState = () =>
-                    {
-                        var v = ReadDword(RegistryHive.CurrentUser,
-                            @"Software\Microsoft\Windows\DWM", "EnableAeroPeek");
-                        return v.HasValue ? v == 1 : true;
-                    },
-                    Apply = on =>
-                    {
-                        Registry.SetValue(
-                            @"HKEY_CURRENT_USER\Software\Microsoft\Windows\DWM",
-                            "EnableAeroPeek", on ? 1 : 0, RegistryValueKind.DWord);
-                        Log($"Aero Peek (DWM) {(on ? "enabled" : "disabled")}.");
-                    }
-                },
-                new TweakDefinition
-                {
-                    Id               = "user-preferences-mask",
-                    Name             = "Windows animation effects (UserPreferencesMask)",
-                    Description      = "Master binary flag controlling fade/slide menus, animate controls, smooth-scroll, tooltip fade, and cursor shadow — disabling matches Best Performance mode",
-                    IsPreference     = true, RecommendedState = false, DefaultState = true,
-                    ReadState = () =>
-                    {
-                        try
-                        {
-                            using var key = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Default)
-                                .OpenSubKey(@"Control Panel\Desktop");
-                            if (key?.GetValue("UserPreferencesMask") is byte[] data && data.Length >= 1)
-                                // Default mask has bit 0x02 set in byte[0] (animate controls).
-                                // "Best performance" clears it. We report ON if default animations are active.
-                                return (data[0] & 0x02) != 0;
-                            return true; // key missing → assume default (on)
-                        }
-                        catch { return null; }
-                    },
-                    Apply = on =>
-                    {
-                        // Best-performance mask:  90 12 03 80 10 00 00 00
-                        // Default (appearance):   9E 3E 07 80 12 00 00 00
-                        var mask = on
-                            ? new byte[] { 0x9E, 0x3E, 0x07, 0x80, 0x12, 0x00, 0x00, 0x00 }
-                            : new byte[] { 0x90, 0x12, 0x03, 0x80, 0x10, 0x00, 0x00, 0x00 };
-                        using var key = Registry.CurrentUser.CreateSubKey(@"Control Panel\Desktop");
-                        key?.SetValue("UserPreferencesMask", mask, RegistryValueKind.Binary);
-                        Log($"Windows animation effects (UserPreferencesMask) {(on ? "restored to default" : "set to best performance")}.");
                     }
                 },
             };

@@ -121,7 +121,7 @@ namespace AkariTool.Tabs.Privacy
                     Description="Controls whether apps can access system AI models on your device",
                     RecommendedState=false, DefaultState=true,
                     ReadState=()=>ReadConsentStore(@"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\systemAIModels"),
-                    Apply=on=>{ WriteConsentStore(@"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\systemAIModels",on); Registry.SetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy","LetAppsAccessSystemAIModels",on?0:2,RegistryValueKind.DWord); Log($"System AI Models Access {(on?"allowed":"denied")}."); }
+                    Apply=on=>{ WriteConsentStore(@"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\systemAIModels",on); Registry.SetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy","LetAppsAccessSystemAIModels",on?0:2,RegistryValueKind.DWord); Registry.SetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\systemAIModels","RecordUsageData",on?1:0,RegistryValueKind.DWord); Log($"System AI Models Access {(on?"allowed":"denied")}."); }
                 },
                 new TweakDefinition { Id="privacy-deny-copilot-microphone", Name="Copilot Microphone Access",
                     Description="Controls whether Copilot and Office Hub apps have microphone permission",

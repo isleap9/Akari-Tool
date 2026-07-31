@@ -11,29 +11,40 @@ public partial class App : Application
 {
     protected override async void OnStartup(StartupEventArgs e)
     {
-        var args = Environment.GetCommandLineArgs();
-        if (args.Contains("--defender-phase2", StringComparer.OrdinalIgnoreCase))
+        try
         {
-            RunDefenderPhase2Headless();   // does its work, then Shutdown — no UI
-            return;                        // never touch splash/MainWindow
+            var args = Environment.GetCommandLineArgs();
+            if (args.Contains("--defender-phase2", StringComparer.OrdinalIgnoreCase))
+            {
+                RunDefenderPhase2Headless();   // does its work, then Shutdown — no UI
+                return;                        // never touch splash/MainWindow
+            }
+
+            base.OnStartup(e);
+            // Apply the persisted theme (default Dark) BEFORE the splash is shown so it
+            // reads the correct tokens. ThemeService also re-asserts the Akari red accent
+            // (WPF-UI otherwise derives accent brushes from the Windows personalisation colour).
+            Services.ThemeService.Apply(Services.ThemeService.LoadPersisted());
+
+            // Reliable click-to-open for the custom implicit ComboBox template (App.xaml).
+            // The template's ToggleButton alone doesn't consistently open the popup, so open
+            // on header press and mark handled (suppresses the toggle that would close it).
+            // Item clicks live in the popup's own window, so they don't route through here;
+            // header clicks while already open fall through to close normally.
+            EventManager.RegisterClassHandler(typeof(ComboBox),
+                UIElement.PreviewMouseLeftButtonDownEvent,
+                new MouseButtonEventHandler(OnComboBoxPreviewMouseDown), handledEventsToo: true);
+
+            await ShowSplashAndLaunchAsync();
         }
-
-        base.OnStartup(e);
-        // Apply the persisted theme (default Dark) BEFORE the splash is shown so it
-        // reads the correct tokens. ThemeService also re-asserts the Akari red accent
-        // (WPF-UI otherwise derives accent brushes from the Windows personalisation colour).
-        Services.ThemeService.Apply(Services.ThemeService.LoadPersisted());
-
-        // Reliable click-to-open for the custom implicit ComboBox template (App.xaml).
-        // The template's ToggleButton alone doesn't consistently open the popup, so open
-        // on header press and mark handled (suppresses the toggle that would close it).
-        // Item clicks live in the popup's own window, so they don't route through here;
-        // header clicks while already open fall through to close normally.
-        EventManager.RegisterClassHandler(typeof(ComboBox),
-            UIElement.PreviewMouseLeftButtonDownEvent,
-            new MouseButtonEventHandler(OnComboBoxPreviewMouseDown), handledEventsToo: true);
-
-        await ShowSplashAndLaunchAsync();
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[App] OnStartup crashed: {ex}");
+            MessageBox.Show(
+                "Akari Tool encountered an error during startup. Please restart the application.",
+                "Startup Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            Shutdown();
+        }
     }
 
     // ── Headless Defender phase-2 (post-reboot) ──
@@ -198,7 +209,12 @@ public partial class App : Application
         {
             LogOrReport($"UI UNHANDLED EXCEPTION: {e.Exception}");
             CrashReport.Write(e.Exception, "DispatcherUnhandledException");
-            MessageBox.Show(e.Exception.ToString(), "Unhandled Exception", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(
+                "Something went wrong. The technical details have been saved to:\n" +
+                System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "AkariTool", $"AkariTool_crash_{DateTime.Now:yyyy-MM-dd}.log"),
+                "Unexpected Error", MessageBoxButton.OK, MessageBoxImage.Error);
             e.Handled = true;
         };
 
@@ -207,14 +223,24 @@ public partial class App : Application
             var msg = $"AppDomain UNHANDLED EXCEPTION: {e.ExceptionObject}";
             LogOrReport(msg);
             CrashReport.Write(e.ExceptionObject as Exception ?? new Exception(msg), "AppDomainUnhandledException");
-            MessageBox.Show(e.ExceptionObject.ToString(), "AppDomain Exception", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(
+                "Something went wrong. The technical details have been saved to:\n" +
+                System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "AkariTool", $"AkariTool_crash_{DateTime.Now:yyyy-MM-dd}.log"),
+                "Unexpected Error", MessageBoxButton.OK, MessageBoxImage.Error);
         };
 
         TaskScheduler.UnobservedTaskException += (_, e) =>
         {
             LogOrReport($"Task UNOBSERVED EXCEPTION: {e.Exception}");
             CrashReport.Write(e.Exception, "UnobservedTaskException");
-            MessageBox.Show(e.Exception.ToString(), "Task Exception", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(
+                "Something went wrong. The technical details have been saved to:\n" +
+                System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "AkariTool", $"AkariTool_crash_{DateTime.Now:yyyy-MM-dd}.log"),
+                "Unexpected Error", MessageBoxButton.OK, MessageBoxImage.Error);
             e.SetObserved();
         };
     }
@@ -222,7 +248,7 @@ public partial class App : Application
     private static void LogOrReport(string message)
     {
         System.Diagnostics.Debug.WriteLine(message);
-        try { Services.ToolService.Current?.Log(message); } catch { }
+        try { Services.ToolService.Current?.Log(message); } catch (Exception logEx) { System.Diagnostics.Debug.WriteLine($"[App] LogOrReport failed: {logEx.Message}"); }
     }
 
     /// <summary>Writes a timestamped crash report file to %APPDATA%\AkariTool\.</summary>
@@ -241,7 +267,7 @@ public partial class App : Application
                     $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [{source}] {ex?.ToString() ?? "null"}{Environment.NewLine}" +
                     $"---{Environment.NewLine}");
             }
-            catch { }
+            catch (Exception writeEx) { System.Diagnostics.Debug.WriteLine($"[App] CrashReport.Write failed: {writeEx.Message}"); }
         }
     }
 }

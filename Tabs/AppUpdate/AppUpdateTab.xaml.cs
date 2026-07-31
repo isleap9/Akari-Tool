@@ -189,65 +189,80 @@ namespace AkariTool.Tabs.AppUpdate
         // ── Check ───────────────────────────────────────────────────────────────
         private async void CheckForUpdates(object sender, RoutedEventArgs e)
         {
-            if (_busy) return;
-            _busy = true;
-            _checkBtn.IsEnabled = false;
-            _updateBtn.Visibility = Visibility.Collapsed;
-            _lastResult = null;
-
-            SetChipColor(Neutral);
-            _stateIcon.Data = SpinnerGeometry();
-            _headline.Text = "Checking for updates…";
-            SetSubline("contacting github.com");
-            StartSpin();
-
-            var result = await UpdateService.CheckAsync();
-            _lastResult = result;
-
-            StopSpin();
-            switch (result.Status)
+            try
             {
-                case UpdateStatus.UpdateAvailable:
-                    SetChipColor(Crimson);
-                    _stateIcon.Data = DownloadGeometry();
-                    _headline.Text = $"Update available — {result.LatestTag}";
-                    if (result.InstallerUrl != null)
-                    {
-                        SetSubline("one click to download and install");
-                        _updateBtn.Content = "Update Now";
-                    }
-                    else
-                    {
-                        SetSubline("no installer attached — opens the release page");
-                        _updateBtn.Content = "View Release";
-                    }
-                    _updateBtn.Visibility = Visibility.Visible;
-                    break;
+                if (_busy) return;
+                _busy = true;
+                _checkBtn.IsEnabled = false;
+                _updateBtn.Visibility = Visibility.Collapsed;
+                _lastResult = null;
 
-                case UpdateStatus.UpToDate:
-                    SetChipColor(Green);
-                    _stateIcon.Data = CheckGeometry();
-                    _headline.Text = "You're on the latest version";
-                    SetSubline($"latest release is {result.LatestTag} · checked just now");
-                    break;
+                SetChipColor(Neutral);
+                _stateIcon.Data = SpinnerGeometry();
+                _headline.Text = "Checking for updates…";
+                SetSubline("contacting github.com");
+                StartSpin();
 
-                case UpdateStatus.NoReleases:
-                    SetChipColor(Green);
-                    _stateIcon.Data = CheckGeometry();
-                    _headline.Text = "You're on the latest version";
-                    SetSubline("no releases published on GitHub yet");
-                    break;
+                var result = await UpdateService.CheckAsync();
+                _lastResult = result;
 
-                default: // Error
-                    SetChipColor(Amber);
-                    _stateIcon.Data = WarnGeometry();
-                    _headline.Text = "Couldn't check for updates";
-                    SetSubline(result.ErrorMessage ?? "network error — try again later");
-                    break;
+                StopSpin();
+                switch (result.Status)
+                {
+                    case UpdateStatus.UpdateAvailable:
+                        SetChipColor(Crimson);
+                        _stateIcon.Data = DownloadGeometry();
+                        _headline.Text = $"Update available — {result.LatestTag}";
+                        if (result.InstallerUrl != null)
+                        {
+                            SetSubline("one click to download and install");
+                            _updateBtn.Content = "Update Now";
+                        }
+                        else
+                        {
+                            SetSubline("no installer attached — opens the release page");
+                            _updateBtn.Content = "View Release";
+                        }
+                        _updateBtn.Visibility = Visibility.Visible;
+                        break;
+
+                    case UpdateStatus.UpToDate:
+                        SetChipColor(Green);
+                        _stateIcon.Data = CheckGeometry();
+                        _headline.Text = "You're on the latest version";
+                        SetSubline($"latest release is {result.LatestTag} · checked just now");
+                        break;
+
+                    case UpdateStatus.NoReleases:
+                        SetChipColor(Green);
+                        _stateIcon.Data = CheckGeometry();
+                        _headline.Text = "You're on the latest version";
+                        SetSubline("no releases published on GitHub yet");
+                        break;
+
+                    default: // Error
+                        SetChipColor(Amber);
+                        _stateIcon.Data = WarnGeometry();
+                        _headline.Text = "Couldn't check for updates";
+                        SetSubline(result.ErrorMessage ?? "network error — try again later");
+                        break;
+                }
+
+                _checkBtn.IsEnabled = true;
+                _busy = false;
             }
-
-            _checkBtn.IsEnabled = true;
-            _busy = false;
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[AppUpdate] CheckForUpdates crashed: {ex}");
+                _busy = false;
+                _checkBtn.IsEnabled = true;
+                _updateBtn.Visibility = Visibility.Collapsed;
+                StopSpin();
+                SetChipColor(Amber);
+                _stateIcon.Data = WarnGeometry();
+                _headline.Text = "Couldn't check for updates";
+                SetSubline("unexpected error — check the log for details");
+            }
         }
 
         // ── Seamless update: download → silent install → relaunch ───────────────

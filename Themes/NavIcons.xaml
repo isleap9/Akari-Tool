@@ -10,6 +10,7 @@
     <BitmapImage x:Key="NavIco_Privacy"       UriSource="pack://application:,,,/Resource/NavIcons/privacy.png"       CacheOption="OnLoad"/>
     <BitmapImage x:Key="NavIco_Update"        UriSource="pack://application:,,,/Resource/NavIcons/update.png"        CacheOption="OnLoad"/>
     <BitmapImage x:Key="NavIco_Notifications" UriSource="pack://application:,,,/Resource/NavIcons/notifications.png" CacheOption="OnLoad"/>
+    <BitmapImage x:Key="NavIco_Sound"         UriSource="pack://application:,,,/Resource/NavIcons/sound.png"         CacheOption="OnLoad"/>
     <BitmapImage x:Key="NavIco_Power"         UriSource="pack://application:,,,/Resource/NavIcons/power.png"         CacheOption="OnLoad"/>
     <BitmapImage x:Key="NavIco_Customize"     UriSource="pack://application:,,,/Resource/NavIcons/customize.png"     CacheOption="OnLoad"/>
     <BitmapImage x:Key="NavIco_Tools"         UriSource="pack://application:,,,/Resource/NavIcons/tools.png"         CacheOption="OnLoad"/>

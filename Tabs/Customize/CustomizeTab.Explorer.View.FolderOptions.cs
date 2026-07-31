@@ -189,6 +189,24 @@ namespace AkariTool.Tabs
 
             foreach (var def in folderToggles)
                 TweakHelpers.AddTweakRow(viewSection, def);
+
+            TweakHelpers.AddTweakRow(viewSection, new TweakDefinition
+            {
+                Id          = "customize-explorer-thumbnail-cache-cleanup",
+                Name        = "Automatic Thumbnail Cache Cleanup",
+                Group       = "View",
+                Description = "Let Disk Cleanup automatically clear the thumbnail cache",
+                IsPreference = true,
+                RecommendedState = true,
+                DefaultState     = true,
+                ReadState = () => { var v = Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Thumbnail Cache", "Autorun", null) as int?; return v != 0; },
+                Apply = on =>
+                {
+                    Registry.SetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Thumbnail Cache", "Autorun", on ? 3 : 0, RegistryValueKind.DWord);
+                    Registry.SetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Thumbnail Cache", "Autorun", on ? 3 : 0, RegistryValueKind.DWord);
+                    Log($"Thumbnail cache cleanup {(on ? "enabled" : "disabled")}.");
+                },
+            });
         }
     }
 }

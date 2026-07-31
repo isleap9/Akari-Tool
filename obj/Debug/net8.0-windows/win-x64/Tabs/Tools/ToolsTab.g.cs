@@ -60,7 +60,7 @@ namespace AkariTool.Tabs {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/AkariTool;V1.1.4.0;component/tabs/tools/toolstab.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/AkariTool;component/tabs/tools/toolstab.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\..\..\..\Tabs\Tools\ToolsTab.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

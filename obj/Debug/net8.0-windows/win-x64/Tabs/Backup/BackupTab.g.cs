@@ -60,7 +60,7 @@ namespace AkariTool.Tabs.Backup {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/AkariTool;V1.1.4.0;component/tabs/backup/backuptab.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/AkariTool;component/tabs/backup/backuptab.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\..\..\..\Tabs\Backup\BackupTab.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

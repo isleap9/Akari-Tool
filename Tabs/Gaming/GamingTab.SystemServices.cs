@@ -270,42 +270,6 @@ namespace AkariTool.Tabs.Gaming
                     "Windows MIDI Service",
                     "Routes MIDI data for connected musical instruments and audio interfaces. Safe to disable if you don't use MIDI hardware; set to Manual to allow it to start on demand",
                     "midisrv", recommendedStart: 3, defaultStart: 3),
-                new TweakDefinition
-                {
-                    Id               = "services-disable-wifi",
-                    Name             = "Disable Wi-Fi",
-                    Description      = "Disable the Wi-Fi stack (WLAN AutoConfig, virtual Wi-Fi filter, network list and location awareness). Use only on desktops wired via Ethernet — this will disconnect and hide all wireless networks",
-                    IsPreference     = true,
-                    RequiresRestart  = true,
-                    DefaultState     = false,
-                    Warning          = "This disables Wi-Fi entirely. If this machine connects wirelessly you will lose network access until you re-enable it. Continue?",
-                    WarningState     = true,          // warn only when switching ON (disabling Wi-Fi)
-                    ReadState        = () =>
-                    {
-                        var v = ReadDword(RegistryHive.LocalMachine,
-                            @"SYSTEM\CurrentControlSet\Services\WlanSvc", "Start");
-                        return v.HasValue && v.Value == 4;
-                    },
-                    Apply = on =>
-                    {
-                        const string b = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\";
-                        if (on)
-                        {
-                            Registry.SetValue(b + "WlanSvc",  "Start", 4, RegistryValueKind.DWord);
-                            Registry.SetValue(b + "vwififlt", "Start", 4, RegistryValueKind.DWord);
-                            Registry.SetValue(b + "netprofm", "Start", 4, RegistryValueKind.DWord);
-                            Registry.SetValue(b + "NlaSvc",   "Start", 4, RegistryValueKind.DWord);
-                        }
-                        else
-                        {
-                            Registry.SetValue(b + "WlanSvc",  "Start", 2, RegistryValueKind.DWord);
-                            Registry.SetValue(b + "vwififlt", "Start", 1, RegistryValueKind.DWord);
-                            Registry.SetValue(b + "netprofm", "Start", 3, RegistryValueKind.DWord);
-                            Registry.SetValue(b + "NlaSvc",   "Start", 2, RegistryValueKind.DWord);
-                        }
-                        Log($"Wi-Fi {(on ? "disabled" : "enabled")}. Restart to apply.");
-                    }
-                },
             };
 
             AddSection(panel, "System Services", defs);

@@ -216,6 +216,115 @@ namespace AkariTool.Tabs
             // Parity vol.2 rows live in their own partial to keep this file
             // within the size conventions.
             BuildTaskbarBehaviorExtras(behaviorSection);
+
+            // ── Winhance-parity Behavior / System Tray rows ──────────────────
+            TweakHelpers.AddTweakRow(behaviorSection, new TweakDefinition
+            {
+                Id          = "customize-taskbar-flashing",
+                Name        = "Show Flashing on Taskbar Apps",
+                Group       = "Behavior",
+                Description = "Flash taskbar buttons when an app needs attention",
+                RecommendedState = true,
+                DefaultState     = true,
+                ReadState   = () => ReadDwordCu(@"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced", "TaskbarFlashing") is int v ? v != 0 : true,
+                Apply       = on =>
+                {
+                    Registry.SetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced",
+                        "TaskbarFlashing", on ? 1 : 0, RegistryValueKind.DWord);
+                    Log($"Taskbar flashing {(on ? "on" : "off")}.");
+                },
+            });
+
+            TweakHelpers.AddTweakRow(behaviorSection, new TweakDefinition
+            {
+                Id          = "customize-taskbar-small-icons",
+                Name        = "Use Small Taskbar Buttons",
+                Group       = "Behavior",
+                Description = "Use smaller taskbar buttons (Windows 10 only; ignored on Windows 11)",
+                RecommendedState = true,
+                DefaultState     = false,
+                ReadState   = () => ReadDwordCu(@"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced", "TaskbarSmallIcons") is int v ? v != 0 : false,
+                Apply       = on =>
+                {
+                    Registry.SetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced",
+                        "TaskbarSmallIcons", on ? 1 : 0, RegistryValueKind.DWord);
+                    Log($"Small taskbar buttons {(on ? "on" : "off")}.");
+                },
+            });
+
+            TweakHelpers.AddTweakRow(behaviorSection, new TweakDefinition
+            {
+                Id          = "customize-taskbar-meet-now",
+                Name        = "Remove Meet Now Button",
+                Group       = "System Tray",
+                Description = "Hide the Meet Now button from the system tray",
+                RecommendedState = true,
+                DefaultState     = false,
+                ReadState   = () => ReadDwordCu(@"Software\Policies\Microsoft\Windows\Explorer", "HideSCAMeetNow") is int v ? v == 1 : false,
+                Apply       = on =>
+                {
+                    Registry.SetValue(@"HKEY_CURRENT_USER\Software\Policies\Microsoft\Windows\Explorer",
+                        "HideSCAMeetNow", on ? 1 : 0, RegistryValueKind.DWord);
+                    Log($"Meet Now {(on ? "removed" : "shown")}.");
+                },
+            });
+
+            TweakHelpers.AddTweakRow(behaviorSection, new TweakDefinition
+            {
+                Id          = "customize-taskbar-button-size",
+                Name        = "Combine Taskbar Buttons / Small Buttons",
+                Group       = "Behavior",
+                Description = "When to use smaller taskbar buttons",
+                IsPreference = true,
+                InputKind   = TweakInputKind.Dropdown,
+                Options = new[]
+                {
+                    new TweakDropdownOption("Always",               0),
+                    new TweakDropdownOption("When taskbar is full", 2, IsDefault: true),
+                    new TweakDropdownOption("Never",                1),
+                },
+                ReadCurrentIndex = () =>
+                {
+                    var v = ReadDwordCu(@"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced", "IconSizePreference");
+                    return v switch { 0 => 0, 2 => 1, 1 => 2, _ => 1 };
+                },
+                ApplyIndex = idx =>
+                {
+                    if (idx < 0 || idx > 2) return;
+                    int[] vals = { 0, 2, 1 };
+                    Registry.SetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced",
+                        "IconSizePreference", vals[idx], RegistryValueKind.DWord);
+                    Log($"Taskbar button size set to option {idx}.");
+                },
+            });
+
+            TweakHelpers.AddTweakRow(behaviorSection, new TweakDefinition
+            {
+                Id          = "customize-taskbar-transparency",
+                Name        = "Taskbar Transparency",
+                Group       = "Behavior",
+                Description = "Force the taskbar fully transparent or fully opaque",
+                IsPreference = true,
+                InputKind   = TweakInputKind.Dropdown,
+                Options = new[]
+                {
+                    new TweakDropdownOption("Windows default", -1, IsDefault: true),
+                    new TweakDropdownOption("Transparent",      0),
+                    new TweakDropdownOption("Opaque",           255),
+                },
+                ReadCurrentIndex = () =>
+                {
+                    var v = ReadDwordCu(@"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced", "TaskbarAcrylicOpacity");
+                    return v switch { 0 => 1, 255 => 2, _ => 0 };
+                },
+                ApplyIndex = idx =>
+                {
+                    const string sub = @"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced";
+                    if (idx == 0) { using var k = Registry.CurrentUser.OpenSubKey(sub, true); k?.DeleteValue("TaskbarAcrylicOpacity", false); }
+                    else Registry.SetValue(@"HKEY_CURRENT_USER\" + sub, "TaskbarAcrylicOpacity", idx == 1 ? 0 : 255, RegistryValueKind.DWord);
+                    Log($"Taskbar transparency set to option {idx}.");
+                },
+            });
         }
     }
 }
