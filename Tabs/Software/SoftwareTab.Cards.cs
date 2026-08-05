@@ -1,4 +1,4 @@
-// SoftwareTab — 1:1 functional port of Winhance's Software section, card-grid UI.
+﻿// SoftwareTab — 1:1 functional port of Winhance's Software section, card-grid UI.
 //
 //   • Windows Apps  (panel "Bloatware"): 56 removable apps + 10 legacy
 //     capabilities + 7 optional features as selectable cards with live
@@ -14,10 +14,11 @@
 // Cards mirror Winhance's card view: checkbox + avatar + name/description
 // + badge row, click anywhere to select, responsive column count.
 
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
-using System.Windows.Media;
+using Microsoft.UI.Text;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Media;
 using AkariTool.Services;
 
 namespace AkariTool.Tabs
@@ -68,9 +69,11 @@ namespace AkariTool.Tabs
         private AppCard BuildAppCard(AppDefinition app, bool isWindowsApps)
         {
             // ── Checkbox (top-left, like Winhance) ────────────────────────────
+            // MIGRATION: the crimson "AppCheckBox" ControlTemplate style was not
+            // ported (trigger-based); native WinUI CheckBox chrome is used, and its
+            // checked fill already comes from the crimson accent overrides in App.xaml.
             var check = new CheckBox
             {
-                Style = (Style)Application.Current.Resources["AppCheckBox"],
                 VerticalAlignment = VerticalAlignment.Top,
                 Margin = new Thickness(0, 2, 12, 0),
                 IsChecked = app.IsSelected
@@ -122,17 +125,16 @@ namespace AkariTool.Tabs
                     Foreground = TweakHelpers.TextMuted,
                     Margin = new Thickness(7, 1, 0, 0),
                     VerticalAlignment = VerticalAlignment.Center,
-                    Cursor = System.Windows.Input.Cursors.Hand,
-                    ToolTip = app.WebsiteUrl
                 };
+                ToolTipService.SetToolTip(link, app.WebsiteUrl);
                 var url = app.WebsiteUrl;
-                link.MouseLeftButtonUp += async (s, e) =>
+                link.Tapped += async (s, e) =>
                 {
                     e.Handled = true; // don't toggle the card
                     await Service!.RunAction(new UrlAction(url));
                 };
-                link.MouseEnter += (_, _) => link.Foreground = TweakHelpers.Accent;
-                link.MouseLeave += (_, _) => link.Foreground = TweakHelpers.TextMuted;
+                link.PointerEntered += (_, _) => link.Foreground = TweakHelpers.Accent;
+                link.PointerExited += (_, _) => link.Foreground = TweakHelpers.TextMuted;
                 nameRow.Children.Add(link);
             }
 
@@ -158,14 +160,14 @@ namespace AkariTool.Tabs
             if (app.HasInstabilityWarning)
             {
                 var warn = MakePill("\uE7BA  Warning", "AkariWarnBgColor", "AkariWarnBorderColor", "AkariWarnFgColor");
-                warn.ToolTip = "Removing this can affect Windows components that depend on it.";
+                ToolTipService.SetToolTip(warn, "Removing this can affect Windows components that depend on it.");
                 badges.Children.Add(warn);
             }
 
             if (isWindowsApps && !app.CanBeReinstalled)
             {
                 var perm = MakePill("\uE7C1  Permanent", "AkariDangerBgColor", "AkariDangerBorderColor", "AkariDangerFgColor");
-                perm.ToolTip = "Once removed, this item can't be reinstalled.";
+                ToolTipService.SetToolTip(perm, "Once removed, this item can't be reinstalled.");
                 badges.Children.Add(perm);
             }
 
@@ -195,8 +197,6 @@ namespace AkariTool.Tabs
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(10),
                 Padding = new Thickness(14, 12, 14, 12),
-                Cursor = System.Windows.Input.Cursors.Hand,
-                Effect = TweakHelpers.CardShadow(),
                 Child = content
             };
 
@@ -206,9 +206,9 @@ namespace AkariTool.Tabs
                 check.IsChecked = app.IsSelected;
             }
 
-            card.MouseEnter += (_, _) => { if (!app.IsSelected) card.BorderBrush = TweakHelpers.HairlineHover; };
-            card.MouseLeave += (_, _) => SyncVisual();
-            card.MouseLeftButtonUp += (_, _) =>
+            card.PointerEntered += (_, _) => { if (!app.IsSelected) card.BorderBrush = TweakHelpers.HairlineHover; };
+            card.PointerExited += (_, _) => SyncVisual();
+            card.Tapped += (_, _) =>
             {
                 app.IsSelected = !app.IsSelected;
                 SyncVisual();
@@ -236,9 +236,9 @@ namespace AkariTool.Tabs
                 var bmp = await AppIconService.GetIconAsync(app);
                 if (bmp is null) return; // keep the letter fallback
 
-                avatar.Dispatcher.Invoke(() =>
+                avatar.DispatcherQueue.TryEnqueue(() =>
                 {
-                    avatar.Background      = Brushes.Transparent;
+                    avatar.Background      = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
                     avatar.BorderThickness = new Thickness(0);
                     avatar.Child = new Image
                     {

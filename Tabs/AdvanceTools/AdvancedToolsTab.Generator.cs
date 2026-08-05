@@ -1,8 +1,8 @@
-using System.IO;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
-using System.Windows.Media;
+﻿using System.IO;
+using Microsoft.UI.Text;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.Win32;
 using AkariTool.Services;
 
@@ -82,20 +82,15 @@ namespace AkariTool.Tabs.AdvancedTools
             var generateBtn = MakePrimaryButton("Generate autounattend.xml");
             generateBtn.Click += async (_, _) =>
             {
-                var dlg = new SaveFileDialog
-                {
-                    Filter = "XML files (*.xml)|*.xml",
-                    FileName = "autounattend.xml",
-                    Title = "Save Autounattend XML File",
-                };
-                if (dlg.ShowDialog() != true) return;
+                var pickedXml = await FilePickers.SaveFileAsync("XML files", ".xml", "autounattend.xml");
+                if (pickedXml is null) return;
 
                 await RunBusyAsync("Autounattend XML generation", async _ =>
                 {
                     var apps = GetSelectedApps();
                     var tweaks = GetSelectedTweaks();
-                    await Task.Run(() => _xmlGen.GenerateToFile(dlg.FileName, apps, tweaks));
-                    Service!.Log($"[XML] Done — {apps.Count} app(s), {tweaks.Count} tweak(s) → {dlg.FileName}");
+                    await Task.Run(() => _xmlGen.GenerateToFile(pickedXml, apps, tweaks));
+                    Service!.Log($"[XML] Done — {apps.Count} app(s), {tweaks.Count} tweak(s) → {pickedXml}");
                 });
             };
 
@@ -120,7 +115,6 @@ namespace AkariTool.Tabs.AdvancedTools
                 CornerRadius = TweakHelpers.CardRadius,
                 Padding = new Thickness(18, 14, 18, 14),
                 Margin = new Thickness(0, 0, 0, 12),
-                Effect = TweakHelpers.CardShadow(),
                 Child = new StackPanel(),
             };
         }

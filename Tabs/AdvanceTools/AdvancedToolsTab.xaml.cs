@@ -1,8 +1,7 @@
-using System.IO;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
-using System.Windows.Media;
+﻿using System.IO;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.Win32;
 using AkariTool.Services;
 
@@ -144,7 +143,7 @@ namespace AkariTool.Tabs.AdvancedTools
         private void SetStatus(int step, string text, bool done = false)
         {
             var ui = _steps[step - 1];
-            Dispatcher.Invoke(() =>
+            DispatcherQueue.TryEnqueue(() =>
             {
                 ui.Status.Text = text;
                 if (done)
@@ -164,7 +163,10 @@ namespace AkariTool.Tabs.AdvancedTools
             for (int i = 1; i < 4; i++)
             {
                 var available = _extractionDone;
-                _steps[i].Card.IsEnabled = available && !_busy;
+                // WinUI: Border has no IsEnabled (that lives on Control), so
+                // interactivity is gated with IsHitTestVisible; Opacity still
+                // supplies the disabled look exactly as before.
+                _steps[i].Card.IsHitTestVisible = available && !_busy;
                 _steps[i].Card.Opacity = available ? 1.0 : 0.45;
                 if (available && _steps[i].Status.Text == "Complete Step 1 first")
                     _steps[i].Status.Text = i switch
@@ -174,7 +176,7 @@ namespace AkariTool.Tabs.AdvancedTools
                         _ => "Ready to create ISO",
                     };
             }
-            _steps[0].Card.IsEnabled = !_busy;
+            _steps[0].Card.IsHitTestVisible = !_busy;
         }
 
         /// <summary>Wraps a long operation: busy state, cancel button, shared progress bar.</summary>

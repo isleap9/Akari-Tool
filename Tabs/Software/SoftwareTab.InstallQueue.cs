@@ -14,10 +14,10 @@
 // Cards mirror Winhance's card view: checkbox + avatar + name/description
 // + badge row, click anywhere to select, responsive column count.
 
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
-using System.Windows.Media;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Media;
 using AkariTool.Services;
 
 namespace AkariTool.Tabs
@@ -36,7 +36,10 @@ namespace AkariTool.Tabs
             var notReinstallable = selected.Where(a => !a.CanBeReinstalled).ToList();
             if (notReinstallable.Count > 0)
             {
-                AkariDialogs.Info(
+                // MIGRATION: async ContentDialog (see AkariDialogs). Same copy; the
+                // await preserves the original ordering — the notice is dismissed
+                // before the filtered install proceeds.
+                await AkariDialogs.InfoAsync(
                     "These items are permanent — once removed they can't be reinstalled — and will be skipped:\n\n" +
                     string.Join(", ", notReinstallable.Select(a => a.Name)),
                     "Permanent Items");

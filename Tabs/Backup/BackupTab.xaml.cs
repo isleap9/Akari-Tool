@@ -1,7 +1,8 @@
-using System.IO;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
+﻿using System.IO;
+using Microsoft.UI.Text;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.Win32;
 using AkariTool.Services;
 
@@ -57,10 +58,13 @@ namespace AkariTool.Tabs.Backup
             };
             body.Children.Add(_summary);
             RefreshSummary();
-            IsVisibleChanged += (_, e) => { if ((bool)e.NewValue) RefreshSummary(); };
+            // MIGRATION: WPF's IsVisibleChanged has no WinUI equivalent. The shell
+            // toggles tab Visibility, which raises no event here, so the summary is
+            // refreshed when the tab is (re)loaded instead.
+            Loaded += (_, _) => RefreshSummary();
 
             var btn = MakeActionButton("Export to File\u2026", primary: true);
-            btn.Click += (_, _) => ExportSettings();
+            btn.Click += async (_, _) => await ExportSettingsAsync();
             body.Children.Add(btn);
 
             _exportStatus = MakeStatusBlock();
@@ -70,22 +74,21 @@ namespace AkariTool.Tabs.Backup
         private void RefreshSummary() =>
             _summary.Text = $"{TweakRegistry.Count} tweaks are currently tracked and will be included in the export.";
 
-        private void ExportSettings()
+        private async Task ExportSettingsAsync()
         {
-            var dlg = new SaveFileDialog
-            {
-                Title = "Export Akari Tool settings",
-                Filter = "Akari Tool settings (*.json)|*.json",
-                FileName = $"AkariTool-Settings-{DateTime.Now:yyyy-MM-dd}.json",
-            };
-            if (dlg.ShowDialog() != true) return;
+            // MIGRATION: SaveFileDialog -> async WinUI FileSavePicker (FilePickers).
+            // The serialization itself (TweakRegistry.ExportToFile) is untouched, so
+            // the produced file is byte-for-byte the same format as the WPF build.
+            var picked = await FilePickers.SaveFileAsync(
+                "Akari Tool settings", ".json", $"AkariTool-Settings-{DateTime.Now:yyyy-MM-dd}.json");
+            if (picked is null) return;
 
             try
             {
-                var result = TweakRegistry.ExportToFile(dlg.FileName);
-                Service!.Log($"[Backup] Exported {result.Exported} tweak(s) \u2192 {dlg.FileName}" +
+                var result = TweakRegistry.ExportToFile(picked);
+                Service!.Log($"[Backup] Exported {result.Exported} tweak(s) \u2192 {picked}" +
                              (result.Skipped > 0 ? $" ({result.Skipped} skipped \u2014 state unreadable)" : ""));
-                ShowStatus(_exportStatus, $"Exported {result.Exported} tweak(s) to {Path.GetFileName(dlg.FileName)}.", ok: true);
+                ShowStatus(_exportStatus, $"Exported {result.Exported} tweak(s) to {Path.GetFileName(picked)}.", ok: true);
             }
             catch (Exception ex)
             {
@@ -105,27 +108,24 @@ namespace AkariTool.Tabs.Backup
                 "Applies every tweak from an Akari Tool settings file to this system. Tweaks already matching the file are skipped, and all toggles and dropdowns across the app update live. Some changes may require a restart to take effect.");
 
             var btn = MakeActionButton("Import from File\u2026", primary: false);
-            btn.Click += (_, _) => ImportSettings();
+            btn.Click += async (_, _) => await ImportSettingsAsync();
             body.Children.Add(btn);
 
             _importStatus = MakeStatusBlock();
             body.Children.Add(_importStatus);
         }
 
-        private void ImportSettings()
+        private async Task ImportSettingsAsync()
         {
-            var dlg = new OpenFileDialog
-            {
-                Title = "Import Akari Tool settings",
-                Filter = "Akari Tool settings (*.json)|*.json|All files (*.*)|*.*",
-            };
-            if (dlg.ShowDialog() != true) return;
+            // MIGRATION: OpenFileDialog -> async WinUI FileOpenPicker (FilePickers).
+            var picked = await FilePickers.OpenFileAsync(".json");
+            if (picked is null) return;
 
             try
             {
                 // Review Mode: preview the file, show only the differing entries,
                 // let the user uncheck what they want to keep.
-                var preview = TweakRegistry.PreviewImport(dlg.FileName);
+                var preview = TweakRegistry.PreviewImport(picked);
                 var differing = preview.Entries.Where(e => e.Differs).ToList();
 
                 if (differing.Count == 0)
@@ -137,17 +137,17 @@ namespace AkariTool.Tabs.Backup
                     return;
                 }
 
-                var review = new ImportReviewDialog(differing, preview.Unknown)
-                {
-                    Owner = Window.GetWindow(this),
-                };
-                if (review.ShowDialog() != true || review.SelectedIds.Count == 0)
+                // MIGRATION: the review UI was a WPF-UI FluentWindow shown with
+                // ShowDialog()/DialogResult. WinUI has no modal secondary window, so
+                // it is now a ContentDialog (see ImportReviewDialog.ShowAsync).
+                var review = new ImportReviewDialog(differing, preview.Unknown);
+                if (!await review.ShowAsync() || review.SelectedIds.Count == 0)
                 {
                     ShowStatus(_importStatus, "Import cancelled — nothing was changed.", ok: true);
                     return;
                 }
 
-                var r = TweakRegistry.ImportFromFile(dlg.FileName, review.SelectedIds);
+                var r = TweakRegistry.ImportFromFile(picked, review.SelectedIds);
                 Service!.Log($"[Backup] Import complete \u2014 {r.Applied} applied, {r.AlreadySet} already set, " +
                              $"{r.Unknown} unknown, {r.Failed} failed (of {r.Total}).");
 
@@ -178,7 +178,7 @@ namespace AkariTool.Tabs.Backup
                 CornerRadius = TweakHelpers.CardRadius,
                 Padding = new Thickness(20, 16, 20, 16),
                 Margin = new Thickness(0, 0, 0, 14),
-                Effect = TweakHelpers.CardShadow(),
+                // Effect = CardShadow() dropped — no WinUI Effect (cosmetic pass).
             };
 
             var outer = new StackPanel();
@@ -226,10 +226,15 @@ namespace AkariTool.Tabs.Backup
                 Content = label,
                 FontSize = 13,
                 Padding = new Thickness(14, 6, 14, 6),
-                Cursor = System.Windows.Input.Cursors.Hand,
                 HorizontalAlignment = HorizontalAlignment.Left,
-                Style = (Style)Application.Current.Resources[primary ? "RunBtn" : "GridBtn"],
             };
+            // MIGRATION: the WPF ternary style lookup
+            //   Resources[primary ? "RunBtn" : "GridBtn"]
+            // referenced trigger-based styles that were never ported — it compiled
+            // fine and would have thrown at runtime. Primary now uses the native
+            // accent button; secondary keeps default chrome + Akari tokens below.
+            if (primary)
+                b.Style = (Style)Application.Current.Resources["AccentButtonStyle"];
             if (!primary)
             {
                 b.Foreground = TweakHelpers.TextPrimary;

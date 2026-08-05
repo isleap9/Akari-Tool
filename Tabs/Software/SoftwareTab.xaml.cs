@@ -14,10 +14,10 @@
 // Cards mirror Winhance's card view: checkbox + avatar + name/description
 // + badge row, click anywhere to select, responsive column count.
 
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
-using System.Windows.Media;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Media;
 using AkariTool.Services;
 
 namespace AkariTool.Tabs

@@ -1,11 +1,12 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
+using Microsoft.UI.Text;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.Win32;
 using AkariTool.Services;
 
@@ -171,7 +172,7 @@ namespace AkariTool.Tabs.AkariOS
 
             void Paint(Border seg, TextBlock txt, bool active)
             {
-                seg.Background  = active ? TweakHelpers.Accent : Brushes.Transparent;
+                seg.Background  = active ? TweakHelpers.Accent : new SolidColorBrush(Microsoft.UI.Colors.Transparent);
                 txt.Foreground  = active ? TweakHelpers.AccentText : TweakHelpers.TextSecondary;
                 txt.FontWeight  = active ? FontWeights.SemiBold : FontWeights.Normal;
                 seg.Tag         = active;   // remembered so hover doesn't fight the active fill
@@ -186,15 +187,15 @@ namespace AkariTool.Tabs.AkariOS
 
             void Wire(Border seg, TextBlock txt, bool alwaysOn)
             {
-                seg.MouseEnter += (_, _) =>
+                seg.PointerEntered += (_, _) =>
                 {
                     if (seg.Tag is bool active && !active) seg.Background = TweakHelpers.CardBgHover;
                 };
-                seg.MouseLeave += (_, _) =>
+                seg.PointerExited += (_, _) =>
                 {
-                    if (seg.Tag is bool active && !active) seg.Background = Brushes.Transparent;
+                    if (seg.Tag is bool active && !active) seg.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
                 };
-                seg.MouseLeftButtonUp += (_, _) =>
+                seg.Tapped += (_, _) =>
                 {
                     if (ApplyAmdShaderCache(alwaysOn)) Refresh();
                 };
@@ -221,8 +222,7 @@ namespace AkariTool.Tabs.AkariOS
                 CornerRadius = radius,
                 BorderThickness = border,
                 BorderBrush = TweakHelpers.CardElevationBorder,
-                Background = Brushes.Transparent,
-                Cursor = System.Windows.Input.Cursors.Hand
+                Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
             };
             return (seg, text);
         }
@@ -277,8 +277,7 @@ namespace AkariTool.Tabs.AkariOS
                     Content = label,
                     Margin = new Thickness(4),
                     Padding = new Thickness(0, 10, 0, 10),
-                    FontSize = 13,
-                    Style = (Style)FindResource("GridBtn")
+                    FontSize = 13
                 };
                 btn.Click += (_, _) =>
                 {

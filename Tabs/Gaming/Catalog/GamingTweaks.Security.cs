@@ -1,6 +1,3 @@
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
 using Microsoft.Win32;
 using AkariTool.Services;
 
@@ -80,6 +77,11 @@ namespace AkariTool.Tabs.Gaming
                     ReadState        = () => TweakHelpers.HasState("DisableDefender"),
                     Apply = on =>
                     {
+                        // RE-ARMED (isleap approved, 2026-08-01) together with the
+                        // App.xaml.cs --defender-phase2 handoff. Body restored VERBATIM from
+                        // the WPF build — SAME DefenderService.SetAsync entry point, which
+                        // schedules the byte-identical DefenderPhase2Scheduler.ScheduleRunOnce
+                        // post-reboot trigger.
                         // on = true  → user wants Defender DISABLED → SetAsync(disable: true)
                         // on = false → user wants Defender ENABLED  → SetAsync(disable: false)
                         // SetAsync is async; fire-and-forget exactly like the AkariOS card does.

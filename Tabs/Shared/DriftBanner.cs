@@ -1,6 +1,8 @@
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
+﻿using Microsoft.UI.Text;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Documents;
+using Microsoft.UI.Xaml.Media;
 
 namespace AkariTool.Tabs
 {
@@ -60,11 +62,14 @@ namespace AkariTool.Tabs
                 Foreground = TweakHelpers.TextPrimary,
                 FontSize = 12.5,
             };
-            text.Inlines.Add(new System.Windows.Documents.Run(
-                n == 1 ? "1 tweak no longer matches what Akari set"
-                       : $"{n} tweaks no longer match what Akari set"));
-            text.Inlines.Add(new System.Windows.Documents.Run("   " + BuildDetail(result))
+            text.Inlines.Add(new Run
             {
+                Text = n == 1 ? "1 tweak no longer matches what Akari set"
+                              : $"{n} tweaks no longer match what Akari set"
+            });
+            text.Inlines.Add(new Run
+            {
+                Text = "   " + BuildDetail(result),
                 Foreground = TweakHelpers.TextMuted,
                 FontSize = 11.5,
             });
@@ -78,7 +83,6 @@ namespace AkariTool.Tabs
                 Padding = new Thickness(14, 4, 14, 5),
                 Margin = new Thickness(12, 0, 4, 0),
                 VerticalAlignment = VerticalAlignment.Center,
-                Cursor = System.Windows.Input.Cursors.Hand,
             };
             review.Click += (_, _) => onReview();
             Grid.SetColumn(review, 2);
@@ -91,13 +95,12 @@ namespace AkariTool.Tabs
                 Width = 26,
                 Height = 24,
                 Padding = new Thickness(0),
-                Background = Brushes.Transparent,
+                Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
                 BorderThickness = new Thickness(0),
                 Foreground = TweakHelpers.TextMuted,
                 VerticalAlignment = VerticalAlignment.Center,
-                Cursor = System.Windows.Input.Cursors.Hand,
-                ToolTip = "Dismiss until next launch",
             };
+            ToolTipService.SetToolTip(dismiss, "Dismiss until next launch");
             dismiss.Click += (_, _) => onDismiss();
             Grid.SetColumn(dismiss, 3);
             grid.Children.Add(dismiss);

@@ -1,13 +1,19 @@
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
+using Microsoft.UI.Text;                 // FontWeights
+using Microsoft.UI.Xaml;                 // Thickness, GridLength, Visibility, FrameworkElement, UIElement
+using Microsoft.UI.Xaml.Controls;        // UserControl, StackPanel, Grid, Button, TextBlock, AutoSuggestBox
+using Microsoft.UI.Xaml.Documents;       // Run
+using Microsoft.UI.Xaml.Media;           // Brush, FontFamily
 using AkariTool.Services;
 
 namespace AkariTool.Tabs
 {
     /// <summary>
-    /// Base class for all tab UserControls.
+    /// Base class for all tab UserControls (WinUI 3).
     /// Provides AddItem / AddSectionTitle helpers and holds the shared ToolService.
+    ///
+    /// Public method signatures are preserved from the WPF version so the ~13 tabs
+    /// port without per-call rewrites; only the internals are reimplemented against
+    /// WinUI controls.
     ///
     /// Each tab:
     ///   1. Inherits this class instead of UserControl directly.
@@ -20,24 +26,15 @@ namespace AkariTool.Tabs
         protected ToolService? Service;
         protected readonly List<string> AppliedTweaks = [];
 
-        /// <summary>
-        /// Called by MainWindow once after construction to inject the shared service.
-        /// Override in each tab to call Build() after base.Initialize().
-        /// </summary>
         public virtual void Initialize(ToolService service)
         {
             Service = service;
         }
 
-        /// <summary>
-        /// Nav tag this tab is registered under in MainWindow (e.g. "Gaming"). Override per tab.
-        /// Empty means the tab's rows are not attributed to any tab in global search.
-        /// Public because Build() runs inside each tab's own Initialize override, so the
-        /// registry bracketing happens in MainWindow around the Initialize call.
-        /// </summary>
+        /// <summary>Nav tag this tab is registered under in MainWindow (e.g. "Gaming").</summary>
         public virtual string NavTag => "";
 
-        /// <summary>Human label shown in global search results (e.g. "Gaming &amp; Performance").</summary>
+        /// <summary>Human label shown in global search results.</summary>
         public virtual string NavLabel => "";
 
         // ── Row factory ────────────────────────────────────────────────────────
@@ -59,7 +56,6 @@ namespace AkariTool.Tabs
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
-            // Left: title + description
             var info = new StackPanel { Orientation = Orientation.Vertical };
             Grid.SetColumn(info, 0);
 
@@ -78,19 +74,20 @@ namespace AkariTool.Tabs
                 TextWrapping = TextWrapping.Wrap
             });
 
-            // Right: Run [Undo]
             var buttons = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
+                Spacing = 8,
                 Margin = new Thickness(8, 0, 8, 0),
                 VerticalAlignment = VerticalAlignment.Center
             };
             Grid.SetColumn(buttons, 1);
 
+            // Run = native accent button (crimson comes from the AccentFillColor override).
             var runButton = new Button
             {
                 Content = "Run",
-                Style = (Style)FindResource("RunBtn")
+                Style = (Style)Application.Current.Resources["AccentButtonStyle"]
             };
             runButton.Click += async (_, _) =>
                 await Service!.RunWithTracking(action, title, AppliedTweaks);
@@ -98,11 +95,7 @@ namespace AkariTool.Tabs
 
             if (undoAction is not null)
             {
-                var undoButton = new Button
-                {
-                    Content = "Undo",
-                    Style = (Style)FindResource("UndoBtn")
-                };
+                var undoButton = new Button { Content = "Undo" };   // native default style
                 undoButton.Click += async (_, _) => await Service!.RunAction(undoAction);
                 buttons.Children.Add(undoButton);
             }
@@ -114,11 +107,6 @@ namespace AkariTool.Tabs
 
         // ── Page header (title + optional subtitle) ────────────────────────────
 
-        /// <summary>
-        /// Standard tab page header: display font 27px SemiBold + muted subtitle.
-        /// Call this as the first child of RootPanel.Children in every tab's Build().
-        /// </summary>
-        // Page eyebrow / crumb path (section ▸ page). Rendered above each title.
         private static readonly Dictionary<string, string[]> _crumbs = new()
         {
             ["Windows Apps"] = new[] { "SOFTWARE", "WINDOWS APPS" },
@@ -150,11 +138,8 @@ namespace AkariTool.Tabs
         }
 
         /// <summary>
-        /// Two-column page header for tabs with registered tweaks: the usual
-        /// crumb/title/subtitle on the left, a [Quick actions] [search] cluster
-        /// bottom-aligned to the title on the right. The search box filters the
-        /// tweak sections under <paramref name="root"/> (replaces AttachSearch),
-        /// and Quick Actions scopes its bulk operations to the same panel.
+        /// Two-column page header for tabs with registered tweaks: crumb/title/subtitle
+        /// on the left, a [Quick actions] [search] cluster bottom-aligned on the right.
         /// </summary>
         protected FrameworkElement PageHeader(string title, string subtitle, bool withActions,
             StackPanel root)
@@ -167,8 +152,6 @@ namespace AkariTool.Tabs
             grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
-            // Row 0 left: eyebrow + title. Row 1 (col-span): subtitle — keeps the
-            // right cluster bottom-aligned to the title baseline area.
             var titleStack = new StackPanel();
             BuildHeaderStack(titleStack, title, subtitle: "");
             Grid.SetColumn(titleStack, 0);
@@ -191,10 +174,10 @@ namespace AkariTool.Tabs
                 grid.Children.Add(sub);
             }
 
-            // Right cluster: [Quick actions] [search], 10px gap.
             var cluster = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
+                Spacing = 10,
                 VerticalAlignment = VerticalAlignment.Bottom,
                 Margin = new Thickness(16, 0, 0, 0)
             };
@@ -202,7 +185,6 @@ namespace AkariTool.Tabs
             Grid.SetRow(cluster, 0);
 
             var quickActions = TweakHelpers.BuildQuickActionsButton(title, root, () => Service);
-            quickActions.Margin = new Thickness(0, 0, 10, 0);
             cluster.Children.Add(quickActions);
             cluster.Children.Add(BuildHeaderSearchBox(root));
 
@@ -213,8 +195,6 @@ namespace AkariTool.Tabs
         /// <summary>Shared eyebrow-crumb + title (+ optional subtitle) builder.</summary>
         private static void BuildHeaderStack(StackPanel stack, string title, string subtitle)
         {
-
-            // Eyebrow crumb — mono, uppercase, grey with a red ▸ separator
             if (_crumbs.TryGetValue(title, out var segs))
             {
                 var mono = (FontFamily)(Application.Current.Resources["MonoFont"] ?? new FontFamily("Consolas"));
@@ -223,8 +203,8 @@ namespace AkariTool.Tabs
                 for (int i = 0; i < segs.Length; i++)
                 {
                     if (i > 0)
-                        eyebrow.Inlines.Add(new System.Windows.Documents.Run($"  {sep}  ") { Foreground = TweakHelpers.TextMuted });
-                    eyebrow.Inlines.Add(new System.Windows.Documents.Run(segs[i]) { Foreground = TweakHelpers.TextMuted });
+                        eyebrow.Inlines.Add(new Run { Text = $"  {sep}  ", Foreground = TweakHelpers.TextMuted });
+                    eyebrow.Inlines.Add(new Run { Text = segs[i], Foreground = TweakHelpers.TextMuted });
                 }
                 stack.Children.Add(eyebrow);
             }
@@ -249,56 +229,33 @@ namespace AkariTool.Tabs
         }
 
         /// <summary>
-        /// Header search box (right cluster): 230px wide, grows to 300px with a
-        /// quick 120ms animation while keyboard-focused. Filters the tweak
-        /// sections under <paramref name="root"/>.
+        /// Header search box (right cluster). Filters the tweak sections under
+        /// <paramref name="root"/>. WinUI AutoSuggestBox (built-in placeholder + clear
+        /// + query icon) replaces the WPF-UI TextBox; the focus-grow animation is dropped.
         /// </summary>
-        private Wpf.Ui.Controls.TextBox BuildHeaderSearchBox(StackPanel root)
+        private AutoSuggestBox BuildHeaderSearchBox(StackPanel root)
         {
-            var searchBox = new Wpf.Ui.Controls.TextBox
+            var searchBox = new AutoSuggestBox
             {
                 PlaceholderText = "Search tweaks…",
-                Icon = new Wpf.Ui.Controls.SymbolIcon(Wpf.Ui.Controls.SymbolRegular.Search24),
-                ClearButtonEnabled = true,
+                QueryIcon = new SymbolIcon(Symbol.Find),
                 FontSize = 13,
-                Height = 38,
-                Width = 230,
-                VerticalContentAlignment = VerticalAlignment.Center,
+                Width = 260,
                 VerticalAlignment = VerticalAlignment.Center,
-                Background = TweakHelpers.CardBg,
-                BorderBrush = TweakHelpers.Hairline,
-                CaretBrush = TweakHelpers.Accent,
-                SelectionBrush = TweakHelpers.Accent,
             };
             searchBox.TextChanged += (_, _) => FilterTweaks(root, searchBox.Text.Trim());
-
-            void AnimateWidth(double to)
-            {
-                searchBox.BeginAnimation(WidthProperty,
-                    new System.Windows.Media.Animation.DoubleAnimation(to, TimeSpan.FromMilliseconds(120))
-                    {
-                        EasingFunction = new System.Windows.Media.Animation.QuadraticEase
-                        { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut }
-                    });
-            }
-            searchBox.GotKeyboardFocus  += (_, _) => AnimateWidth(300);
-            searchBox.LostKeyboardFocus += (_, _) => AnimateWidth(230);
             _headerSearchBox = searchBox;
             return searchBox;
         }
 
-        private Wpf.Ui.Controls.TextBox? _headerSearchBox;
+        private AutoSuggestBox? _headerSearchBox;
 
-        /// <summary>
-        /// Applies a query to this tab's own header search box (fires its TextChanged, so the
-        /// existing FilterTweaks + section auto-expand run unchanged).
-        /// </summary>
+        /// <summary>Applies a query to this tab's own header search box.</summary>
         public void ApplySearch(string query)
         {
             if (_headerSearchBox is null) return;
             _headerSearchBox.Text = query;
-            _headerSearchBox.Focus();
-            _headerSearchBox.CaretIndex = _headerSearchBox.Text.Length;
+            _headerSearchBox.Focus(FocusState.Programmatic);
         }
 
         // ── Section heading ────────────────────────────────────────────────────
@@ -309,7 +266,6 @@ namespace AkariTool.Tabs
             panel.Children.Add(new TextBlock
             {
                 Text = text,
-                // null = the live-updating token; an explicit colour stays literal.
                 Foreground = color is null ? TweakHelpers.TextSecondary : BrushFrom(color),
                 FontSize = fontSize,
                 FontWeight = fontSize > 14 ? FontWeights.Bold : FontWeights.Normal,
@@ -320,57 +276,38 @@ namespace AkariTool.Tabs
         // ── Search bar ─────────────────────────────────────────────────────────
 
         /// <summary>
-        /// Inserts a search TextBox after the page header and wires it to filter
-        /// all tagged tweak rows across sections in <paramref name="root"/>.
-        /// Call once per tab's Build(), right after RootPanel.Children.Add(PageHeader(...)).
+        /// Inserts a search box after the page header and wires it to filter all tagged
+        /// tweak rows across sections in <paramref name="root"/>.
         /// </summary>
         protected void AttachSearch(StackPanel root)
         {
-            // WPF-UI TextBox: built-in placeholder, leading icon and clear button
-            // replace the old Border + watermark-TextBlock + manual clear button.
-            var searchBox = new Wpf.Ui.Controls.TextBox
+            var searchBox = new AutoSuggestBox
             {
                 PlaceholderText = "Search tweaks…",
-                Icon = new Wpf.Ui.Controls.SymbolIcon(Wpf.Ui.Controls.SymbolRegular.Search24),
-                ClearButtonEnabled = true,
+                QueryIcon = new SymbolIcon(Symbol.Find),
                 FontSize = 14,
-                Height = 40,
-                VerticalContentAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(0, 0, 0, 20),
-                Background = TweakHelpers.CardBg,
-                BorderBrush = TweakHelpers.Hairline,
-                CaretBrush = TweakHelpers.Accent,
-                SelectionBrush = TweakHelpers.Accent,
             };
             searchBox.TextChanged += (_, _) => FilterTweaks(root, searchBox.Text.Trim());
             root.Children.Add(searchBox);
         }
 
         /// <summary>
-        /// Walks the RootPanel tree and shows/hides tagged tweak rows.
-        /// Section cards (Border) and their label (TextBlock above them) are
-        /// hidden when all their rows are hidden.
+        /// Walks the RootPanel tree and shows/hides tagged tweak rows. Section cards
+        /// (Border) and their label (TextBlock above them) are hidden when all their
+        /// rows are hidden.
         /// </summary>
         private static void FilterTweaks(StackPanel root, string query)
         {
             bool empty = query.Length == 0;
             string q = query.ToLowerInvariant();
 
-            // Children are identified by type/tag, not position: a Border whose
-            // child is a StackPanel is a section card (from BuildSection); an
-            // untagged TextBlock directly before a card is its label. Everything
-            // else (the header Grid — which now hosts the search box — preset
-            // cards, standalone controls) is left visible.
             TextBlock? pendingLabel = null;
 
             foreach (UIElement child in root.Children)
             {
-                // Skip the search bar itself (no Tag) and page header
                 if (child is Border sectionCard && sectionCard.Child is StackPanel sectionContent)
                 {
-                    // This is a section card — filter its rows. BuildSection cards nest
-                    // their rows one level deeper, inside the tagged collapsible body;
-                    // cards built elsewhere are still filtered directly.
                     var body = sectionContent.Children.OfType<StackPanel>()
                         .FirstOrDefault(p => (p.Tag as string) == "sectionbody") ?? sectionContent;
 
@@ -378,9 +315,6 @@ namespace AkariTool.Tabs
 
                     if (TweakHelpers.SectionCollapseStates.TryGetValue(body, out var st))
                     {
-                        // While a query is active, force-expand sections that contain matches so
-                        // results are never hidden inside a collapsed section. When the query is
-                        // cleared, restore the user's own collapsed choice.
                         st.ForcedOpenBySearch = !empty && anyVisible;
                         st.Render();
                     }
@@ -388,19 +322,16 @@ namespace AkariTool.Tabs
                     sectionCard.Visibility = anyVisible || empty
                         ? Visibility.Visible : Visibility.Collapsed;
 
-                    // Show/hide the label that preceded this card
                     if (pendingLabel != null)
                         pendingLabel.Visibility = sectionCard.Visibility;
                     pendingLabel = null;
                 }
                 else if (child is TextBlock label && label.Tag is null)
                 {
-                    // Section label TextBlock — hold it until we process the card
                     pendingLabel = label;
                 }
                 else
                 {
-                    // PageHeader grid (hosts the search box), preset cards, etc. — always visible
                     child.Visibility = Visibility.Visible;
                     pendingLabel = null;
                 }
@@ -411,27 +342,28 @@ namespace AkariTool.Tabs
         {
             bool anyVisible = false;
 
-            // Separators are interspersed between rows; track the separator before each row
-            Separator? pendingSep = null;
+            // Row dividers are Borders tagged "separator" (WinUI has no Separator control);
+            // track the divider before each row so it hides with its row.
+            FrameworkElement? pendingSep = null;
 
             foreach (UIElement item in content.Children)
             {
-                if (item is Separator sep)
+                var fe = item as FrameworkElement;
+                string? tag = fe?.Tag as string;
+
+                if (tag == "separator")
                 {
-                    pendingSep = sep;
+                    pendingSep = fe;
                     continue;
                 }
 
-                string? tag = (item as FrameworkElement)?.Tag as string;
-
-                // Bulk-action header bar and the section's own title row —
-                // always visible while their section is
                 if (tag == "bulkbar" || tag == "sectionheader")
                 {
                     item.Visibility = Visibility.Visible;
                     pendingSep = null;
                     continue;
                 }
+
                 bool matches = empty || (tag != null && tag.StartsWith("search:") &&
                     tag[7..].ToLowerInvariant().Contains(q));
 

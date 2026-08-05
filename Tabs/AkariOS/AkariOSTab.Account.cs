@@ -1,5 +1,6 @@
-using System.Windows;
-using System.Windows.Controls;
+﻿using Microsoft.UI.Text;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using AkariTool.Services;
 
 namespace AkariTool.Tabs.AkariOS
@@ -51,7 +52,7 @@ namespace AkariTool.Tabs.AkariOS
                                   params (string Label, Action OnClick)[] actions)
         {
             if (panel.Children.Count > 0)
-                panel.Children.Add(new Separator
+                panel.Children.Add(new Border
                 {
                     Background = TweakHelpers.Token("AkariOverlayStrong"),
                     Height = 1,
@@ -83,8 +84,7 @@ namespace AkariTool.Tabs.AkariOS
                     Content = label,
                     Margin = new Thickness(0, 0, 8, 0),
                     Padding = new Thickness(18, 10, 18, 10),
-                    FontSize = 13,
-                    Style = (Style)FindResource("GridBtn")
+                    FontSize = 13
                 };
                 btn.Click += (_, _) =>
                 {
@@ -121,15 +121,13 @@ namespace AkariTool.Tabs.AkariOS
             entry.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             entry.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
-            var box = new Wpf.Ui.Controls.TextBox
+            var box = new TextBox
             {
                 PlaceholderText          = "Enter a new display name",
                 Text                     = AccountService.GetDisplayName() ?? string.Empty,
                 FontSize                 = 13,
                 Height                   = 36,
                 VerticalContentAlignment = VerticalAlignment.Center,
-                CaretBrush               = TweakHelpers.Accent,
-                SelectionBrush           = TweakHelpers.Accent,
             };
             Grid.SetColumn(box, 0);
             entry.Children.Add(box);
@@ -140,7 +138,6 @@ namespace AkariTool.Tabs.AkariOS
                 Margin    = new Thickness(8, 0, 0, 0),
                 Padding   = new Thickness(18, 10, 18, 10),
                 FontSize  = 13,
-                Style     = (Style)FindResource("GridBtn"),
                 IsEnabled = !string.IsNullOrWhiteSpace(box.Text)
             };
             Grid.SetColumn(apply, 1);

@@ -1,5 +1,5 @@
-using System.Windows;
-using System.Windows.Controls;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using Microsoft.Win32;
 using AkariTool.Services;
 
@@ -111,7 +111,7 @@ namespace AkariTool.Tabs.Power
             _schemeResolved = true;
             Service?.Log($"Power: created persistent '{AkariPlanName}' scheme (GUID: {created}) and set it active.");
 
-            RootPanel.Dispatcher.Invoke(() => { RefreshPersistIndicator(); RefreshActiveCard(); });
+            RootPanel.DispatcherQueue.TryEnqueue(() => { RefreshPersistIndicator(); RefreshActiveCard(); });
             return created;
         }
 
@@ -139,13 +139,13 @@ namespace AkariTool.Tabs.Power
                 Content = "Revert to Balanced",
                 FontSize = 12,
                 Padding = new Thickness(12, 4, 12, 4),
-                Cursor = System.Windows.Input.Cursors.Hand,
-                Style = (Style)Application.Current.Resources["GridBtn"],
+                // WPF "GridBtn" style dropped — native WinUI Button chrome + Akari tokens.
                 Foreground = TweakHelpers.TextPrimary,
                 BorderBrush = TweakHelpers.Hairline,
                 BorderThickness = new Thickness(1),
-                ToolTip = "Reactivate the Windows Balanced plan and delete the Akari Performance scheme",
             };
+            ToolTipService.SetToolTip(_revertButton,
+                "Reactivate the Windows Balanced plan and delete the Akari Performance scheme");
             _revertButton.Click += async (_, _) => await RevertToBalanced();
             Grid.SetColumn(_revertButton, 1);
             row.Children.Add(_revertButton);
@@ -192,7 +192,7 @@ namespace AkariTool.Tabs.Power
             _schemeResolved = true; // resolved: reads go back to SCHEME_CURRENT
 
             Service.Log("Power: Balanced plan active; Akari Performance scheme removed.");
-            RootPanel.Dispatcher.Invoke(() =>
+            RootPanel.DispatcherQueue.TryEnqueue(() =>
             {
                 RefreshPersistIndicator();
                 RefreshActiveCard();

@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
+using Microsoft.UI.Text;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.Win32;
 using AkariTool.Services;
 
@@ -82,7 +83,7 @@ namespace AkariTool.Tabs.AkariOS
                 var downloadBtn = new Button
                 {
                     Content            = "Download PostInstall",
-                    Style              = (Style)FindResource("RunBtn"),
+                    Style              = (Style)Application.Current.Resources["AccentButtonStyle"],
                     VerticalAlignment  = VerticalAlignment.Center,
                     Margin             = new Thickness(12, 0, 0, 0)
                 };

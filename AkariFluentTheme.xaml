@@ -45,8 +45,8 @@
   </Style>
   <!-- Recommended pill colours are intentionally fixed (crimson) in both themes. -->
   <Style x:Key="BadgeRecommended" TargetType="Border" BasedOn="{StaticResource BadgeBase}">
-    <Setter Property="Background"><Setter.Value><SolidColorBrush Color="#1AE0142A"/></Setter.Value></Setter>
-    <Setter Property="BorderBrush"><Setter.Value><SolidColorBrush Color="#6BE0142A"/></Setter.Value></Setter>
+    <Setter Property="Background"><Setter.Value><SolidColorBrush Color="{ThemeResource AkariAccentSoftColor}"/></Setter.Value></Setter>
+    <Setter Property="BorderBrush"><Setter.Value><SolidColorBrush Color="{ThemeResource AkariAccentBorderColor}"/></Setter.Value></Setter>
   </Style>
   <!-- Neutral "Windows default" pill — routed through overlay tokens so it reads in both themes. -->
   <Style x:Key="BadgeWindowsDefault" TargetType="Border" BasedOn="{StaticResource BadgeBase}">
@@ -62,7 +62,7 @@
   <!-- ════════════════ RUN BUTTON (crimson filled) ════════════════ -->
   <Style x:Key="RunBtn" TargetType="Button">
     <Setter Property="Background" Value="{DynamicResource AkariAccent}"/>
-    <Setter Property="Foreground" Value="#F2F2F4"/>
+    <Setter Property="Foreground" Value="{DynamicResource AkariAccentFg}"/>
     <Setter Property="FontSize" Value="12.5"/>
     <Setter Property="FontWeight" Value="SemiBold"/>
     <Setter Property="Padding" Value="14,6"/>
@@ -84,10 +84,14 @@
           </Border>
           <ControlTemplate.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
-              <Setter TargetName="Bd" Property="Background" Value="#FF2438"/>
+              <Setter TargetName="Bd" Property="Background">
+                <Setter.Value><SolidColorBrush Color="{ThemeResource AkariAccentHotColor}"/></Setter.Value>
+              </Setter>
             </Trigger>
             <Trigger Property="IsPressed" Value="True">
-              <Setter TargetName="Bd" Property="Background" Value="#B3121F"/>
+              <Setter TargetName="Bd" Property="Background">
+                <Setter.Value><SolidColorBrush Color="{ThemeResource AkariAccentPressedColor}"/></Setter.Value>
+              </Setter>
             </Trigger>
             <Trigger Property="IsEnabled" Value="False">
               <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AkariHairline}"/>
@@ -198,7 +202,7 @@
                          Text="✓"
                          FontSize="11"
                          FontWeight="Bold"
-                         Foreground="#F2F2F4"
+                         Foreground="{DynamicResource AkariAccentFg}"
                          HorizontalAlignment="Center"
                          VerticalAlignment="Center"
                          Visibility="Collapsed"/>

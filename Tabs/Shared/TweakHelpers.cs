@@ -1,35 +1,21 @@
 using System.Runtime.InteropServices;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
-using System.Windows.Media.Effects;
+using Microsoft.UI.Xaml;          // Application, CornerRadius
+using Microsoft.UI.Xaml.Media;    // Brush
 using Microsoft.Win32;
 using AkariTool.Services;
 
 namespace AkariTool.Tabs
 {
     /// <summary>
-    /// Shared UI helpers and registry state utilities for all tweak tabs.
-    /// Replaces the partial-class helpers that used to live in TweakUIHelpers.cs
-    /// and AkariOSTweaks.cs. No AkariOS dependency.
+    /// Shared UI helpers and registry utilities for all tweak tabs.
+    ///
+    /// Registry state persistence (SaveState/HasState/ClearState) lives in the
+    /// logic-only partial <c>TweakHelpers.State.cs</c> so the Services layer can use
+    /// it without the UI factory. The design-token brush accessors below route
+    /// through <see cref="ThemeService.ManagedBrush"/> for live theme switching.
     /// </summary>
     public static partial class TweakHelpers
     {
-        // ── Registry state key ────────────────────────────────────────────────
-        // Stores a flag (1) for each tweak that has been applied so toggles
-        // survive app restarts.
-
-        private static RegistryKey? _stateKey;
-        private static RegistryKey StateKey => _stateKey ??=
-            Registry.CurrentUser.CreateSubKey(
-                @"Software\AkariTool",
-                RegistryKeyPermissionCheck.ReadWriteSubTree)
-            ?? throw new InvalidOperationException("Failed to open AkariTool registry key.");
-
-        public static void SaveState(string key) => StateKey.SetValue(key, 1);
-        public static void ClearState(string key) => StateKey.DeleteValue(key, throwOnMissingValue: false);
-        public static bool HasState(string key) => StateKey.GetValue(key) != null;
-
         // ── Real-HKCU helper (works even when the tool runs as admin) ─────────
 
         [DllImport("advapi32.dll", SetLastError = true)]
@@ -82,32 +68,20 @@ namespace AkariTool.Tabs
             catch { /* best-effort */ }
         }
 
-        // ── Card brush / shadow helpers ───────────────────────────────────────
-
-        // V3 flat premium: neutral opaque card surface. Returns the shared managed
-        // brush so cards live-update on theme switch (was a per-call LinearGradientBrush).
+        // ── Card brush helper ─────────────────────────────────────────────────
+        // V3 flat premium: neutral opaque card surface (live-updates on theme switch).
         public static Brush CardBackground() => CardBg;
 
-        // V3: cards carry a subtle NEUTRAL shadow only — no crimson tint, no glow.
-        public static DropShadowEffect CardShadow() => new DropShadowEffect
-        {
-            Color = Color.FromRgb(0x00, 0x00, 0x00),
-            BlurRadius = 14,
-            ShadowDepth = 4,
-            Direction = 270,
-            Opacity = 0.28
-        };
-
+        // NOTE(migration): CardShadow() (WPF DropShadowEffect) dropped — WinUI has no
+        // Effect. Card shadows are re-added as ThemeShadow with the card builders in a
+        // later tab batch. See MIGRATION_LOG.
 
         // ── Brush helper ──────────────────────────────────────────────────────
 
         public static Brush BrushFrom(string color) =>
             ToolService.BrushFrom(color);
 
-        // ── V3 design-token brushes ───────────────────────────────────────────
-        // Each returns a persistent managed brush that live-updates on theme switch
-        // (ThemeService mutates the shared instance's Colour in place). Keyed on the
-        // Color-token so the switch resolves the right per-theme value.
+        // ── V3 design-token brushes (live-updating via ThemeService.ManagedBrush) ──
         /// <summary>Shared managed brush for a Color- or Brush-token key; live-updates on switch.</summary>
         public static Brush Token(string colorKey) => ThemeService.ManagedBrush(colorKey);
 
@@ -116,16 +90,14 @@ namespace AkariTool.Tabs
         public static Brush Hairline        => ThemeService.ManagedBrush("AkariHairlineColor");
 
         // Gradient elevation stroke for CARD + frame edges (lit top → shadow bottom).
-        // Not for dividers or separators — those keep the flat Hairline.
         public static Brush CardElevationBorder => ThemeService.CardElevationBorder;
         public static Brush HairlineHover   => ThemeService.ManagedBrush("AkariHairlineHoverColor");
         public static Brush TextPrimary     => ThemeService.ManagedBrush("AkariTextPrimaryColor");
         public static Brush TextSecondary   => ThemeService.ManagedBrush("AkariTextSecondaryColor");
         public static Brush TextMuted       => ThemeService.ManagedBrush("AkariTextMutedColor");
         public static Brush IconNeutral     => ThemeService.ManagedBrush("AkariIconNeutralColor");
+
         // ── Radius tokens ─────────────────────────────────────────────────────
-        // Mirrors AkariCardRadius / AkariControlRadius in AkariFluentTheme.xaml for
-        // C#-built UI. Resolved from the dictionary so the two can never drift.
         public static CornerRadius CardRadius    => Radius("AkariCardRadius",    8);
         public static CornerRadius ControlRadius => Radius("AkariControlRadius", 4);
 
@@ -134,8 +106,7 @@ namespace AkariTool.Tabs
 
         public static Brush Accent          => ThemeService.ManagedBrush("AkariAccentColor");
 
-        // Body-size red. The brand accent only reaches ~3.3:1 on the dark canvas,
-        // so anything at normal text size uses these instead.
+        // Body-size red (the brand accent is too low-contrast at text size).
         public static Brush AccentText      => ThemeService.ManagedBrush("AkariAccentTextColor");
         public static Brush AccentTextMuted => ThemeService.ManagedBrush("AkariAccentTextMutedColor");
 
