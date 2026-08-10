@@ -1,6 +1,7 @@
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
+﻿using Microsoft.UI.Text;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using AkariTool.Services;
 
 namespace AkariTool.Tabs.Verify
@@ -56,8 +57,12 @@ namespace AkariTool.Tabs.Verify
                 _status.Text = "Last scan: not yet this session";
             }
 
-            // Re-scan whenever the tab is shown (a scan is a read — safe to repeat).
-            IsVisibleChanged += (_, e) => { if ((bool)e.NewValue) RunScan(); };
+            // MIGRATION: WPF's IsVisibleChanged has no WinUI equivalent, and the shell
+            // toggles tab Visibility silently. The scan is a READ (safe to repeat), so
+            // it now runs on Loaded.
+            // ⚠ Behavioural delta: it no longer re-scans on every re-visit — use the
+            // tab's Re-scan button to refresh. Flagged in the VM checklist.
+            Loaded += (_, _) => RunScan();
         }
 
         // ═════════════════════════════════════════════════════════════════
@@ -120,9 +125,11 @@ namespace AkariTool.Tabs.Verify
 
                 var reapplyAll = MakeActionButton("Re-apply all", primary: true);
                 reapplyAll.Margin = new Thickness(0, 0, 0, 12);
-                reapplyAll.Click += (_, _) =>
+                // MIGRATION: AkariDialogs is async-only under WinUI (ContentDialog).
+                // Same prompt, same guard — still returns before any re-apply on cancel.
+                reapplyAll.Click += async (_, _) =>
                 {
-                    if (AkariDialogs.ConfirmOkCancel(
+                    if (await AkariDialogs.ConfirmOkCancelAsync(
                             $"Re-apply {reverted.Count} tweak{(reverted.Count == 1 ? "" : "s")} to the value Akari Tool originally set?",
                             "Re-apply reverted tweaks"))
                         ReapplyItems(reverted);
@@ -171,11 +178,15 @@ namespace AkariTool.Tabs.Verify
                 TextWrapping = TextWrapping.Wrap,
                 Margin = new Thickness(0, 2, 0, 0),
             };
-            detail.Inlines.Add(new System.Windows.Documents.Run(
-                $"{item.RecordedDisplay} → {item.CurrentDisplay} · set {item.RecordedAt.ToLocalTime():d MMM} on build {item.RecordedOsBuild}"));
+            // WinUI Run has no (string) ctor — Text is set via the initializer.
+            detail.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
+            {
+                Text = $"{item.RecordedDisplay} → {item.CurrentDisplay} · set {item.RecordedAt.ToLocalTime():d MMM} on build {item.RecordedOsBuild}"
+            });
             if (item.AcrossOsUpdate)
-                detail.Inlines.Add(new System.Windows.Documents.Run(" · changed across an OS update")
+                detail.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
                 {
+                    Text = " · changed across an OS update",
                     Foreground = TweakHelpers.WarnFg,
                 });
             info.Children.Add(detail);
@@ -194,13 +205,12 @@ namespace AkariTool.Tabs.Verify
                 FontSize = 12,
                 Padding = new Thickness(8, 4, 8, 4),
                 Margin = new Thickness(6, 0, 0, 0),
-                Background = Brushes.Transparent,
+                Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
                 BorderThickness = new Thickness(0),
                 Foreground = TweakHelpers.TextMuted,
                 VerticalAlignment = VerticalAlignment.Center,
-                Cursor = System.Windows.Input.Cursors.Hand,
-                ToolTip = "Stop tracking this tweak — it will no longer be checked for drift",
             };
+            ToolTipService.SetToolTip(stop, "Stop tracking this tweak — it will no longer be checked for drift");
             stop.Click += (_, _) => StopTracking(item);
             Grid.SetColumn(stop, 2);
             row.Children.Add(stop);
@@ -217,7 +227,11 @@ namespace AkariTool.Tabs.Verify
             var result = DriftScanner.Scan();
             RenderStatus(result);
             RenderResult(result);
-            (Application.Current.MainWindow as MainWindow)?.RefreshDriftBanner(result);
+            // MIGRATION: WinUI Application has no MainWindow property — the shell
+            // exposes itself via MainWindow.Instance. The drift BANNER itself is not
+            // ported yet (deferred cluster), so this currently routes to a no-op that
+            // keeps the wiring intact for when the banner lands.
+            AkariTool.MainWindow.Instance?.RefreshDriftBanner(result);
         }
 
         /// <summary>
@@ -279,7 +293,7 @@ namespace AkariTool.Tabs.Verify
                 CornerRadius = TweakHelpers.CardRadius,
                 Padding = new Thickness(20, 16, 20, 16),
                 Margin = new Thickness(0, 0, 0, 14),
-                Effect = TweakHelpers.CardShadow(),
+                // Effect = CardShadow() dropped — no WinUI Effect (cosmetic pass).
             };
 
             var outer = new StackPanel();
@@ -332,10 +346,14 @@ namespace AkariTool.Tabs.Verify
                 Content = label,
                 FontSize = 13,
                 Padding = new Thickness(14, 6, 14, 6),
-                Cursor = System.Windows.Input.Cursors.Hand,
                 HorizontalAlignment = HorizontalAlignment.Left,
-                Style = (Style)Application.Current.Resources[primary ? "RunBtn" : "GridBtn"],
             };
+            // MIGRATION: the WPF ternary lookup Resources[primary ? "RunBtn" : "GridBtn"]
+            // referenced trigger-based styles that were never ported — it compiled fine
+            // and would have thrown at runtime. Primary -> native accent button;
+            // secondary keeps default chrome + Akari tokens applied below.
+            if (primary)
+                b.Style = (Style)Application.Current.Resources["AccentButtonStyle"];
             if (!primary)
             {
                 b.Foreground = TweakHelpers.TextPrimary;

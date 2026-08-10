@@ -1,6 +1,6 @@
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.Win32;
 using AkariTool.Services;
 
@@ -63,6 +63,46 @@ namespace AkariTool.Tabs
                 value: "sList",
                 options: new[] { ", (Comma)", "; (Semicolon)" },
                 data:    new[] { ",", ";" });
+
+            // RELOCATED (WinUI migration): "os-set-utc" moved here verbatim from the
+            // dead Tabs/OSTweaks/Catalog/OSTweakCatalog.Performance.cs so the tweak
+            // stays reachable once OSTweaksTab is removed. Id, Name, Description,
+            // registry path/value and semantics are unchanged; only the logger is
+            // routed through Service?.Log (the OSTweaks catalog took a Log delegate).
+            // It sits with Regional Settings because it governs how the hardware
+            // clock is interpreted.
+            TweakHelpers.AddTweakRow(regionSection, new TweakDefinition
+            {
+                Id = "os-set-utc", Name = "Set Clock to UTC",
+                Description = "Stores the hardware clock as UTC — fixes time sync conflict when dual-booting with Linux",
+                Group = "Regional Settings",
+                IsPreference = true,
+                ReadState = () =>
+                {
+                    var v = ReadDwordLm(@"SYSTEM\CurrentControlSet\Control\TimeZoneInformation", "RealTimeIsUniversal");
+                    return v.HasValue ? v == 1 : false;
+                },
+                Apply = enable =>
+                {
+                    if (enable)
+                        Registry.SetValue(@"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\TimeZoneInformation", "RealTimeIsUniversal", 1, RegistryValueKind.DWord);
+                    else
+                        Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Control\TimeZoneInformation", true)
+                            ?.DeleteValue("RealTimeIsUniversal", throwOnMissingValue: false);
+                    Service?.Log($"UTC clock {(enable ? "enabled" : "disabled")}. Restart to apply.");
+                }
+            });
+        }
+
+        /// <summary>HKLM DWORD read (mirrors the helper the OSTweaks catalog used).</summary>
+        private static int? ReadDwordLm(string subKey, string valueName)
+        {
+            try
+            {
+                using var k = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Default).OpenSubKey(subKey);
+                return k?.GetValue(valueName) is int i ? i : null;
+            }
+            catch { return null; }
         }
 
         /// <summary>

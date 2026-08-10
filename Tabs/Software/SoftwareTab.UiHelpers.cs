@@ -14,10 +14,11 @@
 // Cards mirror Winhance's card view: checkbox + avatar + name/description
 // + badge row, click anywhere to select, responsive column count.
 
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
-using System.Windows.Media;
+using Microsoft.UI.Text;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Media;
 using AkariTool.Services;
 
 namespace AkariTool.Tabs
@@ -30,11 +31,12 @@ namespace AkariTool.Tabs
 
         private Button MakeActionButton(string glyphAndText, bool primary)
         {
-            var btn = new Button
-            {
-                Style = (Style)FindResource(primary ? "DlActionBtn" : "DlCancelBtn"),
-                Margin = new Thickness(0, 0, 10, 0)
-            };
+            // MIGRATION: the WPF "DlActionBtn"/"DlCancelBtn" ControlTemplate styles
+            // were not ported (trigger-based). Primary maps to the native accent
+            // button; secondary keeps the default WinUI chrome.
+            var btn = new Button { Margin = new Thickness(0, 0, 10, 0) };
+            if (primary)
+                btn.Style = (Style)Application.Current.Resources["AccentButtonStyle"];
             var stack = new StackPanel { Orientation = Orientation.Horizontal };
             var parts = glyphAndText.Split("  ", 2);
             stack.Children.Add(new TextBlock
@@ -80,12 +82,14 @@ namespace AkariTool.Tabs
             var parts = text.Split("  ", 2);
             if (parts.Length == 2)
             {
-                tb.Inlines.Add(new System.Windows.Documents.Run(parts[0])
+                // WinUI Run has no (string) ctor — Text is set via the initializer.
+                tb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
                 {
+                    Text = parts[0],
                     FontFamily = new FontFamily("Segoe MDL2 Assets"),
                     FontSize = 10
                 });
-                tb.Inlines.Add(new System.Windows.Documents.Run("  " + parts[1]));
+                tb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { Text = "  " + parts[1] });
             }
             else tb.Text = text;
 
@@ -105,20 +109,19 @@ namespace AkariTool.Tabs
 
         private void AddSearchRow(StackPanel panel, string placeholderText, Action<string> onSearch)
         {
-            // WPF-UI TextBox with built-in placeholder + leading search icon.
-            var box = new Wpf.Ui.Controls.TextBox
+            // MIGRATION: WPF-UI TextBox -> WinUI AutoSuggestBox (built-in placeholder,
+            // query icon and clear button). CaretBrush/SelectionBrush have no
+            // per-instance equivalent; the crimson caret/selection come from the
+            // TextControl* theme overrides in App.xaml.
+            var box = new AutoSuggestBox
             {
-                PlaceholderText          = placeholderText,
-                Icon                     = new Wpf.Ui.Controls.SymbolIcon(Wpf.Ui.Controls.SymbolRegular.Search24),
-                ClearButtonEnabled       = true,
-                FontSize                 = 13,
-                Height                   = 36,
-                Width                    = 280,
-                HorizontalAlignment      = HorizontalAlignment.Left,
-                VerticalContentAlignment = VerticalAlignment.Center,
-                Margin                   = new Thickness(0, 0, 0, 4),
-                CaretBrush               = TweakHelpers.Accent,
-                SelectionBrush           = TweakHelpers.Accent,
+                PlaceholderText     = placeholderText,
+                QueryIcon           = new SymbolIcon(Symbol.Find),
+                FontSize            = 13,
+                Height              = 36,
+                Width               = 280,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Margin              = new Thickness(0, 0, 0, 4),
             };
             box.TextChanged += (_, _) => onSearch(box.Text.Trim());
             panel.Children.Add(box);
@@ -132,7 +135,6 @@ namespace AkariTool.Tabs
             {
                 var cb = new CheckBox
                 {
-                    Style = (Style)Application.Current.Resources["AppCheckBox"],
                     VerticalAlignment = VerticalAlignment.Center,
                     Margin = new Thickness(0, 0, 18, 0),
                     Content = new TextBlock

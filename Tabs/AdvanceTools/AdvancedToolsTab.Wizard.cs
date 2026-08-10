@@ -1,8 +1,8 @@
-using System.IO;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
-using System.Windows.Media;
+﻿using System.IO;
+using Microsoft.UI.Text;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.Win32;
 using AkariTool.Services;
 
@@ -80,13 +80,12 @@ namespace AkariTool.Tabs.AdvancedTools
                 CornerRadius = TweakHelpers.CardRadius,
                 Padding = new Thickness(18, 14, 18, 14),
                 Margin = new Thickness(0, 0, 0, 12),
-                Effect = TweakHelpers.CardShadow(),
             };
 
             var outer = new StackPanel();
 
             // Header: (n) icon Title ····· status ▾
-            var header = new Grid { Cursor = Cursors.Hand, Background = Brushes.Transparent };
+            var header = new Grid { Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent) };
             header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -167,9 +166,9 @@ namespace AkariTool.Tabs.AdvancedTools
                 Visibility = index == 1 ? Visibility.Visible : Visibility.Collapsed,
             };
 
-            header.MouseLeftButtonUp += (_, _) =>
+            header.Tapped += (_, _) =>
             {
-                if (!ui.Card.IsEnabled) return;
+                if (!ui.Card.IsHitTestVisible) return;   // see UpdateStepStates
                 var open = ui.Body.Visibility == Visibility.Visible;
                 ui.Body.Visibility = open ? Visibility.Collapsed : Visibility.Visible;
                 ui.Chevron.Text = open ? "\uE70D" : "\uE70E";
@@ -195,8 +194,6 @@ namespace AkariTool.Tabs.AdvancedTools
                 Padding = new Thickness(12, 6, 12, 6),
                 Margin = new Thickness(0, 0, 8, 0),
                 FontSize = 13,
-                Cursor = Cursors.Hand,
-                Style = (Style)Application.Current.Resources["GridBtn"],
             };
             _actionButtons.Add(b);
             return b;
@@ -210,8 +207,7 @@ namespace AkariTool.Tabs.AdvancedTools
                 Padding = new Thickness(14, 6, 14, 6),
                 Margin = new Thickness(0, 0, 8, 0),
                 FontSize = 13,
-                Cursor = Cursors.Hand,
-                Style = (Style)Application.Current.Resources["RunBtn"],
+                Style = (Style)Application.Current.Resources["AccentButtonStyle"],
             };
             _actionButtons.Add(b);
             return b;

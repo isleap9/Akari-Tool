@@ -10,8 +10,24 @@
 #define MyAppExeName   "AkariTool.exe"
 #define MyAppPublisher "isleap"
 #define MyAppURL       "https://github.com/isleap9/Akari-Tool"
-; publish output produced by build-installer.ps1
-#define PublishDir     "..\bin\Release\net8.0-windows\win-x64\publish"
+; Unpackaged WinUI 3, fully self-contained publish output produced by
+; build-installer.ps1 (VS MSBuild /t:Publish, x64 Release). This is the whole
+; runtime payload — the .NET 8 runtime AND the Windows App SDK runtime — not just
+; AkariTool.exe. Path uses the WinUI TFM (net8.0-windows10.0.19041.0) and the
+; x64 platform sub-dir, unlike the old WPF output path.
+#define PublishDir     "..\bin\x64\Release\net8.0-windows10.0.19041.0\win-x64\publish"
+
+; Fail the compile early with a clear message if the payload was not published,
+; rather than emitting an installer that is missing the runtime.
+#if !FileExists(AddBackslash(SourcePath) + PublishDir + "\" + MyAppExeName)
+  #error Publish output not found. Run build-installer.ps1 (it publishes, then compiles this).
+#endif
+; The app's own PRI is required for WinUI resource resolution; build-installer.ps1
+; copies it into PublishDir because the Publish target drops it. Guard against a
+; payload assembled without it.
+#if !FileExists(AddBackslash(SourcePath) + PublishDir + "\AkariTool.pri")
+  #error AkariTool.pri missing from publish payload - run build-installer.ps1 (do not call ISCC directly).
+#endif
 
 [Setup]
 ; NEVER change this AppId — it's how Inno recognises an existing install

@@ -1,4 +1,4 @@
-// AppIconService — real app icons for the Software tab cards.
+﻿// AppIconService — real app icons for the Software tab cards.
 //
 // Ported from Winhance's RepoIconKey + RepoIconSource + AppIconResolver,
 // slimmed to the essentials:
@@ -14,7 +14,7 @@
 
 using System.IO;
 using System.Net.Http;
-using System.Windows.Media.Imaging;
+using Microsoft.UI.Xaml.Media.Imaging;
 
 namespace AkariTool.Tabs;
 
@@ -164,13 +164,17 @@ public static class AppIconService
     /// <summary>Loads a BitmapImage fully into memory and freezes it for cross-thread use.</summary>
     private static BitmapImage LoadFrozen(string path)
     {
-        var bmp = new BitmapImage();
-        bmp.BeginInit();
-        bmp.UriSource = new Uri(path, UriKind.Absolute);
-        bmp.CacheOption = BitmapCacheOption.OnLoad;   // release the file handle
-        bmp.DecodePixelWidth = 80;                    // cards render at 40px; 2x for HiDPI
-        bmp.EndInit();
-        bmp.Freeze();
+        // MIGRATION: WinUI BitmapImage has no BeginInit/EndInit/CacheOption/Freeze.
+        // Properties are set directly; DecodePixelWidth still applies (cards render
+        // at 40px, so 80 keeps HiDPI crisp). WinUI decodes off the UI thread and
+        // does not hold the file handle open, so CacheOption.OnLoad has no analogue
+        // and is not needed. Freeze() was for cross-thread WPF use; WinUI image
+        // objects must be created/used on the UI thread instead.
+        var bmp = new BitmapImage
+        {
+            UriSource = new Uri(path, UriKind.Absolute),
+            DecodePixelWidth = 80,
+        };
         return bmp;
     }
 

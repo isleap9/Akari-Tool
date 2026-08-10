@@ -1,7 +1,8 @@
-﻿using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
-using System.Windows.Media;
+using Microsoft.UI.Text;                     // FontWeights
+using Microsoft.UI.Xaml;                     // Thickness, Visibility, FrameworkElement
+using Microsoft.UI.Xaml.Controls;            // StackPanel, TextBlock, Border, Flyout, CheckBox
+using Microsoft.UI.Xaml.Controls.Primitives; // FlyoutPlacementMode
+using Microsoft.UI.Xaml.Media;               // FontFamily
 using AkariTool.Services;
 
 namespace AkariTool.Tabs
@@ -17,9 +18,9 @@ namespace AkariTool.Tabs
         //    • Restore Windows defaults
         //    • Create restore point
         //
-        //  Scope = every tweak registered under the page's root panel, resolved
-        //  through GetEntriesUnder (logical-tree walk, see BulkActions partial).
-        //  Counts and the engine share one predicate: CollectPending.
+        //  MIGRATION NOTE: the WPF ContextMenu is now a WinUI Flyout with custom
+        //  two-line rows (MenuFlyoutItem is single-line text only), and every
+        //  confirmation is an async ContentDialog.
         // ══════════════════════════════════════════════════════════════════════
 
         /// <summary>Builds the header "Quick actions" dropdown button for one tab page.</summary>
@@ -31,7 +32,7 @@ namespace AkariTool.Tabs
             var content = new StackPanel { Orientation = Orientation.Horizontal };
             content.Children.Add(new TextBlock
             {
-                Text = "\uE945", // LightningBolt
+                Text = "", // LightningBolt
                 FontFamily = fluent,
                 FontSize = 12,
                 Foreground = Accent,
@@ -48,7 +49,7 @@ namespace AkariTool.Tabs
             });
             content.Children.Add(new TextBlock
             {
-                Text = "\uE70D", // ChevronDown
+                Text = "", // ChevronDown
                 FontFamily = fluent,
                 FontSize = 10,
                 Foreground = TextSecondary,
@@ -59,7 +60,7 @@ namespace AkariTool.Tabs
             // Hairline accent border, chromeless button host (matches pill language).
             var border = new Border
             {
-                Background = Brushes.Transparent,
+                Background = Transparent(),
                 BorderBrush = Accent,
                 BorderThickness = new Thickness(1),
                 CornerRadius = TweakHelpers.CardRadius, // design: 8 — do not change
@@ -69,13 +70,14 @@ namespace AkariTool.Tabs
 
             var btn = BuildChromelessButton();
             btn.Content = border;
-            btn.ToolTip = "Bulk actions for every tweak on this page";
-            btn.MouseEnter += (_, _) => border.Background = Token("AkariOverlayMedium");
-            btn.MouseLeave += (_, _) => border.Background = Brushes.Transparent;
+            ToolTipService.SetToolTip(btn, "Bulk actions for every tweak on this page");
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(btn, "Quick actions");
+            btn.PointerEntered += (_, _) => border.Background = Token("AkariOverlayMedium");
+            btn.PointerExited  += (_, _) => border.Background = Transparent();
 
             // Defensive: hide when the page registered no tweaks at all
             // (entries register after the header is built, so check on Loaded).
-            btn.Loaded += (_, _) => btn.Dispatcher.BeginInvoke(() =>
+            btn.Loaded += (_, _) => btn.DispatcherQueue.TryEnqueue(() =>
             {
                 if (GetEntriesUnder(scopeRoot).Count == 0)
                     btn.Visibility = Visibility.Collapsed;
@@ -85,7 +87,7 @@ namespace AkariTool.Tabs
             return btn;
         }
 
-        // ── Dropdown menu ─────────────────────────────────────────────────────
+        // ── Dropdown menu (Flyout with two-line rows) ─────────────────────────
 
         private static void OpenQuickActionsMenu(
             FrameworkElement anchor, string tabTitle, StackPanel scopeRoot, ToolService? service)
@@ -95,76 +97,87 @@ namespace AkariTool.Tabs
             int recCount = CollectPending(entries, useRecommended: true).Count;
             int defCount = CollectPending(entries, useRecommended: false).Count;
 
-            var menu = new ContextMenu
+            var menuPanel = new StackPanel { MinWidth = 260 };
+            var flyout = new Flyout
             {
-                PlacementTarget = anchor,
-                Placement = PlacementMode.Bottom,
-                MinWidth = 260,
+                Content = menuPanel,
+                Placement = FlyoutPlacementMode.Bottom,
             };
 
-            menu.Items.Add(BuildMenuItem(
-                "\uE735", "Apply all recommended", // star
-                $"{recCount} tweak{(recCount == 1 ? "" : "s")} differ on this tab",
-                recCount > 0,
-                () => RunTabBulk(tabTitle, scopeRoot, useRecommended: true, service)));
-
-            menu.Items.Add(BuildMenuItem(
-                "\uE777", "Restore Windows defaults", // UpdateRestore
-                $"Reset every tweak on this tab — {defCount} differ",
-                defCount > 0,
-                () => RunTabBulk(tabTitle, scopeRoot, useRecommended: false, service)));
-
-            menu.Items.Add(new Separator());
-
-            menu.Items.Add(BuildMenuItem(
-                "\uE81C", "Create restore point", // History
-                "System snapshot before you change anything",
-                true,
-                () => CreateRestorePointInteractive(service)));
-
-            menu.IsOpen = true;
-        }
-
-        private static MenuItem BuildMenuItem(
-            string glyph, string title, string subtitle, bool enabled, Action onClick)
-        {
-            var stack = new StackPanel { Margin = new Thickness(2, 4, 2, 4) };
-            stack.Children.Add(new TextBlock
+            void AddItem(string glyph, string title, string subtitle, bool enabled, Action onClick)
             {
-                Text = title,
-                FontSize = 13,
-                FontWeight = FontWeights.SemiBold,
-                Foreground = TextPrimary,
-            });
-            stack.Children.Add(new TextBlock
-            {
-                Text = subtitle,
-                FontSize = 11,
-                Foreground = TextSecondary,
-                Margin = new Thickness(0, 1, 0, 0),
-            });
+                var stack = new StackPanel { Margin = new Thickness(2, 4, 2, 4) };
+                stack.Children.Add(new TextBlock
+                {
+                    Text = title,
+                    FontSize = 13,
+                    FontWeight = FontWeights.SemiBold,
+                    Foreground = TextPrimary,
+                });
+                stack.Children.Add(new TextBlock
+                {
+                    Text = subtitle,
+                    FontSize = 11,
+                    Foreground = TextSecondary,
+                    Margin = new Thickness(0, 1, 0, 0),
+                });
 
-            var item = new MenuItem
-            {
-                Header = stack,
-                Icon = new TextBlock
+                var rowContent = new StackPanel { Orientation = Orientation.Horizontal };
+                rowContent.Children.Add(new TextBlock
                 {
                     Text = glyph,
                     FontFamily = new FontFamily("Segoe Fluent Icons"),
                     FontSize = 14,
                     Foreground = Accent,
                     VerticalAlignment = VerticalAlignment.Center,
-                },
-                IsEnabled = enabled,
-            };
-            if (!enabled) item.Opacity = 0.45;
-            item.Click += (_, _) => onClick();
-            return item;
+                    Margin = new Thickness(2, 0, 10, 0),
+                });
+                rowContent.Children.Add(stack);
+
+                var item = new Button
+                {
+                    Content = rowContent,
+                    Background = Transparent(),
+                    BorderThickness = new Thickness(0),
+                    Padding = new Thickness(6, 4, 6, 4),
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    HorizontalContentAlignment = HorizontalAlignment.Left,
+                    IsEnabled = enabled,
+                };
+                Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(item, title);
+                if (!enabled) item.Opacity = 0.45;
+                item.Click += (_, _) => { flyout.Hide(); onClick(); };
+                menuPanel.Children.Add(item);
+            }
+
+            AddItem("", "Apply all recommended",
+                $"{recCount} tweak{(recCount == 1 ? "" : "s")} differ on this tab",
+                recCount > 0,
+                async () => await RunTabBulkAsync(tabTitle, scopeRoot, useRecommended: true, service));
+
+            AddItem("", "Restore Windows defaults",
+                $"Reset every tweak on this tab — {defCount} differ",
+                defCount > 0,
+                async () => await RunTabBulkAsync(tabTitle, scopeRoot, useRecommended: false, service));
+
+            menuPanel.Children.Add(new Border
+            {
+                Height = 1,
+                Background = Hairline,
+                Margin = new Thickness(4, 4, 4, 4),
+            });
+
+            AddItem("", "Create restore point",
+                "System snapshot before you change anything",
+                true,
+                async () => await CreateRestorePointInteractiveAsync(service));
+
+            flyout.ShowAt(anchor);
         }
 
         // ── Bulk engine (tab scope) ───────────────────────────────────────────
 
-        private static async void RunTabBulk(
+        private static async Task RunTabBulkAsync(
             string tabTitle, StackPanel scopeRoot, bool useRecommended, ToolService? service)
         {
             try
@@ -184,7 +197,7 @@ namespace AkariTool.Tabs
                 bool anyRestart = work.Any(w => w.Def.RequiresRestart);
 
                 var (confirmed, createRestorePoint) =
-                    ShowBulkConfirmDialog(tabTitle, useRecommended, work.Count, warnedNames, anyRestart);
+                    await ShowBulkConfirmDialogAsync(tabTitle, useRecommended, work.Count, warnedNames, anyRestart);
                 if (!confirmed) return;
 
                 if (createRestorePoint && service != null)
@@ -193,9 +206,14 @@ namespace AkariTool.Tabs
                     if (!rpOk)
                     {
                         // Never proceed silently past a failed restore point the user asked for.
-                        if (!ShowOwnedConfirm(
-                            "The restore point could not be created (System Restore may be disabled " +
-                            "or requires administrator rights).\n\nApply the tweaks anyway?",
+                        if (!await AkariDialogs.ConfirmContentAsync(
+                            new TextBlock
+                            {
+                                Text = "The restore point could not be created (System Restore may be disabled " +
+                                       "or requires administrator rights).\n\nApply the tweaks anyway?",
+                                TextWrapping = TextWrapping.Wrap,
+                                MaxWidth = 440,
+                            },
                             "Restore point failed", primaryText: "Continue anyway"))
                             return;
                     }
@@ -237,14 +255,14 @@ namespace AkariTool.Tabs
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[QUICK] RunTabBulk crashed: {ex}");
-                service?.Log($"[QUICK] RunTabBulk crashed: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[QUICK] RunTabBulkAsync crashed: {ex}");
+                service?.Log($"[QUICK] RunTabBulkAsync crashed: {ex.Message}");
             }
         }
 
         // ── Confirmation dialog ───────────────────────────────────────────────
 
-        private static (bool Confirmed, bool CreateRestorePoint) ShowBulkConfirmDialog(
+        private static async Task<(bool Confirmed, bool CreateRestorePoint)> ShowBulkConfirmDialogAsync(
             string tabTitle, bool useRecommended, int count, List<string> warnedNames, bool anyRestart)
         {
             var body = new StackPanel { MaxWidth = 440 };
@@ -298,80 +316,33 @@ namespace AkariTool.Tabs
             };
             body.Children.Add(restorePointBox);
 
-            var box = new Wpf.Ui.Controls.MessageBox
-            {
-                Title = useRecommended ? "Apply all recommended settings?" : "Restore Windows defaults?",
-                Content = body,
-                PrimaryButtonText = useRecommended ? $"Apply {count} tweaks" : $"Reset {count} tweaks",
-                CloseButtonText = "Cancel",
-                Owner = Application.Current.MainWindow,
-            };
+            bool ok = await AkariDialogs.ConfirmContentAsync(
+                body,
+                useRecommended ? "Apply all recommended settings?" : "Restore Windows defaults?",
+                primaryText: useRecommended ? $"Apply {count} tweaks" : $"Reset {count} tweaks");
 
-            bool ok = PumpDialog(box) == Wpf.Ui.Controls.MessageBoxResult.Primary;
             return (ok, ok && restorePointBox.IsChecked == true);
         }
 
         // ── Restore point (menu item 3) ───────────────────────────────────────
 
-        private static async void CreateRestorePointInteractive(ToolService? service)
+        private static async Task CreateRestorePointInteractiveAsync(ToolService? service)
         {
             try
             {
                 if (service == null) return;
                 service.Log("[RESTORE] Creating restore point (Quick actions)…");
                 bool ok = await RestorePointHelper.EnsureRestorePointAsync(service);
-                ShowOwnedInfo(
+                await AkariDialogs.InfoAsync(
                     ok ? "Restore point created (or a recent one already exists)."
                        : "Restore point creation failed — System Restore may be disabled for C:. See the log for details.",
                     ok ? "Restore point ready" : "Restore point failed");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[QUICK] CreateRestorePointInteractive crashed: {ex}");
-                service?.Log($"[QUICK] CreateRestorePointInteractive crashed: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[QUICK] CreateRestorePointInteractiveAsync crashed: {ex}");
+                service?.Log($"[QUICK] CreateRestorePointInteractiveAsync crashed: {ex.Message}");
             }
-        }
-
-        // ── Owned dialog helpers ──────────────────────────────────────────────
-        // Same sync-pump pattern as AkariDialogs, but with Owner always set to
-        // the main window so the box centers over the app.
-
-        private static bool ShowOwnedConfirm(string message, string title, string primaryText)
-        {
-            var box = new Wpf.Ui.Controls.MessageBox
-            {
-                Title = title,
-                Content = new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap, MaxWidth = 440 },
-                PrimaryButtonText = primaryText,
-                CloseButtonText = "Cancel",
-                Owner = Application.Current.MainWindow,
-            };
-            return PumpDialog(box) == Wpf.Ui.Controls.MessageBoxResult.Primary;
-        }
-
-        private static void ShowOwnedInfo(string message, string title)
-        {
-            var box = new Wpf.Ui.Controls.MessageBox
-            {
-                Title = title,
-                Content = new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap, MaxWidth = 440 },
-                CloseButtonText = "OK",
-                Owner = Application.Current.MainWindow,
-            };
-            PumpDialog(box);
-        }
-
-        private static Wpf.Ui.Controls.MessageBoxResult PumpDialog(Wpf.Ui.Controls.MessageBox box)
-        {
-            var task = box.ShowDialogAsync();
-            if (!task.IsCompleted)
-            {
-                var frame = new System.Windows.Threading.DispatcherFrame();
-                task.ContinueWith(_ => frame.Continue = false,
-                    TaskScheduler.FromCurrentSynchronizationContext());
-                System.Windows.Threading.Dispatcher.PushFrame(frame);
-            }
-            return task.GetAwaiter().GetResult();
         }
     }
 }

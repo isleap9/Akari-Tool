@@ -1,8 +1,7 @@
-using System.IO;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
-using System.Windows.Media;
+﻿using System.IO;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.Win32;
 using AkariTool.Services;
 
@@ -25,12 +24,12 @@ namespace AkariTool.Tabs.AdvancedTools
             // ISO row
             var selectIsoBtn = MakeButton("Select ISO");
             _isoPathText = MakePathText("—");
-            selectIsoBtn.Click += (_, _) =>
+            selectIsoBtn.Click += async (_, _) =>
             {
-                var dlg = new OpenFileDialog { Filter = "ISO files (*.iso)|*.iso", Title = "Select a Windows ISO" };
-                if (dlg.ShowDialog() != true) return;
-                if (!_wim.ValidateIsoFile(dlg.FileName)) { SetStatus(1, "Invalid ISO file"); return; }
-                _isoPath = dlg.FileName;
+                var picked = await FilePickers.OpenFileAsync(".iso");
+                if (picked is null) return;
+                if (!_wim.ValidateIsoFile(picked)) { SetStatus(1, "Invalid ISO file"); return; }
+                _isoPath = picked;
                 _isoPathText.Text = _isoPath;
                 SetStatus(1, Path.GetFileName(_isoPath));
                 UpdateStepStates();
@@ -40,26 +39,26 @@ namespace AkariTool.Tabs.AdvancedTools
             // Working directory row
             var selectDirBtn = MakeButton("Select Folder");
             _workDirText = MakePathText(_workDir);
-            selectDirBtn.Click += (_, _) =>
+            selectDirBtn.Click += async (_, _) =>
             {
-                var dlg = new OpenFolderDialog { Title = "Select working directory" };
-                if (dlg.ShowDialog() != true) return;
+                var pickedDir = await FilePickers.OpenFolderAsync();
+                if (pickedDir is null) return;
 
                 if (_alreadyExtracted.IsChecked == true)
                 {
-                    if (!_wim.LooksLikeExtractedMedia(dlg.FolderName))
+                    if (!_wim.LooksLikeExtractedMedia(pickedDir))
                     {
                         SetStatus(1, "Folder has no 'sources'/'boot' — not extracted media");
                         return;
                     }
-                    _workDir = dlg.FolderName;
+                    _workDir = pickedDir;
                     _extractionDone = true;
                     SetStatus(1, "Using already-extracted media", done: true);
                     _ = OnExtractionCompleteAsync();
                 }
                 else
                 {
-                    _workDir = Path.Combine(dlg.FolderName, "AkariWIM");
+                    _workDir = Path.Combine(pickedDir, "AkariWIM");
                 }
                 _workDirText.Text = _workDir;
                 UpdateStepStates();
@@ -142,7 +141,7 @@ namespace AkariTool.Tabs.AdvancedTools
                 return;
             }
 
-            _conversionPanel.Children.Add(new Separator
+            _conversionPanel.Children.Add(new Border
             {
                 Background = TweakHelpers.Hairline,
                 Margin = new Thickness(0, 4, 0, 10),
@@ -198,7 +197,7 @@ namespace AkariTool.Tabs.AdvancedTools
                 "Generate one from your current Akari Tool selections, pick your own, or build one online."));
 
             var akariXmlBtn = MakePrimaryButton("Generate Akari XML");
-            akariXmlBtn.ToolTip = "Builds an autounattend.xml from your current Akari Tool selections and places it in the extracted media.";
+            ToolTipService.SetToolTip(akariXmlBtn, "Builds an autounattend.xml from your current Akari Tool selections and places it in the extracted media.");
             akariXmlBtn.Click += async (_, _) => await RunBusyAsync("Akari XML generation", async _ =>
             {
                 var outPath = Path.Combine(_workDir, "autounattend.xml");
@@ -210,7 +209,7 @@ namespace AkariTool.Tabs.AdvancedTools
             });
 
             var hostedBtn = MakeButton("Add Hosted Akari XML");
-            hostedBtn.ToolTip = "Downloads the ready-made Akari autounattend.xml from GitHub (no app selections needed).";
+            ToolTipService.SetToolTip(hostedBtn, "Downloads the ready-made Akari autounattend.xml from GitHub (no app selections needed).");
             hostedBtn.Click += async (_, _) => await RunBusyAsync("XML download", async ct =>
             {
                 if (await _wim.DownloadAkariAutounattendXmlAsync(_workDir, s => SetStatus(2, s), ct))
@@ -220,10 +219,10 @@ namespace AkariTool.Tabs.AdvancedTools
             var selectBtn = MakeButton("Select Custom XML");
             selectBtn.Click += async (_, _) =>
             {
-                var dlg = new OpenFileDialog { Filter = "XML files (*.xml)|*.xml", Title = "Select an autounattend.xml" };
-                if (dlg.ShowDialog() != true) return;
-                if (await _wim.AddXmlToImageAsync(dlg.FileName, _workDir))
-                { _xmlAdded = true; SetStatus(2, $"Added {Path.GetFileName(dlg.FileName)}", done: true); }
+                var pickedXml2 = await FilePickers.OpenFileAsync(".xml");
+                if (pickedXml2 is null) return;
+                if (await _wim.AddXmlToImageAsync(pickedXml2, _workDir))
+                { _xmlAdded = true; SetStatus(2, $"Added {Path.GetFileName(pickedXml2)}", done: true); }
                 else SetStatus(2, "Failed to add XML");
             };
 

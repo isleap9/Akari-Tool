@@ -1,6 +1,7 @@
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
+﻿using Microsoft.UI.Text;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using AkariTool.Services;
 
 namespace AkariTool.Tabs.Backup
@@ -12,47 +13,23 @@ namespace AkariTool.Tabs.Backup
     /// user chose to apply via <see cref="SelectedIds"/> when DialogResult
     /// is true.
     /// </summary>
-    public sealed class ImportReviewDialog : Wpf.Ui.Controls.FluentWindow
+    public sealed class ImportReviewDialog
     {
         private readonly List<(string Id, CheckBox Box)> _checks = new();
+        private readonly ContentDialog _dialog;
 
         /// <summary>Ids checked when "Apply Selected" was clicked.</summary>
         public HashSet<string> SelectedIds { get; } = new();
 
         public ImportReviewDialog(IReadOnlyList<TweakRegistry.PreviewEntry> differing, int unknown)
         {
-            Title = "Review Import";
-            Width = 620;
-            Height = 560;
-            MinWidth = 480;
-            MinHeight = 360;
-            WindowStartupLocation = WindowStartupLocation.CenterOwner;
-            Background = TweakHelpers.CardBg;
-            ResizeMode = ResizeMode.CanResize;
-            ExtendsContentIntoTitleBar = true;
-            WindowBackdropType = Wpf.Ui.Controls.WindowBackdropType.None;
-
-            // outer shell: WPF-UI title bar on top, dialog body below
-            var shell = new Grid();
-            shell.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            shell.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-
-            var titleBar = new Wpf.Ui.Controls.TitleBar
-            {
-                Title = "Review Import",
-                ShowMinimize = false,
-                ShowMaximize = false,
-            };
-            Grid.SetRow(titleBar, 0);
-            shell.Children.Add(titleBar);
-
-            var root = new Grid { Margin = new Thickness(20, 8, 20, 20) };
+            // MIGRATION: was a WPF-UI FluentWindow with its own TitleBar shown via
+            // ShowDialog(). WinUI has no modal secondary window, so this is now a
+            // ContentDialog; its own chrome replaces the shell + title bar.
+            var root = new Grid { MinWidth = 560 };
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            Grid.SetRow(root, 1);
-            shell.Children.Add(root);
 
             // header
             var header = new TextBlock
@@ -95,40 +72,37 @@ namespace AkariTool.Tabs.Backup
                 Child = new ScrollViewer
                 {
                     VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                    MaxHeight = 380,   // ContentDialog has no window height to fill
                     Content = list,
                 },
             };
             Grid.SetRow(card, 2);
             root.Children.Add(card);
 
-            // buttons
-            var buttons = new StackPanel
+            // Buttons are the ContentDialog's own Primary/Close; the Apply handler
+            // harvests the ticked Ids exactly as the WPF version did.
+            _dialog = new ContentDialog
             {
-                Orientation = Orientation.Horizontal,
-                HorizontalAlignment = HorizontalAlignment.Right,
-                Margin = new Thickness(0, 16, 0, 0),
+                Title = "Review Import",
+                Content = root,
+                PrimaryButtonText = "Apply Selected",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Primary,
             };
-
-            var cancel = MakeButton("Cancel", primary: false);
-            cancel.Click += (_, _) => { DialogResult = false; Close(); };
-
-            var apply = MakeButton("Apply Selected", primary: true);
-            apply.Margin = new Thickness(10, 0, 0, 0);
-            apply.Click += (_, _) =>
+            _dialog.PrimaryButtonClick += (_, _) =>
             {
                 SelectedIds.Clear();
                 foreach (var (id, box) in _checks)
                     if (box.IsChecked == true) SelectedIds.Add(id);
-                DialogResult = true;
-                Close();
             };
+        }
 
-            buttons.Children.Add(cancel);
-            buttons.Children.Add(apply);
-            Grid.SetRow(buttons, 3);
-            root.Children.Add(buttons);
-
-            Content = shell;
+        /// <summary>Shows the review dialog. True when "Apply Selected" was pressed.</summary>
+        public async Task<bool> ShowAsync()
+        {
+            _dialog.XamlRoot = AkariDialogs.XamlRoot;
+            if (_dialog.XamlRoot is null) return false;   // no visual tree -> treat as cancel
+            return await _dialog.ShowAsync() == ContentDialogResult.Primary;
         }
 
         private UIElement MakeRow(TweakRegistry.PreviewEntry e)
@@ -196,18 +170,5 @@ namespace AkariTool.Tabs.Backup
             return row;
         }
 
-        private static Button MakeButton(string label, bool primary)
-        {
-            return new Wpf.Ui.Controls.Button
-            {
-                Content = label,
-                FontSize = 13,
-                Padding = new Thickness(16, 7, 16, 7),
-                Cursor = System.Windows.Input.Cursors.Hand,
-                Appearance = primary
-                    ? Wpf.Ui.Controls.ControlAppearance.Primary
-                    : Wpf.Ui.Controls.ControlAppearance.Secondary,
-            };
-        }
     }
 }

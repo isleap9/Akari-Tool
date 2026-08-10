@@ -4,9 +4,10 @@
 // Hosted inside SoftwareTab as the third sub-panel ("Debloat" in the sidebar);
 // runs the embedded AkariOS/AME Playbook PowerShell scripts via ToolService.
 
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
+using Microsoft.UI.Text;          // FontWeights
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;    // FontFamily
 using AkariTool.Services;
 
 namespace AkariTool.Tabs
@@ -75,6 +76,8 @@ namespace AkariTool.Tabs
                 Margin = new Thickness(4, 16, 0, 6)
             });
 
+            // MIGRATION: Effect = TweakHelpers.CardShadow() dropped (no WinUI Effect;
+            // shadows return in the cosmetic pass).
             var card = new Border
             {
                 Background = TweakHelpers.CardBackground(),
@@ -82,7 +85,6 @@ namespace AkariTool.Tabs
                 BorderThickness = new Thickness(1),
                 CornerRadius = TweakHelpers.CardRadius,
                 Margin = new Thickness(0, 0, 0, 16),
-                Effect = TweakHelpers.CardShadow()
             };
             var stack = new StackPanel { Margin = new Thickness(18, 10, 18, 10) };
 
@@ -91,7 +93,7 @@ namespace AkariTool.Tabs
                 var (title, desc, script, undo) = items[i];
 
                 if (i > 0)
-                    stack.Children.Add(new Separator { Background = TweakHelpers.Hairline, Height = 1, Margin = new Thickness(-16, 0, -16, 0) });
+                    stack.Children.Add(new Border { Background = TweakHelpers.Hairline, Height = 1, Margin = new Thickness(-16, 0, -16, 0), Tag = "separator" });
 
                 var row = new Grid { Margin = new Thickness(0, 10, 0, 10) };
                 row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -102,21 +104,24 @@ namespace AkariTool.Tabs
                 info.Children.Add(new TextBlock { Text = title, FontSize = 14, FontWeight = FontWeights.SemiBold, Foreground = TweakHelpers.TextPrimary });
                 info.Children.Add(new TextBlock { Text = desc, FontSize = 12, Foreground = TweakHelpers.TextSecondary, Margin = new Thickness(0, 2, 0, 0), TextWrapping = TextWrapping.Wrap });
 
-                var buttons = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 0, 0) };
+                var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 0, 0) };
                 Grid.SetColumn(buttons, 1);
 
                 var capturedScript = script;
                 var capturedUndo = undo;
                 var capturedTitle = title;
 
-                var runBtn = new Button { Content = "Run", Style = (Style)FindResource("RunBtn") };
+                // Run = native accent button (crimson from the AccentFillColor override),
+                // Undo = native default — same treatment as BaseTab.AddItem.
+                var runBtn = new Button { Content = "Run", Style = (Style)Application.Current.Resources["AccentButtonStyle"] };
+                Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(runBtn, $"Run {capturedTitle}");
                 runBtn.Click += async (_, _) =>
                     await Service!.RunWithTracking(new ScriptAction(capturedScript), capturedTitle, AppliedTweaks);
                 buttons.Children.Add(runBtn);
 
                 if (!string.IsNullOrEmpty(undo))
                 {
-                    var undoBtn = new Button { Content = "Undo", Style = (Style)FindResource("UndoBtn") };
+                    var undoBtn = new Button { Content = "Undo" };
                     undoBtn.Click += async (_, _) => await Service!.RunAction(new ScriptAction(capturedUndo));
                     buttons.Children.Add(undoBtn);
                 }

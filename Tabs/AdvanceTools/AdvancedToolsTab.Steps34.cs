@@ -1,8 +1,7 @@
-using System.IO;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
-using System.Windows.Media;
+﻿using System.IO;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.Win32;
 using AkariTool.Services;
 
@@ -34,11 +33,11 @@ namespace AkariTool.Tabs.AdvancedTools
             var customBtn = MakeButton("Select Custom Driver Folder");
             customBtn.Click += async (_, _) =>
             {
-                var dlg = new OpenFolderDialog { Title = "Select a folder containing drivers (.inf)" };
-                if (dlg.ShowDialog() != true) return;
+                var pickedDrv = await FilePickers.OpenFolderAsync();
+                if (pickedDrv is null) return;
                 await RunBusyAsync("Driver copy", async ct =>
                 {
-                    if (await _wim.AddDriversAsync(_workDir, dlg.FolderName, s => SetStatus(3, s), null, ct))
+                    if (await _wim.AddDriversAsync(_workDir, pickedDrv, s => SetStatus(3, s), null, ct))
                     { _driversAdded = true; SetStatus(3, "Custom drivers added", done: true); }
                 });
             };
@@ -66,16 +65,11 @@ namespace AkariTool.Tabs.AdvancedTools
 
             var selectOutBtn = MakeButton("Select Output Location");
             _outputPathText = MakePathText("—");
-            selectOutBtn.Click += (_, _) =>
+            selectOutBtn.Click += async (_, _) =>
             {
-                var dlg = new SaveFileDialog
-                {
-                    Filter = "ISO files (*.iso)|*.iso",
-                    FileName = "AkariWindows.iso",
-                    Title = "Save bootable ISO as",
-                };
-                if (dlg.ShowDialog() != true) return;
-                _outputIsoPath = dlg.FileName;
+                var pickedOut = await FilePickers.SaveFileAsync("ISO files", ".iso", "AkariWindows.iso");
+                if (pickedOut is null) return;
+                _outputIsoPath = pickedOut;
                 _outputPathText.Text = _outputIsoPath;
                 SetStatus(4, $"Output: {Path.GetFileName(_outputIsoPath)}");
                 UpdateStepStates();

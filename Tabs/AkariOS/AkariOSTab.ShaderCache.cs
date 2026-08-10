@@ -1,10 +1,10 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using AkariTool.Services;
 
 namespace AkariTool.Tabs.AkariOS
@@ -30,7 +30,7 @@ namespace AkariTool.Tabs.AkariOS
         private Button?    _shaderRescanBtn;
         private Button?    _shaderCleanBtn;
         private TextBlock? _shaderStatus;
-        private Wpf.Ui.Controls.ProgressRing? _shaderRing;
+        private ProgressRing? _shaderRing;
         private bool _shaderScanStarted;
 
         private void BuildShaderCacheContent(StackPanel panel)
@@ -46,7 +46,9 @@ namespace AkariTool.Tabs.AkariOS
             });
 
             // ── One checkbox per target ───────────────────────────────────────
-            var boxes = new WrapPanel { Margin = new Thickness(0, 0, 0, 12) };
+            // WinUI has no WrapPanel; these rows carry long "<target> — <size>" labels,
+            // so they stack vertically (one per line) instead of wrapping.
+            var boxes = new StackPanel { Margin = new Thickness(0, 0, 0, 12) };
 
             foreach (var target in ShaderCacheService.GetTargets())
             {
@@ -65,7 +67,6 @@ namespace AkariTool.Tabs.AkariOS
 
                 var box = new CheckBox
                 {
-                    Style = (Style)Application.Current.Resources["AppCheckBox"],
                     VerticalAlignment = VerticalAlignment.Center,
                     Margin = new Thickness(0, 4, 22, 4),
                     Content = label,
@@ -88,7 +89,6 @@ namespace AkariTool.Tabs.AkariOS
                 Padding = new Thickness(18, 10, 18, 10),
                 Margin  = new Thickness(0, 0, 8, 0),
                 FontSize = 13,
-                Style = (Style)FindResource("GridBtn"),
                 IsEnabled = false
             };
             _shaderRescanBtn.Click += (_, _) => _ = RunShaderScanAsync();
@@ -100,13 +100,13 @@ namespace AkariTool.Tabs.AkariOS
                 Padding = new Thickness(18, 10, 18, 10),
                 Margin  = new Thickness(0, 0, 8, 0),
                 FontSize = 13,
-                Style = (Style)FindResource("RunBtn"),
+                Style = (Style)Application.Current.Resources["AccentButtonStyle"],
                 IsEnabled = false
             };
             _shaderCleanBtn.Click += (_, _) => _ = RunShaderCleanAsync();
             actions.Children.Add(_shaderCleanBtn);
 
-            _shaderRing = new Wpf.Ui.Controls.ProgressRing
+            _shaderRing = new ProgressRing
             {
                 IsIndeterminate = true,
                 Width = 20,
@@ -289,18 +289,14 @@ namespace AkariTool.Tabs.AkariOS
         /// </summary>
         private async Task<bool> ConfirmShaderCleanAsync(string message)
         {
-            var box = new Wpf.Ui.Controls.MessageBox
-            {
-                Title   = "Clean Shader Caches",
-                Content = new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap, MaxWidth = 440 },
-                PrimaryButtonText = "Clean",
-                CloseButtonText   = "Cancel",
-            };
-
-            var owner = Window.GetWindow(this);
-            if (owner is not null) box.Owner = owner;
-
-            return await box.ShowDialogAsync() == Wpf.Ui.Controls.MessageBoxResult.Primary;
+            // MIGRATION: WPF-UI MessageBox (+ Owner) → WinUI ContentDialog via
+            // AkariDialogs, which supplies the XamlRoot. The nested-dispatcher-frame
+            // caveat in the comment above no longer applies: WinUI dialogs are
+            // natively async, so this is a plain await with no re-entrancy hazard.
+            return await AkariDialogs.ConfirmContentAsync(
+                new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap, MaxWidth = 440 },
+                "Clean Shader Caches",
+                primaryText: "Clean");
         }
 
         // ── Busy state ────────────────────────────────────────────────────────

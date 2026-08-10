@@ -1,8 +1,7 @@
-﻿using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Effects;
+﻿using Microsoft.UI.Text;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using AkariTool.Services;
 
 namespace AkariTool.Tabs
@@ -160,10 +159,14 @@ namespace AkariTool.Tabs
             }));
 
             // WMI takes a few hundred ms — never on the tab-construction path.
+            // LIVE DATA: the gather runs off-thread and marshals back via the
+            // WinUI DispatcherQueue (WPF's Dispatcher.Invoke has no equivalent).
+            // TryEnqueue is fire-and-forget where Invoke was synchronous — fine
+            // here (the UI just fills in when the data arrives).
             _ = Task.Run(() =>
             {
                 var info = SystemInfoService.Gather();
-                Dispatcher.Invoke(() =>
+                DispatcherQueue.TryEnqueue(() =>
                 {
                     _sysEdition.Text = info.Edition;
                     _sysVersion.Text = info.Version;
@@ -206,29 +209,25 @@ namespace AkariTool.Tabs
         private static void SetStat(TextBlock? block, string value)
         {
             if (block is null) return;
-            block.Text    = value;
-            block.ToolTip = value;
+            block.Text = value;
+            ToolTipService.SetToolTip(block, value);
         }
 
         // ── Global search bar ─────────────────────────────────────────────
 
         private void BuildGlobalSearchBar()
         {
-            // WPF-UI TextBox: built-in placeholder, leading icon and clear button
-            // replace the old Border + watermark-TextBlock + manual clear button.
-            var searchBox = new Wpf.Ui.Controls.TextBox
+            // WinUI AutoSuggestBox: built-in placeholder, query icon and clear button
+            // (replaces the WPF-UI TextBox; CaretBrush/SelectionBrush have no direct
+            // per-instance equivalent — the crimson caret/selection come from the
+            // TextControl* theme overrides in App.xaml).
+            var searchBox = new AutoSuggestBox
             {
-                PlaceholderText          = "Search all tweaks across every tab…",
-                Icon                     = new Wpf.Ui.Controls.SymbolIcon(Wpf.Ui.Controls.SymbolRegular.Search24),
-                ClearButtonEnabled       = true,
-                FontSize                 = 14,
-                Height                   = 44,
-                VerticalContentAlignment = VerticalAlignment.Center,
-                Margin                   = new Thickness(0, 0, 0, 20),
-                Background               = TweakHelpers.CardBg,
-                BorderBrush              = TweakHelpers.Hairline,
-                CaretBrush               = TweakHelpers.Accent,
-                SelectionBrush           = TweakHelpers.Accent,
+                PlaceholderText = "Search all tweaks across every tab…",
+                QueryIcon       = new SymbolIcon(Symbol.Find),
+                FontSize        = 14,
+                Height          = 44,
+                Margin          = new Thickness(0, 0, 0, 20),
             };
             searchBox.TextChanged += (_, _) => RunGlobalSearch(searchBox.Text.Trim());
             RootPanel.Children.Add(searchBox);
@@ -274,11 +273,12 @@ namespace AkariTool.Tabs
                 foreach (var (name, desc) in matches)
                 {
                     if (!firstInGroup)
-                        _resultsPanel.Children.Add(new Separator
+                        _resultsPanel.Children.Add(new Border
                         {
                             Background = TweakHelpers.Token("AkariOverlayStrong"),
                             Height     = 1,
-                            Margin     = new Thickness(-18, 0, -18, 0)
+                            Margin     = new Thickness(-18, 0, -18, 0),
+                            Tag        = "separator"
                         });
                     firstInGroup = false;
 
@@ -339,7 +339,8 @@ namespace AkariTool.Tabs
 
         private Grid BuildResultRow(string name, string desc, string tabLabel, Action navigate)
         {
-            var row = new Grid { Margin = new Thickness(0, 10, 0, 10), Cursor = Cursors.Hand };
+            // Cursors.Hand dropped (no WinUI equivalent); Background makes the whole row hit-testable.
+            var row = new Grid { Margin = new Thickness(0, 10, 0, 10), Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent) };
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
@@ -385,10 +386,10 @@ namespace AkariTool.Tabs
             row.Children.Add(info);
             row.Children.Add(badge);
 
-            // Navigate on click
-            row.MouseLeftButtonUp += (_, _) => { _navigate?.Invoke(tabLabel.Split(' ')[0]); navigate(); };
-            row.MouseEnter += (_, _) => info.Children.OfType<TextBlock>().FirstOrDefault()!.Foreground = TweakHelpers.Accent;
-            row.MouseLeave += (_, _) => info.Children.OfType<TextBlock>().FirstOrDefault()!.Foreground = TweakHelpers.TextPrimary;
+            // Navigate on click (WinUI pointer/tap events replace the WPF mouse events)
+            row.Tapped += (_, _) => { _navigate?.Invoke(tabLabel.Split(' ')[0]); navigate(); };
+            row.PointerEntered += (_, _) => info.Children.OfType<TextBlock>().FirstOrDefault()!.Foreground = TweakHelpers.Accent;
+            row.PointerExited  += (_, _) => info.Children.OfType<TextBlock>().FirstOrDefault()!.Foreground = TweakHelpers.TextPrimary;
 
             return row;
         }
@@ -400,23 +401,30 @@ namespace AkariTool.Tabs
             => new(title, icon, desc, tag);
 
         // Maps each Home card (by its nav Tag) to the same PNG icon the sidebar uses.
+        // MIGRATION: the WPF build resolved these through the NavIcons.xaml
+        // ResourceDictionary (NavIco_* keys → BitmapImage). Under WinUI the PNGs ship
+        // as ms-appx Content, so the map now holds file names and the image is built
+        // directly from an ms-appx:/// URI — same artwork, no resource dictionary.
         private static readonly Dictionary<string, string> _cardNavIcon = new()
         {
-            ["Bloatware"]     = "NavIco_Bloatware",
-            ["AppInstaller"]  = "NavIco_AppInstaller",
-            ["Debloat"]       = "NavIco_Debloat",
-            ["AkariOS"]       = "NavIco_AkariOS",
-            ["Gaming"]        = "NavIco_Gaming",
-            ["Privacy"]       = "NavIco_Privacy",
-            ["Update"]        = "NavIco_Update",
-            ["Notifications"] = "NavIco_Notifications",
-            ["Power"]         = "NavIco_Power",
-            ["Taskbar"]       = "NavIco_Customize",
-            ["Tools"]         = "NavIco_Tools",
-            ["Advanced"]      = "NavIco_Advanced",
-            ["Backup"]        = "NavIco_Backup",
-            ["Verify"]        = "NavIco_Verify",
+            ["Bloatware"]     = "bloatware",
+            ["AppInstaller"]  = "appinstaller",
+            ["Debloat"]       = "debloat",
+            ["AkariOS"]       = "akarios",
+            ["Gaming"]        = "gaming",
+            ["Privacy"]       = "privacy",
+            ["Update"]        = "update",
+            ["Notifications"] = "notifications",
+            ["Power"]         = "power",
+            ["Taskbar"]       = "customize",
+            ["Tools"]         = "tools",
+            ["Advanced"]      = "advanced",
+            ["Backup"]        = "backup",
+            ["Verify"]        = "verify",
         };
+
+        private static Microsoft.UI.Xaml.Media.Imaging.BitmapImage NavIconSource(string fileName) =>
+            new(new Uri($"ms-appx:///Resource/NavIcons/{fileName}.png"));
 
         private void AddCardSection(StackPanel host, string label, bool isFirst, HomeCardDef[] defs)
         {
@@ -487,18 +495,19 @@ namespace AkariTool.Tabs
             if (_cardNavIcon.TryGetValue(tabTarget, out var icoKey))
             {
                 if (tabTarget == "AkariOS" && ThemeService.Current == AkariTheme.Light)
-                    icoKey = "NavIco_AkariOS_Light";
+                    icoKey = "akarios_light";
 
+                // RenderOptions.SetBitmapScalingMode dropped — no WinUI equivalent
+                // (WinUI handles DPI/bitmap scaling itself).
                 var iconImg = new Image
                 {
-                    Source              = (ImageSource)Application.Current.FindResource(icoKey),
+                    Source              = NavIconSource(icoKey),
                     Width               = 20,
                     Height              = 20,
                     Stretch             = Stretch.Uniform,
                     HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment   = VerticalAlignment.Center
                 };
-                RenderOptions.SetBitmapScalingMode(iconImg, BitmapScalingMode.HighQuality);
                 iconBox.Child = iconImg;
             }
             else
@@ -557,23 +566,23 @@ namespace AkariTool.Tabs
                 CornerRadius    = TweakHelpers.CardRadius,
                 Padding         = new Thickness(14, 12, 16, 12),
                 Child           = row,
-                Cursor          = Cursors.Hand,
             };
 
             // V3 hover: neutral surface lift + hairline brighten + crimson icon accent.
-            card.MouseEnter += (_, _) =>
+            // (Cursors.Hand dropped — no WinUI equivalent.)
+            card.PointerEntered += (_, _) =>
             {
                 card.Background   = TweakHelpers.CardBgHover;
                 card.BorderBrush  = TweakHelpers.HairlineHover;
                 if (iconGlyphBlock != null) iconGlyphBlock.Foreground = TweakHelpers.Accent;
             };
-            card.MouseLeave += (_, _) =>
+            card.PointerExited += (_, _) =>
             {
                 card.Background   = TweakHelpers.CardBackground();
                 card.BorderBrush  = TweakHelpers.Hairline;
                 if (iconGlyphBlock != null) iconGlyphBlock.Foreground = TweakHelpers.IconNeutral;
             };
-            card.MouseLeftButtonUp += (_, _) => _navigate?.Invoke(tabTarget);
+            card.Tapped += (_, _) => _navigate?.Invoke(tabTarget);
 
             return TweakHelpers.ShadowWrapCard(card);
         }

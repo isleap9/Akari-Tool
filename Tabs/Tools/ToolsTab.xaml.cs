@@ -1,8 +1,9 @@
-using System.Diagnostics;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
-using System.Windows.Media;
+﻿using System.Diagnostics;
+using Microsoft.UI.Text;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Media;
 using AkariTool.Services;
 
 namespace AkariTool.Tabs
@@ -85,7 +86,11 @@ namespace AkariTool.Tabs
             var copyBtn = MakeButton("Copy to Clipboard", "#e0142a");
             copyBtn.Click += (_, _) =>
             {
-                Clipboard.SetText(infoText);
+                // WinUI: WPF's static Clipboard.SetText is replaced by the WinRT
+                // DataPackage/Clipboard API (same user-visible behaviour).
+                var pkg = new Windows.ApplicationModel.DataTransfer.DataPackage();
+                pkg.SetText(infoText);
+                Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(pkg);
                 Service?.Log("[INFO] System info copied to clipboard.");
             };
             inner.Children.Add(copyBtn);
@@ -275,7 +280,9 @@ namespace AkariTool.Tabs
                 Margin     = new Thickness(0, 0, 0, 10)
             });
 
-            var dnsRow = new WrapPanel { Orientation = Orientation.Horizontal };
+            // WinUI ships no in-box WrapPanel; these 4 short DNS buttons fit one row,
+            // so a horizontal StackPanel is behaviourally equivalent here.
+            var dnsRow = new StackPanel { Orientation = Orientation.Horizontal };
             dnsRow.Children.Add(MakeDnsButton("Cloudflare",  "SetDnsCloudflare.ps1", "#ff5e6e"));
             dnsRow.Children.Add(MakeDnsButton("Google",      "SetDnsGoogle.ps1",     "#a6e3a1"));
             dnsRow.Children.Add(MakeDnsButton("Quad9",       "SetDnsQuad9.ps1",      "#fab387"));
@@ -310,17 +317,36 @@ namespace AkariTool.Tabs
             var card = MakeCard();
             var inner = (StackPanel)card.Child;
 
-            var grid = new UniformGrid { Columns = 2 };
-            grid.Children.Add(MakeShortcutButton("Task Manager",    () => Launch("taskmgr")));
-            grid.Children.Add(MakeShortcutButton("Startup Apps",    () => LaunchMs("ms-settings:startupapps")));
-            grid.Children.Add(MakeShortcutButton("MSConfig",        () => Launch("msconfig")));
-            grid.Children.Add(MakeShortcutButton("Device Manager",  () => Launch("devmgmt.msc")));
-            grid.Children.Add(MakeShortcutButton("Event Viewer",    () => Launch("eventvwr.msc")));
-            grid.Children.Add(MakeShortcutButton("Windows Update",  () => LaunchMs("ms-settings:windowsupdate")));
-            grid.Children.Add(MakeShortcutButton("Disk Management", () => Launch("diskmgmt.msc")));
-            grid.Children.Add(MakeShortcutButton("Services",        () => Launch("services.msc")));
-            grid.Children.Add(MakeShortcutButton("Resource Monitor",() => Launch("resmon")));
-            grid.Children.Add(MakeShortcutButton("Registry Editor", () => Launch("regedit")));
+            // WinUI ships no UniformGrid — an equivalent 2-column Grid is built by hand
+            // (same visual result: items fill left-to-right, top-to-bottom).
+            var items = new FrameworkElement[]
+            {
+                MakeShortcutButton("Task Manager",    () => Launch("taskmgr")),
+                MakeShortcutButton("Startup Apps",    () => LaunchMs("ms-settings:startupapps")),
+                MakeShortcutButton("MSConfig",        () => Launch("msconfig")),
+                MakeShortcutButton("Device Manager",  () => Launch("devmgmt.msc")),
+                MakeShortcutButton("Event Viewer",    () => Launch("eventvwr.msc")),
+                MakeShortcutButton("Windows Update",  () => LaunchMs("ms-settings:windowsupdate")),
+                MakeShortcutButton("Disk Management", () => Launch("diskmgmt.msc")),
+                MakeShortcutButton("Services",        () => Launch("services.msc")),
+                MakeShortcutButton("Resource Monitor",() => Launch("resmon")),
+                MakeShortcutButton("Registry Editor", () => Launch("regedit")),
+            };
+
+            const int columns = 2;
+            var grid = new Grid();
+            for (int c = 0; c < columns; c++)
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            int rows = (items.Length + columns - 1) / columns;
+            for (int r = 0; r < rows; r++)
+                grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+            for (int i = 0; i < items.Length; i++)
+            {
+                Grid.SetColumn(items[i], i % columns);
+                Grid.SetRow(items[i], i / columns);
+                grid.Children.Add(items[i]);
+            }
 
             inner.Children.Add(grid);
             panel.Children.Add(card);
@@ -353,14 +379,15 @@ namespace AkariTool.Tabs
                 CornerRadius    = TweakHelpers.CardRadius,
                 Padding         = new Thickness(20, 16, 20, 16),
                 Margin          = new Thickness(0, 0, 0, 16),
-                Effect          = TweakHelpers.CardShadow(),
+                // Effect = TweakHelpers.CardShadow() dropped — no WinUI Effect
+                // (card shadows return in the post-migration cosmetic pass).
                 Child           = new StackPanel()
             };
         }
 
         private static void AddDivider(StackPanel panel)
         {
-            panel.Children.Add(new Separator
+            panel.Children.Add(new Border
             {
                 Background = TweakHelpers.Hairline,
                 Margin     = new Thickness(0, 8, 0, 8),
@@ -375,14 +402,14 @@ namespace AkariTool.Tabs
                 Content         = label,
                 // null = the live-updating token; an explicit colour stays literal.
                 Foreground      = color is null ? TweakHelpers.TextPrimary : BrushFrom(color),
-                // Background left to the GridBtn style (Transparent) so the flat window background shows through.
+                // WPF "GridBtn" style dropped (no longer defined) — native WinUI Button
+                // chrome with a transparent fill + Akari hairline, same intent.
+                Background      = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
                 BorderBrush     = TweakHelpers.Hairline,
                 BorderThickness = new Thickness(1),
                 Padding         = new Thickness(12, 6, 12, 6),
                 Margin          = new Thickness(0, 0, 8, 0),
                 FontSize        = 13,
-                Cursor          = System.Windows.Input.Cursors.Hand,
-                Style           = (Style)Application.Current.Resources["GridBtn"]
             };
         }
 
@@ -400,15 +427,15 @@ namespace AkariTool.Tabs
             {
                 Content         = label,
                 Foreground      = TweakHelpers.TextPrimary,
-                // Background left to the GridBtn style (Transparent) so the flat window background shows through.
+                // WPF "GridBtn" style dropped — native WinUI Button chrome.
+                Background      = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
                 BorderBrush     = TweakHelpers.Hairline,
                 BorderThickness = new Thickness(1),
                 Padding         = new Thickness(10, 8, 10, 8),
                 Margin          = new Thickness(0, 0, 8, 8),
                 FontSize        = 13,
                 HorizontalContentAlignment = HorizontalAlignment.Left,
-                Cursor          = System.Windows.Input.Cursors.Hand,
-                Style           = (Style)Application.Current.Resources["GridBtn"]
+                HorizontalAlignment = HorizontalAlignment.Stretch,
             };
             btn.Click += (_, _) => action();
             return btn;
@@ -440,7 +467,7 @@ namespace AkariTool.Tabs
             var runBtn = new Button
             {
                 Content           = "Run",
-                Style             = (Style)FindResource("RunBtn"),
+                Style             = (Style)Application.Current.Resources["AccentButtonStyle"],
                 VerticalAlignment = VerticalAlignment.Center
             };
             runBtn.Click += async (_, _) => await Service!.RunScript(scriptName);

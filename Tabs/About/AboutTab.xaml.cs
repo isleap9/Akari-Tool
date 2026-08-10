@@ -1,20 +1,19 @@
-using System.Diagnostics;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Documents;
-using System.Windows.Navigation;
-using System.Windows.Media;
-using System.Windows.Media.Effects;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
+﻿using Microsoft.UI.Text;                 // FontWeights
+using Microsoft.UI.Xaml;                 // Thickness, GridLength
+using Microsoft.UI.Xaml.Controls;        // StackPanel, Grid, TextBlock, Button, Border
+using Microsoft.UI.Xaml.Documents;       // Run, Hyperlink
+using Microsoft.UI.Xaml.Media;           // ImageBrush, Stretch
+using Microsoft.UI.Xaml.Media.Imaging;   // (ImageSource via ThemeService)
+using Microsoft.UI.Xaml.Shapes;          // Ellipse
+using Windows.UI;                        // Color
+using AkariTool.Helpers;                 // AkariShadow
 using AkariTool.Services;
 
 namespace AkariTool.Tabs.About
 {
     /// <summary>
     /// App info page: header card (logo + version + tagline), Environment & Credits
-    /// cards, and the two remaining external links (Repository, .NET 8 Runtime).
-    /// Replaces the old GitHub nav link.
+    /// cards, and the two external links (Repository, .NET 8 Runtime).
     /// </summary>
     public partial class AboutTab : BaseTab
     {
@@ -42,31 +41,38 @@ namespace AkariTool.Tabs.About
 
         // Brand mark for the active theme — routes through the single source of truth.
         private static ImageBrush ThemeLogoBrush() =>
-            new(ThemeService.Logo) { Stretch = Stretch.UniformToFill };
+            new() { ImageSource = ThemeService.Logo, Stretch = Stretch.UniformToFill };
 
         // ── Header card: logo · title · version pill · tagline ──────────────────
         private static Border HeaderCard()
         {
             var card = Card(new Thickness(24, 22, 24, 22), new Thickness(0, 14, 0, 0));
 
-            var row = new StackPanel { Orientation = Orientation.Horizontal };
+            // WPF parity: logo (col 0, Auto) + text column (col 1, *). A Grid — not a
+            // horizontal StackPanel — is what bounds the text column's width, so the
+            // tagline's TextWrapping actually engages instead of clipping ("cleaner frame d…").
+            var row = new Grid();
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
+            // Logo cell: an empty shadow host behind the brand ellipse carries the WPF logo
+            // glow (black, BlurRadius 22, Opacity 0.5) via Composition (WinUI has no Effect).
+            var logoCell = new Grid { Margin = new Thickness(0, 0, 18, 0), VerticalAlignment = VerticalAlignment.Center };
+            var logoShadowHost = new Border();
             var logo = new Ellipse
             {
                 Width = 58,
                 Height = 58,
                 VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(0, 0, 18, 0),
                 Fill = ThemeLogoBrush(),
-                Effect = new DropShadowEffect
-                {
-                    Color = (Color)ColorConverter.ConvertFromString("#000000"),
-                    BlurRadius = 22,
-                    ShadowDepth = 0,
-                    Opacity = 0.5
-                }
             };
-            row.Children.Add(logo);
+            logoCell.Children.Add(logoShadowHost);
+            logoCell.Children.Add(logo);
+            Grid.SetColumn(logoCell, 0);
+            row.Children.Add(logoCell);
+            logo.Loaded += (_, _) =>
+                AkariShadow.Attach(logoShadowHost, logo,
+                    Color.FromArgb(0xFF, 0, 0, 0), blurRadius: 22, opacity: 0.5f);
 
             // Swap the brand mark when the theme changes; unsubscribe when the card leaves
             // the tree so the static event doesn't leak the destroyed Ellipse.
@@ -75,6 +81,7 @@ namespace AkariTool.Tabs.About
             logo.Unloaded += (_, _) => ThemeService.ThemeChanged -= OnTheme;
 
             var textCol = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+            Grid.SetColumn(textCol, 1);
 
             var titleRow = new StackPanel { Orientation = Orientation.Horizontal };
             titleRow.Children.Add(new TextBlock
@@ -121,7 +128,7 @@ namespace AkariTool.Tabs.About
                 Foreground = TweakHelpers.AccentTextMuted
             }
         };
-        
+
         // ── Environment + Credits cards side by side ────────────────────────────
         private static UIElement InfoCards()
         {
@@ -135,7 +142,7 @@ namespace AkariTool.Tabs.About
             envStack.Children.Add(CardLabel("Environment"));
             envStack.Children.Add(InfoRow("Platform", "Windows 11 (x64)"));
             envStack.Children.Add(InfoRow("Framework", ".NET 8 Desktop"));
-            envStack.Children.Add(InfoRow("UI", "WPF-UI 4.1 (Fluent)"));
+            envStack.Children.Add(InfoRow("UI", "WinUI 3 (Windows App SDK)"));
             envStack.Children.Add(InfoRow("License", "MIT"));
             env.Child = envStack;
             Grid.SetColumn(env, 0);
@@ -150,22 +157,18 @@ namespace AkariTool.Tabs.About
                 TextWrapping = TextWrapping.Wrap,
                 LineHeight = 20
             };
-            body.Inlines.Add(new Run("Registry tweak references from "));
-            body.Inlines.Add(new Run("CTT WinUtil") { Foreground = TweakHelpers.AccentTextMuted });
-            body.Inlines.Add(new Run(" and "));
-            body.Inlines.Add(new Run("Winhance") { Foreground = TweakHelpers.AccentTextMuted });
-            body.Inlines.Add(new Run(". Advanced Tools ISO flow ported from Winhance. " +
+            body.Inlines.Add(new Run { Text = "Registry tweak references from " });
+            body.Inlines.Add(new Run { Text = "CTT WinUtil", Foreground = TweakHelpers.AccentTextMuted });
+            body.Inlines.Add(new Run { Text = " and " });
+            body.Inlines.Add(new Run { Text = "Winhance", Foreground = TweakHelpers.AccentTextMuted });
+            body.Inlines.Add(new Run { Text = ". Advanced Tools ISO flow ported from Winhance. " +
                                      "NVIDIA profile applied with nvidiaProfileInspector by Orbmu2k (MIT). " +
-                                     "Made for the AkariOS ecosystem."));
-            body.Inlines.Add(new Run(" Sidebar icons by "));
-            var icons8 = new Hyperlink(new Run("Icons8")) { NavigateUri = new System.Uri("https://icons8.com") };
-            icons8.RequestNavigate += (_, e) =>
-            {
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
-                e.Handled = true;
-            };
+                                     "Made for the AkariOS ecosystem." });
+            body.Inlines.Add(new Run { Text = " Sidebar icons by " });
+            var icons8 = new Hyperlink { NavigateUri = new Uri("https://icons8.com") };
+            icons8.Inlines.Add(new Run { Text = "Icons8" });
             body.Inlines.Add(icons8);
-            body.Inlines.Add(new Run("."));
+            body.Inlines.Add(new Run { Text = "." });
             creditsStack.Children.Add(body);
             credits.Child = creditsStack;
             Grid.SetColumn(credits, 2);
@@ -207,21 +210,20 @@ namespace AkariTool.Tabs.About
             var row = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
+                Spacing = 9,
                 Margin = new Thickness(0, 12, 0, 0)
             };
-            row.Children.Add(LinkButton("Repository", RepoUrl, new Thickness(0, 0, 9, 0)));
-            row.Children.Add(LinkButton(".NET 8 Runtime", RuntimeUrl, new Thickness(0)));
+            row.Children.Add(LinkButton("Repository", RepoUrl));
+            row.Children.Add(LinkButton(".NET 8 Runtime", RuntimeUrl));
             return row;
         }
 
-        private Button LinkButton(string text, string url, Thickness margin)
+        private Button LinkButton(string text, string url)
         {
             var btn = new Button
             {
                 Content = text,
-                Margin = margin,
-                Style = (Style)Application.Current.Resources["AppButtonSecondary"],
-                Padding = new Thickness(16, 0, 16, 0)
+                Padding = new Thickness(16, 6, 16, 6)
             };
             btn.Click += (_, _) => Service?.OpenUrl(url);
             return btn;

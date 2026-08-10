@@ -14,10 +14,10 @@
 // Cards mirror Winhance's card view: checkbox + avatar + name/description
 // + badge row, click anywhere to select, responsive column count.
 
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
-using System.Windows.Media;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Media;
 using AkariTool.Services;
 
 namespace AkariTool.Tabs
@@ -77,7 +77,9 @@ namespace AkariTool.Tabs
             var msg = $"Uninstall {selected.Count} app(s)?\n\n" +
                       string.Join(", ", selected.Take(10).Select(a => a.Name)) +
                       (selected.Count > 10 ? $" (+{selected.Count - 10} more)" : "");
-            if (!AkariDialogs.ConfirmYesNo(msg, "Uninstall External Apps"))
+            // MIGRATION: async ContentDialog (see AkariDialogs). Same message, same
+            // Yes/No, still returns before any uninstall work when declined.
+            if (!await AkariDialogs.ConfirmYesNoAsync(msg, "Uninstall External Apps"))
                 return;
 
             _busy = true;

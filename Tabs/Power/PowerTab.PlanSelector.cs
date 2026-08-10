@@ -1,7 +1,8 @@
 using System.Diagnostics;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
+using Microsoft.UI.Text;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.Win32;
 using AkariTool.Services;
 
@@ -24,7 +25,6 @@ namespace AkariTool.Tabs.Power
                 Foreground = TweakHelpers.TextMuted, // rgba(255,255,255,0.42)
                 Margin     = new Thickness(4, 0, 0, 6)
             };
-            header.SetValue(System.Windows.Documents.Typography.KerningProperty, false);
             header.Margin = new Thickness(4, 0, 0, 10);
             panel.Children.Add(header);
 
@@ -104,17 +104,18 @@ namespace AkariTool.Tabs.Power
                     CornerRadius    = TweakHelpers.CardRadius,
                     Padding         = new Thickness(15, 13, 15, 13),
                     Margin          = new Thickness(left, 0, right, 0),
-                    Cursor          = System.Windows.Input.Cursors.Hand,
-                    ToolTip         = desc,
                     Child           = stack
                 };
+                ToolTipService.SetToolTip(card, desc);
 
                 int idx = i;
-                card.MouseEnter += (_, _) => card.BorderBrush = CardBorderActive;
-                card.MouseLeave += (_, _) => card.BorderBrush =
+                // WinUI pointer events replace WPF mouse events; Tapped replaces
+                // MouseLeftButtonUp (and also covers touch/pen).
+                card.PointerEntered += (_, _) => card.BorderBrush = CardBorderActive;
+                card.PointerExited  += (_, _) => card.BorderBrush =
                     activeTag.Visibility == Visibility.Visible ? CardBorderActive : CardBorderIdle;
                 // Highlight the clicked card immediately, then run the (async) activation.
-                card.MouseLeftButtonUp += async (_, _) => { SetActiveCard(idx); await action(); };
+                card.Tapped += async (_, _) => { SetActiveCard(idx); await action(); };
 
                 Grid.SetColumn(card, i);
                 grid.Children.Add(card);
@@ -179,15 +180,14 @@ namespace AkariTool.Tabs.Power
                 CornerRadius    = TweakHelpers.CardRadius,
                 Padding         = new Thickness(15, 13, 15, 13),
                 Margin          = new Thickness(4.5, 0, 0, 0),
-                Cursor          = System.Windows.Input.Cursors.Hand,
                 Child           = stack,
                 Visibility      = Visibility.Collapsed
             };
 
-            _customPlanCard.MouseEnter += (_, _) => _customPlanCard.BorderBrush = CardBorderActive;
-            _customPlanCard.MouseLeave += (_, _) => _customPlanCard.BorderBrush =
+            _customPlanCard.PointerEntered += (_, _) => _customPlanCard.BorderBrush = CardBorderActive;
+            _customPlanCard.PointerExited  += (_, _) => _customPlanCard.BorderBrush =
                 _customPlanActiveTag.Visibility == Visibility.Visible ? CardBorderActive : CardBorderIdle;
-            _customPlanCard.MouseLeftButtonUp += async (_, _) =>
+            _customPlanCard.Tapped += async (_, _) =>
             {
                 if (_customPlanGuid is null) return;
                 SetActiveCard(-1);
@@ -269,7 +269,7 @@ namespace AkariTool.Tabs.Power
         {
             Service?.Log($"Activating {name} plan...");
             int exit = await Service!.RunProcess("powercfg", $"/setactive {guid}", timeoutMilliseconds: 10_000);
-            if (exit == 0) { Service.Log($"{name} plan activated."); RootPanel.Dispatcher.Invoke(() => { RefreshActiveCard(); RefreshPersistIndicator(); }); }
+            if (exit == 0) { Service.Log($"{name} plan activated."); RootPanel.DispatcherQueue.TryEnqueue(() => { RefreshActiveCard(); RefreshPersistIndicator(); }); }
             else Service.Log($"Failed to activate {name} (exit {exit}).");
         }
 
@@ -299,7 +299,7 @@ namespace AkariTool.Tabs.Power
         private async Task SetActiveUltimate(string guid)
         {
             int act = await Service!.RunProcess("powercfg", $"/setactive {guid}", timeoutMilliseconds: 10_000);
-            if (act == 0) { Service.Log($"Ultimate Performance plan activated (GUID: {guid})."); RootPanel.Dispatcher.Invoke(() => { RefreshActiveCard(); RefreshPersistIndicator(); }); }
+            if (act == 0) { Service.Log($"Ultimate Performance plan activated (GUID: {guid})."); RootPanel.DispatcherQueue.TryEnqueue(() => { RefreshActiveCard(); RefreshPersistIndicator(); }); }
             else Service.Log($"Failed to activate Ultimate Performance (exit {act}).");
         }
 

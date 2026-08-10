@@ -1,11 +1,12 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
+using Microsoft.UI.Text;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.Win32;
 using AkariTool.Services;
 
@@ -27,10 +28,7 @@ namespace AkariTool.Tabs.AkariOS
                 BorderBrush = TweakHelpers.CardElevationBorder,
                 BorderThickness = new Thickness(1),
                 CornerRadius = TweakHelpers.CardRadius,
-                ClipToBounds = true,
                 Margin = new Thickness(0, 0, 0, 16),
-                Effect = ThemeService.CardShadowEffect,
-                CacheMode = new System.Windows.Media.BitmapCache()
             };
             var presetsInner = new StackPanel();
             presetsCard.Child = presetsInner;
@@ -67,9 +65,9 @@ namespace AkariTool.Tabs.AkariOS
             presetsInner.Children.Add(presetWarning);
 
             BuildServicePresetSection(presetsInner);
-            presetsInner.Children.Add(new Separator { Background = TweakHelpers.Token("AkariOverlayStrong"), Height = 1 });
+            presetsInner.Children.Add(new Border { Background = TweakHelpers.Token("AkariOverlayStrong"), Height = 1 });
             BuildPlaybookSection(presetsInner);
-            presetsInner.Children.Add(new Separator { Background = TweakHelpers.Token("AkariOverlayStrong"), Height = 1 });
+            presetsInner.Children.Add(new Border { Background = TweakHelpers.Token("AkariOverlayStrong"), Height = 1 });
             BuildBcdSection(presetsInner);
 
             panel.Children.Add(TweakHelpers.ShadowWrapCard(presetsCard));
@@ -111,14 +109,12 @@ namespace AkariTool.Tabs.AkariOS
                 BorderThickness = new Thickness(1),
                 CornerRadius = TweakHelpers.CardRadius,
                 Margin = new Thickness(0, 0, 0, 12),
-                Effect = ThemeService.CardShadowEffect,
-                CacheMode = new System.Windows.Media.BitmapCache()
             };
             var inner = new StackPanel { Margin = new Thickness(20, 16, 20, 16) };
             card.Child = inner;
 
             // ── Clickable header row: title + chevron ─────────────────────────
-            var header = new Grid { Cursor = System.Windows.Input.Cursors.Hand };
+            var header = new Grid();   // Cursors.Hand dropped (no WinUI equivalent)
             header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
@@ -143,7 +139,7 @@ namespace AkariTool.Tabs.AkariOS
             header.Children.Add(chevron);
 
             // Transparent background so the whole row is hit-testable, not just the glyph
-            var headerHit = new Border { Background = Brushes.Transparent, Child = header };
+            var headerHit = new Border { Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent), Child = header };
             inner.Children.Add(headerHit);
 
             // ── Content, in its own panel so it can collapse ──────────────────
@@ -169,7 +165,7 @@ namespace AkariTool.Tabs.AkariOS
             }
             ApplyState();
 
-            headerHit.MouseLeftButtonUp += (_, _) =>
+            headerHit.Tapped += (_, _) =>
             {
                 collapsed = !collapsed;
                 // Marker present only while the section deviates from its default.
@@ -190,7 +186,7 @@ namespace AkariTool.Tabs.AkariOS
             void AddRow(string name, string desc, Action<bool> apply, string? disabledNote = null)
             {
                 var sep = panel.Children.Count > 0;
-                if (sep) panel.Children.Add(new Separator { Background = TweakHelpers.Token("AkariOverlayStrong"), Height = 1, Margin = new Thickness(-20, 0, -20, 0) });
+                if (sep) panel.Children.Add(new Border { Background = TweakHelpers.Token("AkariOverlayStrong"), Height = 1, Margin = new Thickness(-20, 0, -20, 0) });
 
                 var row = new Grid { Margin = new Thickness(0, 12, 0, 12) };
                 row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -219,7 +215,8 @@ namespace AkariTool.Tabs.AkariOS
 
                 if (disabledNote is not null)
                 {
-                    toggleCtrl.IsEnabled = false;
+                    // WinUI: IsEnabled lives on Control, not FrameworkElement.
+                    if (toggleCtrl is Control c) c.IsEnabled = false;
                     info.Opacity = 0.6;
                 }
 
@@ -324,24 +321,18 @@ namespace AkariTool.Tabs.AkariOS
                 ? "Applying AkariOS network tweaks"
                 : "Reverting AkariOS network tweaks";
 
-            var box = new Wpf.Ui.Controls.MessageBox
-            {
-                Title = "This will restart your PC",
-                Content = new TextBlock
+            // MIGRATION: WPF-UI MessageBox (+ Owner) → WinUI ContentDialog via AkariDialogs.
+            // Wording and button labels unchanged.
+            return await AkariDialogs.ConfirmContentAsync(
+                new TextBlock
                 {
                     Text = $"{what} runs a script that restarts your computer immediately " +
                            "when it finishes. Save your work before continuing.\n\nContinue?",
                     TextWrapping = TextWrapping.Wrap,
                     MaxWidth = 440,
                 },
-                PrimaryButtonText = enable ? "Restart and apply" : "Restart and revert",
-                CloseButtonText = "Cancel",
-            };
-
-            var owner = Window.GetWindow(this);
-            if (owner is not null && owner.IsVisible) box.Owner = owner;
-
-            return await box.ShowDialogAsync() == Wpf.Ui.Controls.MessageBoxResult.Primary;
+                "This will restart your PC",
+                primaryText: enable ? "Restart and apply" : "Restart and revert");
         }
 
         // The batches ship inside the assembly (csproj embeds Scripts\Network\*.bat),

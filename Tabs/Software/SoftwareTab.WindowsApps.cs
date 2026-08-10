@@ -14,10 +14,10 @@
 // Cards mirror Winhance's card view: checkbox + avatar + name/description
 // + badge row, click anywhere to select, responsive column count.
 
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
-using System.Windows.Media;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Media;
 using AkariTool.Services;
 
 namespace AkariTool.Tabs
@@ -90,7 +90,10 @@ namespace AkariTool.Tabs
                       (selected.Count > 10 ? $" (+{selected.Count - 10} more)" : "") +
                       (warnings.Count > 0 ? $"\n\n⚠ {string.Join(", ", warnings)}: removal can affect Windows components that depend on it." : "") +
                       "\n\nA startup task keeps these removed after Windows updates.";
-            if (!AkariDialogs.ConfirmYesNo(msg, "Remove Windows Apps"))
+            // MIGRATION: AkariDialogs is async-only under WinUI (ContentDialog).
+            // The guard is otherwise identical — same message, same Yes/No, and it
+            // still returns BEFORE any removal work when the user declines.
+            if (!await AkariDialogs.ConfirmYesNoAsync(msg, "Remove Windows Apps"))
                 return;
 
             _busy = true;
@@ -99,7 +102,7 @@ namespace AkariTool.Tabs
             {
                 await SoftwareAppService.RemoveWindowsAppsAsync(selected,
                     log: m => Service!.Log(m),
-                    status: s => Dispatcher.Invoke(() => { _waStatus.Text = s; _waStatus.Visibility = Visibility.Visible; }));
+                    status: s => DispatcherQueue.TryEnqueue(() => { _waStatus.Text = s; _waStatus.Visibility = Visibility.Visible; }));
                 foreach (var app in selected) SetSelected(app, false);
             }
             finally

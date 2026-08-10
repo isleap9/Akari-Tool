@@ -1,13 +1,13 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
-using System.Windows.Threading;
+using Microsoft.UI.Text;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.Win32;
 using AkariTool.Services;
 
@@ -172,6 +172,12 @@ namespace AkariTool.Tabs.AkariOS
             _cmLaunchInfo.Visibility = Visibility.Visible;
         }
 
+        /// <summary>
+        /// MIGRATION: the WPF style keys ("RunBtn" = crimson filled, "GridBtn" = ghost
+        /// outline) were never ported — those styles were trigger-based. The key is now
+        /// mapped to native WinUI chrome: RunBtn → AccentButtonStyle, anything else →
+        /// the default Button style. The parameter is kept so call sites stay unchanged.
+        /// </summary>
         private Button MakeCompetitiveButton(string label, string style, Action onClick)
         {
             var btn = new Button
@@ -180,8 +186,9 @@ namespace AkariTool.Tabs.AkariOS
                 Margin = new Thickness(8, 0, 0, 0),
                 Padding = new Thickness(16, 10, 16, 10),
                 FontSize = 13,
-                Style = (Style)FindResource(style),
             };
+            if (style == "RunBtn")
+                btn.Style = (Style)Application.Current.Resources["AccentButtonStyle"];
             btn.Click += (_, _) =>
             {
                 try { onClick(); }
@@ -219,7 +226,7 @@ namespace AkariTool.Tabs.AkariOS
                 try { found = GameDetection.DetectSteamGames(); }
                 catch { found = Array.Empty<DetectedGame>(); }
 
-                return Dispatcher.BeginInvoke(() => PopulateCompetitiveGames(found));
+                return DispatcherQueue.TryEnqueue(() => PopulateCompetitiveGames(found));
             });
         }
 
@@ -262,17 +269,16 @@ namespace AkariTool.Tabs.AkariOS
             SyncCompetitiveControlStates();
         }
 
-        private void BrowseForGame()
-        {
-            var dlg = new OpenFileDialog
-            {
-                Title = "Select a game executable",
-                Filter = "Executables (*.exe)|*.exe",
-                CheckFileExists = true,
-            };
-            if (dlg.ShowDialog() != true) return;
+        // MIGRATION: WinUI pickers are async, so the body moved to BrowseForGameAsync
+        // and this stays a void Action for MakeCompetitiveButton's signature.
+        private void BrowseForGame() => _ = BrowseForGameAsync();
 
-            string path = dlg.FileName;
+        private async Task BrowseForGameAsync()
+        {
+            var picked = await FilePickers.OpenFileAsync(".exe");
+            if (picked is null) return;
+
+            string path = picked;
             string name = Path.GetFileNameWithoutExtension(path);
 
             int existing = _cmGames.FindIndex(g => g.ExePath.Equals(path, StringComparison.OrdinalIgnoreCase));
@@ -336,10 +342,10 @@ namespace AkariTool.Tabs.AkariOS
         {
             if (CompetitiveDisclaimerAccepted()) return true;
 
-            var box = new Wpf.Ui.Controls.MessageBox
-            {
-                Title = "Competitive Mode is experimental",
-                Content = new TextBlock
+            // MIGRATION: WPF-UI MessageBox (+ Owner) → WinUI ContentDialog via AkariDialogs.
+            // Disclaimer wording and button labels unchanged.
+            bool accepted = await AkariDialogs.ConfirmContentAsync(
+                new TextBlock
                 {
                     Text = "This feature suspends background apps, stops Windows services and changes " +
                            "the power plan for the duration of your game session, then restores them " +
@@ -351,15 +357,10 @@ namespace AkariTool.Tabs.AkariOS
                     TextWrapping = TextWrapping.Wrap,
                     MaxWidth = 440,
                 },
-                PrimaryButtonText = "I understand, continue",
-                CloseButtonText = "Cancel",
-            };
+                "Competitive Mode is experimental",
+                primaryText: "I understand, continue");
 
-            var owner = Window.GetWindow(this);
-            if (owner is not null && owner.IsVisible) box.Owner = owner;
-
-            if (await box.ShowDialogAsync() != Wpf.Ui.Controls.MessageBoxResult.Primary)
-                return false;
+            if (!accepted) return false;
 
             try { Registry.SetValue(DisclaimerPrefKey, DisclaimerPrefName, 1, RegistryValueKind.DWord); }
             catch { /* a lost flag only means asking again — never block the start */ }
@@ -452,7 +453,6 @@ namespace AkariTool.Tabs.AkariOS
 
             var cb = new CheckBox
             {
-                Style = (Style)Application.Current.Resources["AppCheckBox"],
                 Margin = new Thickness(0, 5, 0, 5),
                 VerticalContentAlignment = VerticalAlignment.Center,
                 Content = content
@@ -501,7 +501,7 @@ namespace AkariTool.Tabs.AkariOS
 
         private void BuildCompetitiveStatus(StackPanel panel)
         {
-            panel.Children.Add(new Separator
+            panel.Children.Add(new Border
             {
                 Background = TweakHelpers.Token("AkariOverlayStrong"),
                 Height = 1,
@@ -583,7 +583,8 @@ namespace AkariTool.Tabs.AkariOS
             _cmElapsedTimer.Start();
         }
 
-        private void OnCompetitiveTimerTick(object? sender, EventArgs e) => RefreshCompetitiveStatus();
+        // WinUI DispatcherTimer.Tick is EventHandler<object> (WPF used EventHandler).
+        private void OnCompetitiveTimerTick(object? sender, object e) => RefreshCompetitiveStatus();
 
         private void StopCompetitiveTimer() => _cmElapsedTimer?.Stop();
 
@@ -810,7 +811,7 @@ namespace AkariTool.Tabs.AkariOS
         /// <summary>Watcher-driven end — marshal to the dispatcher before touching UI.</summary>
         private void OnCompetitiveSessionEndedExternally()
         {
-            Dispatcher.BeginInvoke(() =>
+            DispatcherQueue.TryEnqueue(() =>
             {
                 StopCompetitiveTimer();
                 _cmActiveSchemeName = null;
@@ -841,10 +842,12 @@ namespace AkariTool.Tabs.AkariOS
                     }
                     await Task.Delay(TimeSpan.FromSeconds(10));
 
-                    await Dispatcher.BeginInvoke(() =>
+                    DispatcherQueue.TryEnqueue(() =>
                     {
-                        var w = Window.GetWindow(this);
-                        if (w is not null && CompetitiveService.IsSessionActive) w.Hide();
+                        // WinUI: no Window.GetWindow / Window.Hide — use the shell
+                        // window's AppWindow.
+                        var w = MainWindow.Instance;
+                        if (w is not null && CompetitiveService.IsSessionActive) w.AppWindow.Hide();
                     });
                 }
                 catch { /* hiding is a convenience — never let it surface */ }
@@ -855,10 +858,12 @@ namespace AkariTool.Tabs.AkariOS
         {
             try
             {
-                var w = Window.GetWindow(this);
+                // WinUI: AppWindow replaces WPF Show/IsVisible/WindowState.
+                var w = MainWindow.Instance;
                 if (w is null) return;
-                if (!w.IsVisible) w.Show();
-                if (w.WindowState == WindowState.Minimized) w.WindowState = WindowState.Normal;
+                w.AppWindow.Show();
+                if (w.AppWindow.Presenter is Microsoft.UI.Windowing.OverlappedPresenter p)
+                    p.Restore();
                 w.Activate();
             }
             catch { }

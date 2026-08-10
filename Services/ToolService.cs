@@ -2,9 +2,11 @@ using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Text;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
+using Microsoft.UI.Dispatching;   // WinUI: DispatcherQueue (replaces WPF Dispatcher)
+using Microsoft.UI.Xaml;          // Visibility
+using Microsoft.UI.Xaml.Controls; // TextBox, ProgressBar, TextBlock
+using Microsoft.UI.Xaml.Media;    // Brush, SolidColorBrush
+using Windows.UI;                 // Color
 using Microsoft.Win32;
 
 namespace AkariTool.Services
@@ -42,17 +44,37 @@ namespace AkariTool.Services
         // ── Logging ────────────────────────────────────────────────────────────
 
         public void Log(string message) =>
-            _log.Dispatcher.Invoke(() =>
+            _log.DispatcherQueue.TryEnqueue(() =>
             {
-                _log.AppendText(message + Environment.NewLine);
-                _log.ScrollToEnd();
+                _log.Text += message + Environment.NewLine;
+                ScrollLogToEnd();
             });
+
+        // WinUI TextBox has no ScrollToEnd(); scroll its template ScrollViewer instead.
+        private ScrollViewer? _logScroller;
+        private void ScrollLogToEnd()
+        {
+            _logScroller ??= FindScrollViewer(_log);
+            _logScroller?.ChangeView(null, _logScroller.ScrollableHeight, null);
+        }
+
+        private static ScrollViewer? FindScrollViewer(DependencyObject root)
+        {
+            if (root is ScrollViewer sv) return sv;
+            int count = VisualTreeHelper.GetChildrenCount(root);
+            for (int i = 0; i < count; i++)
+            {
+                var found = FindScrollViewer(VisualTreeHelper.GetChild(root, i));
+                if (found != null) return found;
+            }
+            return null;
+        }
 
         // ── Progress bar ───────────────────────────────────────────────────────
 
         public void StartProgress(string processName)
         {
-            _progress.Dispatcher.Invoke(() =>
+            _progress.DispatcherQueue.TryEnqueue(() =>
             {
                 _activeProcessCount++;
                 _progressStatus.Text = $"Running {processName}...";
@@ -65,7 +87,7 @@ namespace AkariTool.Services
 
         public void StopProgress()
         {
-            _progress.Dispatcher.Invoke(() =>
+            _progress.DispatcherQueue.TryEnqueue(() =>
             {
                 _activeProcessCount = Math.Max(0, _activeProcessCount - 1);
                 if (_activeProcessCount > 0) return;
@@ -265,8 +287,27 @@ namespace AkariTool.Services
 
         // ── Helpers ────────────────────────────────────────────────────────────
 
-        public static Brush BrushFrom(string color) =>
-            (Brush)new BrushConverter().ConvertFromString(color)!;
+        // WinUI has no BrushConverter. Parse a #RGB hex string (#RRGGBB or
+        // #AARRGGBB, with or without the leading '#') into a SolidColorBrush.
+        public static Brush BrushFrom(string color)
+        {
+            var hex = color.TrimStart('#');
+            byte a = 0xFF, r, g, b;
+            if (hex.Length == 8)
+            {
+                a = Convert.ToByte(hex.Substring(0, 2), 16);
+                r = Convert.ToByte(hex.Substring(2, 2), 16);
+                g = Convert.ToByte(hex.Substring(4, 2), 16);
+                b = Convert.ToByte(hex.Substring(6, 2), 16);
+            }
+            else // assume 6-digit RRGGBB
+            {
+                r = Convert.ToByte(hex.Substring(0, 2), 16);
+                g = Convert.ToByte(hex.Substring(2, 2), 16);
+                b = Convert.ToByte(hex.Substring(4, 2), 16);
+            }
+            return new SolidColorBrush(Color.FromArgb(a, r, g, b));
+        }
 
         private static string? FindEmbeddedScriptResource(string scriptName)
         {

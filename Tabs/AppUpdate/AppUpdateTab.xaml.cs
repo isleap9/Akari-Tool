@@ -1,9 +1,10 @@
-using System.Diagnostics;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
-using System.Windows.Media.Animation;
-using System.Windows.Shapes;
+﻿using System.Diagnostics;
+using Microsoft.UI.Text;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Animation;
+using Microsoft.UI.Xaml.Shapes;
 using AkariTool.Services;
 
 namespace AkariTool.Tabs.AppUpdate
@@ -23,7 +24,7 @@ namespace AkariTool.Tabs.AppUpdate
     {
         private TextBlock _headline = null!;
         private TextBlock _subline = null!;
-        private Path _stateIcon = null!;
+        private Microsoft.UI.Xaml.Shapes.Path _stateIcon = null!;
         private Border _chip = null!;
         private Button _checkBtn = null!;
         private Button _updateBtn = null!;
@@ -114,8 +115,8 @@ namespace AkariTool.Tabs.AppUpdate
                 BorderThickness = new Thickness(1),
                 VerticalAlignment = VerticalAlignment.Center
             };
-            _spin = new RotateTransform(0);
-            _stateIcon = new Path
+            _spin = new RotateTransform { Angle = 0 };   // WinUI RotateTransform has no ctor arg
+            _stateIcon = new Microsoft.UI.Xaml.Shapes.Path
             {
                 StrokeThickness = 1.8,
                 StrokeStartLineCap = PenLineCap.Round,
@@ -123,7 +124,7 @@ namespace AkariTool.Tabs.AppUpdate
                 StrokeLineJoin = PenLineJoin.Round,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center,
-                RenderTransformOrigin = new Point(0.5, 0.5),
+                RenderTransformOrigin = new Windows.Foundation.Point(0.5, 0.5),
                 RenderTransform = _spin
             };
             _chip.Child = _stateIcon;
@@ -156,14 +157,14 @@ namespace AkariTool.Tabs.AppUpdate
                 Content = "Update Now",
                 Visibility = Visibility.Collapsed,
                 Margin = new Thickness(0, 0, 8, 0),
-                Style = (Style)Application.Current.Resources["AppButton"],
+                Style = (Style)Application.Current.Resources["AccentButtonStyle"],
                 Padding = new Thickness(18, 0, 18, 0)
             };
             _updateBtn.Click += UpdateNow;
             _checkBtn = new Button
             {
                 Content = "Check for Updates",
-                Style = (Style)Application.Current.Resources["AppButton"],
+                Style = (Style)Application.Current.Resources["AccentButtonStyle"],
                 Padding = new Thickness(18, 0, 18, 0)
             };
             _checkBtn.Click += CheckForUpdates;
@@ -310,7 +311,7 @@ namespace AkariTool.Tabs.AppUpdate
                 });
 
                 await Task.Delay(800);           // let the installer process spin up
-                Application.Current.Shutdown();
+                Application.Current.Exit();      // WinUI equivalent of WPF's Shutdown()
             }
             catch (Exception ex)
             {
@@ -346,15 +347,22 @@ namespace AkariTool.Tabs.AppUpdate
 
         private void StartSpin()
         {
-            var anim = new DoubleAnimation(0, 360, new Duration(TimeSpan.FromSeconds(1.1)))
+            // WinUI: DoubleAnimation has no (from,to,duration) ctor, SetTargetProperty
+            // takes a string path (no PropertyPath type), and animating a non-composition
+            // property requires EnableDependentAnimation.
+            var anim = new DoubleAnimation
             {
-                RepeatBehavior = RepeatBehavior.Forever
+                From = 0,
+                To = 360,
+                Duration = new Duration(TimeSpan.FromSeconds(1.1)),
+                RepeatBehavior = RepeatBehavior.Forever,
+                EnableDependentAnimation = true,
             };
             _spinSb = new Storyboard();
             _spinSb.Children.Add(anim);
             Storyboard.SetTarget(anim, _stateIcon);
             Storyboard.SetTargetProperty(anim,
-                new PropertyPath("(UIElement.RenderTransform).(RotateTransform.Angle)"));
+                "(UIElement.RenderTransform).(RotateTransform.Angle)");
             _spinSb.Begin();
         }
 
@@ -480,9 +488,22 @@ namespace AkariTool.Tabs.AppUpdate
         }
 
         // ── Icon geometries (Lucide-style, 24x24 viewbox, drawn centred) ────────
-        private static Geometry CheckGeometry()    => Geometry.Parse("M20 6 9 17l-5-5");
-        private static Geometry SpinnerGeometry()  => Geometry.Parse("M21 12a9 9 0 1 1-6.2-8.6");
-        private static Geometry DownloadGeometry() => Geometry.Parse("M12 3v12m0 0 5-5m-5 5-5-5M4 21h16");
-        private static Geometry WarnGeometry()     => Geometry.Parse("M12 4 2 20h20L12 4Zm0 6v5m0 3v.01");
+        // MIGRATION: WinUI has no Geometry.Parse. XamlReader.Load parses the SAME
+        // path-data strings (unchanged below) through the XAML path mini-language,
+        // so the icons are identical to the WPF build.
+        private static Geometry ParseGeometry(string data)
+        {
+            const string ns = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+            var path = (Microsoft.UI.Xaml.Shapes.Path)Microsoft.UI.Xaml.Markup.XamlReader.Load(
+                $"<Path xmlns='{ns}' Data='{data}'/>");
+            var geo = path.Data;
+            path.Data = null;   // detach so the geometry can be re-parented
+            return geo;
+        }
+
+        private static Geometry CheckGeometry()    => ParseGeometry("M20 6 9 17l-5-5");
+        private static Geometry SpinnerGeometry()  => ParseGeometry("M21 12a9 9 0 1 1-6.2-8.6");
+        private static Geometry DownloadGeometry() => ParseGeometry("M12 3v12m0 0 5-5m-5 5-5-5M4 21h16");
+        private static Geometry WarnGeometry()     => ParseGeometry("M12 4 2 20h20L12 4Zm0 6v5m0 3v.01");
     }
 }

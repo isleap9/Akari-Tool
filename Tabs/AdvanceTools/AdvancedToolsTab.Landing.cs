@@ -1,8 +1,8 @@
-using System.IO;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
-using System.Windows.Media;
+﻿using System.IO;
+using Microsoft.UI.Text;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.Win32;
 using AkariTool.Services;
 
@@ -35,8 +35,6 @@ namespace AkariTool.Tabs.AdvancedTools
                 CornerRadius = TweakHelpers.CardRadius,
                 Padding = new Thickness(20, 16, 20, 16),
                 Margin = new Thickness(0, 0, 0, 14),
-                Effect = TweakHelpers.CardShadow(),
-                Cursor = enabled ? Cursors.Hand : Cursors.Arrow,
                 Opacity = enabled ? 1.0 : 0.55,
             };
 
@@ -112,9 +110,9 @@ namespace AkariTool.Tabs.AdvancedTools
 
             if (enabled && onClick != null)
             {
-                card.MouseLeftButtonUp += (_, _) => onClick();
-                card.MouseEnter += (_, _) => card.BorderBrush = TweakHelpers.HairlineHover;
-                card.MouseLeave += (_, _) => card.BorderBrush = TweakHelpers.Token("AkariOverlayMedium");
+                card.Tapped += (_, _) => onClick();
+                card.PointerEntered += (_, _) => card.BorderBrush = TweakHelpers.HairlineHover;
+                card.PointerExited += (_, _) => card.BorderBrush = TweakHelpers.Token("AkariOverlayMedium");
             }
             return card;
         }

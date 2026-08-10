@@ -1,6 +1,7 @@
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
+using Microsoft.UI.Text;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.Win32;
 using AkariTool.Services;
 
@@ -37,7 +38,8 @@ namespace AkariTool.Tabs
             for (int i = 0; i < items.Length; i++)
             {
                 var (title, desc, script, undo) = items[i];
-                if (i > 0) stack.Children.Add(new Separator { Background = TweakHelpers.Hairline, Height = 1, Margin = new Thickness(-16, 0, -16, 0) });
+                // WinUI has no Separator control — tagged Border divider (matches the factory).
+                if (i > 0) stack.Children.Add(new Border { Background = TweakHelpers.Hairline, Height = 1, Margin = new Thickness(-16, 0, -16, 0), Tag = "separator" });
 
                 var row = new Grid { Margin = new Thickness(0, 10, 0, 10) };
                 row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -55,14 +57,15 @@ namespace AkariTool.Tabs
                 var capturedScript = script;
                 var capturedUndo   = undo;
 
-                var runBtn = new Button { Content = "Run", Style = (Style)FindResource("RunBtn") };
+                // Run = native accent button, Undo = native default (same as BaseTab.AddItem).
+                var runBtn = new Button { Content = "Run", Style = (Style)Application.Current.Resources["AccentButtonStyle"] };
                 runBtn.Click += async (_, _) =>
                     await Service!.RunWithTracking(new ScriptAction(capturedScript), capturedTitle, AppliedTweaks);
                 btns.Children.Add(runBtn);
 
                 if (!string.IsNullOrEmpty(undo))
                 {
-                    var undoBtn = new Button { Content = "Undo", Style = (Style)FindResource("UndoBtn") };
+                    var undoBtn = new Button { Content = "Undo" };
                     undoBtn.Click += async (_, _) => await Service!.RunAction(new ScriptAction(capturedUndo));
                     btns.Children.Add(undoBtn);
                 }

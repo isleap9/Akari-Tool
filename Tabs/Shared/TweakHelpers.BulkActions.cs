@@ -1,6 +1,7 @@
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
+using Microsoft.UI.Text;                   // FontWeights
+using Microsoft.UI.Xaml;                   // Thickness, GridLength, FrameworkElement
+using Microsoft.UI.Xaml.Controls;          // StackPanel, Grid, TextBlock, Border
+using Microsoft.UI.Xaml.Media;             // Brush, FontFamily
 
 namespace AkariTool.Tabs
 {
@@ -14,16 +15,9 @@ namespace AkariTool.Tabs
         //
         //      TweakHelpers.AttachBulkActions(section);
         //
-        //  AFTER all rows have been added. This inserts a header bar at the top
-        //  of the section card with:
-        //    • a live "N pending" pill — how many tweaks currently differ from
-        //      their Recommended value
-        //    • ★ Recommended — bulk-applies the recommended value to every
-        //      mismatched tweak (single confirmation, warnings surfaced)
-        //    • ⊞ Defaults — bulk-resets every tweak to its Windows default
-        //
-        //  The pill also refreshes live when individual rows change, via
-        //  NotifySectionChanged() calls inside AddTweakRow's handlers.
+        //  AFTER all rows have been added. Inserts a header bar with a live
+        //  "N pending" pill, ★ Recommended bulk-apply and ⊞ Defaults bulk-reset.
+        //  MIGRATION NOTE: confirmations are async ContentDialogs now.
         // ══════════════════════════════════════════════════════════════════════
 
         private static readonly Dictionary<StackPanel, List<(TweakDefinition Def, Action Refresh)>> _sectionEntries = new();
@@ -56,11 +50,6 @@ namespace AkariTool.Tabs
 
         // ── Target resolution ─────────────────────────────────────────────────
 
-        /// <summary>
-        /// Resolves the "recommended" target for a tweak.
-        /// Returns false when the tweak has no recommended value (e.g. pure
-        /// preference dropdowns) — those are excluded from bulk operations.
-        /// </summary>
         private static bool TryGetRecommendedTarget(TweakDefinition def, out bool toggleTarget, out int optionTarget)
         {
             toggleTarget = false; optionTarget = -1;
@@ -114,9 +103,8 @@ namespace AkariTool.Tabs
         }
 
         /// <summary>
-        /// Shared predicate for every bulk surface (section bars, tab-level
-        /// Quick Actions counts AND the bulk engine): the entries whose current
-        /// state differs from their recommended/default target.
+        /// Shared predicate for every bulk surface (section bars, tab-level Quick
+        /// Actions counts AND the bulk engine).
         /// </summary>
         internal static List<(TweakDefinition Def, Action Refresh, bool ToggleTarget, int OptionTarget)> CollectPending(
             IEnumerable<(TweakDefinition Def, Action Refresh)> entries, bool useRecommended)
@@ -135,16 +123,17 @@ namespace AkariTool.Tabs
 
         /// <summary>
         /// All registered tweak entries whose section panel lives under
-        /// <paramref name="root"/> in the logical tree — the tab-scoping
-        /// mechanism for Quick Actions (sections are registered globally,
-        /// but each section StackPanel parents up to its page's root panel).
+        /// <paramref name="root"/> in the element tree — the tab-scoping mechanism
+        /// for Quick Actions.
         /// </summary>
         internal static List<(TweakDefinition Def, Action Refresh)> GetEntriesUnder(FrameworkElement root)
         {
             var result = new List<(TweakDefinition Def, Action Refresh)>();
             foreach (var (section, entries) in _sectionEntries)
             {
-                for (FrameworkElement? el = section; el != null; el = el.Parent as FrameworkElement)
+                for (FrameworkElement? el = section; el != null;
+                     el = (el.Parent as FrameworkElement)
+                          ?? Microsoft.UI.Xaml.Media.VisualTreeHelper.GetParent(el) as FrameworkElement)
                 {
                     if (ReferenceEquals(el, root)) { result.AddRange(entries); break; }
                 }
@@ -171,7 +160,6 @@ namespace AkariTool.Tabs
                 FontWeight = FontWeights.SemiBold,
                 VerticalAlignment = VerticalAlignment.Center,
             };
-            // Accent-outlined pill; live-updating themed brushes (crimson accent set).
             var pill = new Border
             {
                 Background = PillAccentBg,
@@ -190,26 +178,22 @@ namespace AkariTool.Tabs
                     TryGetRecommendedTarget(e.Def, out var t, out var o) && IsMismatched(e.Def, t, o));
 
                 pillText.Text = pending > 0 ? $"{pending} pending" : "All recommended";
-                pill.ToolTip = pending > 0
+                ToolTipService.SetToolTip(pill, pending > 0
                     ? $"{pending} setting{(pending == 1 ? "" : "s")} in this section differ from the recommended value"
-                    : "Every setting in this section matches its recommended value";
-                // Calm the pill when nothing is pending.
+                    : "Every setting in this section matches its recommended value");
                 pill.Opacity = pending > 0 ? 1.0 : 0.6;
             }
 
             // ── Bulk buttons ──────────────────────────────────────────────────
-            // Star uses the label's brand red, not StarGold, so the button reads as
-            // one colour. StarGold is unchanged as a token and still drives the
-            // per-row quick-set star buttons.
-            var applyBtn = BuildBulkButton("\uE735", "Recommended",
+            var applyBtn = BuildBulkButton("", "Recommended",
                 PillAccentBg, PillAccentBorder, PillAccentFg, PillAccentFg,
                 "Apply the recommended value to every setting in this section",
-                () => RunBulk(entries, useRecommended: true, RefreshPill));
+                async () => await RunBulkAsync(entries, useRecommended: true, RefreshPill));
 
             var defaultBtn = BuildBulkButton(null, "Defaults",
                 PillNeutralBg, PillNeutralBorder, PillNeutralFg, WinBlueIcon,
                 "Reset every setting in this section to its Windows default",
-                () => RunBulk(entries, useRecommended: false, RefreshPill));
+                async () => await RunBulkAsync(entries, useRecommended: false, RefreshPill));
 
             // ── Header bar layout ─────────────────────────────────────────────
             var bar = new Grid { Margin = new Thickness(0, 2, 0, 4), Tag = "bulkbar" };
@@ -232,19 +216,18 @@ namespace AkariTool.Tabs
             RefreshPill();
         }
 
-        // ── Bulk execution ────────────────────────────────────────────────────
+        // ── Bulk execution (async dialogs) ────────────────────────────────────
 
-        private static void RunBulk(
+        private static async Task RunBulkAsync(
             List<(TweakDefinition Def, Action Refresh)> entries,
             bool useRecommended,
             Action refreshPill)
         {
-            // Collect mismatched targets (shared predicate with Quick Actions)
             var work = CollectPending(entries, useRecommended);
 
             if (work.Count == 0)
             {
-                AkariDialogs.Info(
+                await AkariDialogs.InfoAsync(
                     useRecommended
                         ? "Every setting in this section already matches its recommended value."
                         : "Every setting in this section already matches its Windows default.",
@@ -252,7 +235,6 @@ namespace AkariTool.Tabs
                 return;
             }
 
-            // Surface warnings carried by any of the target values
             var warned = work
                 .Select(w => (w.Def.Name, Warning: w.Def.InputKind == TweakInputKind.Toggle
                     ? w.Def.GetToggleWarning(w.ToggleTarget)
@@ -269,7 +251,7 @@ namespace AkariTool.Tabs
                 if (warned.Count > 5) msg += $"\n  …and {warned.Count - 5} more.";
             }
 
-            if (!AkariDialogs.ConfirmOkCancel(msg, useRecommended ? "Apply Recommended" : "Reset to Defaults"))
+            if (!await AkariDialogs.ConfirmOkCancelAsync(msg, useRecommended ? "Apply Recommended" : "Reset to Defaults"))
                 return;
 
             int applied = 0, failed = 0;
@@ -294,7 +276,7 @@ namespace AkariTool.Tabs
             refreshPill();
 
             if (failed > 0)
-                AkariDialogs.Info(
+                await AkariDialogs.InfoAsync(
                     $"Applied {applied} setting{(applied == 1 ? "" : "s")}; {failed} failed " +
                     "(some tweaks require running Akari Tool as administrator).",
                     "Bulk apply finished");
@@ -302,20 +284,20 @@ namespace AkariTool.Tabs
 
         // ── Button builder ────────────────────────────────────────────────────
         // Pill-shaped text button matching the quick-set icon language:
-        // ★ gold for Recommended, ⊞ (4-square path) blue for Windows Defaults.
+        // ★ for Recommended, ⊞ (4-square logo) for Windows Defaults.
 
         private static FrameworkElement BuildBulkButton(
-            string? mdl2Glyph, string label,
+            string? glyph, string label,
             Brush pillBg, Brush pillBorder, Brush pillFg, Brush iconBrush,
             string tooltip, Action onClick)
         {
             var content = new StackPanel { Orientation = Orientation.Horizontal };
-            if (mdl2Glyph != null)
+            if (glyph != null)
             {
                 content.Children.Add(new TextBlock
                 {
-                    Text = mdl2Glyph,
-                    FontFamily = new FontFamily("Segoe MDL2 Assets"),
+                    Text = glyph,
+                    FontFamily = new FontFamily("Segoe Fluent Icons,Segoe MDL2 Assets"),
                     FontSize = 11,
                     Foreground = iconBrush,
                     VerticalAlignment = VerticalAlignment.Center,
@@ -324,16 +306,10 @@ namespace AkariTool.Tabs
             }
             else
             {
-                content.Children.Add(new System.Windows.Shapes.Path
-                {
-                    Data = _windowsLogoGeometry,
-                    Fill = iconBrush,
-                    Width = 10,
-                    Height = 10,
-                    Stretch = Stretch.Uniform,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    Margin = new Thickness(0, 0, 5, 0),
-                });
+                var logo = BuildWindowsLogoIcon(iconBrush, 10);
+                logo.VerticalAlignment = VerticalAlignment.Center;
+                logo.Margin = new Thickness(0, 0, 5, 0);
+                content.Children.Add(logo);
             }
             content.Children.Add(new TextBlock
             {
@@ -357,10 +333,11 @@ namespace AkariTool.Tabs
 
             var btn = BuildChromelessButton();
             btn.Content = border;
-            btn.ToolTip = tooltip;
-            // Hover: darken/lighten wash over the pill bg; restore the themed bg on leave.
-            btn.MouseEnter += (_, _) => border.Background = TweakHelpers.Token("AkariOverlayMedium");
-            btn.MouseLeave += (_, _) => border.Background = pillBg;
+            ToolTipService.SetToolTip(btn, tooltip);
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(btn, label);
+            // Hover: wash over the pill bg; restore the themed bg on exit.
+            btn.PointerEntered += (_, _) => border.Background = TweakHelpers.Token("AkariOverlayMedium");
+            btn.PointerExited  += (_, _) => border.Background = pillBg;
             btn.Click += (_, _) => onClick();
             return btn;
         }

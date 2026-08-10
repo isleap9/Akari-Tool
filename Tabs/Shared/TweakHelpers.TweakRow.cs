@@ -1,9 +1,9 @@
-using System.Runtime.InteropServices;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
-using System.Windows.Media.Effects;
-using Microsoft.Win32;
+using Microsoft.UI.Text;                   // FontWeights
+using Microsoft.UI.Xaml;                   // Thickness, GridLength, Visibility, FrameworkElement
+using Microsoft.UI.Xaml.Automation;        // AutomationProperties
+using Microsoft.UI.Xaml.Controls;          // StackPanel, Grid, TextBlock, ComboBox, Border, Button
+using Microsoft.UI.Xaml.Media;             // Brush, FontFamily
+using Microsoft.UI.Xaml.Shapes;            // Rectangle (Windows-logo icon)
 using AkariTool.Services;
 
 namespace AkariTool.Tabs
@@ -16,17 +16,16 @@ namespace AkariTool.Tabs
         /// Renders a full TweakDefinition as a list row (toggle or dropdown),
         /// complete with badge pills. Returns a refresh delegate that re-reads
         /// state from the system and updates badges + toggle visuals.
+        ///
+        /// MIGRATION NOTE: warning confirmations are now async (ContentDialog);
+        /// interaction handlers await them before applying. Controls carry
+        /// AutomationProperties.Name = def.Name for accessibility/UIA.
         /// </summary>
         public static Action AddTweakRow(StackPanel parent, TweakDefinition def)
         {
             // separator between rows
             if (parent.Children.Count > 0)
-                parent.Children.Add(new Separator
-                {
-                    Background = TweakHelpers.Token("AkariOverlayStrong"), // V3 neutral row divider
-                    Height = 1,
-                    Margin = new Thickness(-18, 0, -18, 0)
-                });
+                parent.Children.Add(BuildRowSeparator());
 
             var row = new StackPanel { Margin = new Thickness(0, 13, 0, 13), Tag = $"search:{def.Name}|{def.Description}" };
 
@@ -55,8 +54,10 @@ namespace AkariTool.Tabs
                 TextWrapping = TextWrapping.Wrap
             });
 
-            // badge pill row (populated by refresh)
-            var pillRow = new WrapPanel { Margin = new Thickness(0, 5, 0, 0) };
+            // badge pill row (populated by refresh).
+            // MIGRATION NOTE: was a WrapPanel; WinUI ships no in-box WrapPanel, and a
+            // row carries at most ~3 short pills, so a horizontal StackPanel suffices.
+            var pillRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 5, 0, 0) };
             info.Children.Add(pillRow);
 
             topRow.Children.Add(info);
@@ -68,12 +69,12 @@ namespace AkariTool.Tabs
 
             if (def.InputKind == TweakInputKind.Dropdown && def.Options != null)
             {
-                // Styling comes from the WPF-UI implicit ComboBox style (ui:ControlsDictionary).
                 var dropdown = new ComboBox
                 {
                     MinWidth = 210,
                     VerticalAlignment = VerticalAlignment.Center,
                 };
+                AutomationProperties.SetName(dropdown, def.Name);
                 foreach (var opt in def.Options)
                     dropdown.Items.Add(opt.Label);
 
@@ -92,9 +93,9 @@ namespace AkariTool.Tabs
                     ddWrapper.Children.Add(BuildQuickSetButton(
                         isRecommended: true,
                         tooltip: $"Apply recommended: {def.Options![recIdx].Label}",
-                        onClick: () =>
+                        onClick: async () =>
                         {
-                            if (!ConfirmWarning(def.Name, def.GetOptionWarning(recIdx))) return;
+                            if (!await ConfirmWarningAsync(def.Name, def.GetOptionWarning(recIdx))) return;
                             ApplyOption(def, recIdx);
                             initialized = false;
                             dropdown.SelectedIndex = recIdx;
@@ -108,9 +109,9 @@ namespace AkariTool.Tabs
                     ddWrapper.Children.Add(BuildQuickSetButton(
                         isRecommended: false,
                         tooltip: $"Apply Windows default: {def.Options![defIdx].Label}",
-                        onClick: () =>
+                        onClick: async () =>
                         {
-                            if (!ConfirmWarning(def.Name, def.GetOptionWarning(defIdx))) return;
+                            if (!await ConfirmWarningAsync(def.Name, def.GetOptionWarning(defIdx))) return;
                             ApplyOption(def, defIdx);
                             initialized = false;
                             dropdown.SelectedIndex = defIdx;
@@ -123,11 +124,11 @@ namespace AkariTool.Tabs
                 ddWrapper.Children.Add(dropdown);
                 topRow.Children.Add(ddWrapper);
 
-                dropdown.SelectionChanged += (_, _) =>
+                dropdown.SelectionChanged += async (_, _) =>
                 {
                     if (!initialized) return;
                     int newIdx = dropdown.SelectedIndex;
-                    if (!ConfirmWarning(def.Name, def.GetOptionWarning(newIdx)))
+                    if (!await ConfirmWarningAsync(def.Name, def.GetOptionWarning(newIdx)))
                     {
                         // user cancelled — revert selection without re-applying
                         initialized = false;
@@ -151,11 +152,7 @@ namespace AkariTool.Tabs
 
                 refreshBadges = () =>
                 {
-                    // ReadCurrentIndex returning null means "current value matches no
-                    // option" (custom locale, vendor-specific index). Leave the
-                    // dropdown unselected (-1) rather than clamping to option 0 and
-                    // implying a value the machine does not actually hold — nothing is
-                    // written until the user picks an option.
+                    // null from ReadCurrentIndex = "matches no option": leave unselected.
                     var idx = def.ReadCurrentIndex?.Invoke() ?? -1;
                     initialized = false;
                     dropdown.SelectedIndex = Math.Max(-1, idx);
@@ -169,9 +166,9 @@ namespace AkariTool.Tabs
                 // Toggle
                 bool currentState = def.ReadState?.Invoke() ?? false;
                 Action<bool>? setterRef = null; // assigned right after BuildToggle
-                var (toggleControl, setter) = BuildToggle(newState =>
+                var (toggleControl, setter) = BuildToggle(async newState =>
                 {
-                    if (!ConfirmWarning(def.Name, def.GetToggleWarning(newState)))
+                    if (!await ConfirmWarningAsync(def.Name, def.GetToggleWarning(newState)))
                     {
                         // user cancelled — flip the visual back, don't apply
                         setterRef?.Invoke(!newState);
@@ -181,6 +178,7 @@ namespace AkariTool.Tabs
                     RefreshPills(pillRow, def.ComputeToggleBadges(newState));
                     NotifySectionChanged(parent);
                 });
+                AutomationProperties.SetName(toggleControl, def.Name);
                 setter(currentState);
                 setterRef = setter;
                 toggleSetter = setter;
@@ -195,10 +193,10 @@ namespace AkariTool.Tabs
                         tooltip: def.InvertBadgeLabelWording
                             ? $"Apply recommended: {(def.RecommendedState.Value ? "Off" : "On")}"
                             : $"Apply recommended: {(def.RecommendedState.Value ? "On" : "Off")}",
-                        onClick: () =>
+                        onClick: async () =>
                         {
                             bool v = def.RecommendedState.Value;
-                            if (!ConfirmWarning(def.Name, def.GetToggleWarning(v))) return;
+                            if (!await ConfirmWarningAsync(def.Name, def.GetToggleWarning(v))) return;
                             ApplyToggle(def, v);
                             toggleSetter?.Invoke(v);
                             RefreshPills(pillRow, def.ComputeToggleBadges(v));
@@ -211,10 +209,10 @@ namespace AkariTool.Tabs
                         tooltip: def.InvertBadgeLabelWording
                             ? $"Apply Windows default: {(def.DefaultState.Value ? "Off" : "On")}"
                             : $"Apply Windows default: {(def.DefaultState.Value ? "On" : "Off")}",
-                        onClick: () =>
+                        onClick: async () =>
                         {
                             bool v = def.DefaultState.Value;
-                            if (!ConfirmWarning(def.Name, def.GetToggleWarning(v))) return;
+                            if (!await ConfirmWarningAsync(def.Name, def.GetToggleWarning(v))) return;
                             ApplyToggle(def, v);
                             toggleSetter?.Invoke(v);
                             RefreshPills(pillRow, def.ComputeToggleBadges(v));
@@ -248,92 +246,99 @@ namespace AkariTool.Tabs
             return refreshBadges;
         }
 
-        // ── Warning confirmation ──────────────────────────────────────────────
+        // ── Warning confirmation (async — see AkariDialogs migration note) ────
 
         /// <summary>
         /// Shows an OK/Cancel confirmation for a warned tweak value.
         /// Returns true when there is no warning or the user confirmed.
         /// </summary>
-        private static bool ConfirmWarning(string tweakName, string? warning)
+        private static Task<bool> ConfirmWarningAsync(string tweakName, string? warning)
         {
-            if (string.IsNullOrEmpty(warning)) return true;
-            return AkariDialogs.ConfirmOkCancel(warning, tweakName);
+            if (string.IsNullOrEmpty(warning)) return Task.FromResult(true);
+            return AkariDialogs.ConfirmOkCancelAsync(warning, tweakName);
         }
 
-        // ── Chrome-free WPF-UI button (quick-set + bulk buttons) ─────────────
-        // Transparent appearance with hover/press fills nulled out so the
-        // content (glyph or pill Border) is the only visible chrome.
+        // ── Chrome-free button (quick-set + bulk buttons) ─────────────────────
+        // WinUI Button with its hover/press theme fills nulled out per-instance so
+        // the content (glyph or pill Border) is the only visible chrome.
 
-        internal static Wpf.Ui.Controls.Button BuildChromelessButton()
+        internal static Button BuildChromelessButton()
         {
-            return new Wpf.Ui.Controls.Button
+            var btn = new Button
             {
-                Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent,
-                Background = System.Windows.Media.Brushes.Transparent,
+                Background = Transparent(),
                 BorderThickness = new Thickness(0),
                 Padding = new Thickness(0),
-                MouseOverBackground = System.Windows.Media.Brushes.Transparent,
-                MouseOverBorderBrush = System.Windows.Media.Brushes.Transparent,
-                PressedBackground = System.Windows.Media.Brushes.Transparent,
-                PressedBorderBrush = System.Windows.Media.Brushes.Transparent,
-                FocusVisualStyle = null,
-                Cursor = System.Windows.Input.Cursors.Hand,
                 VerticalAlignment = VerticalAlignment.Center,
             };
+            btn.Resources["ButtonBackgroundPointerOver"] = Transparent();
+            btn.Resources["ButtonBackgroundPressed"]     = Transparent();
+            btn.Resources["ButtonBorderBrushPointerOver"] = Transparent();
+            btn.Resources["ButtonBorderBrushPressed"]     = Transparent();
+            return btn;
         }
 
         // ── Badge pill renderer ───────────────────────────────────────────────
 
-        private static void RefreshPills(WrapPanel pillRow, TweakBadgePill[] pills)
+        private static void RefreshPills(StackPanel pillRow, TweakBadgePill[] pills)
         {
             pillRow.Children.Clear();
             foreach (var pill in pills)
                 pillRow.Children.Add(BuildPill(pill));
 
-            // A definition with no Recommended/Default/Preference metadata must render
-            // exactly like the old AddToggleRow — an empty WrapPanel still contributes
-            // its 5px top margin, so collapse it to reclaim the space.
+            // Collapse the empty pill row so its 5px top margin doesn't linger.
             pillRow.Visibility = pills.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
         }
 
         // ── Quick-set button builder ──────────────────────────────────────
         // Transparent borderless button placed left of toggle/dropdown.
-        // isRecommended=true → green ★ (E735);  false → grey Windows logo (4-square path)
+        // isRecommended=true → gold ★ (E735);  false → blue Windows logo (4 squares)
 
-        private static readonly System.Windows.Media.Geometry _windowsLogoGeometry =
-            System.Windows.Media.Geometry.Parse("M0,0 H5 V5 H0 Z M6,0 H11 V5 H6 Z M0,6 H5 V11 H0 Z M6,6 H11 V11 H6 Z");
+        /// <summary>
+        /// The ⊞ Windows-logo mark as a 2×2 grid of squares. Replaces the WPF
+        /// Geometry.Parse path (WinUI has no C# geometry parser).
+        /// </summary>
+        internal static FrameworkElement BuildWindowsLogoIcon(Brush fill, double size)
+        {
+            double cell = (size - 1) / 2.0;   // 1px gutter
+            var g = new Grid { Width = size, Height = size };
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(cell) });
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1) });
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(cell) });
+            g.RowDefinitions.Add(new RowDefinition { Height = new GridLength(cell) });
+            g.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1) });
+            g.RowDefinitions.Add(new RowDefinition { Height = new GridLength(cell) });
+            foreach (var (r, c) in new[] { (0, 0), (0, 2), (2, 0), (2, 2) })
+            {
+                var sq = new Rectangle { Fill = fill };
+                Grid.SetRow(sq, r);
+                Grid.SetColumn(sq, c);
+                g.Children.Add(sq);
+            }
+            return g;
+        }
 
         private static FrameworkElement BuildQuickSetButton(bool isRecommended, string tooltip, Action onClick)
         {
             FrameworkElement icon;
             if (isRecommended)
             {
-                // ★ filled star glyph
+                // ★ filled star glyph (glow effect dropped — cosmetic pass)
                 icon = new TextBlock
                 {
-                    Text = "\uE735",
-                    FontFamily = new System.Windows.Media.FontFamily("Segoe MDL2 Assets"),
+                    Text = "",
+                    FontFamily = new FontFamily("Segoe Fluent Icons,Segoe MDL2 Assets"),
                     FontSize = 16,
                     Foreground = TweakHelpers.StarGold,
-                    Effect = new System.Windows.Media.Effects.DropShadowEffect { Color = Services.ThemeService.Color("AkariStarGoldColor"), BlurRadius = 9, ShadowDepth = 0, Opacity = 0.95 },
                     VerticalAlignment = VerticalAlignment.Center,
                     HorizontalAlignment = HorizontalAlignment.Center,
                 };
             }
             else
             {
-                // ⊞ Windows logo — four squares path
-                icon = new System.Windows.Shapes.Path
-                {
-                    Data = _windowsLogoGeometry,
-                    Fill = TweakHelpers.WinBlueIcon,
-                    Effect = new System.Windows.Media.Effects.DropShadowEffect { Color = Services.ThemeService.Color("AkariWinBlueIconColor"), BlurRadius = 8, ShadowDepth = 0, Opacity = 0.9 },
-                    Width = 13,
-                    Height = 13,
-                    Stretch = System.Windows.Media.Stretch.Uniform,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                };
+                icon = BuildWindowsLogoIcon(TweakHelpers.WinBlueIcon, 13);
+                icon.VerticalAlignment = VerticalAlignment.Center;
+                icon.HorizontalAlignment = HorizontalAlignment.Center;
             }
 
             var btn = BuildChromelessButton();
@@ -343,17 +348,16 @@ namespace AkariTool.Tabs
             btn.MinWidth = 28;
             btn.MinHeight = 28;
             btn.HorizontalAlignment = HorizontalAlignment.Center;
-            btn.ToolTip = tooltip;
+            ToolTipService.SetToolTip(btn, tooltip);
+            AutomationProperties.SetName(btn, tooltip);
             btn.Click += (_, _) => onClick();
             return btn;
         }
 
         private static Border BuildPill(TweakBadgePill pill)
         {
-            // design: CornerRadius 8 — do not change
-            // README 5a: transparent fill, 1px border + text in the pill colour;
+            // design: transparent fill, 1px border + text in the pill colour;
             // active opacity 1.0, inactive 0.35.
-            // Themed per-kind brush (live-updating; darkened in Light so it reads on white).
             var brush = pill.Kind switch
             {
                 TweakBadgeKind.Preference  => TweakHelpers.PillPreference,
@@ -363,23 +367,19 @@ namespace AkariTool.Tabs
                 _ => TweakHelpers.PillGeneric,
             };
 
-            // Recommended shares the header button's accent trio so the two
-            // treatments stay identical: transparent fill, exact brand accent as both
-            // the 1px border and the label, in both themes. Every other kind keeps
-            // its own outline colour.
             bool isRecommended = pill.Kind == TweakBadgeKind.Recommended;
 
             var b = new Border
             {
-                Background = isRecommended ? TweakHelpers.PillAccentBg : Brushes.Transparent,
+                Background = isRecommended ? TweakHelpers.PillAccentBg : Transparent(),
                 BorderBrush = isRecommended ? TweakHelpers.PillAccentBorder : brush,
                 BorderThickness = new Thickness(1),
                 CornerRadius = TweakHelpers.CardRadius, // design: 8 — do not change
                 Padding = new Thickness(10, 2, 10, 2),
                 Margin = new Thickness(0, 0, 6, 0),
-                ToolTip = pill.Tooltip,
                 Opacity = pill.IsActive ? 1.0 : 0.35,
             };
+            ToolTipService.SetToolTip(b, pill.Tooltip);
             b.Child = new TextBlock
             {
                 Text = pill.Label,
@@ -390,6 +390,5 @@ namespace AkariTool.Tabs
             };
             return b;
         }
-
     }
 }

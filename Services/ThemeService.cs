@@ -1,45 +1,64 @@
-using System.Windows;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
+using Microsoft.UI;                       // Colors
+using Microsoft.UI.Xaml;                  // Application, FrameworkElement, ElementTheme, ResourceDictionary
+using Microsoft.UI.Xaml.Media;            // Brush, SolidColorBrush, LinearGradientBrush, GradientStop
+using Microsoft.UI.Xaml.Media.Imaging;    // BitmapImage
+using Windows.Foundation;                 // Point
+using Windows.UI;                         // Color
 using Microsoft.Win32;
-using Wpf.Ui.Appearance;
 
 namespace AkariTool.Services
 {
     public enum AkariTheme { Dark, Light }
 
     /// <summary>
-    /// Runtime theme switcher. Swaps the active Themes/Akari.*.xaml token dictionary,
-    /// re-applies the WPF-UI application theme + the fixed Akari crimson accent, and
-    /// raises <see cref="ThemeChanged"/> so code-built UI (splash pips, tab factories)
-    /// can refresh raw Color/Brush values that don't live-update via DynamicResource.
-    /// Persists the choice under HKCU\Software\AkariTool (same store as the power scheme).
+    /// Runtime theme switcher (WinUI 3). Flips the root element's
+    /// <see cref="ElementTheme"/> — which re-resolves every {ThemeResource} against the
+    /// Akari token ThemeDictionaries in App.xaml — and refreshes the shared "managed"
+    /// brushes that C#-built UI (tab factories) assign directly and that ThemeResource
+    /// cannot reach. Raises <see cref="ThemeChanged"/> so code-built surfaces (e.g. the
+    /// About logo) can refresh raw Brush/ImageSource values. Persists the choice under
+    /// HKCU\Software\AkariTool.
+    ///
+    /// WinUI notes vs the WPF original: no WPF-UI ApplicationThemeManager /
+    /// ApplicationAccentColorManager (the crimson accent is baked into the App.xaml
+    /// ThemeDictionaries as SystemAccentColor / AccentFillColor / ToggleSwitch overrides);
+    /// no dictionary hot-swap (theme dictionaries switch by ElementTheme); no
+    /// DropShadowEffect (CardShadowEffect dropped — see MIGRATION_LOG).
     /// </summary>
     public static class ThemeService
     {
         private const string StateKeyPath = @"HKEY_CURRENT_USER\Software\AkariTool";
         private const string ThemeValue   = "Theme";
 
-        // The fixed Akari crimson accent (identical in both themes). WPF-UI 4.1.0 otherwise
-        // re-derives the palette keys from the Windows personalisation colour, so we must
-        // re-apply this after every ApplicationThemeManager.Apply.
-        private static readonly Color AccentBase      = FromHex("#E0142A");
-        private static readonly Color AccentPrimary   = FromHex("#E0142A");
-        private static readonly Color AccentSecondary = FromHex("#FF2438");
-        private static readonly Color AccentTertiary  = FromHex("#FF4150");
+        // The root element whose RequestedTheme drives {ThemeResource} re-resolution.
+        // MainWindow supplies it via AttachRoot before the first Apply.
+        private static FrameworkElement? _root;
 
         public static AkariTheme Current { get; private set; } = AkariTheme.Dark;
 
         /// <summary>
+        /// Sets the element whose <see cref="FrameworkElement.RequestedTheme"/> drives
+        /// {ThemeResource} resolution. Called first by App with the SPLASH root (so the
+        /// splash paints in the right theme), then again by MainWindow with the shell
+        /// root. Null is ignored so a caller can pass a not-yet-realised Content.
+        /// </summary>
+        public static void AttachRoot(FrameworkElement? root)
+        {
+            if (root is null) return;
+            _root = root;
+            // Re-assert on the new root so a window created after Apply() still matches.
+            root.RequestedTheme = Current == AkariTheme.Light ? ElementTheme.Light : ElementTheme.Dark;
+        }
+
+        /// <summary>
         /// The brand mark for the active theme — the SINGLE source of truth for the logo.
-        /// AkariLogo.png = light-coloured mark for DARK backgrounds; AkariLogoLight.png =
-        /// black/red mark for LIGHT backgrounds. Every logo surface must read this property
-        /// (in its ctor and again on <see cref="ThemeChanged"/>); no call site hardcodes a URI.
+        /// AkariLogo.png = light mark for DARK backgrounds; AkariLogoLight.png = dark mark
+        /// for LIGHT backgrounds.
         /// </summary>
         public static ImageSource Logo =>
             new BitmapImage(new Uri(Current == AkariTheme.Light
-                ? "pack://application:,,,/Resource/AkariLogoLight.png"
-                : "pack://application:,,,/Resource/AkariLogo.png"));
+                ? "ms-appx:///Resource/AkariLogoLight.png"
+                : "ms-appx:///Resource/AkariLogo.png"));
 
         /// <summary>Raised after a theme is applied. Argument is the new theme.</summary>
         public static event Action<AkariTheme>? ThemeChanged;
@@ -68,23 +87,18 @@ namespace AkariTool.Services
         private static void Persist(AkariTheme t) =>
             Registry.SetValue(StateKeyPath, ThemeValue, t.ToString());
 
-        /// <summary>Applies <paramref name="theme"/>, persists it, and raises <see cref="ThemeChanged"/>.</summary>
+        /// <summary>Applies <paramref name="theme"/> and raises <see cref="ThemeChanged"/> (does NOT persist).</summary>
         public static void Apply(AkariTheme theme)
         {
-            SwapTokenDictionary(theme);
+            Current = theme;                                   // set first: Color(key) reads the active dict
+            if (_root != null)
+                _root.RequestedTheme = theme == AkariTheme.Light ? ElementTheme.Light : ElementTheme.Dark;
 
-            ApplicationThemeManager.Apply(
-                theme == AkariTheme.Light ? ApplicationTheme.Light : ApplicationTheme.Dark);
-
-            // Re-assert the Akari crimson accent (WPF-UI would otherwise re-derive from Windows).
-            ApplicationAccentColorManager.Apply(AccentBase, AccentPrimary, AccentSecondary, AccentTertiary);
-
-            Current = theme;
             RefreshManagedBrushes();
             ThemeChanged?.Invoke(theme);
         }
 
-        /// <summary>Cycles Dark ⇄ Light and applies.</summary>
+        /// <summary>Cycles Dark ⇄ Light, applies, and pins the choice.</summary>
         public static void Toggle()
         {
             var next = Current == AkariTheme.Dark ? AkariTheme.Light : AkariTheme.Dark;
@@ -92,38 +106,24 @@ namespace AkariTool.Services
             Persist(next);   // only an explicit toggle pins the theme; startup follows Windows
         }
 
-        // Replaces the merged Akari.Dark/Light dictionary in place (same slot ordering)
-        // so the agnostic AkariFluentTheme styles still resolve tokens after it.
-        private static void SwapTokenDictionary(AkariTheme theme)
+        // ── Palette resolution from the App.xaml ThemeDictionaries ─────────────
+
+        private static ResourceDictionary? ThemeDict(AkariTheme theme)
         {
+            var name = theme == AkariTheme.Light ? "Light" : "Default";
             var app = Application.Current;
-            if (app == null) return;
-
-            var uri = new Uri(
-                $"pack://application:,,,/Themes/Akari.{theme}.xaml", UriKind.Absolute);
-            var next = new ResourceDictionary { Source = uri };
-
-            var merged = app.Resources.MergedDictionaries;
-            int idx = -1;
-            for (int i = 0; i < merged.Count; i++)
-            {
-                var src = merged[i].Source?.OriginalString ?? "";
-                if (src.Contains("Akari.Dark.xaml", StringComparison.OrdinalIgnoreCase) ||
-                    src.Contains("Akari.Light.xaml", StringComparison.OrdinalIgnoreCase))
-                {
-                    idx = i;
-                    break;
-                }
-            }
-
-            if (idx >= 0) merged[idx] = next;
-            else merged.Add(next);
+            if (app is null) return null;
+            var tds = app.Resources.ThemeDictionaries;
+            return tds.ContainsKey(name) ? tds[name] as ResourceDictionary : null;
         }
 
-        // ── Helpers for C# call sites ─────────────────────────────────────────
         /// <summary>Resolves a Brush token from the active theme dictionary.</summary>
-        public static Brush Brush(string key) =>
-            (Application.Current?.Resources[key] as Brush) ?? Brushes.Transparent;
+        public static Brush Brush(string key)
+        {
+            var td = ThemeDict(Current);
+            if (td != null && td.ContainsKey(key) && td[key] is Brush b) return b;
+            return new SolidColorBrush(Colors.Transparent);
+        }
 
         /// <summary>
         /// Resolves a Color from the active theme dictionary. Accepts either a Color
@@ -131,20 +131,24 @@ namespace AkariTool.Services
         /// </summary>
         public static Color Color(string key)
         {
-            var r = Application.Current?.Resources[key];
-            return r switch
+            var td = ThemeDict(Current);
+            if (td != null && td.ContainsKey(key))
             {
-                Color c => c,
-                SolidColorBrush b => b.Color,
-                _ => Colors.Transparent,
-            };
+                return td[key] switch
+                {
+                    Color c => c,
+                    SolidColorBrush b => b.Color,
+                    _ => Colors.Transparent,
+                };
+            }
+            return Colors.Transparent;
         }
 
         // ── Managed brushes (live theme switching for C#-built UI) ─────────────
-        // C#-built controls assign a Brush snapshot that DynamicResource can't reach.
-        // ManagedBrush returns ONE persistent, unfrozen SolidColorBrush per token that
-        // every call site shares; on Apply we mutate each brush's Colour in place, so
-        // all controls referencing it re-paint with no per-call-site work.
+        // C#-built controls assign a Brush snapshot that ThemeResource can't reach.
+        // ManagedBrush returns ONE persistent SolidColorBrush per token that every call
+        // site shares; on Apply we mutate each brush's Colour in place, so all controls
+        // referencing it re-paint with no per-call-site work.
         private static readonly Dictionary<string, SolidColorBrush> _managed = new();
 
         /// <summary>
@@ -164,21 +168,11 @@ namespace AkariTool.Services
         private static void RefreshManagedBrushes()
         {
             foreach (var (key, brush) in _managed)
-            {
-                // A shared brush must never be handed to a code-built Style Setter — sealing
-                // the style freezes it. Guard anyway so a stray frozen brush can't crash the
-                // switch (it just won't live-update). Use ManagedBrush(key).Clone() in setters.
-                if (!brush.IsFrozen)
-                    brush.Color = Color(key);
-            }
+                brush.Color = Color(key);
             RefreshCardElevation();
         }
 
         // ── Managed card-elevation gradient (live theme switching) ─────────────
-        // The gradient counterpart to ManagedBrush: one shared, unfrozen vertical
-        // LinearGradientBrush whose two stops are mutated in place on theme switch,
-        // so C#-built card borders re-paint like the solid managed brushes do.
-        // XAML consumers use {DynamicResource AkariCardElevationBorder} instead.
         private static LinearGradientBrush? _cardElevation;
 
         /// <summary>
@@ -197,8 +191,8 @@ namespace AkariTool.Services
                         EndPoint   = new Point(0, 1),
                         GradientStops =
                         {
-                            new GradientStop(Color("AkariCardElevationLitColor"),    0),
-                            new GradientStop(Color("AkariCardElevationShadowColor"), 1),
+                            new GradientStop { Color = Color("AkariCardElevationLitColor"),    Offset = 0 },
+                            new GradientStop { Color = Color("AkariCardElevationShadowColor"), Offset = 1 },
                         },
                     };
                 }
@@ -208,49 +202,9 @@ namespace AkariTool.Services
 
         private static void RefreshCardElevation()
         {
-            if (_cardElevation is null || _cardElevation.IsFrozen) return;
+            if (_cardElevation is null) return;
             _cardElevation.GradientStops[0].Color = Color("AkariCardElevationLitColor");
             _cardElevation.GradientStops[1].Color = Color("AkariCardElevationShadowColor");
-            RefreshCardShadow();
         }
-
-        // ── Managed card shadow (live theme switching) ─────────────────────────
-        // Same shared-instance trick as the brushes: one unfrozen DropShadowEffect
-        // whose Opacity is re-read on switch, since dark needs a much stronger
-        // shadow than light to read at all against its canvas.
-        private static System.Windows.Media.Effects.DropShadowEffect? _cardShadow;
-
-        /// <summary>
-        /// Shared card-face shadow. Callers MUST also set
-        /// <c>CacheMode = new BitmapCache()</c> — the effect pipeline is what costs
-        /// scroll and resize latency, and caching is what makes it affordable.
-        /// </summary>
-        public static System.Windows.Media.Effects.DropShadowEffect CardShadowEffect
-        {
-            get
-            {
-                _cardShadow ??= new System.Windows.Media.Effects.DropShadowEffect
-                {
-                    Color       = Colors.Black,
-                    Direction   = 270,
-                    ShadowDepth = 2,
-                    BlurRadius  = 12,
-                    Opacity     = CardShadowOpacity(),
-                };
-                return _cardShadow;
-            }
-        }
-
-        private static double CardShadowOpacity() =>
-            Application.Current?.Resources["AkariCardShadow"]
-                is System.Windows.Media.Effects.DropShadowEffect e ? e.Opacity : 0.45;
-
-        private static void RefreshCardShadow()
-        {
-            if (_cardShadow is null || _cardShadow.IsFrozen) return;
-            _cardShadow.Opacity = CardShadowOpacity();
-        }
-
-        private static Color FromHex(string hex) => (Color)ColorConverter.ConvertFromString(hex);
     }
 }

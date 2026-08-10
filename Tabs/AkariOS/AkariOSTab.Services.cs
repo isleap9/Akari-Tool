@@ -1,11 +1,12 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
+using Microsoft.UI.Text;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.Win32;
 using AkariTool.Services;
 
@@ -30,20 +31,20 @@ namespace AkariTool.Tabs.AkariOS
                 Text = "Apply a service configuration preset. Gaming disables 166 services (telemetry, Bluetooth, Xbox, Hyper-V guests, search, and more) including Windows Update and ISO mounting. Daily keeps the same optimizations but leaves Windows Update and ISO mounting working. Defender is always protected.",
                 FontSize = 12, Foreground = TweakHelpers.TextSecondary, Margin = new Thickness(0, 2, 0, 0), TextWrapping = TextWrapping.Wrap
             });
-            _servicePresetLabel = new TextBlock { FontSize = 12, Foreground = TweakHelpers.TextSecondary, Margin = new Thickness(0, 4, 0, 0), FontStyle = FontStyles.Italic };
+            _servicePresetLabel = new TextBlock { FontSize = 12, Foreground = TweakHelpers.TextSecondary, Margin = new Thickness(0, 4, 0, 0), FontStyle = Windows.UI.Text.FontStyle.Italic };
             info.Children.Add(_servicePresetLabel);
             SyncPresetLabel();
 
             var buttons = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 0, 0) };
             Grid.SetColumn(buttons, 1);
 
-            var gamingBtn = new Button { Content = "Apply Gaming", Style = (Style)FindResource("RunBtn"), Margin = new Thickness(0, 0, 6, 0) };
+            var gamingBtn = new Button { Content = "Apply Gaming", Style = (Style)Application.Current.Resources["AccentButtonStyle"], Margin = new Thickness(0, 0, 6, 0) };
             gamingBtn.Click += async (_, _) => { await ServicesPreset.ApplyAkariGaming(Service!); SyncPresetLabel(); };
 
-            var dailyBtn = new Button { Content = "Apply Daily", Style = (Style)FindResource("RunBtn"), Margin = new Thickness(0, 0, 6, 0) };
+            var dailyBtn = new Button { Content = "Apply Daily", Style = (Style)Application.Current.Resources["AccentButtonStyle"], Margin = new Thickness(0, 0, 6, 0) };
             dailyBtn.Click += async (_, _) => { await ServicesPreset.ApplyAkariDaily(Service!); SyncPresetLabel(); };
 
-            var restoreBtn = new Button { Content = "Restore Stock", Style = (Style)FindResource("UndoBtn") };
+            var restoreBtn = new Button { Content = "Restore Stock" };
             restoreBtn.Click += async (_, _) => { await ServicesPreset.ApplyStockDefault(Service!); SyncPresetLabel(); };
 
             buttons.Children.Add(gamingBtn);
@@ -103,10 +104,10 @@ namespace AkariTool.Tabs.AkariOS
             label.Foreground = v.Fg;
 
             // Drift detail on hover so "Mixed" is diagnosable without a rebuild.
-            label.ToolTip = result.Drift.Count == 0
+            ToolTipService.SetToolTip(label, result.Drift.Count == 0
                 ? null
                 : string.Join(Environment.NewLine,
-                    result.Drift.Select(d => $"{d.Service}: {d.Actual} -> expected {d.Expected}"));
+                    result.Drift.Select(d => $"{d.Service}: {d.Actual} -> expected {d.Expected}")));
         }
 
         // ── Playbook ───────────────────────────────────────────────────────
@@ -136,7 +137,7 @@ namespace AkariTool.Tabs.AkariOS
             var btns = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 0, 0) };
             Grid.SetColumn(btns, 1);
 
-            var applyBtn = new Button { Content = "Apply All", Style = (Style)FindResource("RunBtn"), Margin = new Thickness(0, 0, 6, 0) };
+            var applyBtn = new Button { Content = "Apply All", Style = (Style)Application.Current.Resources["AccentButtonStyle"], Margin = new Thickness(0, 0, 6, 0) };
             applyBtn.Click += async (_, _) =>
             {
                 applyBtn.IsEnabled = false;
@@ -150,7 +151,7 @@ namespace AkariTool.Tabs.AkariOS
                 finally { applyBtn.IsEnabled = true; }
             };
 
-            var undoBtn = new Button { Content = "Undo All", Style = (Style)FindResource("UndoBtn") };
+            var undoBtn = new Button { Content = "Undo All" };
             undoBtn.Click += async (_, _) => { undoBtn.IsEnabled = false; try { await PlaybookTweaks.UndoAllAsync(Service!); } finally { undoBtn.IsEnabled = true; } };
 
             btns.Children.Add(applyBtn);
@@ -187,7 +188,7 @@ namespace AkariTool.Tabs.AkariOS
             var btns = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 0, 0) };
             Grid.SetColumn(btns, 1);
 
-            var applyBtn = new Button { Content = "Apply", Style = (Style)FindResource("RunBtn"), Margin = new Thickness(0, 0, 6, 0) };
+            var applyBtn = new Button { Content = "Apply", Style = (Style)Application.Current.Resources["AccentButtonStyle"], Margin = new Thickness(0, 0, 6, 0) };
             applyBtn.Click += async (_, _) =>
             {
                 applyBtn.IsEnabled = false;
@@ -195,7 +196,7 @@ namespace AkariTool.Tabs.AkariOS
                 finally { applyBtn.IsEnabled = true; }
             };
 
-            var undoBtn = new Button { Content = "Restore", Style = (Style)FindResource("UndoBtn") };
+            var undoBtn = new Button { Content = "Restore" };
             undoBtn.Click += async (_, _) => { undoBtn.IsEnabled = false; try { await BcdBackup.RestoreAsync(Service!); } finally { undoBtn.IsEnabled = true; } };
 
             btns.Children.Add(applyBtn);

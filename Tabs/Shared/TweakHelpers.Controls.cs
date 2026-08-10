@@ -1,42 +1,56 @@
-using System.Runtime.InteropServices;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
-using System.Windows.Media.Effects;
+﻿using Microsoft.UI;                        // Colors
+using Microsoft.UI.Text;                   // FontWeights
+using Microsoft.UI.Xaml;                   // Thickness, GridLength, Visibility, FrameworkElement
+using Microsoft.UI.Xaml.Controls;          // Border, StackPanel, Grid, TextBlock, ToggleSwitch
+using Microsoft.UI.Xaml.Hosting;           // ElementCompositionPreview (rounded clip)
+using Microsoft.UI.Xaml.Media;             // SolidColorBrush
 using Microsoft.Win32;
+using AkariTool.Helpers;                   // AkariShadow
 using AkariTool.Services;
 
 namespace AkariTool.Tabs
 {
     public static partial class TweakHelpers
     {
+        // WinUI has no Brushes class — small helper for fresh transparent brushes.
+        private static SolidColorBrush Transparent() => new(Colors.Transparent);
+
         // ── Toggle control ────────────────────────────────────────────────────
 
         /// <summary>
         /// Builds a toggle switch and returns both the control and a setter delegate
         /// that can flip the visual state programmatically (e.g. from ReadSettings).
+        ///
+        /// MIGRATION NOTE: WPF-UI's ToggleSwitch had a Click event that fired only on
+        /// user interaction. WinUI's Toggled fires on programmatic IsOn changes too,
+        /// so a suppress flag restores the original semantics — the setter can flip
+        /// the visual without re-firing Apply (warning-revert relies on that).
         /// </summary>
         public static (FrameworkElement Control, Action<bool> Setter) BuildToggle(Action<bool>? onToggle = null)
         {
-            // WPF-UI ToggleSwitch — the checked fill/glow comes from the crimson
-            // accent overrides in AkariFluentTheme.xaml, no per-instance styling.
-            var toggle = new Wpf.Ui.Controls.ToggleSwitch
+            var toggle = new ToggleSwitch
             {
                 VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(12, 0, 0, 0),
-                Cursor = System.Windows.Input.Cursors.Hand,
-                FocusVisualStyle = null,
+                // Compact, label-free like the WPF-UI switch.
+                OnContent = null,
+                OffContent = null,
+                MinWidth = 0,
             };
 
-            // Click fires only on user interaction (mouse or keyboard), never when
-            // IsChecked is written programmatically — the setter below relies on
-            // that so warning-revert can flip the visual without re-firing Apply.
-            toggle.Click += (_, _) => onToggle?.Invoke(toggle.IsChecked == true);
+            bool suppress = false;
+            toggle.Toggled += (_, _) =>
+            {
+                if (suppress) return;
+                onToggle?.Invoke(toggle.IsOn);
+            };
 
             Action<bool> setter = state =>
             {
-                if ((toggle.IsChecked == true) == state) return;
-                toggle.IsChecked = state;
+                if (toggle.IsOn == state) return;
+                suppress = true;
+                toggle.IsOn = state;
+                suppress = false;
             };
 
             return (toggle, setter);
@@ -55,17 +69,17 @@ namespace AkariTool.Tabs
         {
             var cell = new Border
             {
-                Background = Brushes.Transparent,
-                BorderBrush = Brushes.Transparent,
+                Background = Transparent(),
+                BorderBrush = Transparent(),
                 BorderThickness = new Thickness(1),
                 CornerRadius = TweakHelpers.CardRadius,
                 Margin = new Thickness(4),
                 Padding = new Thickness(16, 14, 16, 14),
                 Tag = $"search:{title}|{description}"
             };
-            // V3 hover: neutral surface lift + hairline (no icon in a tweak cell)
-            cell.MouseEnter += (_, _) => { cell.Background = CardBgHover; cell.BorderBrush = HairlineHover; };
-            cell.MouseLeave += (_, _) => { cell.Background = Brushes.Transparent; cell.BorderBrush = Brushes.Transparent; };
+            // V3 hover: neutral surface lift + hairline
+            cell.PointerEntered += (_, _) => { cell.Background = CardBgHover; cell.BorderBrush = HairlineHover; };
+            cell.PointerExited  += (_, _) => { cell.Background = Transparent(); cell.BorderBrush = Transparent(); };
 
             var row = new Grid();
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -103,27 +117,27 @@ namespace AkariTool.Tabs
         // ── Rounded clipping + shadow wrapping ────────────────────────────────
 
         /// <summary>
-        /// Clips a Border's children to its own CornerRadius.
-        ///
-        /// WPF's Border does NOT clip children to the corner curve, and
-        /// ClipToBounds is no help — it clips to the rectangular layout bounds.
-        /// So any child with an opaque square-cornered Background that reaches the
-        /// card's edge (a header banner, a full-bleed footer row) paints over the
-        /// curve. This installs a real rounded geometry instead, recomputed on
-        /// SizeChanged so it survives resize and content growth — never hardcoded.
+        /// Clips a Border's children to its own CornerRadius via a composition
+        /// rounded-rectangle clip (WinUI's XAML Clip only supports plain rectangles).
+        /// Best-effort: failure just means square-cornered children can overdraw the
+        /// curve, which is cosmetic.
         /// </summary>
         public static void ApplyRoundedClip(Border border)
         {
             void Update()
             {
-                if (border.ActualWidth <= 0 || border.ActualHeight <= 0)
+                try
                 {
-                    border.Clip = null;
-                    return;
+                    if (border.ActualWidth <= 0 || border.ActualHeight <= 0) return;
+                    var visual = ElementCompositionPreview.GetElementVisual(border);
+                    var compositor = visual.Compositor;
+                    float r = (float)border.CornerRadius.TopLeft;
+                    var geometry = compositor.CreateRoundedRectangleGeometry();
+                    geometry.CornerRadius = new System.Numerics.Vector2(r, r);
+                    geometry.Size = new System.Numerics.Vector2((float)border.ActualWidth, (float)border.ActualHeight);
+                    visual.Clip = compositor.CreateGeometricClip(geometry);
                 }
-                double r = border.CornerRadius.TopLeft;
-                border.Clip = new RectangleGeometry(
-                    new Rect(0, 0, border.ActualWidth, border.ActualHeight), r, r);
+                catch { /* cosmetic best-effort */ }
             }
 
             border.SizeChanged += (_, _) => Update();
@@ -132,61 +146,51 @@ namespace AkariTool.Tabs
         }
 
         /// <summary>
-        /// Two-layer card shell: an OUTER Border carrying the shadow + BitmapCache,
-        /// wrapping the supplied card which keeps its fill, gradient border and
-        /// corner radius and gains a rounded clip.
-        ///
-        /// The two must not be the same element. A clip applies to the element's own
-        /// rendering, so clipping the shadow-carrying Border would cut the blur off
-        /// at the card edge; and a rectangular clip makes the effect's silhouette
-        /// rectangular, which is what produced square shadow hooks outside the
-        /// rounded corners. Separating them keeps the shadow outside the clip.
+        /// Card shell wrapper. The WPF original layered a DropShadowEffect +
+        /// BitmapCache on an outer Border; WinUI has no Effect, so this now only
+        /// applies the rounded clip and returns a plain outer wrapper (API preserved
+        /// for existing call sites). Shadows return in the post-migration cosmetic
+        /// pass (Composition/ThemeShadow).
         /// </summary>
         public static Border ShadowWrapCard(Border card)
         {
-            // The margin belongs to the outer element, or the shadow would be
-            // offset relative to the space the card reserves in layout.
-            var outer = new Border
-            {
-                Margin    = card.Margin,
-                Effect    = ThemeService.CardShadowEffect,
-                CacheMode = new BitmapCache(),
-            };
-
-            card.Margin       = new Thickness(0);
-            card.Effect       = null;
-            card.CacheMode    = null;
-            card.ClipToBounds = false;   // superseded by the rounded clip below
+            var outer = new Border { Margin = card.Margin };
+            card.Margin = new Thickness(0);
             ApplyRoundedClip(card);
 
-            outer.Child = card;
+            // Host layer BEHIND the card carries its Composition drop shadow (WPF
+            // AkariCardShadow; WinUI has no UIElement.Effect). A sibling Grid keeps the
+            // shadow under the card in z-order — SetElementChildVisual renders above its
+            // host's own content, so the host must not be the card's ancestor.
+            var host = new Border();
+            var cell = new Grid();
+            cell.Children.Add(host);
+            cell.Children.Add(card);
+            outer.Child = cell;
+
+            void Attach()
+            {
+                // Black, blur 12, depth 2, theme-dependent opacity — WPF AkariCardShadow
+                // (0.45 dark / 0.18 light). NB: rectangular (Border exposes no alpha mask),
+                // so shadow corners are not radius-matched — a minor, soft deviation.
+                var shadow = AkariShadow.Attach(host, card,
+                    Colors.Black, blurRadius: 12, opacity: CardShadowOpacity(), offsetY: 2);
+                void OnTheme(AkariTheme _) => shadow.Opacity = CardShadowOpacity();
+                ThemeService.ThemeChanged += OnTheme;
+                card.Unloaded += (_, _) => ThemeService.ThemeChanged -= OnTheme;
+            }
+            if (card.ActualWidth > 0) Attach();
+            else
+            {
+                void OnLoaded(object s, RoutedEventArgs e) { card.Loaded -= OnLoaded; Attach(); }
+                card.Loaded += OnLoaded;
+            }
             return outer;
         }
 
-        // ── Collapsible section card ──────────────────────────────────────────
-
-        /// <summary>
-        /// Tracks one section's collapse state. Collapse drives the INNER content
-        /// panel's Visibility — never the card's — because search already owns the
-        /// card's Visibility and the two must not fight.
-        /// </summary>
-        internal sealed class SectionCollapse
-        {
-            public required TextBlock  Chevron;
-            public required StackPanel Body;
-            public required string     Title;
-            public bool UserCollapsed;          // the user's persisted choice
-            public bool ForcedOpenBySearch;     // temporarily expanded for a query
-
-            public void Render()
-            {
-                bool show = !UserCollapsed || ForcedOpenBySearch;
-                Body.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
-                Chevron.Text    = show ? "▾" : "▸";
-            }
-        }
-
-        internal static readonly Dictionary<StackPanel, SectionCollapse> SectionCollapseStates = new();
+        // WPF AkariCardShadow opacity, per theme.
+        private static float CardShadowOpacity() =>
+            ThemeService.Current == AkariTheme.Light ? 0.18f : 0.45f;
 
         // ── UI preference persistence ─────────────────────────────────────────
         // Collapse state is a UI preference, not tweak state, so it uses the same
@@ -214,7 +218,8 @@ namespace AkariTool.Tabs
         /// </summary>
         public static StackPanel BuildSection(StackPanel parent, string? title = null)
         {
-            // V3 flat premium section card: neutral surface + hairline border, subtle neutral shadow.
+            // V3 flat premium section card: neutral surface + hairline border.
+            // (WPF carried Effect = CardShadow(); dropped — cosmetic pass.)
             var card = new Border
             {
                 Background = CardBackground(),
@@ -222,7 +227,6 @@ namespace AkariTool.Tabs
                 BorderThickness = new Thickness(1),
                 CornerRadius = TweakHelpers.CardRadius,
                 Margin = new Thickness(0, 0, 0, 16),
-                Effect = CardShadow()
             };
 
             var content = new StackPanel { Margin = new Thickness(18, 4, 18, 4) };
@@ -237,14 +241,12 @@ namespace AkariTool.Tabs
                 header = new Grid
                 {
                     Tag        = "sectionheader",       // excluded from search filtering
-                    Background = Brushes.Transparent,   // whole row hit-testable
-                    Cursor     = System.Windows.Input.Cursors.Hand,
+                    Background = Transparent(),         // whole row hit-testable
                     Margin     = new Thickness(0, 12, 0, 12)
                 };
                 header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                 header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
-                // In-card clickable header, matching the AkariOS tab's section headers
                 var titleText = new TextBlock
                 {
                     Text       = title,                      // NOT ToUpperInvariant — use as written
@@ -269,8 +271,7 @@ namespace AkariTool.Tabs
             }
 
             // The collapsible body. Tagged so BaseTab.FilterTweaks can find it
-            // unambiguously — "first StackPanel child" would misfire on cards that
-            // were not built here.
+            // unambiguously.
             var body = new StackPanel { Tag = "sectionbody" };
             content.Children.Add(body);
 
@@ -285,7 +286,7 @@ namespace AkariTool.Tabs
                 SectionCollapseStates[body] = st;
                 st.Render();
 
-                header.MouseLeftButtonUp += (_, _) =>
+                header.Tapped += (_, _) =>
                 {
                     st.UserCollapsed = !st.UserCollapsed;
                     WriteUiPref(prefKey, st.UserCollapsed);
@@ -296,6 +297,17 @@ namespace AkariTool.Tabs
 
             return body;
         }
+
+        // ── Row separator (WinUI has no Separator control) ────────────────────
+
+        /// <summary>1px full-bleed divider; tagged so search filtering can pair it with its row.</summary>
+        private static Border BuildRowSeparator() => new()
+        {
+            Background = Token("AkariOverlayStrong"),
+            Height = 1,
+            Margin = new Thickness(-18, 0, -18, 0),
+            Tag = "separator",
+        };
 
         // ── Toggle row (for list-style sections) ──────────────────────────────
 
@@ -310,12 +322,7 @@ namespace AkariTool.Tabs
             Action<bool>? onToggle = null)
         {
             if (parent.Children.Count > 0)
-                parent.Children.Add(new Separator
-                {
-                    Background = Token("AkariOverlayStrong"), // V3 neutral row divider
-                    Height = 1,
-                    Margin = new Thickness(-18, 0, -18, 0)
-                });
+                parent.Children.Add(BuildRowSeparator());
 
             var row = new Grid { Margin = new Thickness(0, 13, 0, 13), Tag = $"search:{title}|{description}" };
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -386,14 +393,12 @@ namespace AkariTool.Tabs
                 BorderBrush = CardElevationBorder,
                 BorderThickness = new Thickness(1),
                 CornerRadius = TweakHelpers.CardRadius,
-                ClipToBounds = true,
                 Child = grid,
-                Effect = CardShadow()
             };
+            ApplyRoundedClip(wrapper);
             parent.Children.Add(wrapper);
 
             return setters;
         }
-
     }
 }

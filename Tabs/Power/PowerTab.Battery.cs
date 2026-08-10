@@ -1,5 +1,5 @@
 using System.Runtime.InteropServices;
-using System.Windows.Controls;
+using Microsoft.UI.Xaml.Controls;
 using AkariTool.Services;
 
 namespace AkariTool.Tabs.Power
