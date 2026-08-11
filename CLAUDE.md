@@ -10,7 +10,7 @@ Keep it updated as the project changes — it is the single source of truth, not
 **Akari Tool** — a Windows 11 optimization utility. WPF / .NET 8 / WPF-UI 4.1.0 (lepo.co), C#, XAML, `win-x64`.
 Covers gaming performance, privacy hardening, system tweaks, software management, and service presets.
 
-Originally a companion to AkariOS (an AME Playbook-based custom Windows environment), now **repositioned as a fully standalone product targeting stock Windows 11 installs**. The AkariOS Playbook has been retired as a dependency.
+Grew out of AkariOS (an AME Playbook-based custom Windows environment). **AkariOS is a first-class, actively-maintained part of the product and its primary differentiator** — the AkariOS tab (service presets, Playbook tweaks, BCD, Competitive Mode, GPU tooling, PostInstall) is a supported feature set, not a legacy dependency. The app also runs fully on stock Windows 11; AkariOS-specific features degrade gracefully (e.g. the PostInstall banner offers a download) rather than being required.
 
 - Assembly / root namespace: `AkariTool`
 - Current version: `1.1.5`
