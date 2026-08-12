@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Software ▸ Debloat (rail tag "Debloat") — Stage 4, final Software-tab stage.
+    MVVM rebuild of net8 DebloatTab: three groups of (Title, Desc, Run, Undo) rows,
+    each row shelling an embedded .ps1 through ToolService.
+
+    NOT a tweak page — no TweakSectionTemplate, no TweakPageViewModel, no
+    TweakRegistry. NO confirmation dialogs anywhere, matching net8 exactly; several
+    Run/Undo actions are destructive and unguarded by design (Phase 27/28).
+
+    Header font: net8 used Consolas for the group header; matched here.
+-->
+<Page
+    x:Class="AkariTool.Views.DebloatPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:AkariTool.ViewModels.Software"
+    mc:Ignorable="d"
+    NavigationCacheMode="Required">
+
+    <Page.Resources>
+
+        <!-- One row: title + description on the left, Run (+ optional Undo) on the right -->
+        <DataTemplate x:Key="DebloatRowTemplate" x:DataType="vm:DebloatRowViewModel">
+            <Grid Margin="0,10,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                    <TextBlock
+                        Text="{x:Bind Title}"
+                        FontSize="14"
+                        FontWeight="SemiBold"
+                        Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
+                    <TextBlock
+                        Text="{x:Bind Description}"
+                        FontSize="12"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Margin="0,2,0,0"
+                        TextWrapping="Wrap" />
+                </StackPanel>
+
+                <StackPanel
+                    Grid.Column="1"
+                    Orientation="Horizontal"
+                    Spacing="8"
+                    VerticalAlignment="Center">
+                    <Button
+                        Content="Run"
+                        Style="{StaticResource AccentButtonStyle}"
+                        Command="{x:Bind RunCommand}"
+                        AutomationProperties.Name="{x:Bind Title}" />
+                    <Button
+                        Content="Undo"
+                        Command="{x:Bind UndoCommand}"
+                        Visibility="{x:Bind HasUndo, Converter={StaticResource BoolToVis}}" />
+                </StackPanel>
+            </Grid>
+        </DataTemplate>
+
+        <!-- One group: mono header + a card whose rows are separated by hairlines -->
+        <DataTemplate x:Key="DebloatGroupTemplate" x:DataType="vm:DebloatGroupViewModel">
+            <StackPanel>
+                <TextBlock
+                    Text="{x:Bind Header}"
+                    FontFamily="Consolas"
+                    FontSize="10.5"
+                    FontWeight="Medium"
+                    Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                    Margin="4,16,0,6" />
+                <Border
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Margin="0,0,0,16"
+                    Padding="18,4,18,4">
+                    <ItemsControl
+                        ItemsSource="{x:Bind Rows}"
+                        ItemTemplate="{StaticResource DebloatRowTemplate}" />
+                </Border>
+            </StackPanel>
+        </DataTemplate>
+    </Page.Resources>
+
+    <ScrollViewer>
+        <StackPanel Padding="32,24,32,24" MaxWidth="920" HorizontalAlignment="Center">
+
+            <StackPanel Margin="0,0,0,4">
+                <TextBlock
+                    Text="{x:Bind ViewModel.Title}"
+                    FontSize="26"
+                    FontWeight="SemiBold"
+                    Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
+                <TextBlock
+                    Text="{x:Bind ViewModel.Subtitle}"
+                    FontSize="13"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Margin="0,4,0,0"
+                    TextWrapping="Wrap" />
+            </StackPanel>
+
+            <ItemsControl
+                ItemsSource="{x:Bind ViewModel.Groups}"
+                ItemTemplate="{StaticResource DebloatGroupTemplate}" />
+
+        </StackPanel>
+    </ScrollViewer>
+</Page>

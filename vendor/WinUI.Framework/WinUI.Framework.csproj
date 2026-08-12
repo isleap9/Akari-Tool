@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <RootNamespace>WinUI.Framework</RootNamespace>
+    <UseWinUI>true</UseWinUI>
+    <WinUISDKReferences>false</WinUISDKReferences>
+    <!--
+      Self-contained Windows App SDK deployment is an EXE concern. When a
+      publishing EXE project (app or tests) flows WindowsAppSDKSelfContained=true
+      into this class library, suppress the "not a class library" audit that would
+      otherwise fail the build.
+    -->
+    <WindowsAppSDKSelfContainedAudit>false</WindowsAppSDKSelfContainedAudit>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.3.1" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />
+  </ItemGroup>
+
+  <!--
+    WindowsAppSDK SelfContained.targets clears PriIndexName during self-contained
+    publish, which makes the XAML compiler emit unprefixed ms-appx:/// URIs for this
+    library's .xbf resources. They then can't be resolved at runtime. Re-declaring
+    the PRI index name here (the documented pattern for WinRT component libraries)
+    keeps library build and app PRI merge aligned.
+  -->
+  <Target Name="GetPriIndexName">
+    <PropertyGroup>
+      <PriIndexName>WinUI.Framework</PriIndexName>
+    </PropertyGroup>
+  </Target>
+</Project>

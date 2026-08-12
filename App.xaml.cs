@@ -1,185 +1,88 @@
-using System;
-using System.IO;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
+using AkariTool.Services;
+using AkariTool.ViewModels;
+using AkariTool.ViewModels.AkariOS;
+using AkariTool.ViewModels.Software;
+using AkariTool.ViewModels.Tweaks;
+using WinUI.Framework.IoC;
+using WinUI.Framework.Services;
 
 namespace AkariTool;
 
-// WinUI 3 application entry point (Phase 0 scaffold).
-//
-// Phase 0 deliberately keeps this minimal: WinUI lifecycle (OnLaunched -> create
-// Window), the process-wide crash handlers, the splash + staged startup
-// orchestration, and — approved by isleap — the load-bearing "--defender-phase2"
-// headless post-reboot handoff (RunDefenderPhase2Headless below). That handoff
-// calls the byte-identical DefenderService.RunPhase2Native +
-// DefenderPhase2Scheduler.ClearRunOnce entry points; only Shutdown()→Exit()
-// differs from WPF.
+/// <summary>
+/// Application entry point. Phase A keeps startup deliberately thin (no staged
+/// splash): the framework's DI container is built once, services resolve from it,
+/// and the shell window is created and activated. The migration branch's staged
+/// splash + Defender phase-2 handoff are deferred to a later phase (see
+/// docs/MIGRATION.md).
+/// </summary>
 public partial class App : Application
 {
-    private Window? _window;
+    /// <summary>The main application window.</summary>
+    public static Window? MainWindow { get; private set; }
+
+    /// <summary>The UI thread dispatcher. Use to marshal calls to the UI thread.</summary>
+    public static DispatcherQueue DispatcherQueue { get; private set; } = null!;
+
+    /// <summary>The app-wide dependency injection container.</summary>
+    public static IServiceProvider Services { get; } = ConfigureServices();
 
     public App()
     {
-        this.InitializeComponent();
-
-        // WinUI's own UI-thread unhandled-exception hook (replaces WPF's
-        // DispatcherUnhandledException). Log + crash-report; do not show UI here.
-        this.UnhandledException += (_, e) =>
-        {
-            LogOrReport($"UI UNHANDLED EXCEPTION: {e.Exception}");
-            CrashReport.Write(e.Exception, "App.UnhandledException");
-            e.Handled = true;
-        };
-
-        AppDomain.CurrentDomain.UnhandledException += (_, e) =>
-        {
-            var msg = $"AppDomain UNHANDLED EXCEPTION: {e.ExceptionObject}";
-            LogOrReport(msg);
-            CrashReport.Write(e.ExceptionObject as Exception ?? new Exception(msg), "AppDomainUnhandledException");
-        };
-
-        System.Threading.Tasks.TaskScheduler.UnobservedTaskException += (_, e) =>
-        {
-            LogOrReport($"Task UNOBSERVED EXCEPTION: {e.Exception}");
-            CrashReport.Write(e.Exception, "UnobservedTaskException");
-            e.SetObserved();
-        };
+        InitializeComponent();
     }
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
-        // Post-reboot Defender phase-2 handoff. Launched by the HKLM RunOnce entry
-        // written in phase 1 (DefenderService → DefenderPhase2Scheduler.ScheduleRunOnce).
-        // Must be checked BEFORE anything else: this path never shows UI.
-        if (Environment.GetCommandLineArgs()
-                .Contains("--defender-phase2", StringComparer.OrdinalIgnoreCase))
-        {
-            RunDefenderPhase2Headless();   // does its work, then Exit()
-            return;                        // never touch splash/MainWindow
-        }
+        DispatcherQueue = DispatcherQueue.GetForCurrentThread();
 
-        _ = ShowSplashAndLaunchAsync();
-    }
+        // Route unhandled exceptions into the file log so failures survive a crash.
+        var log = Services.GetRequiredService<ILogService>();
+        UnhandledException += (_, e) => log.Error("Unhandled exception.", e.Exception);
 
-    // ── Headless Defender phase-2 (post-reboot) ──
-    // Launched via the HKLM RunOnce entry (see DefenderPhase2Scheduler) with the
-    // --defender-phase2 flag. It must never show UI: it does its work, self-cleans the
-    // RunOnce entry, and shuts the process down.
-    //
-    // MIGRATION: this is the WPF RunDefenderPhase2Headless verbatim except for two
-    // framework-only changes — WPF's `ShutdownMode = OnExplicitShutdown` line is gone
-    // (no WinUI equivalent, and unnecessary because no window is ever created on this
-    // path), and `Shutdown()` became `this.Exit()`. DefenderService.cs and
-    // DefenderPhase2Scheduler.cs are byte-identical to the WPF build.
-    private void RunDefenderPhase2Headless()
-    {
-        try
-        {
-            var logPath = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "AkariTool", "defender-phase2.log");
-            Directory.CreateDirectory(Path.GetDirectoryName(logPath)!);
-            void Log(string m) => File.AppendAllText(logPath,
-                $"{DateTime.Now:yyyy-MM-dd HH:mm:ss}  {m}{Environment.NewLine}");
-
-            Log("[PHASE2] Headless phase-2 started.");
-            Log($"[PHASE2] Identity: {System.Security.Principal.WindowsIdentity.GetCurrent().Name}");
-
-            Log("[PHASE2] Native phase-2 starting.");
-            Services.DefenderService.RunPhase2Native(Log);
-
-            // Clear the RunOnce entry AFTER the work — a crash mid-work leaves it
-            // scheduled to retry next login rather than silently half-disabling Defender.
-            Services.DefenderPhase2Scheduler.ClearRunOnce();
-            Log("[PHASE2] Native phase-2 complete.");
-        }
-        catch (Exception ex)
-        {
-            try
-            {
-                var p = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                    "AkariTool", "defender-phase2.log");
-                File.AppendAllText(p, $"[PHASE2] ERROR: {ex}{Environment.NewLine}");
-            }
-            catch { }
-        }
-        finally
-        {
-            this.Exit();   // headless — exit immediately, never show a window
-        }
-    }
-
-    // ── Startup orchestration ──
-    // The splash must paint before the heavy MainWindow constructor runs, so the user
-    // never stares at a blank taskbar icon during cold start. We show it first, let it
-    // render a frame, then build MainWindow while reporting the seven init stages.
-    private async Task ShowSplashAndLaunchAsync()
-    {
-        // Theme FIRST, before any window paints, so the splash reads the correct
-        // tokens (WPF applied it at the top of OnStartup for the same reason).
-        // The splash's own root is attached as the theme root until MainWindow exists.
-        var theme = Services.ThemeService.LoadPersisted();
-
-        var splash = new SplashWindow();
-        Services.ThemeService.AttachRoot(splash.Content as FrameworkElement);
-        Services.ThemeService.Apply(theme);
-        splash.Activate();
-
-        // Let the splash paint its first (0%) frame before we do any work.
-        await PaintAsync();
-
-        // Each stage: report BEFORE its work so the label/percentage/pip render first,
-        // then run the phase, holding the frame at least MinStepMs so fast phases don't
-        // blink past. `completed` is the number of stages already finished, so the bar
-        // starts at 0%.
-        MainWindow? main = null;
-
-        await RunStageAsync(splash, 0, "Checking administrator privileges", null);
-        await RunStageAsync(splash, 1, "Loading system configuration", null);
-        await RunStageAsync(splash, 2, "Reading current system state", null);
-
-        // The bulk of cold start: the MainWindow constructor initialises every tab,
-        // builds their catalogs and loads the WinGet app list. It must run on the UI
-        // thread (it creates WinUI controls), so stages 4-6 report the phases that
-        // happen inside this one call.
-        await RunStageAsync(splash, 3, "Initializing optimization modules",
-            () => { main = new MainWindow(); return Task.CompletedTask; });
-        await RunStageAsync(splash, 4, "Building tweak catalog", null);
-        await RunStageAsync(splash, 5, "Preparing app catalog (WinGet)", null);
-        await RunStageAsync(splash, 6, "Finalizing interface", null);
-
-        // All real init is done — light every pip at 100% and hold briefly before revealing.
-        splash.Report(SplashWindow.TotalSteps, "Launching Akari Tool…");
-        await PaintAsync();
-        await Task.Delay(300);
-
-        _window = main;
+        MainWindow = Services.GetRequiredService<MainWindow>();
 
         // --competitive "<exe>": launched from a Desktop shortcut. The window stays
-        // hidden (CloseAfterLaunch behaviour), but the process must keep running —
-        // the session watcher lives here and is what restores the user's settings.
-        // NOTE: in WinUI an un-Activated window still keeps the app alive, which is
-        // what replaces WPF's ShutdownMode juggling.
+        // hidden (CloseAfterLaunch behaviour), but the process keeps running — the
+        // session watcher lives in-process and is what restores the user's settings.
+        // An un-Activated window still keeps the app alive (replaces WPF ShutdownMode).
         string? competitiveExe = ParseCompetitiveArgument();
+        if (competitiveExe is null)
+        {
+            MainWindow.Activate();
+            // Normal path: offer to restore a session left over from a crash/kill (E3).
+            // No-op when there is no orphaned session on record.
+            _ = Services.GetRequiredService<AkariOSViewModel>().CheckOrphanedSessionAsync();
+        }
 
-        if (competitiveExe is null) main!.Activate();
-
-        await splash.FadeOutAndCloseAsync();
+        // Warm up the tweak registry AFTER the shell is up: build every tweak-page
+        // VM once, on a single background thread, so Backup export + global search
+        // see every tab even if the user never navigates to it. Sequential (never
+        // parallel) — see TweakRegistryWarmUp for the threading rationale. This is
+        // also the seam the future staged-progress splash will hook into.
+        _ = Task.Run(() => TweakRegistryWarmUp.Run(Services, log));
 
         if (competitiveExe is not null)
         {
-            // Orphan recovery still runs in this path — a crashed session must not
-            // survive just because the next launch came from a shortcut. It shows the
-            // window itself only if there is something to prompt about.
-            await main!.CheckOrphanedCompetitiveSessionAsync();
-            await main.StartCompetitiveFromCommandLineAsync(competitiveExe);
+            // --competitive path: recover any orphaned session FIRST (net8 order), then start
+            // the shortcut's session. Sequenced in a local async helper since OnLaunched is void.
+            _ = StartCompetitiveFromShortcutAsync(competitiveExe);
         }
     }
 
+    private static async Task StartCompetitiveFromShortcutAsync(string exePath)
+    {
+        var vm = Services.GetRequiredService<AkariOSViewModel>();
+        await vm.CheckOrphanedSessionAsync();
+        await vm.StartFromCommandLineAsync(exePath);
+    }
+
     /// <summary>
-    /// The path following --competitive, or null. Returns null for a missing or
-    /// non-existent path so a stale shortcut falls back to a normal launch rather
-    /// than starting a session against nothing.
+    /// The path following <c>--competitive</c>, or null. Returns null for a missing or
+    /// non-existent path so a stale shortcut falls back to a normal launch rather than
+    /// starting a session against nothing.
     /// </summary>
     private static string? ParseCompetitiveArgument()
     {
@@ -194,65 +97,92 @@ public partial class App : Application
                 return File.Exists(path) ? path : null;
             }
         }
-        catch (Exception ex) { Services.ToolService.Current?.Log($"[App] ParseCompetitiveArgument failed: {ex.Message}"); }
+        catch (Exception ex) { ToolService.Current?.Log($"[App] ParseCompetitiveArgument failed: {ex.Message}"); }
         return null;
     }
 
-    // Minimum time each stage stays on screen so the bar fills deliberately rather than skipping.
-    private const int MinStepMs = 320;
-
-    // Reports a stage (label + pips + percentage), lets it paint, then runs its work
-    // while enforcing a minimum visible duration. `work` may be null for phases with no
-    // separable work (their real cost lives in the MainWindow constructor).
-    private static async Task RunStageAsync(SplashWindow splash, int completed, string label, Func<Task>? work)
+    private static IServiceProvider ConfigureServices()
     {
-        splash.Report(completed, label);
-        await PaintAsync();
+        var services = new ServiceCollection();
 
-        var minVisible = Task.Delay(MinStepMs);
-        if (work != null) await work();
-        await minVisible;
-    }
+        services.AddWinUIFrameworkCore();
 
-    // MIGRATION: WPF yielded with Dispatcher.Yield(DispatcherPriority.Background) to
-    // flush a paint. WinUI has no Dispatcher.Yield, so this re-enqueues at Low
-    // priority — which runs after the current render pass — and awaits that.
-    private static Task PaintAsync()
-    {
-        var tcs = new TaskCompletionSource();
-        var queue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
-        if (queue is null || !queue.TryEnqueue(
-                Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
-                () => tcs.TrySetResult()))
+        // App-local IFileService override (Phase 4): the framework default uses WinRT
+        // Windows.Storage.Pickers, which throw COMException 0x80004005 under elevation
+        // (this app ships requireAdministrator). AkariFileService drives the Win32 COM
+        // common dialogs instead, which work at any integrity level. Registered AFTER
+        // AddWinUIFrameworkCore so MS.DI's last-registration-wins resolves to this one —
+        // same IFileService interface, so no call sites change. Framework untouched.
+        services.AddSingleton<IFileService, AkariFileService>();
+
+        // UI log decorator: wraps the framework's FileLogService and raises
+        // LineLogged so the shell's log dock renders live output. Registered after
+        // AddWinUIFrameworkCore so the interface resolves to this instance.
+        services.AddSingleton<FileLogService>();
+        services.AddSingleton<AkariUiLogService>(sp => new AkariUiLogService(sp.GetRequiredService<FileLogService>()));
+        services.AddSingleton<ILogService>(sp => sp.GetRequiredService<AkariUiLogService>());
+
+        // ToolService is the tweak layer's logger + process runner. Its sink feeds
+        // the framework ILogService, which the shell's log dock already renders —
+        // that wires the HEADLESS EVENT ToolService.LineLogged. ProgressStarted /
+        // ProgressStopped are subscribed by MainWindow (status bar).
+        services.AddSingleton<ToolService>(sp =>
         {
-            tcs.TrySetResult();
-        }
-        return tcs.Task;
-    }
+            var log = sp.GetRequiredService<ILogService>();
+            return new ToolService(line => log.Info(line));
+        });
 
-    private static void LogOrReport(string message)
-    {
-        System.Diagnostics.Debug.WriteLine(message);
-        try { Services.ToolService.Current?.Log(message); }
-        catch (Exception logEx) { System.Diagnostics.Debug.WriteLine($"[App] LogOrReport failed: {logEx.Message}"); }
-    }
+        // Dialog helper for tweak confirmations (serializes ContentDialogs).
+        services.AddSingleton<TweakDialogs>();
 
-    /// <summary>Writes a timestamped crash report file to %APPDATA%\AkariTool\.</summary>
-    private static class CrashReport
-    {
-        public static void Write(Exception? ex, string source)
-        {
-            try
-            {
-                var dir = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AkariTool");
-                Directory.CreateDirectory(dir);
-                var path = Path.Combine(dir, $"AkariTool_crash_{DateTime.Now:yyyy-MM-dd}.log");
-                File.AppendAllText(path,
-                    $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [{source}] {ex?.ToString() ?? "null"}{Environment.NewLine}" +
-                    $"---{Environment.NewLine}");
-            }
-            catch (Exception writeEx) { System.Diagnostics.Debug.WriteLine($"[App] CrashReport.Write failed: {writeEx.Message}"); }
-        }
+        services.AddSingleton<MainWindow>();
+        services.AddTransient<HomeViewModel>();
+        services.AddTransient<PlaceholderViewModel>();
+        services.AddTransient<SettingsViewModel>();
+
+        // ⚠ SINGLETON, not transient: tweak rows register themselves with
+        // TweakRegistry on construction and TweakRegistry has no unregister. A
+        // transient page view model would re-register the whole tab on every
+        // navigation — inflating the tweak count, duplicating Backup/Restore
+        // entries, and breaking the contiguous index range ClaimRange depends on.
+        // Tweak-page VMs — one DI SINGLETON each (see the lifetime note above).
+        services.AddSingleton<GamingViewModel>();
+        services.AddSingleton<SoundViewModel>();
+        services.AddSingleton<NotificationsViewModel>();
+        services.AddSingleton<UpdateViewModel>();
+        services.AddSingleton<PrivacyViewModel>();
+        services.AddSingleton<CustomizeViewModel>();
+        services.AddSingleton<PowerViewModel>();
+
+        // ⚠ BESPOKE PAGE — deliberately NOT registered under TweakPageViewModel below.
+        // The Software tab has no TweakDefinition rows and never registers with
+        // TweakRegistry, so it must stay out of the warm-up enumeration (adding it
+        // there would break the ClaimRange tiling assertion). Singleton for the same
+        // reason the tweak pages are: it owns the built catalog + selection state.
+        services.AddSingleton<ExternalAppsViewModel>();
+        services.AddSingleton<WindowsAppsViewModel>();
+        services.AddSingleton<DebloatViewModel>();
+        services.AddSingleton<AkariTool.ViewModels.Backup.BackupViewModel>();
+        services.AddSingleton<AkariTool.ViewModels.AdvancedTools.AdvancedToolsViewModel>();
+        services.AddSingleton<AkariTool.ViewModels.AkariOS.AkariOSViewModel>();
+
+        // Enumerable marker for the startup warm-up: every tweak-page VM is ALSO
+        // registered under the TweakPageViewModel base type, resolving to the SAME
+        // singleton instance. TweakRegistryWarmUp does GetServices<TweakPageViewModel>()
+        // and Build()s each one at startup so a never-visited tab is still present
+        // in Backup exports and global search (rows register inside Build(), which
+        // otherwise only runs on first navigation). Registration order = warm-up
+        // order = TweakRegistry range order; add each new tweak page to BOTH lists.
+        services.AddSingleton<TweakPageViewModel>(sp => sp.GetRequiredService<GamingViewModel>());
+        services.AddSingleton<TweakPageViewModel>(sp => sp.GetRequiredService<SoundViewModel>());
+        services.AddSingleton<TweakPageViewModel>(sp => sp.GetRequiredService<NotificationsViewModel>());
+        services.AddSingleton<TweakPageViewModel>(sp => sp.GetRequiredService<UpdateViewModel>());
+        services.AddSingleton<TweakPageViewModel>(sp => sp.GetRequiredService<PrivacyViewModel>());
+        services.AddSingleton<TweakPageViewModel>(sp => sp.GetRequiredService<CustomizeViewModel>());
+        services.AddSingleton<TweakPageViewModel>(sp => sp.GetRequiredService<PowerViewModel>());
+
+        var provider = services.BuildServiceProvider();
+        ServiceLocator.Initialize(provider);
+        return provider;
     }
 }

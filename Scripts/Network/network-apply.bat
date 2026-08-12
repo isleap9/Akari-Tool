@@ -182,8 +182,4 @@ netsh int tcp set supplemental template=custom icw=10
 netsh interface ip set interface ethernet currenthoplimit=64
 netsh int ip set global taskoffload=enabled
 cls
-Echo "A reboot may be required"
-Echo "Press any key to reboot"
-pause
-shutdown -r -t 01
 exit

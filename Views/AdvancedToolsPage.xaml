@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Advanced Tools (rail tag "Advanced") — MVVM port of net8 AdvancedToolsTab.
+    Two features off a landing: the 4-step WIM wizard and the Autounattend generator,
+    both over the already-ported (byte-identical) WimUtilService / AutounattendService.
+
+    The interactive UI (collapsible step cards, live status, busy/cancel, the dynamic
+    conversion + oscdimg cards) is built in the page code-behind — a faithful port of
+    net8's imperative builders — because it is far more stateful than the card/list
+    panels ported as DataTemplates elsewhere. This XAML is just the scroll host + the
+    three panels the code-behind fills. NOT a tweak page — registers nothing.
+-->
+<Page
+    x:Class="AkariTool.Views.AdvancedToolsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    NavigationCacheMode="Required">
+
+    <ScrollViewer>
+        <StackPanel Padding="32,24,32,24" MaxWidth="960" HorizontalAlignment="Center">
+            <StackPanel Margin="0,0,0,20">
+                <TextBlock
+                    Text="Advanced Tools"
+                    FontSize="26"
+                    FontWeight="SemiBold"
+                    Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
+                <TextBlock
+                    Text="Power tools for Windows customization."
+                    FontSize="13"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Margin="0,4,0,0"
+                    TextWrapping="Wrap" />
+            </StackPanel>
+
+            <!-- Filled by code-behind: landing (two entry cards), wizard (4 steps),
+                 generator (apps summary + tweak checklists). -->
+            <StackPanel x:Name="LandingPanel" />
+            <StackPanel x:Name="WizardPanel" Visibility="Collapsed" />
+            <StackPanel x:Name="GeneratorPanel" Visibility="Collapsed" />
+        </StackPanel>
+    </ScrollViewer>
+</Page>

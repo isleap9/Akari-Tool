@@ -9,302 +9,332 @@
     mc:Ignorable="d"
     Title="Akari Tool">
 
-    <Grid x:Name="RootGrid" Background="{ThemeResource AkariFlatBackdrop}">
+    <Window.SystemBackdrop>
+        <MicaBackdrop />
+    </Window.SystemBackdrop>
+
+    <Grid x:Name="RootGrid">
         <Grid.RowDefinitions>
-            <RowDefinition Height="48"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="48" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <!-- Continuous right-side backdrop gutter (Winhance frame): col 1 is an empty
-             12px strip that shows RootGrid's backdrop unbroken from the title bar to the
-             footer. The body (NavigationView row 1, status bar row 2) sits in col 0 and so
-             stops at this gutter; the title bar spans BOTH columns (ColumnSpan=2) so the
-             system caption buttons + drag region are unaffected — its right edge is
-             transparent, so the backdrop still shows there and the gutter reads continuous.
-             12 matches the content card's former right margin, so all right edges align. -->
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="12"/>
-        </Grid.ColumnDefinitions>
 
-        <!-- ═══ Custom title bar (draggable) ═══ -->
-        <!-- ColumnSpan=2: keep the title bar full-width so SetTitleBar's drag region and the
-             system min/max/close buttons stay exactly as before; its transparent right edge
-             lets the gutter's backdrop show through at the top. -->
-        <Grid x:Name="AppTitleBar" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Height="48" Padding="14,0,8,0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-
-            <!-- Branding: logo · crimson glow dot · AKARI TOOL mono wordmark (WPF parity).
-                 TitleDotShadowHost is an empty layer behind the branding row that hosts the
-                 dot's Composition glow (WinUI has no UIElement.Effect). -->
-            <Grid Grid.Column="0" VerticalAlignment="Stretch">
-                <Border x:Name="TitleDotShadowHost"/>
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <Image x:Name="TitleLogo" Height="24" Stretch="Uniform"
-                           VerticalAlignment="Center" Margin="0,0,9,0"/>
-                    <Ellipse x:Name="TitleDot" Width="5" Height="5" VerticalAlignment="Center"
-                             Margin="0,0,10,0" Fill="{ThemeResource AkariAccent}"/>
-                    <TextBlock FontFamily="{StaticResource MonoFont}" FontSize="10.5"
-                               FontWeight="Bold" VerticalAlignment="Center">
-                        <Run Text="AKARI " Foreground="{ThemeResource AkariTextPrimary}"/><Run Text="TOOL" Foreground="{ThemeResource AkariAccent}"/>
-                    </TextBlock>
-                </StackPanel>
-            </Grid>
-
-            <!-- (Theme toggle moved to the footer / status bar.) -->
+        <!-- Custom title bar (draggable): logo + accent dot + wordmark. -->
+        <Grid
+            x:Name="AppTitleBar"
+            Grid.Row="0"
+            Height="48"
+            Padding="14,0,8,0">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <Image
+                    x:Name="TitleLogo"
+                    Height="24"
+                    Stretch="Uniform"
+                    VerticalAlignment="Center"
+                    Margin="0,0,9,0" />
+                <Ellipse
+                    x:Name="TitleDot"
+                    Width="5"
+                    Height="5"
+                    VerticalAlignment="Center"
+                    Margin="0,0,10,0"
+                    Fill="{ThemeResource AccentFillColorDefaultBrush}" />
+                <TextBlock
+                    FontFamily="Consolas"
+                    FontSize="10.5"
+                    FontWeight="Bold"
+                    VerticalAlignment="Center">
+                    <Run Text="AKARI " Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
+                    <Run Text="TOOL" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                </TextBlock>
+            </StackPanel>
         </Grid>
 
-        <!-- ═══ Body: rail + content + log ═══ -->
-        <muxc:NavigationView x:Name="Nav" Grid.Row="1"
-                             PaneDisplayMode="Left"
-                             IsBackButtonVisible="Collapsed"
-                             IsSettingsVisible="False"
-                             OpenPaneLength="220"
-                             SelectionChanged="Nav_SelectionChanged">
+        <!-- Body: nav rail + content -->
+        <muxc:NavigationView
+            x:Name="Nav"
+            Grid.Row="1"
+            PaneDisplayMode="Left"
+            IsBackButtonVisible="Collapsed"
+            IsSettingsVisible="False"
+            OpenPaneLength="220"
+            SelectionChanged="Nav_SelectionChanged">
 
-            <!-- Global "Find a setting" — searches every tab's tweaks via
-                 TweakRegistry.Search and navigates to the hit. Replaces the WPF rail
-                 TextBox + Popup + ListBox with a native AutoSuggestBox (built-in
-                 suggestion dropdown). Only shown when the pane is expanded. -->
+            <!-- Global search: queries TweakRegistry across all 7 tweak tabs; picking a
+                 result navigates to its tab and pre-fills that page's own search box. -->
             <muxc:NavigationView.AutoSuggestBox>
-                <AutoSuggestBox x:Name="GlobalSearch"
-                                PlaceholderText="Find a setting"
-                                QueryIcon="Find"
-                                TextMemberPath="Name"
-                                TextChanged="GlobalSearch_TextChanged"
-                                SuggestionChosen="GlobalSearch_SuggestionChosen"
-                                QuerySubmitted="GlobalSearch_QuerySubmitted">
-                    <!-- Two-line suggestion (tweak name + tab), matching the WPF popup. -->
+                <AutoSuggestBox
+                    x:Name="GlobalSearch"
+                    PlaceholderText="Search all settings…"
+                    QueryIcon="Find"
+                    TextMemberPath="Display"
+                    TextChanged="GlobalSearch_TextChanged"
+                    QuerySubmitted="GlobalSearch_QuerySubmitted">
+                    <!-- ItemTemplate is required: without it the dropdown renders each
+                         item via ToString() (the record's "SearchResult { Display = … }").
+                         TextMemberPath only fills the text box after a pick, not the list. -->
                     <AutoSuggestBox.ItemTemplate>
                         <DataTemplate>
-                            <StackPanel Margin="2,3,2,3">
-                                <TextBlock Text="{Binding Name}" FontSize="13" TextTrimming="CharacterEllipsis"/>
-                                <TextBlock Text="{Binding TabLabel}" FontSize="11" Opacity="0.7" TextTrimming="CharacterEllipsis"/>
-                            </StackPanel>
+                            <TextBlock Text="{Binding Display}" TextTrimming="CharacterEllipsis" />
                         </DataTemplate>
                     </AutoSuggestBox.ItemTemplate>
                 </AutoSuggestBox>
             </muxc:NavigationView.AutoSuggestBox>
+
+            <!-- Rail tags MUST match the routing contract (see MainWindow.xaml.cs).
+                 Phase A: Home routes to HomePage, every other tag to PlaceholderPage. -->
             <muxc:NavigationView.MenuItems>
                 <muxc:NavigationViewItem Content="Home" Tag="Home">
-                    <muxc:NavigationViewItem.Icon><FontIcon Glyph="&#xE80F;"/></muxc:NavigationViewItem.Icon>
+                    <muxc:NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE80F;" />
+                    </muxc:NavigationViewItem.Icon>
                 </muxc:NavigationViewItem>
 
-                <!-- Tags MUST match the WPF routing contract (_subInfo): these two are
-                     Software sub-panels, so their tags are Bloatware / AppInstaller. -->
-                <muxc:NavigationViewItemHeader Content="SOFTWARE"/>
+                <muxc:NavigationViewItemHeader Content="SOFTWARE" />
                 <muxc:NavigationViewItem Content="Windows Apps" Tag="Bloatware">
-                    <muxc:NavigationViewItem.Icon><FontIcon Glyph="&#xE71D;"/></muxc:NavigationViewItem.Icon>
+                    <muxc:NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE71D;" />
+                    </muxc:NavigationViewItem.Icon>
                 </muxc:NavigationViewItem>
                 <muxc:NavigationViewItem Content="External Apps" Tag="AppInstaller">
-                    <muxc:NavigationViewItem.Icon><FontIcon Glyph="&#xE896;"/></muxc:NavigationViewItem.Icon>
+                    <muxc:NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE896;" />
+                    </muxc:NavigationViewItem.Icon>
                 </muxc:NavigationViewItem>
                 <muxc:NavigationViewItem Content="Debloat" Tag="Debloat">
-                    <muxc:NavigationViewItem.Icon><FontIcon Glyph="&#xE74D;"/></muxc:NavigationViewItem.Icon>
+                    <muxc:NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE74D;" />
+                    </muxc:NavigationViewItem.Icon>
                 </muxc:NavigationViewItem>
 
-                <muxc:NavigationViewItemHeader Content="OPTIMIZE"/>
+                <muxc:NavigationViewItemHeader Content="OPTIMIZE" />
                 <muxc:NavigationViewItem Content="AkariOS" Tag="AkariOS">
-                    <muxc:NavigationViewItem.Icon><FontIcon Glyph="&#xE945;"/></muxc:NavigationViewItem.Icon>
+                    <muxc:NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE945;" />
+                    </muxc:NavigationViewItem.Icon>
                 </muxc:NavigationViewItem>
                 <muxc:NavigationViewItem Content="Gaming &amp; Performance" Tag="Gaming">
-                    <muxc:NavigationViewItem.Icon><FontIcon Glyph="&#xE7FC;"/></muxc:NavigationViewItem.Icon>
+                    <muxc:NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE7FC;" />
+                    </muxc:NavigationViewItem.Icon>
                 </muxc:NavigationViewItem>
                 <muxc:NavigationViewItem Content="Privacy &amp; Security" Tag="Privacy">
-                    <muxc:NavigationViewItem.Icon><FontIcon Glyph="&#xE72E;"/></muxc:NavigationViewItem.Icon>
+                    <muxc:NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE72E;" />
+                    </muxc:NavigationViewItem.Icon>
                 </muxc:NavigationViewItem>
                 <muxc:NavigationViewItem Content="Windows Updates" Tag="Update">
-                    <muxc:NavigationViewItem.Icon><FontIcon Glyph="&#xE895;"/></muxc:NavigationViewItem.Icon>
+                    <muxc:NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE895;" />
+                    </muxc:NavigationViewItem.Icon>
                 </muxc:NavigationViewItem>
                 <muxc:NavigationViewItem Content="Notifications" Tag="Notifications">
-                    <muxc:NavigationViewItem.Icon><FontIcon Glyph="&#xE7E7;"/></muxc:NavigationViewItem.Icon>
+                    <muxc:NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE7E7;" />
+                    </muxc:NavigationViewItem.Icon>
                 </muxc:NavigationViewItem>
                 <muxc:NavigationViewItem Content="Sound" Tag="Sound">
-                    <muxc:NavigationViewItem.Icon><FontIcon Glyph="&#xE767;"/></muxc:NavigationViewItem.Icon>
+                    <muxc:NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE767;" />
+                    </muxc:NavigationViewItem.Icon>
                 </muxc:NavigationViewItem>
                 <muxc:NavigationViewItem Content="Power" Tag="Power">
-                    <muxc:NavigationViewItem.Icon><FontIcon Glyph="&#xE945;"/></muxc:NavigationViewItem.Icon>
+                    <muxc:NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE945;" />
+                    </muxc:NavigationViewItem.Icon>
                 </muxc:NavigationViewItem>
-                <!-- Customize hosts SIX sub-panels (CustomizeTab.ShowPanel). The WPF rail
-                     exposed each as a child item; reproduced natively via MenuItems. -->
                 <muxc:NavigationViewItem Content="Customize" Tag="Customize">
-                    <muxc:NavigationViewItem.Icon><FontIcon Glyph="&#xE790;"/></muxc:NavigationViewItem.Icon>
+                    <muxc:NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE790;" />
+                    </muxc:NavigationViewItem.Icon>
                     <muxc:NavigationViewItem.MenuItems>
-                        <muxc:NavigationViewItem Content="Taskbar"      Tag="Taskbar"/>
-                        <muxc:NavigationViewItem Content="Explorer"     Tag="Explorer"/>
-                        <muxc:NavigationViewItem Content="Context Menu" Tag="ContextMenu"/>
-                        <muxc:NavigationViewItem Content="Appearance"   Tag="Appearance"/>
-                        <muxc:NavigationViewItem Content="Start Menu"   Tag="StartMenu"/>
-                        <muxc:NavigationViewItem Content="Desktop"      Tag="Desktop"/>
+                        <muxc:NavigationViewItem Content="Taskbar" Tag="Taskbar" />
+                        <muxc:NavigationViewItem Content="Explorer" Tag="Explorer" />
+                        <muxc:NavigationViewItem Content="Context Menu" Tag="ContextMenu" />
+                        <muxc:NavigationViewItem Content="Appearance" Tag="Appearance" />
+                        <muxc:NavigationViewItem Content="Start Menu" Tag="StartMenu" />
+                        <muxc:NavigationViewItem Content="Desktop" Tag="Desktop" />
                     </muxc:NavigationViewItem.MenuItems>
                 </muxc:NavigationViewItem>
                 <muxc:NavigationViewItem Content="Tools" Tag="Tools">
-                    <muxc:NavigationViewItem.Icon><FontIcon Glyph="&#xE90F;"/></muxc:NavigationViewItem.Icon>
+                    <muxc:NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE90F;" />
+                    </muxc:NavigationViewItem.Icon>
                 </muxc:NavigationViewItem>
 
-                <muxc:NavigationViewItemHeader Content="ADVANCED"/>
+                <muxc:NavigationViewItemHeader Content="ADVANCED" />
                 <muxc:NavigationViewItem Content="Advanced Tools" Tag="Advanced">
-                    <muxc:NavigationViewItem.Icon><FontIcon Glyph="&#xEC7A;"/></muxc:NavigationViewItem.Icon>
+                    <muxc:NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xEC7A;" />
+                    </muxc:NavigationViewItem.Icon>
                 </muxc:NavigationViewItem>
                 <muxc:NavigationViewItem Content="Backup &amp; Restore" Tag="Backup">
-                    <muxc:NavigationViewItem.Icon><FontIcon Glyph="&#xE777;"/></muxc:NavigationViewItem.Icon>
+                    <muxc:NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE777;" />
+                    </muxc:NavigationViewItem.Icon>
                 </muxc:NavigationViewItem>
                 <muxc:NavigationViewItem Content="Verify" Tag="Verify">
-                    <muxc:NavigationViewItem.Icon><FontIcon Glyph="&#xE73E;"/></muxc:NavigationViewItem.Icon>
+                    <muxc:NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE73E;" />
+                    </muxc:NavigationViewItem.Icon>
                 </muxc:NavigationViewItem>
             </muxc:NavigationView.MenuItems>
 
             <muxc:NavigationView.FooterMenuItems>
-                <muxc:NavigationViewItem Content="App Updates" Tag="AppUpdate">
-                    <muxc:NavigationViewItem.Icon><FontIcon Glyph="&#xE896;"/></muxc:NavigationViewItem.Icon>
-                </muxc:NavigationViewItem>
-                <muxc:NavigationViewItem Content="About" Tag="About">
-                    <muxc:NavigationViewItem.Icon><FontIcon Glyph="&#xE946;"/></muxc:NavigationViewItem.Icon>
+                <muxc:NavigationViewItem Content="Settings" Tag="Settings">
+                    <muxc:NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE713;" />
+                    </muxc:NavigationViewItem.Icon>
                 </muxc:NavigationViewItem>
             </muxc:NavigationView.FooterMenuItems>
 
-            <!-- Content card (contains the tab content AND the log console) -->
+            <!-- Page host + docked live log console. -->
             <Grid>
-                <!-- ═══ Inset "floating card" (Winhance-style) ═══
-                     The content column is lifted off the base shell: the Margin lets the
-                     window backdrop show on all four sides (left = the gap from the rail),
-                     the surface (AkariContentSurface) is distinct from rail/backdrop, and
-                     the corners are rounded (AkariCardRadius = 8), composition-CLIPPED in
-                     code (ClipCardToRadius) so nothing bleeds past the radius.
-                     The card WRAPS the whole content column — including the log console
-                     docked at its bottom row — so all four corners render the radius,
-                     including the dark bottom corners AROUND the log. Title bar + nav rail
-                     stay OUTSIDE the card and are never touched. Right margin is 0: the
-                     RootGrid gutter column supplies the right inset so the card's right edge
-                     aligns with the title bar's and footer's into one backdrop strip. -->
-                <Border x:Name="ContentCard"
-                        Margin="8,8,0,8"
-                        CornerRadius="{ThemeResource AkariCardRadius}"
-                        Background="{ThemeResource AkariContentSurface}">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
 
-                        <!-- Drift banner: a row above the content, shown only when a scan
-                             found tweaks that no longer match what Akari wrote. Content is
-                             built in code (DriftBanner.Build) via RefreshDriftBanner.
-                             Top margin = the card radius (8) so the CARD's rounded surface
-                             owns the top corners: the banner is pushed just below the corner
-                             curve and therefore renders as a flat, square-cornered full-width
-                             strip instead of becoming the thing the composition clip rounds.
-                             When the banner is Collapsed the card's own rounded top shows. -->
-                        <ContentControl x:Name="DriftBannerHost" Grid.Row="0"
-                                        HorizontalContentAlignment="Stretch"
-                                        Margin="0,8,0,0"
-                                        Visibility="Collapsed"/>
+                <Frame x:Name="ContentFrame" Grid.Row="0" />
 
-                        <Grid x:Name="ContentHost" Grid.Row="1"/>
-
-                        <!-- ═══ Log console — docked at the BOTTOM of the card ═══
-                             Inside the card so the card's rounded corners wrap AROUND it: the
-                             dark AkariLogSurface fills flush to the card's rounded bottom
-                             corners, so those (the darkest) corners render the radius. Its own
-                             top hairline divides it from the scrolling content; it keeps square
-                             internal corners and is clipped round by the card. -->
-                        <Border x:Name="TxtLogPanel" Grid.Row="2"
-                                Visibility="Collapsed"
-                                Background="{ThemeResource AkariLogSurface}"
-                                BorderBrush="{ThemeResource AkariHairline}"
-                                BorderThickness="0,1,0,0"
-                                Padding="16,8,16,10">
+                <Border
+                    x:Name="TxtLogPanel"
+                    Grid.Row="1"
+                    Visibility="Collapsed"
+                    Background="{ThemeResource LayerFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+                    BorderThickness="0,1,0,0"
+                    Padding="16,8,16,10">
                     <StackPanel Spacing="6">
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="LOG" FontFamily="{StaticResource MonoFont}"
-                                       FontSize="10" Foreground="{ThemeResource AkariTextMuted}"
-                                       VerticalAlignment="Center"/>
-                            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8"
-                                        VerticalAlignment="Center" Margin="0,0,10,0">
-                                <TextBlock x:Name="TxtProgressStatus"
-                                           Foreground="{ThemeResource AkariTextSecondary}" FontSize="12"
-                                           VerticalAlignment="Center" Visibility="Collapsed"/>
-                                <muxc:ProgressBar x:Name="LogProgress" Width="180" Height="4"
-                                                  Minimum="0" Maximum="100" Value="0"
-                                                  Visibility="Collapsed" VerticalAlignment="Center"/>
-                            </StackPanel>
-                            <Button Grid.Column="3" x:Name="InfoDialogBtn" Click="InfoDialog_Click"
-                                    Background="Transparent" BorderThickness="0" Padding="6,2"
-                                    ToolTipService.ToolTip="About Akari Tool">
-                                <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE946;" FontSize="13"
-                                          Foreground="{ThemeResource AkariIconNeutral}"/>
+                            <TextBlock
+                                Grid.Column="0"
+                                Text="LOG"
+                                FontFamily="Consolas"
+                                FontSize="10"
+                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                VerticalAlignment="Center" />
+                            <Button
+                                Grid.Column="2"
+                                x:Name="InfoDialogBtn"
+                                Click="InfoDialog_Click"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Padding="6,2"
+                                ToolTipService.ToolTip="About Akari Tool">
+                                <FontIcon
+                                    FontFamily="Segoe Fluent Icons"
+                                    Glyph="&#xE946;"
+                                    FontSize="13"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                             </Button>
                         </Grid>
-                        <TextBox x:Name="TxtLog" IsReadOnly="True" IsSpellCheckEnabled="False"
-                                 Height="86" FontFamily="{StaticResource MonoFont}" FontSize="11.5"
-                                 AcceptsReturn="True" TextWrapping="NoWrap"
-                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                 ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                 Background="Transparent" BorderThickness="0"/>
-                            </StackPanel>
-                        </Border>
-                    </Grid>
+                        <TextBox
+                            x:Name="TxtLog"
+                            IsReadOnly="True"
+                            IsSpellCheckEnabled="False"
+                            Height="86"
+                            FontFamily="Consolas"
+                            FontSize="11.5"
+                            AcceptsReturn="True"
+                            TextWrapping="NoWrap"
+                            ScrollViewer.VerticalScrollBarVisibility="Auto"
+                            ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                            Background="Transparent"
+                            BorderThickness="0" />
+                    </StackPanel>
                 </Border>
             </Grid>
         </muxc:NavigationView>
 
-        <!-- ═══ Status bar (green Ready dot + LOG toggle + build stamp) ═══
-             Full-width footer below the rail+content. Background is Transparent (NOT an
-             opaque surface) so the window's Mica backdrop shows through the footer too.
-             StatusDotShadowHost carries the dot's green Composition glow. -->
-        <Border Grid.Row="2" Background="Transparent"
-                BorderThickness="0" Padding="16,5,16,5">
+        <!-- Status bar: ready state + theme toggle + LOG toggle + build stamp. -->
+        <Border
+            Grid.Row="2"
+            Background="Transparent"
+            BorderThickness="0"
+            Padding="16,5,16,5">
             <Grid VerticalAlignment="Center">
-                <Grid HorizontalAlignment="Left" VerticalAlignment="Center">
-                    <Border x:Name="StatusDotShadowHost"/>
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Ellipse x:Name="StatusDot" Width="6" Height="6" VerticalAlignment="Center"
-                                 Margin="0,0,7,0" Fill="{ThemeResource AkariSuccess}"/>
-                        <TextBlock Text="Ready" FontSize="11.5"
-                                   Foreground="{ThemeResource AkariTextSecondary}"
-                                   VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Grid>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
-                            VerticalAlignment="Center" Spacing="14">
-                    <!-- Theme (dark / light) toggle — sun glyph while dark, moon while light
-                         (icon set in UpdateThemeVisuals). Moved here from the title bar. -->
-                    <Button x:Name="ThemeToggleBtn" Click="ThemeToggle_Click"
-                            Background="Transparent" BorderThickness="0" Padding="8,2"
-                            VerticalAlignment="Center"
-                            ToolTipService.ToolTip="Toggle light / dark theme">
-                        <FontIcon x:Name="ThemeToggleIcon" FontFamily="Segoe Fluent Icons"
-                                  Glyph="&#xE706;" FontSize="13"
-                                  Foreground="{ThemeResource AkariTextMuted}"/>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Ellipse
+                        x:Name="StatusDot"
+                        Width="6"
+                        Height="6"
+                        VerticalAlignment="Center"
+                        Margin="0,0,7,0"
+                        Fill="{ThemeResource SystemFillColorSuccessBrush}" />
+                    <TextBlock
+                        x:Name="StatusText"
+                        Text="Ready"
+                        FontSize="11.5"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        VerticalAlignment="Center" />
+                    <!-- Driven by ToolService.ProgressStarted / ProgressStopped. -->
+                    <ProgressBar
+                        x:Name="StatusProgress"
+                        Width="120"
+                        Height="2"
+                        Margin="12,0,0,0"
+                        VerticalAlignment="Center"
+                        Visibility="Collapsed" />
+                </StackPanel>
+                <StackPanel
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    Spacing="14">
+                    <!-- Theme toggle: sun glyph while dark, moon glyph while light
+                         (icon set in code). -->
+                    <Button
+                        x:Name="ThemeToggleBtn"
+                        Click="ThemeToggle_Click"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Padding="8,2"
+                        VerticalAlignment="Center"
+                        ToolTipService.ToolTip="Toggle light / dark theme">
+                        <FontIcon
+                            x:Name="ThemeToggleIcon"
+                            FontFamily="Segoe Fluent Icons"
+                            Glyph="&#xE706;"
+                            FontSize="13"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                     </Button>
-                    <!-- Show / hide the log console docked at the bottom of the content card. -->
-                    <Button x:Name="LogToggleBtn" Click="LogToggle_Click"
-                            Background="Transparent" BorderThickness="0" Padding="8,2"
-                            VerticalAlignment="Center"
-                            ToolTipService.ToolTip="Show or hide the log">
+                    <!-- Show / hide the log console. -->
+                    <Button
+                        x:Name="LogToggleBtn"
+                        Click="LogToggle_Click"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Padding="8,2"
+                        VerticalAlignment="Center"
+                        ToolTipService.ToolTip="Show or hide the log">
                         <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                            <!-- ChevronUp: log starts collapsed, so the button shows "expand". -->
-                            <FontIcon x:Name="LogToggleIcon" FontFamily="Segoe Fluent Icons"
-                                      Glyph="&#xE70E;" FontSize="11"
-                                      Foreground="{ThemeResource AkariTextMuted}"/>
-                            <TextBlock Text="LOG" FontFamily="{StaticResource MonoFont}" FontSize="10"
-                                       Foreground="{ThemeResource AkariTextMuted}" VerticalAlignment="Center"/>
+                            <FontIcon
+                                x:Name="LogToggleIcon"
+                                FontFamily="Segoe Fluent Icons"
+                                Glyph="&#xE70E;"
+                                FontSize="11"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            <TextBlock
+                                Text="LOG"
+                                FontFamily="Consolas"
+                                FontSize="10"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <TextBlock x:Name="BuildStamp" VerticalAlignment="Center"
-                               FontFamily="{StaticResource MonoFont}" FontSize="10.5"
-                               Foreground="{ThemeResource AkariTextMuted}"/>
+                    <TextBlock
+                        x:Name="BuildStamp"
+                        VerticalAlignment="Center"
+                        FontFamily="Consolas"
+                        FontSize="10.5"
+                        Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
                 </StackPanel>
             </Grid>
         </Border>

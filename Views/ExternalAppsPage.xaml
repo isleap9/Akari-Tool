@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Software ▸ External Apps (rail tag "AppInstaller") — Stage 1 of the Software
+    rollout. MVVM rebuild of net8's SoftwareTab External-Apps panel: the imperative
+    card grid (SoftwareTab.Cards.cs / .UiHelpers.cs) becomes a section template + a
+    card template, driven by ExternalAppsViewModel.
+
+    NOT a tweak page — no TweakSectionTemplate, no TweakPageViewModel, no
+    TweakRegistry involvement. Layout mirrors net8: header, action bar + selected
+    count, status line, search, select-all row, then one responsive card grid per
+    category.
+
+    net8 used a UniformGrid whose column count it recomputed on SizeChanged;
+    UniformGridLayout with MinItemWidth does the same thing declaratively at the
+    same 340px threshold (CardMinWidth).
+-->
+<Page
+    x:Class="AkariTool.Views.ExternalAppsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:AkariTool.ViewModels.Software"
+    mc:Ignorable="d"
+    NavigationCacheMode="Required">
+
+    <Page.Resources>
+
+        <!-- ── One app card ─────────────────────────────────────────────────
+             net8 BuildAppCard: checkbox + avatar + name/description + badge row,
+             click anywhere to select. The "Permanent" pill is Windows-Apps-only
+             and so is absent here, exactly as in net8. -->
+        <DataTemplate x:Key="AppCardTemplate" x:DataType="vm:AppCardViewModel">
+            <Border
+                Tapped="Card_Tapped"
+                PointerEntered="Card_PointerEntered"
+                PointerExited="Card_PointerExited"
+                MinHeight="104"
+                Margin="5"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{x:Bind BorderBrush, Mode=OneWay}"
+                BorderThickness="1"
+                CornerRadius="10"
+                Padding="14,12,14,12">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <CheckBox
+                        Grid.Column="0"
+                        VerticalAlignment="Top"
+                        Margin="0,2,12,0"
+                        MinWidth="0"
+                        IsChecked="{x:Bind IsSelected, Mode=TwoWay}"
+                        Click="Check_Click"
+                        AutomationProperties.Name="{x:Bind Name}" />
+
+                    <!-- Avatar: real icon once it loads, crimson letter tile until then -->
+                    <Border
+                        Grid.Column="1"
+                        Width="40"
+                        Height="40"
+                        CornerRadius="8"
+                        VerticalAlignment="Top"
+                        Margin="0,0,12,0"
+                        Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1">
+                        <Grid>
+                            <TextBlock
+                                Text="{x:Bind Letter}"
+                                FontSize="16"
+                                FontWeight="Bold"
+                                Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center" />
+                            <Image
+                                Source="{x:Bind Icon, Mode=OneWay}"
+                                Stretch="Uniform"
+                                Margin="4"
+                                Visibility="{x:Bind HasIcon, Mode=OneWay, Converter={StaticResource BoolToVis}}" />
+                        </Grid>
+                    </Border>
+
+                    <StackPanel Grid.Column="2">
+
+                        <!-- Name + website glyph -->
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock
+                                Text="{x:Bind Name}"
+                                FontSize="13.5"
+                                FontWeight="SemiBold"
+                                Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                TextTrimming="CharacterEllipsis"
+                                VerticalAlignment="Center" />
+                            <FontIcon
+                                Glyph="&#xE8A7;"
+                                FontFamily="Segoe Fluent Icons"
+                                FontSize="10.5"
+                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                Margin="7,1,0,0"
+                                VerticalAlignment="Center"
+                                Visibility="{x:Bind HasWebsite, Converter={StaticResource BoolToVis}}"
+                                ToolTipService.ToolTip="{x:Bind WebsiteUrl}"
+                                Tapped="Website_Tapped" />
+                        </StackPanel>
+
+                        <TextBlock
+                            Text="{x:Bind Description}"
+                            FontSize="11.5"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            TextWrapping="Wrap"
+                            TextTrimming="CharacterEllipsis"
+                            MaxHeight="48"
+                            Margin="0,3,0,0" />
+
+                        <!-- Badge row: Installed / Warning -->
+                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                            <Border
+                                Background="Transparent"
+                                BorderBrush="{ThemeResource SystemFillColorSuccessBrush}"
+                                BorderThickness="1"
+                                CornerRadius="9"
+                                Padding="9,2,9,3"
+                                Margin="0,0,6,0"
+                                Visibility="{x:Bind IsInstalled, Mode=OneWay, Converter={StaticResource BoolToVis}}">
+                                <StackPanel Orientation="Horizontal">
+                                    <FontIcon
+                                        Glyph="&#xE73E;"
+                                        FontFamily="Segoe Fluent Icons"
+                                        FontSize="10"
+                                        Foreground="{ThemeResource SystemFillColorSuccessBrush}"
+                                        VerticalAlignment="Center" />
+                                    <TextBlock
+                                        Text="Installed"
+                                        FontSize="10.5"
+                                        FontWeight="SemiBold"
+                                        Foreground="{ThemeResource SystemFillColorSuccessBrush}"
+                                        Margin="6,0,0,0"
+                                        VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border
+                                Background="Transparent"
+                                BorderBrush="{ThemeResource SystemFillColorCautionBrush}"
+                                BorderThickness="1"
+                                CornerRadius="9"
+                                Padding="9,2,9,3"
+                                Margin="0,0,6,0"
+                                Visibility="{x:Bind HasWarning, Converter={StaticResource BoolToVis}}"
+                                ToolTipService.ToolTip="Removing this can affect Windows components that depend on it.">
+                                <StackPanel Orientation="Horizontal">
+                                    <FontIcon
+                                        Glyph="&#xE7BA;"
+                                        FontFamily="Segoe Fluent Icons"
+                                        FontSize="10"
+                                        Foreground="{ThemeResource SystemFillColorCautionBrush}"
+                                        VerticalAlignment="Center" />
+                                    <TextBlock
+                                        Text="Warning"
+                                        FontSize="10.5"
+                                        FontWeight="SemiBold"
+                                        Foreground="{ThemeResource SystemFillColorCautionBrush}"
+                                        Margin="6,0,0,0"
+                                        VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </DataTemplate>
+
+        <!-- ── One category section: header + responsive card grid ──────────── -->
+        <DataTemplate x:Key="AppSectionTemplate" x:DataType="vm:AppSectionViewModel">
+            <StackPanel Visibility="{x:Bind IsVisible, Mode=OneWay, Converter={StaticResource BoolToVis}}">
+                <TextBlock
+                    Text="{x:Bind Title}"
+                    FontSize="17"
+                    FontWeight="SemiBold"
+                    Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                    Margin="2,18,0,10" />
+                <ItemsRepeater
+                    ItemsSource="{x:Bind VisibleCards}"
+                    ItemTemplate="{StaticResource AppCardTemplate}">
+                    <ItemsRepeater.Layout>
+                        <UniformGridLayout
+                            MinItemWidth="340"
+                            MinItemHeight="104"
+                            ItemsStretch="Fill" />
+                    </ItemsRepeater.Layout>
+                </ItemsRepeater>
+            </StackPanel>
+        </DataTemplate>
+    </Page.Resources>
+
+    <!-- NavigationCacheMode="Required": the view model is a DI singleton holding the
+         built catalog + selection state, so the Frame must reuse this page instance
+         rather than rebuild it per navigation. -->
+    <ScrollViewer>
+        <StackPanel Padding="32,24,32,24" MaxWidth="1100" HorizontalAlignment="Stretch">
+
+            <!-- ── Page header ─────────────────────────────────────────────── -->
+            <StackPanel Margin="0,0,0,20">
+                <TextBlock
+                    Text="{x:Bind ViewModel.Title}"
+                    FontSize="26"
+                    FontWeight="SemiBold"
+                    Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
+                <TextBlock
+                    Text="{x:Bind ViewModel.Subtitle}"
+                    FontSize="13"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Margin="0,4,0,0"
+                    TextWrapping="Wrap" />
+            </StackPanel>
+
+            <!-- ── Action bar + selected count ─────────────────────────────── -->
+            <Grid Margin="0,0,0,14">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <Button
+                        Style="{StaticResource AccentButtonStyle}"
+                        Margin="0,0,10,0"
+                        Command="{x:Bind ViewModel.InstallSelectedCommand}"
+                        IsEnabled="{x:Bind ViewModel.ButtonsEnabled, Mode=OneWay}"
+                        AutomationProperties.Name="Install Selected">
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon Glyph="&#xE896;" FontFamily="Segoe Fluent Icons" FontSize="13" Margin="0,0,8,0" VerticalAlignment="Center" />
+                            <TextBlock Text="Install Selected" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button
+                        Margin="0,0,10,0"
+                        Command="{x:Bind ViewModel.UninstallSelectedCommand}"
+                        IsEnabled="{x:Bind ViewModel.ButtonsEnabled, Mode=OneWay}"
+                        AutomationProperties.Name="Uninstall Selected">
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon Glyph="&#xE74D;" FontFamily="Segoe Fluent Icons" FontSize="13" Margin="0,0,8,0" VerticalAlignment="Center" />
+                            <TextBlock Text="Uninstall Selected" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button
+                        Margin="0,0,10,0"
+                        Command="{x:Bind ViewModel.RefreshStatusCommand}"
+                        IsEnabled="{x:Bind ViewModel.ButtonsEnabled, Mode=OneWay}"
+                        AutomationProperties.Name="Refresh">
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon Glyph="&#xE72C;" FontFamily="Segoe Fluent Icons" FontSize="13" Margin="0,0,8,0" VerticalAlignment="Center" />
+                            <TextBlock Text="Refresh" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+
+                <Border
+                    Grid.Column="1"
+                    Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="15,5,15,5"
+                    VerticalAlignment="Center">
+                    <TextBlock
+                        Text="{x:Bind ViewModel.SelectedCountText, Mode=OneWay}"
+                        FontSize="12"
+                        Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                </Border>
+            </Grid>
+
+            <!-- ── Status line (hidden unless working) ─────────────────────── -->
+            <TextBlock
+                Text="{x:Bind ViewModel.StatusText, Mode=OneWay}"
+                Visibility="{x:Bind ViewModel.StatusVisible, Mode=OneWay, Converter={StaticResource BoolToVis}}"
+                FontSize="12"
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                Margin="0,0,0,10" />
+
+            <!-- ── Search ──────────────────────────────────────────────────── -->
+            <AutoSuggestBox
+                Width="280"
+                Height="36"
+                FontSize="13"
+                HorizontalAlignment="Left"
+                Margin="0,0,0,4"
+                PlaceholderText="Search external apps…"
+                QueryIcon="Find"
+                Text="{x:Bind ViewModel.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                AutomationProperties.Name="Search external apps" />
+
+            <!-- ── Select-all row ──────────────────────────────────────────── -->
+            <StackPanel Orientation="Horizontal" Margin="2,10,0,4">
+                <CheckBox
+                    Margin="0,0,18,0"
+                    IsChecked="{x:Bind ViewModel.SelectAll, Mode=TwoWay}"
+                    Content="Select all" />
+                <CheckBox
+                    Margin="0,0,18,0"
+                    IsChecked="{x:Bind ViewModel.SelectInstalled, Mode=TwoWay}"
+                    Content="Select installed" />
+                <CheckBox
+                    Margin="0,0,18,0"
+                    IsChecked="{x:Bind ViewModel.SelectNotInstalled, Mode=TwoWay}"
+                    Content="Select not installed" />
+            </StackPanel>
+
+            <!-- ── Category sections ───────────────────────────────────────── -->
+            <ItemsControl
+                ItemsSource="{x:Bind ViewModel.Sections}"
+                ItemTemplate="{StaticResource AppSectionTemplate}" />
+
+        </StackPanel>
+    </ScrollViewer>
+</Page>

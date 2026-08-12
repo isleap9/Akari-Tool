@@ -1,0 +1,19 @@
+# Build output
+bin/
+obj/
+publish/
+[Dd]ebug/
+[Rr]elease/
+
+# De-elevated test build (isolated dirs)
+bin/DeElevated/
+obj/DeElevated/
+
+# Installer output
+installer-output/
+
+# VS / IDE
+.vs/
+
+# Archives / local blobs
+*.7z

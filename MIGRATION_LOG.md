@@ -2572,3 +2572,1123 @@ survive to the end of the migration. **Do not fix mid-batch** unless noted.
 
 ---
 
+
+# ══════════════════════════════════════════════════════════════════════════════
+# NEW FOUNDATION — WinUI 3 **MVVM shell** (net10 · Windows App SDK 2.3.1)
+# ══════════════════════════════════════════════════════════════════════════════
+
+Everything **above** this banner is the net8 / WinAppSDK-1.8 WPF→WinUI migration
+(the **shipping fallback**, kept completely untouched). Everything **below** is a
+separate, newer effort: the MVVM shell (`AkariTool.7z` — net10, WinAppSDK 2.3.1,
+CommunityToolkit.Mvvm, admin manifest, native Mica/nav) adopted as the new
+project foundation. The current build's **logic** is brought into it in waves.
+Guiding rule for these waves: **do NOT bring `TweakHelpers`/`BaseTab` or any
+imperative UI construction** (it fights MVVM); bring the UI-agnostic logic and the
+data (tweak catalogs) only. Rendering + tab wiring are later, unstarted waves.
+
+---
+
+## MVVM Phase 1 — establish base + port the UI-agnostic logic — **COMPLETE ✅**
+
+### Build status (literal)
+
+`dotnet`/VS MSBuild build of the MVVM project: **0 errors, 0 warnings.**
+Base TFM `net10.0-windows10.0.26100.0`, `WindowsPackageType=None`,
+`WindowsAppSDKSelfContained=true`, `requireAdministrator` manifest, native
+Mica/NavigationView shell confirmed to build + run + self-elevate.
+
+### What ported (UI-agnostic logic layer) — 98 `.cs`, clean
+
+- **Services** (29) · **Tabs/Shared** (27) · **Gaming/Catalog** (10) ·
+  **Privacy/Catalog** (7) · **Software logic** (25 — `AppModels` + catalogs +
+  removal generators).
+- **Embedded payloads** re-declared in the csproj so `GetManifestResourceStream`
+  lookups resolve identically: `Scripts/*.ps1` (66), `Scripts/Network/*.bat`,
+  `Defender/NoDefender.cab` + `Defender/DisableDefender.ps1` (2),
+  `Nvidia/Settings.nip` (1, `Condition="Exists(...)"`).
+- **`Services/DefenderService.cs`, `DefenderPhase2Scheduler.cs`,
+  `ElevationService.cs` — BYTE-IDENTICAL** to net8 (verified by diff). The
+  Gaming/Privacy `Catalog` trees are also byte-identical to net8.
+
+### Files that HAD to change for the MVVM base (flagged)
+
+- **`Services/ToolService.cs` — rewritten HEADLESS.** net8 constructed it from
+  three WinUI controls (log `TextBox`, `ProgressBar`, status `TextBlock`) and
+  wrote straight into them, making every consumer transitively depend on the
+  view. The MVVM port keeps the **identical public surface** for all 23 callers
+  (`Log`/`StartProgress`/`StopProgress`/`RunAction`/`RunWithTracking`/`RunScript`/
+  `RunPackageCommand`/`RunProcess`/`OpenUrl`/`CreateDesktopShortcut`) but pushes
+  output through events a ViewModel subscribes to (`LineLogged`,
+  `ProgressStarted`, `ProgressStopped`). Execution logic carried over verbatim.
+  Added `public static ToolService? Current` so static catalogs (which only get an
+  `Action<string> Log`) can reach the full service. **Dropped** `BrushFrom(string)`
+  (returned a WinUI brush; pure view concern, no logic callers).
+- **`Tabs/Shared/TweakHelpers.Apply.cs`** — added `public static void
+  RunCommand(string exe, string args)`, moved verbatim from the net8 factory
+  `TweakHelpers.cs` (pure `Process` logic that merely lived in the rendering file).
+- **`Tabs/Shared/TweakRegistry.cs`** — added `public static event Action?
+  SectionsNeedRefresh;` and replaced the one `TweakHelpers.RefreshAllSectionPills()`
+  UI call in `ImportFromFile` with `SectionsNeedRefresh?.Invoke()`. **This event is
+  the precedent the Power write-path decoupling (Phase 2) reuses.**
+
+### csproj deltas vs net8
+
+- ProjectReference fixed to the framework source:
+  `..\WinUI-3-framework\src\WinUI.Framework\WinUI.Framework.csproj`
+  (supplies `ILogService`/`FileLogService`, self-contained PriIndexName fix).
+- Packages bumped to the net10 line: `System.ServiceProcess.ServiceController`
+  10.0.0 (net8 used 8.0.1), `System.Management` 10.0.0,
+  `Microsoft.Extensions.DependencyInjection` 10.0.10, `CommunityToolkit.Mvvm` 8.4.2,
+  `Microsoft.WindowsAppSDK` 2.3.1.
+
+### Excluded as rendering (correctly NOT ported)
+
+All `TweakHelpers.*` render partials, `BaseTab`, `DriftBanner`, `AkariDialogs`,
+`FilePickers`, `UniformGrid`, `ThemeService` (UI theming), `SystemInfoService`
+(shell has its own), `AppIconService` (returns `BitmapImage`), every tab
+`.xaml.cs`.
+
+---
+
+## MVVM Phase 2 — extract the embedded (seam-B) catalogs — **COMPLETE ✅**
+
+Narrow wave: extract ONLY the `TweakDefinition` data embedded inside the 5 seam-B
+tab partials into standalone **data-only** catalog classes matching the
+Gaming/Privacy/Software shape. **No rendering layer built, no tabs wired, net8
+build untouched.** Seam-B = catalogs interleaved with factory render calls inside
+tab code-behind (vs seam-A = logic already in factory-named files).
+
+Target shape adopted (per catalog): `namespace AkariTool.Tabs.<Area>` (or
+`AkariTool.Tabs` for Customize) · `public static partial class <Area>Tweaks` ·
+one `public static TweakDefinition[] <Section>(Action<string> Log)` method per
+section, returning `new[]{ … }`. Rendering scaffolding (`BaseTab`, `PageHeader`,
+`AddTweakRow`/`BuildSection`, `_refreshActions`, sub-panel wiring) left behind.
+Section titles became the method names. Instance helpers → `static`;
+`Service?.Log` → the `Log` param (or `ToolService.Current?.Log`).
+
+### Build status (literal)
+
+VS 18 MSBuild (`…\VS\18\Community\MSBuild\Current\Bin\MSBuild.exe`),
+`-t:Build -p:Configuration=Debug -p:Platform=x64`: **EXIT 0 — 0 errors, 0
+warnings** (final, all 5 catalogs present). Two intermediate builds during the
+wave also passed clean (after the 4 smaller tabs; after 13 of the Customize files).
+
+### Per-tab extracted counts + Id-integrity (CRITICAL: byte-for-byte)
+
+Ids are what `TweakRegistry` and Backup/Restore match on — a changed Id silently
+orphans a tweak from every saved config. Every extracted Id was diffed against the
+net8 source (sorted, capturing `Id="..."` literals **and** generator-produced Ids:
+`gpu-*` row tuples, `region.*` named args, and the `customize-*`
+context-menu/icon/nav-pane/this-pc loop tuples). All IDENTICAL; no duplicates.
+
+| Tab | Count | Sections → methods | Catalog files | Id diff |
+|---|---|---|---|---|
+| **Sound** | 5 | SystemSounds | `Tabs/Sound/Catalog/SoundTweaks.cs` | ✅ IDENTICAL |
+| **Update** | 12 | UpdatePolicy / DeliveryAndStore / UpdateBehavior | `Tabs/Update/Catalog/UpdateTweaks.cs` | ✅ IDENTICAL |
+| **Notifications** | 16 | General / AdditionalSettings / SystemNotifications / PrivacyNotifications / SecurityNotifications | `Tabs/Notifications/Catalog/NotificationsTweaks.cs` | ✅ IDENTICAL |
+| **Power** | 47 | Battery / GpuPower / Multimedia×3 / Peripherals×8 / Processor×2 | `Tabs/Power/Catalog/PowerTweaks.cs` + 5 section partials | ✅ IDENTICAL |
+| **Customize** | 145 | Taskbar / Explorer / Desktop / ContextMenu / StartMenu / Appearance | `Tabs/Customize/Catalog/CustomizeTweaks.cs` + 17 partials | ✅ IDENTICAL |
+
+**Total extracted: 225 definitions.**
+
+Notes on tricky sources:
+- **Notifications** `explorer-action-center` row uses
+  `SystemStateReader.ReadActionCenter()` — confirmed already ported (Phase 1).
+- **Customize** count reconciled to **145 = 139** (`customize-`/`os-`) **+ 6**
+  (`region.*`, from the `MakeRegionalDropdown` generator — the `region.*` Ids are
+  what a `customize-`-only grep undercounts). The relocated **`os-set-utc`** (moved
+  out of the dead OSTweaks tab, see net8 Batch 6 above) is included, in
+  `RegionalSettings`. `PhotoViewer.FileAssoc.Tiff` is a `progId` local, **not** a
+  tweak Id (regex false-positive) — excluded.
+- **Generators moved verbatim** (Ids preserved by construction, not retyped):
+  ContextMenu 17-row table + `Add*/Remove*` verb impls (`.Verbs.Shell`/`.Verbs.Tools`,
+  pure registry logic), Desktop.Icons 6-row loop + `EnsureBlankIcon`,
+  Desktop.Regional `MakeRegionalDropdown`, Explorer.ThisPc 6-folder loop,
+  Explorer.Sidebar `NavPaneFolder` + 6-folder loop, Power.Gpu probe-gated 4-row
+  table. Shared Customize helpers (`ReadDwordCu`, `SetHkcu`, ShellState blob,
+  `WriteExplorer`, `_suppressRestart`) hoisted to `CustomizeTweaks.cs` base as
+  `static` (logging via `ToolService.Current`).
+
+### 433 reconciliation (data-layer vs runtime-registered)
+
+The **"433"** figure (see the net8 "📊 433 tweaks tracked" section above) is a
+**runtime-registered** count on the dev desktop:
+
+```
+Notif 16 · Sound 5 · Update 12 · Privacy 89 · Gaming 130 · Customize 145 · Power 36  = 433  (runtime)
+Notif 16 · Sound 5 · Update 12 · Privacy 89 · Gaming 130 · Customize 145 · Power 47  = 444  (data layer)
+```
+
+The **only** delta is **Power: 47 catalog definitions vs 36 registered** = **11
+conditionally-gated rows** (7 Battery + 4 GPU). The catalog holds every definition;
+the gating is preserved *inside* the section methods (`Battery` returns
+`Array.Empty<>()` on a battery-less machine via `GetSystemPowerStatus`; `GpuPower`
+returns only rows whose vendor subgroup a `powercfg` probe exposes). On a laptop
+with a vendor GPU all 47 register and the runtime total equals 444. The 5 extracted
+tabs' counts match the net8 reconciliation exactly **except** Power (data 47 vs
+runtime 36), the expected consequence of holding data instead of render-time
+registrations. Gaming (130) + Privacy (89) catalogs are byte-identical to net8
+(Phase 1); Privacy independently re-counted at 89.
+
+### ⚑ Flagged decision — Power write-path UI-decoupling (only non-mechanical change)
+
+Unlike the other four tabs (whose apply/read delegates were pure logic), Power's
+shared write path was instance-coupled to the view: `SetPowerCfg` /
+`EnsureAkariScheme` ended by calling `RefreshPersistIndicator()` +
+`RefreshActiveCard()` on the plan-card controls and touched `RootPanel`. A
+data-only catalog cannot hold those. Resolution — **reuse the Phase-1
+`SectionsNeedRefresh` precedent**:
+
+- The powercfg writes, Akari-scheme persistence (`/duplicatescheme` +
+  `/changename` + `/setactive`, stored GUID under `HKCU\Software\AkariTool`),
+  drift-clear, and logging are **preserved exactly**.
+- The trailing UI repaint is raised as a new static event
+  **`PowerTweaks.PowerSchemeChanged`** instead of the two direct control calls.
+  The (future) rendering layer subscribes to repaint the cards.
+- `SetPowerCfg` / `EnsureAkariScheme` became `static`, logging via
+  `ToolService.Current?.Log`. All powercfg arg strings, GUIDs, probe tables,
+  value arrays, and the scheme-drift rule are byte-identical.
+- CLAUDE.md invariant re-verified: `/SETACTIVE`-on-write kept; **`EnsureAkariScheme`
+  (the writer) is still called only from `SetPowerCfg`, never from a read path**;
+  `QueryPowerCfg`/`ProbePowerSetting` remain read-only.
+
+The powercfg logic helpers (`RunPowerCfg`, `RunPowerCfgCapture`, `QueryPowerCfg`,
+`ExactValueIndex`, `ProbePowerSetting`/`PowerSettingExists` + parsers,
+`ResolveSchemeTarget`/`ClearSchemeDrift`/`ListPowerPlans`, time-interval helpers,
+`ReadDword`, the `GetSystemPowerStatus` P/Invoke) moved into `PowerTweaks.cs`
+(base partial). UI-only pieces (`_persistIndicator`, `RefreshPersistIndicator`,
+`BuildPersistIndicator`, `RevertToBalanced`, plan-card fields, `MonoFont`) were
+left in the net8 tab and are NOT in the catalog.
+
+### Not done (by design — later waves, not yet requested)
+
+Rendering layer, tab wiring, bulk-apply orchestration (which sets
+`CustomizeTweaks._suppressRestart`), and a subscriber for `PowerSchemeChanged`.
+The net8 build remains the shipping fallback, untouched.
+
+---
+
+## MVVM Phase 3 — Gaming rendering-layer spike — **COMPLETE ✅ (VM sign-off pending)**
+
+Date: 2026-08-05
+
+Built the native MVVM tweak-rendering layer end-to-end for **ONE** tab (Gaming),
+the measurement gate before any other tab is rolled out. This replaces the net8
+imperative `TweakHelpers` factory with **one render path**: a settings-list of
+section cards, item ViewModels, per-row-type DataTemplates chosen by a selector,
+and shared style/badge templates — so every future tab reuses it unchanged (the
+factory's leverage, done the MVVM way). **No other tab was touched; the net8 build
+(#2) and the Defender code were not touched.**
+
+### Build status (literal)
+
+Clean rebuild via VS 18 MSBuild (`…\VS\18\Community\MSBuild\Current\Bin\MSBuild.exe`),
+`-t:Rebuild -p:Configuration=Debug -p:Platform=x64`:
+
+```
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+Time Elapsed 00:00:18.90
+```
+
+Output: `bin\x64\Debug\net10.0-windows10.0.26100.0\win-x64\AkariTool.exe`.
+
+### Files added (rendering layer — reusable by every tab)
+
+**Logic-only helpers (lifted VERBATIM out of the net8 factory partials):**
+- `Tabs/Shared/TweakTargets.cs` — `TryGetRecommendedTarget` / `TryGetDefaultTarget`
+  / `IsMismatched` / `CollectPending` + `PendingWork`/`WarningFor`. These are the
+  net8 `TweakHelpers.BulkActions.cs` predicates, unchanged — kept in ONE place so
+  the section pill, the Quick Actions count and the bulk run can never disagree
+  (the net8 invariant on `CollectPending`).
+- `Tabs/Shared/UiPreferences.cs` — the section-collapse pref store, byte-compatible
+  registry value name (`SectionCollapsed_<TitleNoSpaces>` under
+  `HKCU\Software\AkariTool`), lifted from net8 `TweakHelpers.Controls.cs`. Collapsed
+  sections carry over between builds.
+
+**Dialog helper:**
+- `Services/TweakDialogs.cs` — thin wrapper over the framework `IDialogService`
+  that (a) serializes ContentDialogs behind a semaphore (WinUI allows one dialog at
+  a time — same guard net8's `AkariDialogs` had), and (b) treats an unset `XamlRoot`
+  as **declined** rather than throwing (the framework service throws), the same
+  fail-safe direction net8 chose (never apply unconfirmed).
+
+**Item / page ViewModels (the factory replacement):**
+- `ViewModels/Tweaks/TweakBadgeViewModel.cs` — projection of `TweakBadgePill`
+  (badge math itself is unchanged; computed by `TweakDefinition`).
+- `ViewModels/Tweaks/TweakItemViewModel.cs` — base row VM; `Changed` event,
+  `RefreshFromSystem` (the delegate handed to `TweakRegistry.Register`), search
+  match, quick-set commands.
+- `ViewModels/Tweaks/ToggleTweakViewModel.cs` / `DropdownTweakViewModel.cs` — the
+  two leaf rows. Both carry the **suppress flag** (WinUI two-way binding re-enters
+  Apply on programmatic writes exactly like WinUI's `Toggled` did in net8) and the
+  **cancel-reverts** behaviour. Dropdown preserves **`SelectedIndex = -1` as a real
+  "matches no option" state** (do not "fix" to 0).
+- `ViewModels/Tweaks/TweakSectionViewModel.cs` — one collapsible card: rows +
+  live "N pending" pill + section bulk bar (★ Recommended / ⊞ Defaults). Replaces
+  net8 `BuildSection`+`AttachBulkActions` and the two static
+  StackPanel→rows dictionaries (the section now OWNS its rows, so the
+  `GetEntriesUnder` visual-tree walk is gone). Search force-expands a collapsed
+  section that contains a hit WITHOUT overwriting the user's persisted collapse
+  choice (net8 `ForcedOpenBySearch`).
+- `ViewModels/Tweaks/TweakPageViewModel.cs` — the `BaseTab` replacement: page
+  header, per-page search, tab-scope Quick Actions (apply-all-recommended /
+  restore-defaults / create-restore-point), and the
+  `TweakRegistry.Mark()`/`ClaimRange()` bracket around row registration. Bulk run
+  carries over net8's batching (`ExplorerRestart` + `DriftBaseline` once per run),
+  the re-check-before-apply guard, the failed-restore-point "continue anyway"
+  prompt, and the summary log line.
+- `ViewModels/GamingViewModel.cs` — the Gaming tab: section order identical to
+  net8 `GamingTab.Build()`.
+
+**View layer:**
+- `Views/Selectors/TweakRowTemplateSelector.cs` — `TweakRowTemplateSelector`
+  (toggle vs dropdown) + `TweakBadgeTemplateSelector` (one template per badge kind
+  so pill colours stay live `{ThemeResource}`).
+- `Views/Templates/TweakTemplates.xaml` — the shared rendering dictionary (section
+  card, both row templates, four badge templates, chromeless button style),
+  merged in `App.xaml`.
+- `Views/GamingPage.xaml` (+ `.xaml.cs`) — the spike host. `NavigationCacheMode=
+  "Required"`; code-behind is only the Quick Actions flyout plumbing.
+
+### Files changed (wiring — additive)
+
+- `App.xaml` — merged the template dictionary.
+- `App.xaml.cs` — registered `ToolService` (sink → framework `ILogService`, which
+  the log dock already renders → wires `LineLogged`), `TweakDialogs`, and
+  **`GamingViewModel` as a SINGLETON** (see the lifetime trap below).
+- `MainWindow.xaml` / `.xaml.cs` — added `Gaming → GamingPage` to the route map +
+  `SyncSelectedItem`; injected `ToolService` and subscribed the status bar to
+  **`ProgressStarted` / `ProgressStopped`** (new `StatusText` + `StatusProgress`
+  in the status bar).
+
+### 🔴 Headless-event subscribers — status after this spike
+
+- `ToolService.LineLogged` → **WIRED** (via the ILogService sink → existing dock).
+- `ToolService.ProgressStarted` / `ProgressStopped` → **WIRED** (status bar).
+- `TweakRegistry.SectionsNeedRefresh` → **WIRED** (`TweakPageViewModel`
+  subscribes; refreshes every section pill + the Quick Actions counts after an
+  import). *Note:* only the Gaming page is a live subscriber so far; each tab wires
+  its own on `Build()`. The import path itself (Backup tab) is a later wave.
+- `PowerTweaks.PowerSchemeChanged` → **still unsubscribed** (Power tab not built
+  yet). Unchanged from Phase 2. Its subscriber must stay read-only when added.
+
+### ⚠ Lifetime trap (flagged, load-bearing)
+
+Tweak rows call `TweakRegistry.Register` on construction and `TweakRegistry` has
+**no unregister**. So the page VM MUST be a DI **singleton** and its page carries
+`NavigationCacheMode="Required"`; `Build()` is idempotent (guarded by `_built`).
+A transient VM would re-register the whole tab on every navigation — inflating the
+count, duplicating Backup/Restore entries, and breaking the contiguous index range
+`ClaimRange` depends on. This is the single most important thing to copy for every
+future tab.
+
+### Deviations from net8 (all cosmetic / flagged)
+
+- **Colours use stock Fluent `{ThemeResource}`** (accent pills via
+  `AccentFillColorSelectedTextBackgroundBrush`, star via `SystemFillColorCaution`,
+  etc.). The Akari **crimson token dictionary is not ported into this build yet**
+  (net8 had `PillAccentBg`/`StarGold`/`WinBlueIcon`/`Hairline`…). Everything is a
+  one-dictionary swap away — no per-template edits needed. **This is the biggest
+  visual gap vs net8 and the first thing the cosmetic pass should close.**
+- Chromeless buttons keep WinUI's subtle hover fill instead of net8's fully-nulled
+  hover (native-first).
+- Card shadows/glows not carried (same as the whole MVVM build to date).
+
+### Verification (read-only — no tweak was applied)
+
+Method: copied the build output to the scratchpad, patched **only the copy's**
+`requestedExecutionLevel` from `requireAdministrator` to `asInvoker` (extracted the
+real generated 128 KB manifest with `mt.exe`, string-replaced the one token, wrote
+it back — the repo exe stays `requireAdministrator`), launched non-elevated, drove
+it via UI Automation. **Nothing was clicked that applies a tweak; toggles/dropdowns
+were never actuated. No registry write path was exercised.**
+
+- ⚠ **First attempt EXITED with `0xc0000409` (STATUS_STACK_BUFFER_OVERRUN).** This
+  was a **test-harness artifact, NOT a code bug**: the first de-elevation used a
+  hand-written 5-line `asInvoker` manifest via `mt.exe -manifest`, which **replaced
+  the whole manifest** and stripped the WinAppSDK activation manifest (the ~129 KB
+  of `activatableClass` entries), so WinUI's `Microsoft.UI.Xaml.dll` faulted on
+  activation. A control run with the template dictionary commented OUT crashed
+  identically → proved it was the manifest, not the new XAML. Re-derived the
+  de-elevation by patching only the exec-level token inside the **real** generated
+  manifest; every launch since is clean. (Recorded so the next de-elevated test
+  doesn't repeat it.)
+- **Launch + nav to Gaming:** clean; app alive, no crash-log growth.
+- **Registration count: 72 — verified correct.** Log line
+  `[Gaming] 72 tweaks registered in 9 sections (registry total 72)`. A naive
+  `grep -c "new TweakDefinition"` returns **65**, but that undercounts: the
+  **Visual Effects** section produces **8 rows via the `UiPrefBitTweak(...)`
+  generator** (a `UserPreferencesMask` bit factory) whose bodies don't contain a
+  literal `new TweakDefinition` at the call site, and **one of the 65 literals is
+  the factory body itself**, which is not a row. So real rows =
+  `65 − 1 (factory) + 8 (generated) = 72`. The **net8 Gaming catalog is
+  byte-identical** (Phase 1), so it produces the same 72; the whole net8 Gaming tab
+  counted **130** because it also has the three bespoke sections (SystemServices /
+  ScheduledTasks / SystemRestore) that this spike does not yet render (see gap).
+  72 is the correct catalog-row count for the 9 rendered sections.
+- **Rendered rows:** UIA counted **65 controls exposing `TogglePattern`** (65 of
+  the 72 rows are toggles) plus **7 `ComboBox` dropdowns** = 72, i.e. every catalog
+  row rendered.
+- **Search (the known first-keystroke crash class) — PASS:** typed
+  `x→xb→xbo→xbox` character-by-character (65→2 visible), then `game mode` (→1),
+  `zzzznomatch` (→0), cleared (→65). **No crash on any keystroke**, filtering
+  correct, count restores on clear.
+- **Quick Actions flyout (read-only counts) — PASS:** opened without crash; showed
+  `Apply all recommended — 7 tweaks differ`, `Restore Windows defaults — 47 differ`,
+  `Create restore point`, and the per-row recommended tooltips. Counts computed
+  via the same `CollectPending` predicate the run uses.
+
+### 📏 Per-tab cost (the point of the spike)
+
+The **reusable rendering layer** (everything except `GamingViewModel` +
+`GamingPage.xaml/.cs`) is written **once**: ~9 new files, ~1,050 lines, plus the
+shared `TweakTemplates.xaml`. That cost is **amortised across all tabs and does not
+recur.**
+
+The **per-tab incremental cost** for a standard tweak-row tab is small:
+1. a `GamingViewModel`-shaped VM — override `NavTag`/`NavLabel` + `BuildCatalog()`
+   yielding `(title, TweakDefinition[])` per section (**~50 lines, mostly the
+   section list**);
+2. a `GamingPage.xaml` — for a tab with no bespoke header controls this is the
+   page-header + `ItemsControl` + Quick Actions flyout, **near-identical** to
+   Gaming (**copy + retitle**; the flyout block is boilerplate that could later be
+   extracted to a UserControl);
+3. `GamingPage.xaml.cs` — ~15 lines of flyout plumbing (identical every tab);
+4. register the VM **as a singleton** + add the `tag → page` route (2 lines each);
+5. exercise search + flyout on the VM checklist.
+
+**Estimate: ~1–2 hours per standard tweak-row tab** once the catalog is already
+extracted (which it is, for all of them). **Special-case tabs cost more and are
+NOT covered by this estimate:** Gaming's own **SystemServices / ScheduledTasks /
+SystemRestore** bespoke sections (see gap below), **Software** (destructive removal
+selection UI), **Backup & Restore** (`ClaimRange` round-trip), and the bespoke
+**Home / About / Tools / Advanced Tools** layouts. The ~1–2h × ~10 standard tabs is
+the bulk of the remaining rollout; the specials are separate.
+
+### Known gap (in scope for the Gaming tab's OWN rollout wave, not this spike)
+
+Gaming in net8 also renders **three bespoke sections that are NOT
+`TweakDefinition` rows** and were never in the extracted catalog:
+`BuildSystemServices`, `BuildScheduledTasks`, `BuildSystemRestore`
+(`GamingTab.SystemServices/.ScheduledTasks/.SystemRestore.cs`). The spike renders
+the **9 catalog sections** (all 65 tweak rows) but **not** these three. They need
+their own small VMs/templates and land when Gaming is formally rolled out. Flagged
+so the Gaming tab is not mistaken for "fully done".
+
+### VM checklist (Gaming — hard functional items for isleap)
+
+- [ ] Toggle a row ON/OFF: warned rows show the confirm dialog; Cancel reverts the
+      switch with **no** registry write; OK applies and the badge pills update.
+- [ ] A dropdown row: change option → confirm (if warned) → applies + reads back;
+      Cancel reverts to the previous option; a machine value matching no option
+      leaves it unselected with the **Custom** badge lit.
+- [ ] Section bulk bar ★ Recommended / ⊞ Defaults: "N pending" pill updates live;
+      a bulk apply restarts Explorer **once** and writes the drift baseline once.
+- [ ] Quick Actions → Apply all recommended / Restore defaults: the confirm dialog
+      shows the warning callout + restore-point checkbox; a failed restore point
+      prompts "continue anyway"; the summary log line is correct.
+- [ ] Section collapse persists across an app restart (and matches any collapse
+      state carried from the net8 build).
+- [ ] The status bar shows progress + "Running …" while a tweak that spawns a
+      process runs, then returns to "Ready" (ProgressStarted/Stopped).
+- [ ] Crimson accent is currently **stock-Fluent**, not Akari red — expected until
+      the token dictionary is ported (cosmetic pass).
+
+### Not touched (verified)
+
+- **Build #2 (net8)** — separate repo dir; zero files written there.
+- **Defender** — `DefenderService.cs` / `GamingTweaks.Security.cs` unchanged; the
+  Gaming Security section renders through the same catalog but the Defender row's
+  Apply is still the inert stub from the net8 build's guard. No Defender behaviour
+  was added, armed, or relocated.
+- **Other tabs** — still route to `PlaceholderPage`.
+
+---
+
+## MVVM Phase 4 — startup warm-up (registry completeness) — **COMPLETE ✅ (VM sign-off pending)**
+
+Date: 2026-08-05
+
+Fixed the registration-on-first-navigation hole before the tab rollout replicates
+the Gaming pattern. **Registration semantics are byte-for-byte unchanged** — this
+only guarantees every tweak-page VM's `Build()` runs once at startup, independent
+of navigation, so `TweakRegistry.ExportToFile` (Backup) and `.Search` (global
+search) — both of which iterate `_entries` — see every tab even if the user never
+opens it. Build #2 and Defender untouched.
+
+### Build status (literal)
+
+VS 18 MSBuild, `-t:Rebuild -p:Configuration=Debug -p:Platform=x64`:
+
+```
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+Time Elapsed 00:00:23.70
+```
+
+### The bug
+
+A tweak-page VM registers its rows with `TweakRegistry` only inside `Build()`,
+which runs on first navigation (`GamingPage` ctor → `ViewModel.Build()`). Export
+and search iterate `TweakRegistry._entries`, so any **never-visited** tab was
+silently absent from Backup exports and from global search results. Left as-is, the
+rollout would inherit the hole on all ~15 tabs.
+
+### What changed (additive only)
+
+- **`Services/TweakRegistryWarmUp.cs`** (new) — `Run(IServiceProvider, ILogService)`:
+  resolves every `TweakPageViewModel`, calls `Build()` on each **sequentially** on
+  one thread, then logs the guard. Never parallel: `_entries` is a plain `List`, so
+  concurrent `Build()`s would interleave `Mark`/`Register`/`ClaimRange` and corrupt
+  the per-tab index ranges. Sequential build reproduces navigation-order building
+  exactly.
+- **`App.xaml.cs`**:
+  - Enumerable marker: `services.AddSingleton<TweakPageViewModel>(sp =>
+    sp.GetRequiredService<GamingViewModel>())` — every tweak page is ALSO registered
+    under the base type, resolving to the **same singleton** instance, so
+    `GetServices<TweakPageViewModel>()` enumerates them. **GamingViewModel is the
+    first (only) member**; new tabs add one line here as they roll out.
+  - After `MainWindow.Activate()`: `_ = Task.Run(() => TweakRegistryWarmUp.Run(
+    Services, log))` — a single background thread, kicked off once the shell is up.
+- **`ViewModels/Tweaks/TweakPageViewModel.cs`** — `Build()` made thread-safe:
+  `volatile bool _built` + `lock (_buildLock)`, double-checked, with `_built` set
+  **last**. This is the only behavioural change and it is invisible to registration:
+  a navigation that lands mid-warm-up now **waits on the lock and then no-ops**,
+  instead of a second `Build()` racing the index ranges. Idempotency is unchanged
+  (still one build); it is now also concurrency-safe.
+- **`Tabs/Shared/TweakRegistry.cs`** — added a read-only `TabRanges` snapshot
+  (`TabRange` record + LINQ projection) for the guard. **No writer touched** —
+  `Mark`/`ClaimRange`/`Register` are byte-identical; this only exposes the existing
+  `_tabRanges` for diagnostics.
+
+### Threading — why no dispatcher marshaling was added
+
+Building `Sections` (an `ObservableCollection`) off the UI thread is safe **here**:
+a page binds its VM's `Sections` only when that page is navigated, and by then
+`Build()` has finished populating it (the Build lock makes a mid-warm-up navigation
+wait, then no-op). No `CollectionChanged` ever fires against a **bound** collection,
+so there is no cross-thread hazard to marshal around. The item/section VMs are pure
+data + registry reads (no UI), and `Build()`'s log lines are already marshaled by
+the shell (`AkariUiLogService.LineLogged → DispatcherQueue.TryEnqueue`). Per the
+brief, no blanket dispatcher hops were added — none is needed.
+
+### Guard log (the assertion)
+
+After warm-up, `LogGuard` logs the total `TweakRegistry.Count` and every claimed
+range, then asserts two invariants Backup/search depend on, logging **Error**
+(loudly) on any violation:
+1. **every warmed page owns a non-empty range** — because `ClaimRange` skips empty
+   ranges, a page that registered zero rows is *absent* from `TabRanges`, not
+   present-and-empty; the guard cross-checks each built VM's `NavTag` to catch that
+   silent-missing case;
+2. **ranges tile `[0, Count)` contiguously** — no gap, no overlap, and no rows
+   registered outside a `Mark`/`ClaimRange` bracket.
+
+### Verification (read-only; de-elevated copy + UIA, no tweak applied)
+
+De-elevation via the proven method (patch only the exec-level token inside the real
+generated manifest — repo exe stays `requireAdministrator`).
+
+- **Warm-up runs without navigation — PASS.** Launched and left on **Home** (Gaming
+  never opened). Log after ~1s:
+  ```
+  [Gaming] 72 tweaks registered in 9 sections (registry total 72).
+  [WARMUP] Tweak registry warmed: 1 tweak page(s), 72 tweaks, 1 claimed range(s).
+  [WARMUP]   Gaming [0..72) 72 rows — Gaming & Performance
+  [WARMUP] OK: 1 range(s) contiguous and non-empty, tiling [0..72).
+  ```
+  So Gaming is present in the registry (→ Backup export + search) with no
+  navigation. (The em-dash renders as mojibake in a non-UTF-8 console; the UTF-8
+  log file is correct.)
+- **Navigation after warm-up is a true no-op — PASS.** Warmed up, then navigated to
+  Gaming via UIA: **no second `[Gaming]` registration line**, `Count` stayed 72, one
+  range, and the page rendered its 65 toggles + 7 dropdowns by binding to the
+  warm-up-built `Sections`. The lock + `_built` guard held under the
+  background-build → UI-navigate sequence.
+- App alive throughout; crash log did not grow.
+
+### Splash seam (noted, NOT wired)
+
+`TweakRegistryWarmUp.Run` already enumerates the pages sequentially, so it is the
+natural hook for the future **staged-progress splash**: report "warming N of M" per
+`Build()` before showing the main window. Not wired in this task (splash is its own
+sub-phase). The current warm-up runs *after* `Activate()`; when the splash lands it
+will move ahead of the main window and drive its progress from this same loop.
+
+### Rollout note
+
+Every new tweak page, when built, must: (1) be a DI **singleton**, (2) also be
+registered `AddSingleton<TweakPageViewModel>(sp => sp.GetRequiredService<TheVM>())`
+so warm-up picks it up, (3) set `NavigationCacheMode="Required"` on its page. The
+guard log will flag immediately if a new tab registers nothing or breaks range
+contiguity.
+
+### VM checklist (add for this phase)
+
+- [ ] On a machine with a saved Backup file, confirm a **fresh launch with no
+      navigation** still exports/searches Gaming tweaks (proves warm-up ran).
+- [ ] Watch the log on startup for the `[WARMUP] OK:` line; a `✗` line means a tab
+      registered nothing or the ranges are non-contiguous.
+- [ ] Rapidly click a tweak tab **during** startup (mid-warm-up) — the page must
+      render correctly with the right count and no duplicate rows (exercises the
+      Build lock's warm-up-vs-navigation race).
+
+### Not touched (verified)
+
+- **Build #2 (net8)** — separate repo dir; zero files written there.
+- **Defender** — no Defender file touched; warm-up building the Gaming Security
+  section runs the same inert-stub Apply guard, applies nothing.
+- **Registration semantics** — `Mark`/`ClaimRange`/`Register`/`Count`/`ExportToFile`/
+  `Search` bodies unchanged; only a read-only `TabRanges` accessor was added and
+  `Build()` gained a lock. Every `TweakDefinition` Id is untouched.
+
+---
+
+## MVVM Phase 5 — tab rollout wave 1: Sound + Notifications — **COMPLETE ✅ (VM sign-off pending)**
+
+Date: 2026-08-05
+
+First rollout wave replicating the Gaming pattern on the two simplest standard
+tweak-row tabs: **Sound** and **Notifications** (both single-file catalogs, no
+bespoke sections). Reuses the Phase-3 rendering layer and the Phase-4 warm-up
+wholesale — no rendering-layer or registry code changed. Build #2 and Defender
+untouched.
+
+### Build status (literal)
+
+VS 18 MSBuild, `-t:Rebuild -p:Configuration=Debug -p:Platform=x64`:
+
+```
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+Time Elapsed 00:00:19.16
+```
+
+### Files added (per tab: one VM + one page copy)
+
+- **Sound:** `ViewModels/SoundViewModel.cs`, `Views/SoundPage.xaml` (+ `.xaml.cs`).
+- **Notifications:** `ViewModels/NotificationsViewModel.cs`,
+  `Views/NotificationsPage.xaml` (+ `.xaml.cs`).
+
+Each VM overrides only `NavTag` / `NavLabel` + `BuildCatalog()`, yielding the
+catalog's sections in the **same order as the net8 tab**:
+- Sound: `System Sounds` (1 section) — matches net8 `SoundTab.Build()`.
+- Notifications: `General → Additional Settings → System Notifications →
+  Privacy Notifications → Security Notifications` (5 sections) — matches net8
+  `NotificationsTab.Build()` (BuildGeneral/Additional/System/Privacy/Security).
+
+The page `.xaml` files are a **byte-for-byte copy of GamingPage.xaml with only
+`x:Class` changed** — the layout binds exclusively to `TweakPageViewModel` base
+members, so it carries no per-tab content. (Noted for a later refactor: this page
+shell could collapse into a shared UserControl; not done now to keep the wave
+mechanical and the diff obvious.)
+
+### Files changed (wiring — 3 edits, additive)
+
+- `App.xaml.cs` — registered `SoundViewModel` + `NotificationsViewModel` as
+  singletons, and added each to the `TweakPageViewModel` warm-up enumeration
+  (registration order = warm-up order = range order).
+- `MainWindow.xaml.cs` — added `Sound → SoundPage` and
+  `Notifications → NotificationsPage` to the route map and to `SyncSelectedItem`.
+
+### Id / range integrity — PRESERVED
+
+Catalog counts equal the net8 catalogs exactly (`grep -c "Id  ="`): **Sound 5,
+Notifications 16.** No `TweakDefinition` was touched — the VMs only *call* the
+already-extracted Phase-2 catalog methods (`SoundTweaks.SystemSounds`,
+`NotificationsTweaks.General/AdditionalSettings/SystemNotifications/
+PrivacyNotifications/SecurityNotifications`). `Mark`/`ClaimRange` semantics
+unchanged; each tab is bracketed exactly as Gaming is.
+
+### ⚠ Defender NOTIFICATION toggles (in scope, protection untouched)
+
+Notifications ▸ Security Notifications renders `notifications-windows-security`
+and `notifications-security-maintenance` — Windows Defender/Security **notification**
+toggles. These write only notification registry keys
+(`…\Windows Defender Security Center\Notifications\DisableNotifications` and the
+`SecurityAndMaintenance` toast `Enabled` value). They do **not** disable, arm, or
+alter Defender protection, and the live `DefenderService` is not referenced. This
+is the same behaviour the net8 build ships; nothing protective was touched. Flagged
+because the strings contain "Defender"/"Security" — the rows are safe.
+
+### Guard log (de-elevated launch, NO navigation — proves warm-up registers both)
+
+```
+[Gaming] 72 tweaks registered in 9 sections (registry total 72).
+[Sound] 5 tweaks registered in 1 sections (registry total 77).
+[Notifications] 16 tweaks registered in 5 sections (registry total 93).
+[WARMUP] Tweak registry warmed: 3 tweak page(s), 93 tweaks, 3 claimed range(s).
+[WARMUP]   Gaming [0..72) 72 rows — Gaming & Performance
+[WARMUP]   Sound [72..77) 5 rows — Sound
+[WARMUP]   Notifications [77..93) 16 rows — Notifications
+[WARMUP] OK: 3 range(s) contiguous and non-empty, tiling [0..93).
+```
+
+Per-tab registered counts: **Gaming 72, Sound 5, Notifications 16** — ranges
+contiguous, non-empty, tiling `[0..93)`. Both new tabs are present in the registry
+(→ Backup export + global search) without ever being opened.
+
+### Interaction smoke (read-only, de-elevated + UIA; no tweak applied)
+
+- **Sound** rendered **4 toggles + 1 ComboBox = 5 rows** (the ComboBox is the
+  "Sound Ducking Preference" dropdown — exercises the dropdown row in a 2nd tab).
+- **Notifications** rendered **16 toggles = 16 rows**.
+- **Search on Notifications (first-keystroke crash class) — PASS:** typed
+  `s→se→sec→secu` (16→2 visible), cleared → 16 restored. No crash.
+- **Navigation is a no-op — PASS:** after warm-up (total 93), navigating to Sound
+  then Notifications produced **no further `registered` log lines** and the total
+  stayed 93 — the singleton + `_built` lock held, no re-registration.
+- App alive throughout; crash log did not grow.
+
+### 📏 Actual per-tab cost vs the ~1–2h spike estimate
+
+**Well under estimate for the mechanical portion.** The spike predicted ~1–2h per
+standard tab (a ~50-line VM + copy-retitle page + wiring + verification). In
+practice the *code* was smaller than expected:
+- Sound VM = ~35 lines (1 section); Notifications VM = ~45 lines (5 sections).
+- Both pages were a **pure copy+retitle of GamingPage.xaml** (one `x:Class` change)
+  — zero per-tab layout, because the page shell turned out 100% generic.
+- Wiring = 3 two-line edits per tab (DI singleton, warm-up enumeration, route map +
+  SyncSelectedItem).
+- **No new bugs; first build clean 0/0.** Both tabs done in one build+verify cycle.
+
+Realistically the code+wiring for both tabs together was ~15–20 min of edits; the
+shared build + de-elevated UIA smoke (~10 min) amortises across the wave. The 1–2h
+estimate remains the right planning figure **for a human dev including full
+per-tab VM functional testing** (actuating toggles/dropdowns/bulk on a VM, which is
+isleap's sign-off gate), but the build-out itself is closer to **~20–30 min per
+standard tab** now that the page shell is proven copy-paste. The estimate should
+tighten for the remaining standard tabs (Update, Privacy, Customize sub-panels);
+the special-case tabs (Power, Software, Backup, Home/About/Tools) keep their own
+higher budgets.
+
+### VM checklist (wave 1 — for isleap)
+
+- [ ] **Sound** — the "Sound Ducking Preference" dropdown applies + reads back;
+      the 4 toggles read correct state; accessibility-sounds row handles the
+      REG_SZ-vs-DWORD dual-format read.
+- [ ] **Notifications** — toggles read + apply per section; **"Disable Action
+      Center"** shows its OFF-direction warning dialog (Cancel reverts, no write);
+      per-tab search filters; section collapse persists across restart.
+- [ ] **Defender notification rows** — toggling "Windows Security Notifications" /
+      "Security and Maintenance Notifications" changes ONLY the notification keys;
+      confirm Defender real-time protection is still ON afterward (belt-and-braces,
+      given the row names).
+- [ ] Both tabs' Quick Actions (apply-recommended / restore-defaults / restore
+      point) behave as Gaming's did.
+
+### Not touched (verified)
+
+- **Build #2 (net8)** — separate repo dir; zero files written there.
+- **Defender protection** — no Defender service/protection code referenced; only
+  notification-key toggles render (see note above).
+- **Rendering layer + warm-up + TweakRegistry** — unchanged; both tabs are pure
+  consumers. Power / Software / Backup / Home / About / Tools deliberately NOT
+  touched (their own later waves).
+
+---
+
+## MVVM Phase 6 — tab rollout wave 2: Update + Privacy — **COMPLETE ✅ (VM sign-off pending)**
+
+Date: 2026-08-05
+
+Second rollout wave, same pattern as wave 1: two catalog-only standard tweak-row
+tabs — **Update** and **Privacy** — reusing the rendering layer + warm-up + guard
+unchanged. Build #2 and Defender protection code untouched.
+
+### Build status (literal)
+
+VS 18 MSBuild, `-t:Rebuild -p:Configuration=Debug -p:Platform=x64`:
+
+```
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+Time Elapsed 00:00:26.46
+```
+
+### Files added (per tab: one VM + one page copy)
+
+- **Update:** `ViewModels/UpdateViewModel.cs`, `Views/UpdatePage.xaml` (+ `.xaml.cs`).
+- **Privacy:** `ViewModels/PrivacyViewModel.cs`, `Views/PrivacyPage.xaml` (+ `.xaml.cs`).
+
+Both `.xaml` files are a **byte-for-byte copy of the wave-1 page with only
+`x:Class` changed** (verified by diff). Section order matches the net8 tab
+exactly:
+- **Update** — `UpdateTab.Build()`: Update Policy -> Delivery & Store ->
+  Update Behavior (3 sections).
+- **Privacy** — `PrivacyTab.Build()`: Security -> Content Delivery & Advertising ->
+  Lock Screen -> General -> Speech -> Inking & Typing Personalization ->
+  Diagnostics & Feedback -> Search Permissions -> Activity History -> App Permissions
+  -> Windows AI -> Microsoft Edge AI -> Microsoft Office AI (13 sections across the
+  7 catalog partials).
+
+### Files changed (wiring — 3 edits, additive)
+
+- `App.xaml.cs` — `UpdateViewModel` + `PrivacyViewModel` as singletons, each added
+  to the `TweakPageViewModel` warm-up enumeration (registration order = warm-up
+  order = range order; appended after Gaming/Sound/Notifications).
+- `MainWindow.xaml.cs` — `Update -> UpdatePage`, `Privacy -> PrivacyPage` in the
+  route map and `SyncSelectedItem`.
+
+### Id / range integrity — PRESERVED (diffed against net8)
+
+- **Update: 12 Ids**, MVVM == net8 (the 12 inline `UpdateTab` Ids; net8 keeps
+  Update inline, not in a Catalog folder).
+- **Privacy: 89 rows** = **77 literal Ids + 12 generator-produced** (App Permissions
+  consent-store loops etc.). A sorted Id-literal diff of the MVVM vs net8 Privacy
+  catalogs is **IDENTICAL** (77/77). No `TweakDefinition` touched — the VMs only
+  call the already-extracted Phase-2 catalog methods. `Mark`/`ClaimRange` bodies
+  unchanged; each tab bracketed exactly as Gaming.
+
+### Privacy "Security" section — audited, Defender protection NOT touched
+
+The Security section is 10 rows, all **pure registry-key** tweaks — no
+`DefenderService` reference, no SmartScreen, no real-time/tamper/antivirus toggle
+(repo grep over `Tabs/Privacy/Catalog/` for
+`DefenderService|SetAsync|RunPhase2|RealtimeMonitoring|DisableAntiSpyware|TamperProtect`
+= **zero hits**):
+
+| Id | Touches |
+|---|---|
+| `security-uac-level` | UAC `ConsentPromptBehaviorAdmin` / `PromptOnSecureDesktop` |
+| `security-workplace-join-messages` | `WorkplaceJoin\BlockAADWorkplaceJoin` |
+| `security-bitlocker-auto-encryption` | `BitLocker\PreventDeviceEncryption` |
+| `security-wifi-sense` | `PolicyManager\...\WiFi` hotspot policy |
+| `security-automatic-maintenance` | `Schedule\Maintenance\MaintenanceDisabled` |
+| `security-error-reporting` | `Windows Error Reporting\Disabled` |
+| `security-remote-assistance` | `Remote Assistance\fAllowToGetHelp` |
+| `security-smart-app-control` | `CI\Policy\VerifiedAndReputablePolicyState` (Code Integrity policy state — NOT Defender AV) |
+| `security-developer-mode` | `AppModelUnlock\AllowDevelopmentWithoutDevLicense` |
+| `security-powershell-execution-policy` | PowerShell `ExecutionPolicy` |
+
+Smart App Control is a WDAC/Code-Integrity reputation feature keyed only via the
+registry; it does not call into Defender protection. Nothing here disables or arms
+Defender. **No STOP condition — safe to wire, and wired.**
+
+### Guard log (de-elevated launch, NO navigation — proves warm-up registers both)
+
+```
+[Gaming] 72 tweaks registered in 9 sections (registry total 72).
+[Sound] 5 tweaks registered in 1 sections (registry total 77).
+[Notifications] 16 tweaks registered in 5 sections (registry total 93).
+[Update] 12 tweaks registered in 3 sections (registry total 105).
+[Privacy] 89 tweaks registered in 13 sections (registry total 194).
+[WARMUP] Tweak registry warmed: 5 tweak page(s), 194 tweaks, 5 claimed range(s).
+[WARMUP]   Gaming [0..72) 72 rows — Gaming & Performance
+[WARMUP]   Sound [72..77) 5 rows — Sound
+[WARMUP]   Notifications [77..93) 16 rows — Notifications
+[WARMUP]   Update [93..105) 12 rows — Windows Updates
+[WARMUP]   Privacy [105..194) 89 rows — Privacy & Security
+[WARMUP] OK: 5 range(s) contiguous and non-empty, tiling [0..194).
+```
+
+Per-tab registered counts: **Gaming 72, Sound 5, Notifications 16, Update 12,
+Privacy 89** — all match the net8 catalogs. Ranges contiguous, non-empty, tiling
+`[0..194)`. Update and Privacy are present in the registry (-> Backup export +
+global search) **without ever being opened**.
+
+### Interaction smoke (read-only, de-elevated + UIA; no tweak actuated)
+
+- **Update** rendered **10 toggles + 2 ComboBoxes = 12 rows** (dropdowns:
+  "Windows Update Policy", "Delivery Optimization").
+- **Privacy** rendered **86 toggles + 3 ComboBoxes = 89 rows** (dropdowns:
+  UAC Level, Smart App Control, PowerShell Execution Policy — all in Security).
+- **First-keystroke search on Privacy — PASS (required check):** typed
+  `r->re->rec->reca->recal->recall` char-by-char (86->2 visible, the Recall rows),
+  then `zzzznope` (->0), cleared (->86). No crash on any keystroke.
+- **Navigation is a no-op — PASS:** after warm-up (total 194), navigating to Update
+  then Privacy produced **no further `registered` lines**; total stayed 194.
+- App alive throughout; crash log did not grow. **No tweak was actuated.**
+
+### Cosmetic deferral (flagged)
+
+net8 `UpdateTab` centred its content at `MaxWidth 860` (one of three intentionally
+narrow tabs — About 860, App Updates 720, Windows Updates 860). This page uses the
+shared 1100-wide wave-1 shell per the "copy+retitle, x:Class only" instruction. The
+narrower centring is a **deferred cosmetic**, not a functional difference; revisit
+in the width/centring pass alongside About and App Updates.
+
+### Per-tab cost (wave 2)
+
+As predicted at the end of wave 1, the standard-tab cost keeps shrinking now the
+page shell is proven copy-paste:
+- **Update VM** ~40 lines (3 sections); **Privacy VM** ~55 lines (13 sections).
+- Both pages produced by `sed 's/SoundPage/XPage/'` on the wave-1 page (x:Class
+  only) — **zero hand-written XAML**.
+- Wiring = the same 3 two-line edits per tab.
+- First build clean **0/0**; no new bugs. Privacy is the largest catalog tab so far
+  (89 rows, 13 sections, 3 dropdowns, generator-produced rows) and needed **no**
+  special handling — the rendering layer absorbed it unchanged, which is the
+  strongest evidence yet that the spike's one-render-path bet holds.
+
+Realistic build-out for both tabs together: ~15 min of edits + one shared
+build/verify cycle. The **~20-30 min/standard-tab** figure from wave 1 holds (the
+1-2h planning number remains right once per-tab VM functional testing on a VM is
+included — isleap's sign-off gate).
+
+### VM checklist (wave 2 — for isleap)
+
+- [ ] **Update** — both dropdowns ("Windows Update Policy" 4-option, "Delivery
+      Optimization" 4-option) apply + read back; the "Custom" badge lights when the
+      machine value matches no option; the paused/disabled policy warnings appear
+      in the log.
+- [ ] **Privacy** — spot-check a few toggles per section read correct state; the
+      three Security dropdowns (UAC / Smart App Control / PowerShell) apply + read
+      back; warned UAC options ("no dim", "Never notify") prompt before applying.
+- [ ] **Privacy Security != Defender** — after toggling Security rows, confirm
+      Windows Defender real-time protection is still ON (belt-and-braces; these
+      rows never touch it, but verify on the VM given the section name).
+- [ ] Section collapse persists across restart; per-tab search + Quick Actions
+      behave as Gaming/wave-1 did.
+
+### Not touched (verified)
+
+- **Build #2 (net8)** — separate repo dir; zero files written there.
+- **Defender protection/service** — no Defender code referenced by either tab; the
+  Privacy Security section is registry-key-only (audited above).
+- **Rendering layer + warm-up + TweakRegistry** — unchanged; both tabs are pure
+  consumers. Customize / Power / Software / Backup / Home / About / Tools
+  deliberately NOT touched (their own later waves).
+
+---
+
+## MVVM Phase 7 — Gaming bespoke section: System Services (service-preset card) — **COMPLETE (VM sign-off pending)**
+
+Date: 2026-08-05
+
+The Gaming tab's own wave: port the **bespoke "System Services" section** — a
+service-preset card, NOT tweak rows — into the MVVM Gaming page. Only System
+Services this wave; Scheduled Tasks and System Restore deliberately NOT ported.
+Build #2 and Defender code untouched.
+
+### Build status (literal)
+
+VS 18 MSBuild, `-t:Rebuild -p:Configuration=Debug -p:Platform=x64`:
+
+```
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+Time Elapsed 00:00:24.73
+```
+
+### Which net8 UI this is (and why it lives where it does)
+
+net8 had TWO "service" surfaces: `GamingTab.SystemServices.cs` (a flat list of
+~40 per-service dropdown TweakDefinitions) and the **service-preset card** in
+`AkariOSTab.Services.cs` (`BuildServicePresetSection` + `ApplyPresetLabel`) —
+Apply Gaming / Apply Daily / Restore Stock + a detection status line + Mixed drift.
+The task's hard rules (use `DetectServicePresetDetailed()` +
+`ServicesPreset.ApplyAkari*`, `akariOsContext: false`, "Mixed drift presentation",
+"NOT a TweakDefinition, must NOT call TweakRegistry.Register") describe the
+**preset card**, not the flat dropdowns. So the preset card is what was ported, and
+it occupies the Gaming tab's "System Services" position.
+
+### Files added
+
+- `ViewModels/ServicePresetSectionViewModel.cs` — the bespoke section VM. Consumes
+  the already-ported logic ONLY:
+  - detection: `SystemStateReader.DetectServicePresetDetailed()` +
+    `ServicesPreset.ReadPresetStamp()`, presentation reproduced VERBATIM from net8
+    `ApplyPresetLabel` (same status texts, same stamp-agrees logic, same
+    Mixed `"Current: Mixed (N of M probes differ)"` format, same drift tooltip
+    `"<svc>: <actual> -> expected <expected>"`).
+  - apply: `ServicesPreset.ApplyAkariGaming / ApplyAkariDaily / ApplyStockDefault`,
+    each called with **`akariOsContext: false`** (standalone product — no
+    AkariOS-gated card resurrected). Async, routed through `ToolService` (its
+    log + `StartProgress`/`StopProgress` are the already-wired events). Buttons
+    disable while an apply runs (`IsBusy`) so two presets can't write concurrently.
+  - **No preset/probe/drift/service-write logic is reimplemented here.** Defender
+    protection lives inside `ServicesPreset` (`_defenderServices`, never touched);
+    this VM adds no service writes.
+- `Views/Selectors/GamingSectionTemplateSelector.cs` — picks the shared
+  `TweakSectionTemplate` for a `TweakSectionViewModel` or the bespoke preset
+  template for the `ServicePresetSectionViewModel`, so both render inline in one
+  ItemsControl.
+
+### Files changed
+
+- `ViewModels/GamingViewModel.cs` — added `ServicePreset` (the bespoke VM) and a
+  heterogeneous `DisplayItems` (`ObservableCollection<object>`) composed by
+  `ComposeDisplay()`: it walks the base `Sections` and inserts `ServicePreset`
+  **immediately after the "Security" section** (net8's exact position), then runs
+  read-only detection. `DisplayItems` is kept SEPARATE from the base `Sections`
+  collection, so per-tab search / Quick Actions (which iterate `Sections`) never
+  see the bespoke card and the tweak-row registration + range tiling is untouched.
+- `Views/GamingPage.xaml` — hosts the bespoke `ServicePresetSectionTemplate`
+  DataTemplate + the selector in `Page.Resources`; the single sections ItemsControl
+  now binds `DisplayItems` with `ItemTemplateSelector`. (Sound/Notifications/Update/
+  Privacy pages still bind `Sections` — unchanged.)
+- `Views/GamingPage.xaml.cs` — calls `ViewModel.ComposeDisplay()` after `Build()`
+  (UI thread; idempotent; render-only + read-only detection).
+
+### Threading note
+
+`GamingViewModel` (and thus `ServicePreset`) is constructed by the startup warm-up
+on a background thread. The VM ctor does NOT run detection — detection resolves a
+status brush from `Application.Current.Resources` (UI-thread-affine), so it is
+deferred to `ComposeDisplay()`/`Refresh()`, which the page calls on the UI thread.
+`DisplayItems` is likewise populated on the UI thread before anything binds.
+
+### Registry integrity — tweak-row tiling UNCHANGED (required check)
+
+The bespoke section does not register with `TweakRegistry`. Warm-up guard, launched
+with NO navigation, is byte-for-byte the same tiling as before this wave:
+
+```
+[Gaming] 72 tweaks registered in 9 sections (registry total 72).
+[Sound] 5 tweaks registered in 1 sections (registry total 77).
+[Notifications] 16 tweaks registered in 5 sections (registry total 93).
+[Update] 12 tweaks registered in 3 sections (registry total 105).
+[Privacy] 89 tweaks registered in 13 sections (registry total 194).
+[WARMUP] Tweak registry warmed: 5 tweak page(s), 194 tweaks, 5 claimed range(s).
+[WARMUP]   Gaming [0..72) 72 rows — Gaming & Performance
+[WARMUP]   Sound [72..77) 5 rows — Sound
+[WARMUP]   Notifications [77..93) 16 rows — Notifications
+[WARMUP]   Update [93..105) 12 rows — Windows Updates
+[WARMUP]   Privacy [105..194) 89 rows — Privacy & Security
+[WARMUP] OK: 5 range(s) contiguous and non-empty, tiling [0..194).
+```
+
+Gaming is still `[0..72)` / 9 tweak-sections — the System Services card added zero
+tweak rows.
+
+### Interaction smoke (read-only, de-elevated + UIA; NO preset actuated)
+
+- **Section renders in the net8 position** — on-screen heading order:
+  Game Mode -> Processor -> Graphics -> Storage -> Network -> Xbox -> Security ->
+  **System Services** -> Accessibility -> Visual Effects. System Services is
+  immediately after Security (verified: index delta = 1).
+- **Verbatim description** rendered ("Apply a service configuration preset. Gaming
+  disables 166 services …").
+- **Detection on load (read-only) — this machine:**
+  `Current: Mixed (4 of 18 probes differ)`. Detection ran without applying
+  anything; the amber (caution) brush + per-service drift tooltip are wired.
+- **All three preset buttons present** (Apply Gaming / Apply Daily / Restore Stock).
+- App alive; **no preset change was actuated** (that is isleap's destructive VM
+  gate).
+
+### Deviations / flags
+
+- **Colours mapped to stock Fluent**, since the Akari crimson token dictionary
+  isn't ported into this build yet: Gaming→`SystemFillColorSuccess` (green),
+  Daily→`SystemFillColorAttention` (blue), Stock→`AccentTextFillColorPrimary`,
+  Mixed→`SystemFillColorCaution` (amber), Unknown→`TextFillColorSecondary`. Same
+  semantics as net8's SuccessFg/InfoFg/Accent/WarnFg. The status brush is resolved
+  at detection time (matches net8's set-once behaviour) — it won't re-resolve on a
+  live theme flip until the next detection; cosmetic, flagged.
+- The bespoke card is NOT part of per-tab search (it's not tweak rows) — it stays
+  visible while a search filters the tweak sections. Consistent with net8 (bespoke
+  sections were separate from tweak search).
+- Card title is "System Services" (the Gaming section name/position). net8's card's
+  own heading was "Service Preset"; the description/status copy is verbatim.
+
+### VM checklist (Phase 7 — for isleap; DESTRUCTIVE, VM only)
+
+- [ ] **Apply Gaming** — status flips to "Current: Gaming (stock Windows)" (green);
+      Store/NVIDIA App/Settings still work; Defender real-time protection still ON
+      (presets never touch it); "Restart to take full effect" logged.
+- [ ] **Apply Daily** — "Current: Daily (stock Windows)" (blue); Windows Update +
+      ISO mounting still work; DUSM data-usage task re-enabled (Settings network
+      status).
+- [ ] **Restore Stock** — "Current: Windows Stock" (accent).
+- [ ] **Mixed drift** — hover the status line while Mixed shows the per-service
+      `<svc>: <actual> -> expected <expected>` list.
+- [ ] Buttons disable during an apply; the status-bar progress shows while running.
+- [ ] Guard log still tiles `[0..194)` after any of the above (services aren't
+      tweak rows — count must not move).
+
+### Not touched (verified)
+
+- **Build #2 (net8)** — separate repo dir; zero files written there.
+- **`Tabs/Shared/ServicesPreset*.cs` and `SystemStateReader.ServicePreset.cs`** —
+  consumed only, not edited (hard rule).
+- **Defender** — no Defender code referenced; preset apply protects Defender
+  internally.
+- **Scheduled Tasks / System Restore** — NOT ported this wave (next Gaming sub-wave).
+- **Rendering layer / warm-up / TweakRegistry / other tabs** — unchanged.
+
+---
+
+## MVVM Phase 8 — REVERT Phase 7 (wrong section) + locate the real System Services — **Part 1 done; Part 2 = show-only checkpoint**
+
+Date: 2026-08-05
+
+Phase 7 ported the WRONG surface. It imported the **AkariOS service-PRESET card**
+(`AkariOSTab.Services.cs` → `BuildServicePresetSection`: Apply Gaming/Daily/Restore
+Stock + Mixed drift, wired to `DetectServicePresetDetailed` / `ServicesPreset.ApplyAkari*`)
+— that is the AkariOS tab's surface, not Gaming's "System Services". This phase
+undoes it and identifies the real section. **Nothing new was ported.**
+
+### PART 1 — Phase-7 preset card removed
+
+Deleted:
+- `ViewModels/ServicePresetSectionViewModel.cs`
+- `Views/Selectors/GamingSectionTemplateSelector.cs`
+
+Reverted to pre-Phase-7 state:
+- `ViewModels/GamingViewModel.cs` — removed `ServicePreset`, `DisplayItems`,
+  `ComposeDisplay`; back to the 9 catalog sections only.
+- `Views/GamingPage.xaml` — removed the `Page.Resources` (bespoke DataTemplate +
+  selector) and the `selectors` xmlns; ItemsControl binds `Sections` with
+  `TweakSectionTemplate` again.
+- `Views/GamingPage.xaml.cs` — removed the `ComposeDisplay()` call.
+
+NOT touched (correct, stays for the future AkariOS tab):
+`Tabs/Shared/ServicesPreset*.cs`, `Tabs/Shared/SystemStateReader.ServicePreset.cs`.
+
+Grep confirms zero remaining references to any removed Phase-7 symbol.
+
+#### Build status (literal)
+
+```
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+Time Elapsed 00:00:26.06
+```
+
+#### Guard tiled back to pre-Phase-7 totals (de-elevated, no navigation)
+
+```
+[Gaming] 72 tweaks registered in 9 sections (registry total 72).
+[Sound] 5 tweaks registered in 1 sections (registry total 77).
+[Notifications] 16 tweaks registered in 5 sections (registry total 93).
+[Update] 12 tweaks registered in 3 sections (registry total 105).
+[Privacy] 89 tweaks registered in 13 sections (registry total 194).
+[WARMUP] OK: 5 range(s) contiguous and non-empty, tiling [0..194).
+```
+
+Gaming back to `[0..72)`, overall `[0..194)`.
+
+### PART 2 — the REAL section, located (SHOW ONLY — not extracted)
+
+Source (build #2, read-only): `Tabs/Gaming/GamingTab.SystemServices.cs`
+(`BuildSystemServices`), called from `GamingTab.Build()` between "Security" and
+"Scheduled Tasks".
+
+- **38 rows** total: **37 per-service startup-type dropdowns** (built by the
+  `ServiceDropdown(...)` helper) **+ 1 toggle** (`gaming-input-app-preload`).
+- **Input kind:** the 37 service rows are `TweakInputKind.Dropdown` with options
+  Disabled(4) / Manual(3) / Automatic(2); `ReadCurrentIndex`/`ApplyIndex` read and
+  write the `Start` DWORD at `HKLM\SYSTEM\CurrentControlSet\Services\<key>`. All
+  three options are ALWAYS offered — no option is omitted for any service.
+- **These ARE TweakDefinitions and DO register with TweakRegistry** (via
+  `AddSection`→`AddTweakRow`). ⚠ Implication for the eventual extraction: unlike the
+  (wrong) preset card, porting this section correctly will ADD 38 registered rows —
+  Gaming would go `72 → 110`, overall `194 → 232`. That is expected and correct.
+- **Never-disable handling:** the boot-critical never-disable services
+  (`DcomLaunch`, `RpcSs`, `RpcEptMapper`, `SamSs`), plus `WpnService`, `DusmSvc`/
+  `Ndu`, and `DPS`, are **absent from the list entirely** (correctly excluded). The
+  one Action-Center/NVIDIA-App dependency that IS present — `CDPSvc` — is defended
+  NOT by a hard block but by `recommendedStart: 3` (Manual) + a `disabledWarning`
+  about Night Light / Phone Link / clipboard sync. Disabled remains selectable with
+  a confirmation. No row hard-blocks a service.
+
+Full ordered Id list, the three representative defs, and the CDPSvc detail were
+reported to isleap at this checkpoint. **Extraction deferred to isleap's go.**
