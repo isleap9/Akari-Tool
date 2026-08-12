@@ -21,5 +21,25 @@ namespace AkariTool.Tabs
             def.ApplyIndex(index);
             DriftBaseline.Record(def, index);
         }
+
+        /// <summary>
+        /// Fire-and-forget process runner used by a few tweak Apply delegates
+        /// (netsh, etc.). MVVM PORT: carried over verbatim from the net8
+        /// TweakHelpers.cs — it is pure logic (ProcessStartInfo + WaitForExit) that
+        /// merely happened to live in the rendering factory file.
+        /// </summary>
+        public static void RunCommand(string exe, string args)
+        {
+            try
+            {
+                var psi = new System.Diagnostics.ProcessStartInfo(exe, args)
+                {
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+                System.Diagnostics.Process.Start(psi)?.WaitForExit();
+            }
+            catch { /* best-effort */ }
+        }
     }
 }

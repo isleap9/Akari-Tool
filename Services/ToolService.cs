@@ -2,100 +2,72 @@ using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Text;
-using Microsoft.UI.Dispatching;   // WinUI: DispatcherQueue (replaces WPF Dispatcher)
-using Microsoft.UI.Xaml;          // Visibility
-using Microsoft.UI.Xaml.Controls; // TextBox, ProgressBar, TextBlock
-using Microsoft.UI.Xaml.Media;    // Brush, SolidColorBrush
-using Windows.UI;                 // Color
-using Microsoft.Win32;
 
 namespace AkariTool.Services
 {
     /// <summary>
     /// Shared service that handles script execution, process management, logging,
-    /// and progress bar state. Each tab gets a reference to the single instance
-    /// created in MainWindow, so they all share the same log and progress bar.
+    /// and progress reporting.
+    ///
+    /// MVVM PORT NOTE: the net8 build's ToolService was constructed from three WinUI
+    /// controls (TextBox log, ProgressBar, TextBlock status) and wrote straight into
+    /// them. That made every consuming service transitively depend on the view. This
+    /// port is HEADLESS: identical public surface for every consumer
+    /// (Log / StartProgress / StopProgress / RunAction / RunWithTracking / RunScript /
+    /// RunPackageCommand / RunProcess / OpenUrl / CreateDesktopShortcut), but output is
+    /// pushed through events that a ViewModel subscribes to. All execution logic below
+    /// is carried over verbatim.
+    ///
+    /// Dropped: <c>BrushFrom(string)</c> — returned a WinUI SolidColorBrush; pure view
+    /// concern with no callers in the ported logic layer.
     /// </summary>
     public class ToolService
     {
-        private readonly TextBox _log;
-        private readonly ProgressBar _progress;
-        private readonly TextBlock _progressStatus;
-
         private int _activeProcessCount;
 
         private static readonly Assembly AppAssembly = typeof(ToolService).Assembly;
 
+        /// <summary>Raised for every log line (on whatever thread logged).</summary>
+        public event Action<string>? LineLogged;
+
+        /// <summary>Raised when a process starts (payload = process name) / stops.</summary>
+        public event Action<string>? ProgressStarted;
+        public event Action? ProgressStopped;
+
         /// <summary>
-        /// The single ToolService instance created in MainWindow. Lets static tweak
-        /// catalogs (which only receive an Action&lt;string&gt; Log) reach the full service
-        /// when a row needs it — e.g. the Defender row calling DefenderService.SetAsync.
+        /// The single ToolService instance. Lets static tweak catalogs (which only
+        /// receive an Action&lt;string&gt; Log) reach the full service when a row needs
+        /// it — e.g. the Defender row calling DefenderService.SetAsync.
         /// </summary>
         public static ToolService? Current { get; private set; }
 
-        public ToolService(TextBox log, ProgressBar progress, TextBlock progressStatus)
+        /// <param name="sink">
+        /// Optional extra log sink (e.g. the framework ILogService) invoked in addition
+        /// to <see cref="LineLogged"/>.
+        /// </param>
+        public ToolService(Action<string>? sink = null)
         {
-            _log = log;
-            _progress = progress;
-            _progressStatus = progressStatus;
+            if (sink is not null) LineLogged += sink;
             Current = this;
         }
 
         // ── Logging ────────────────────────────────────────────────────────────
 
-        public void Log(string message) =>
-            _log.DispatcherQueue.TryEnqueue(() =>
-            {
-                _log.Text += message + Environment.NewLine;
-                ScrollLogToEnd();
-            });
+        public void Log(string message) => LineLogged?.Invoke(message);
 
-        // WinUI TextBox has no ScrollToEnd(); scroll its template ScrollViewer instead.
-        private ScrollViewer? _logScroller;
-        private void ScrollLogToEnd()
-        {
-            _logScroller ??= FindScrollViewer(_log);
-            _logScroller?.ChangeView(null, _logScroller.ScrollableHeight, null);
-        }
-
-        private static ScrollViewer? FindScrollViewer(DependencyObject root)
-        {
-            if (root is ScrollViewer sv) return sv;
-            int count = VisualTreeHelper.GetChildrenCount(root);
-            for (int i = 0; i < count; i++)
-            {
-                var found = FindScrollViewer(VisualTreeHelper.GetChild(root, i));
-                if (found != null) return found;
-            }
-            return null;
-        }
-
-        // ── Progress bar ───────────────────────────────────────────────────────
+        // ── Progress ───────────────────────────────────────────────────────────
 
         public void StartProgress(string processName)
         {
-            _progress.DispatcherQueue.TryEnqueue(() =>
-            {
-                _activeProcessCount++;
-                _progressStatus.Text = $"Running {processName}...";
-                _progressStatus.Visibility = Visibility.Visible;
-                _progress.Value = 0;
-                _progress.IsIndeterminate = false;
-                _progress.Visibility = Visibility.Visible;
-            });
+            _activeProcessCount++;
+            ProgressStarted?.Invoke(processName);
         }
 
         public void StopProgress()
         {
-            _progress.DispatcherQueue.TryEnqueue(() =>
-            {
-                _activeProcessCount = Math.Max(0, _activeProcessCount - 1);
-                if (_activeProcessCount > 0) return;
-
-                _progress.Value = 0;
-                _progress.Visibility = Visibility.Collapsed;
-                _progressStatus.Visibility = Visibility.Collapsed;
-            });
+            _activeProcessCount = Math.Max(0, _activeProcessCount - 1);
+            if (_activeProcessCount > 0) return;
+            ProgressStopped?.Invoke();
         }
 
         // ── Action routing ─────────────────────────────────────────────────────
@@ -286,28 +258,6 @@ namespace AkariTool.Services
         }
 
         // ── Helpers ────────────────────────────────────────────────────────────
-
-        // WinUI has no BrushConverter. Parse a #RGB hex string (#RRGGBB or
-        // #AARRGGBB, with or without the leading '#') into a SolidColorBrush.
-        public static Brush BrushFrom(string color)
-        {
-            var hex = color.TrimStart('#');
-            byte a = 0xFF, r, g, b;
-            if (hex.Length == 8)
-            {
-                a = Convert.ToByte(hex.Substring(0, 2), 16);
-                r = Convert.ToByte(hex.Substring(2, 2), 16);
-                g = Convert.ToByte(hex.Substring(4, 2), 16);
-                b = Convert.ToByte(hex.Substring(6, 2), 16);
-            }
-            else // assume 6-digit RRGGBB
-            {
-                r = Convert.ToByte(hex.Substring(0, 2), 16);
-                g = Convert.ToByte(hex.Substring(2, 2), 16);
-                b = Convert.ToByte(hex.Substring(4, 2), 16);
-            }
-            return new SolidColorBrush(Color.FromArgb(a, r, g, b));
-        }
 
         private static string? FindEmbeddedScriptResource(string scriptName)
         {

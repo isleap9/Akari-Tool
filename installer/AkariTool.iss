@@ -12,10 +12,10 @@
 #define MyAppURL       "https://github.com/isleap9/Akari-Tool"
 ; Unpackaged WinUI 3, fully self-contained publish output produced by
 ; build-installer.ps1 (VS MSBuild /t:Publish, x64 Release). This is the whole
-; runtime payload — the .NET 8 runtime AND the Windows App SDK runtime — not just
-; AkariTool.exe. Path uses the WinUI TFM (net8.0-windows10.0.19041.0) and the
+; runtime payload — the .NET 10 runtime AND the Windows App SDK runtime — not just
+; AkariTool.exe. Path uses the WinUI TFM (net10.0-windows10.0.26100.0) and the
 ; x64 platform sub-dir, unlike the old WPF output path.
-#define PublishDir     "..\bin\x64\Release\net8.0-windows10.0.19041.0\win-x64\publish"
+#define PublishDir     "..\bin\x64\Release\net10.0-windows10.0.26100.0\win-x64\publish"
 
 ; Fail the compile early with a clear message if the payload was not published,
 ; rather than emitting an installer that is missing the runtime.
@@ -43,7 +43,7 @@ DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
 OutputDir=..\installer-output
 OutputBaseFilename=AkariTool-Setup-v{#MyAppVersion}
-SetupIconFile=..\Resource\AkariLogo.ico
+SetupIconFile=..\Assets\AkariLogo.ico
 UninstallDisplayIcon={app}\{#MyAppExeName}
 Compression=lzma2/max
 SolidCompression=yes

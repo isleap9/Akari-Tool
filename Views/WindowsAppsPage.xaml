@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Software ▸ Windows Apps (rail tag "Bloatware") — Stage 2 of the Software rollout.
+    MVVM rebuild of net8's SoftwareTab Windows-Apps panel.
+
+    NOT a tweak page — no TweakSectionTemplate, no TweakPageViewModel, no
+    TweakRegistry involvement.
+
+    Differences from ExternalAppsPage (Stage 1), both from net8:
+      • THREE FIXED sections filtered by definition shape, not GroupBy(GroupName).
+      • The card template adds the "Permanent" pill (isWindowsApps && !CanBeReinstalled).
+      • Remove Selected is the primary (accent) button; Install is secondary.
+
+    The card/section templates are duplicated rather than shared with
+    ExternalAppsPage because they carry DataTemplate event handlers, which resolve
+    against the owning page's code-behind and cannot live in a merged dictionary.
+-->
+<Page
+    x:Class="AkariTool.Views.WindowsAppsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:AkariTool.ViewModels.Software"
+    mc:Ignorable="d"
+    NavigationCacheMode="Required">
+
+    <Page.Resources>
+
+        <DataTemplate x:Key="WinAppCardTemplate" x:DataType="vm:AppCardViewModel">
+            <Border
+                Tapped="Card_Tapped"
+                PointerEntered="Card_PointerEntered"
+                PointerExited="Card_PointerExited"
+                MinHeight="104"
+                Margin="5"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{x:Bind BorderBrush, Mode=OneWay}"
+                BorderThickness="1"
+                CornerRadius="10"
+                Padding="14,12,14,12">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <CheckBox
+                        Grid.Column="0"
+                        VerticalAlignment="Top"
+                        Margin="0,2,12,0"
+                        MinWidth="0"
+                        IsChecked="{x:Bind IsSelected, Mode=TwoWay}"
+                        Click="Check_Click"
+                        AutomationProperties.Name="{x:Bind Name}" />
+
+                    <Border
+                        Grid.Column="1"
+                        Width="40"
+                        Height="40"
+                        CornerRadius="8"
+                        VerticalAlignment="Top"
+                        Margin="0,0,12,0"
+                        Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1">
+                        <Grid>
+                            <TextBlock
+                                Text="{x:Bind Letter}"
+                                FontSize="16"
+                                FontWeight="Bold"
+                                Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center" />
+                            <Image
+                                Source="{x:Bind Icon, Mode=OneWay}"
+                                Stretch="Uniform"
+                                Margin="4"
+                                Visibility="{x:Bind HasIcon, Mode=OneWay, Converter={StaticResource BoolToVis}}" />
+                        </Grid>
+                    </Border>
+
+                    <StackPanel Grid.Column="2">
+
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock
+                                Text="{x:Bind Name}"
+                                FontSize="13.5"
+                                FontWeight="SemiBold"
+                                Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                TextTrimming="CharacterEllipsis"
+                                VerticalAlignment="Center" />
+                            <FontIcon
+                                Glyph="&#xE8A7;"
+                                FontFamily="Segoe Fluent Icons"
+                                FontSize="10.5"
+                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                Margin="7,1,0,0"
+                                VerticalAlignment="Center"
+                                Visibility="{x:Bind HasWebsite, Converter={StaticResource BoolToVis}}"
+                                ToolTipService.ToolTip="{x:Bind WebsiteUrl}"
+                                Tapped="Website_Tapped" />
+                        </StackPanel>
+
+                        <TextBlock
+                            Text="{x:Bind Description}"
+                            FontSize="11.5"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            TextWrapping="Wrap"
+                            TextTrimming="CharacterEllipsis"
+                            MaxHeight="48"
+                            Margin="0,3,0,0" />
+
+                        <!-- Badge row: Installed / Warning / Permanent (net8 order) -->
+                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                            <Border
+                                Background="Transparent"
+                                BorderBrush="{ThemeResource SystemFillColorSuccessBrush}"
+                                BorderThickness="1"
+                                CornerRadius="9"
+                                Padding="9,2,9,3"
+                                Margin="0,0,6,0"
+                                Visibility="{x:Bind IsInstalled, Mode=OneWay, Converter={StaticResource BoolToVis}}">
+                                <StackPanel Orientation="Horizontal">
+                                    <FontIcon Glyph="&#xE73E;" FontFamily="Segoe Fluent Icons" FontSize="10"
+                                              Foreground="{ThemeResource SystemFillColorSuccessBrush}" VerticalAlignment="Center" />
+                                    <TextBlock Text="Installed" FontSize="10.5" FontWeight="SemiBold"
+                                               Foreground="{ThemeResource SystemFillColorSuccessBrush}"
+                                               Margin="6,0,0,0" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border
+                                Background="Transparent"
+                                BorderBrush="{ThemeResource SystemFillColorCautionBrush}"
+                                BorderThickness="1"
+                                CornerRadius="9"
+                                Padding="9,2,9,3"
+                                Margin="0,0,6,0"
+                                Visibility="{x:Bind HasWarning, Converter={StaticResource BoolToVis}}"
+                                ToolTipService.ToolTip="Removing this can affect Windows components that depend on it.">
+                                <StackPanel Orientation="Horizontal">
+                                    <FontIcon Glyph="&#xE7BA;" FontFamily="Segoe Fluent Icons" FontSize="10"
+                                              Foreground="{ThemeResource SystemFillColorCautionBrush}" VerticalAlignment="Center" />
+                                    <TextBlock Text="Warning" FontSize="10.5" FontWeight="SemiBold"
+                                               Foreground="{ThemeResource SystemFillColorCautionBrush}"
+                                               Margin="6,0,0,0" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Stage 2: the pill Stage 1 omitted. net8 gate:
+                                 isWindowsApps && !CanBeReinstalled. -->
+                            <Border
+                                Background="Transparent"
+                                BorderBrush="{ThemeResource SystemFillColorCriticalBrush}"
+                                BorderThickness="1"
+                                CornerRadius="9"
+                                Padding="9,2,9,3"
+                                Margin="0,0,6,0"
+                                Visibility="{x:Bind IsPermanent, Converter={StaticResource BoolToVis}}"
+                                ToolTipService.ToolTip="Once removed, this item can't be reinstalled.">
+                                <StackPanel Orientation="Horizontal">
+                                    <FontIcon Glyph="&#xE7C1;" FontFamily="Segoe Fluent Icons" FontSize="10"
+                                              Foreground="{ThemeResource SystemFillColorCriticalBrush}" VerticalAlignment="Center" />
+                                    <TextBlock Text="Permanent" FontSize="10.5" FontWeight="SemiBold"
+                                               Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                                               Margin="6,0,0,0" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </DataTemplate>
+
+        <DataTemplate x:Key="WinAppSectionTemplate" x:DataType="vm:AppSectionViewModel">
+            <StackPanel Visibility="{x:Bind IsVisible, Mode=OneWay, Converter={StaticResource BoolToVis}}">
+                <TextBlock
+                    Text="{x:Bind Title}"
+                    FontSize="17"
+                    FontWeight="SemiBold"
+                    Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                    Margin="2,18,0,10" />
+                <ItemsRepeater
+                    ItemsSource="{x:Bind VisibleCards}"
+                    ItemTemplate="{StaticResource WinAppCardTemplate}">
+                    <ItemsRepeater.Layout>
+                        <UniformGridLayout MinItemWidth="340" MinItemHeight="104" ItemsStretch="Fill" />
+                    </ItemsRepeater.Layout>
+                </ItemsRepeater>
+            </StackPanel>
+        </DataTemplate>
+    </Page.Resources>
+
+    <ScrollViewer>
+        <StackPanel Padding="32,24,32,24" MaxWidth="1100" HorizontalAlignment="Stretch">
+
+            <StackPanel Margin="0,0,0,20">
+                <TextBlock
+                    Text="{x:Bind ViewModel.Title}"
+                    FontSize="26"
+                    FontWeight="SemiBold"
+                    Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
+                <TextBlock
+                    Text="{x:Bind ViewModel.Subtitle}"
+                    FontSize="13"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Margin="0,4,0,0"
+                    TextWrapping="Wrap" />
+            </StackPanel>
+
+            <!-- net8 button order: Remove (primary), Install, Refresh -->
+            <Grid Margin="0,0,0,14">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <Button
+                        Style="{StaticResource AccentButtonStyle}"
+                        Margin="0,0,10,0"
+                        Command="{x:Bind ViewModel.RemoveSelectedCommand}"
+                        IsEnabled="{x:Bind ViewModel.ButtonsEnabled, Mode=OneWay}"
+                        AutomationProperties.Name="Remove Selected">
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon Glyph="&#xE74D;" FontFamily="Segoe Fluent Icons" FontSize="13" Margin="0,0,8,0" VerticalAlignment="Center" />
+                            <TextBlock Text="Remove Selected" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button
+                        Margin="0,0,10,0"
+                        Command="{x:Bind ViewModel.InstallSelectedCommand}"
+                        IsEnabled="{x:Bind ViewModel.ButtonsEnabled, Mode=OneWay}"
+                        AutomationProperties.Name="Install Selected">
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon Glyph="&#xE896;" FontFamily="Segoe Fluent Icons" FontSize="13" Margin="0,0,8,0" VerticalAlignment="Center" />
+                            <TextBlock Text="Install Selected" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button
+                        Margin="0,0,10,0"
+                        Command="{x:Bind ViewModel.RefreshStatusCommand}"
+                        IsEnabled="{x:Bind ViewModel.ButtonsEnabled, Mode=OneWay}"
+                        AutomationProperties.Name="Refresh">
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon Glyph="&#xE72C;" FontFamily="Segoe Fluent Icons" FontSize="13" Margin="0,0,8,0" VerticalAlignment="Center" />
+                            <TextBlock Text="Refresh" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+
+                <Border
+                    Grid.Column="1"
+                    Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="15,5,15,5"
+                    VerticalAlignment="Center">
+                    <TextBlock
+                        Text="{x:Bind ViewModel.SelectedCountText, Mode=OneWay}"
+                        FontSize="12"
+                        Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                </Border>
+            </Grid>
+
+            <TextBlock
+                Text="{x:Bind ViewModel.StatusText, Mode=OneWay}"
+                Visibility="{x:Bind ViewModel.StatusVisible, Mode=OneWay, Converter={StaticResource BoolToVis}}"
+                FontSize="12"
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                Margin="0,0,0,10" />
+
+            <AutoSuggestBox
+                Width="280"
+                Height="36"
+                FontSize="13"
+                HorizontalAlignment="Left"
+                Margin="0,0,0,4"
+                PlaceholderText="Search Windows apps…"
+                QueryIcon="Find"
+                Text="{x:Bind ViewModel.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                AutomationProperties.Name="Search Windows apps" />
+
+            <StackPanel Orientation="Horizontal" Margin="2,10,0,4">
+                <CheckBox Margin="0,0,18,0" IsChecked="{x:Bind ViewModel.SelectAll, Mode=TwoWay}" Content="Select all" />
+                <CheckBox Margin="0,0,18,0" IsChecked="{x:Bind ViewModel.SelectInstalled, Mode=TwoWay}" Content="Select installed" />
+                <CheckBox Margin="0,0,18,0" IsChecked="{x:Bind ViewModel.SelectNotInstalled, Mode=TwoWay}" Content="Select not installed" />
+            </StackPanel>
+
+            <ItemsControl
+                ItemsSource="{x:Bind ViewModel.Sections}"
+                ItemTemplate="{StaticResource WinAppSectionTemplate}" />
+
+        </StackPanel>
+    </ScrollViewer>
+</Page>

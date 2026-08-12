@@ -1,241 +1,75 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Version>1.1.6</Version>
+    <Version>2.0.0</Version>
+    <!-- vendor/ holds the vendored WinUI.Framework project (consumed via
+         ProjectReference). Exclude it from this project's default source/XAML
+         globs so its types are not ALSO compiled into AkariTool (CS0121). -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);vendor\**</DefaultItemExcludes>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-
-    <!-- WinUI 3, unpackaged (NON-MSIX). requireAdministrator + TrustedInstaller
-         impersonation are incompatible with the packaged sandbox. -->
-    <UseWinUI>true</UseWinUI>
-    <WindowsPackageType>None</WindowsPackageType>
-    <EnableMsixTooling>false</EnableMsixTooling>
-    <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
-
-    <Platforms>x64</Platforms>
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <SelfContained>false</SelfContained>
-
-    <AssemblyName>AkariTool</AssemblyName>
     <RootNamespace>AkariTool</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <ApplicationIcon>Resource\AkariLogo.ico</ApplicationIcon>
+    <ApplicationIcon>Assets\AkariLogo.ico</ApplicationIcon>
+    <LangVersion>latest</LangVersion>
+    <Platforms>x64</Platforms>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <UseWinUI>true</UseWinUI>
+    <WinUISDKReferences>false</WinUISDKReferences>
+    <EnableMsixTooling>true</EnableMsixTooling>
+    <!--
+      Unpackaged + self-contained: this machine has no installed Windows App SDK
+      runtime, so the runtime ships alongside the EXE (mirrors WinUI.Framework.App).
+    -->
+    <WindowsPackageType>None</WindowsPackageType>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <!-- ─── Reference-only folders kept out of every SDK glob ─────────────────── -->
-  <ItemGroup>
-    <Compile          Remove="webview2-app\**" />
-    <Page             Remove="webview2-app\**" />
-    <Resource         Remove="webview2-app\**" />
-    <EmbeddedResource Remove="webview2-app\**" />
-    <None             Remove="webview2-app\**" />
-    <Content          Remove="webview2-app\**" />
+  <!--
+    De-elevated asInvoker TEST build isolation (MIGRATION_LOG3 "Phase 6").
+    build-deelevated.ps1 passes /p:DeElevatedTest=true; that redirects ONLY the leaf
+    IntermediateOutputPath to obj\DeElevated\, so the asInvoker Win32-manifest
+    intermediate can never overwrite the normal (requireAdministrator) build's manifest
+    in obj\Debug\. BaseIntermediateOutputPath deliberately stays the default obj\ so
+    obj\** remains excluded from the default compile globs (redirecting the *base* path
+    un-excludes stale obj files and breaks the build). No-op unless DeElevatedTest=true —
+    normal builds are byte-for-byte unaffected.
+  -->
+  <PropertyGroup Condition="'$(DeElevatedTest)' == 'true'">
+    <IntermediateOutputPath>obj\DeElevated\</IntermediateOutputPath>
+  </PropertyGroup>
 
-    <Compile          Remove="design_handoff_akari_wpfui_redesign\**" />
-    <Page             Remove="design_handoff_akari_wpfui_redesign\**" />
-    <Resource         Remove="design_handoff_akari_wpfui_redesign\**" />
-    <EmbeddedResource Remove="design_handoff_akari_wpfui_redesign\**" />
-    <None             Remove="design_handoff_akari_wpfui_redesign\**" />
-    <Content          Remove="design_handoff_akari_wpfui_redesign\**" />
+  <ItemGroup>
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.3.1" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.10" />
+    <!-- WMI lookups (GPU list + RAM speed) on the Home system banner. -->
+    <PackageReference Include="System.Management" Version="10.0.0" />
+    <!-- Service start/stop + status queries (service presets, Competitive Mode,
+         ElevationService). net8 build used 8.0.1; bumped to the net10 line. -->
+    <PackageReference Include="System.ServiceProcess.ServiceController" Version="10.0.0" />
   </ItemGroup>
 
-  <!-- ─── PHASE 0 COMPILE CLOSURE ───────────────────────────────────────────────
-       Only the logic layer + the new WinUI shell compile this phase. Every
-       WPF/WPF-UI-coupled file (all tabs, the TweakHelpers UI factory, BaseTab,
-       theme dictionaries, splash, old nav shims) is excluded until its phase.
-       As tabs are migrated (Phase 1+), the corresponding Removes below are
-       narrowed / dropped and the tab's .xaml is re-added as a Page. -->
   <ItemGroup>
-    <!-- All tab code-behind + Tabs/Shared UI. Specific Shared logic files that
-         the Services layer needs are re-included just below. -->
-    <Compile Remove="Tabs\**\*.cs" />
-    <!-- Every XAML except App.xaml (ApplicationDefinition) and MainWindow.xaml. -->
-    <Page    Remove="Tabs\**\*.xaml" />
-    <Page    Remove="Themes\**\*.xaml" />
-    <Page    Remove="AkariFluentTheme.xaml" />
-    <!-- Root-level WPF-only files. -->
-    <Compile Remove="NavDummyPage.cs" />
-    <Compile Remove="AssemblyInfo.cs" />        <!-- WPF ThemeInfo attribute; N/A in WinUI -->
+    <!--
+      Phase A development wiring: consume the framework from its source repo so the
+      self-contained PriIndexName fix and any framework changes flow into the build.
+      Switch to a local NuGet feed (pack WinUI.Framework) before releasing.
+    -->
+    <ProjectReference Include="vendor\WinUI.Framework\WinUI.Framework.csproj" />
   </ItemGroup>
 
-  <!-- Logic-only Tabs/Shared files the Services layer depends on this phase:
-         DefenderService  -> TweakHelpers.{Save,Has,Clear}State, PostInstallService
-         SystemUtilities  -> ExplorerRestart -->
   <ItemGroup>
-    <Compile Include="Tabs\Shared\TweakHelpers.State.cs" />
-    <Compile Include="Tabs\Shared\PostInstallService.cs" />
-    <Compile Include="Tabs\Shared\ExplorerRestart.cs" />
-    <!-- AutounattendService builds an autounattend.xml from the Software tab's
-         AppDefinition model (logic-only DTO) and the bloat/Edge/OneDrive removal
-         script generators (logic-only). -->
-    <Compile Include="Tabs\Software\AppModels.cs" />
-    <Compile Include="Tabs\Software\Removal\**\*.cs" />
-    <!-- AkariPaths + winget/app-list helpers (logic-only). -->
-    <Compile Include="Tabs\Software\SoftwareAppService.cs" />
+    <Content Include="Assets\AkariLogo.png" />
+    <Content Include="Assets\AkariLogoLight.png" />
+    <Content Include="Assets\AkariLogo.ico" />
   </ItemGroup>
 
-  <!-- ─── PHASE 1: shell factory core + pilot tab ───────────────────────────────
-       BaseTab + the TweakHelpers factory spine (token accessors, apply, section
-       state) reimplemented against WinUI, plus the AboutTab pilot. The heavy
-       row/section/bulk/quick-action partials (TweakHelpers.Controls/TweakRow/
-       BulkActions/QuickActions) stay excluded until their tab batch — they need
-       the sync→async ContentDialog rework. See MIGRATION_LOG. -->
-  <ItemGroup>
-    <Compile Include="Tabs\Shared\BaseTab.cs" />
-    <Compile Include="Tabs\Shared\TweakHelpers.cs" />
-    <Compile Include="Tabs\Shared\TweakHelpers.Apply.cs" />
-    <Compile Include="Tabs\Shared\TweakHelpers.Sections.cs" />
-    <Compile Include="Tabs\Shared\TweakDefinition.cs" />
-    <Compile Include="Tabs\Shared\DriftBaseline.cs" />
-    <Compile Include="Tabs\Shared\DriftBanner.cs" />   <!-- shell drift banner (startup + Verify re-scan) -->
-    <Compile Include="Tabs\About\AboutTab.xaml.cs" />
-    <Page    Include="Tabs\About\AboutTab.xaml" />
-  </ItemGroup>
-
-  <!-- ─── TAB BATCH 1: full tweak factory + Notifications + Sound ─────────────
-       The row/section/bulk/quick-action factory partials, ported to WinUI with
-       async ContentDialog confirmations (AkariDialogs), plus their logic deps
-       (TweakRegistry, RestorePointHelper, SystemStateReader family). -->
-  <ItemGroup>
-    <Compile Include="Tabs\Shared\AkariDialogs.cs" />
-    <Compile Include="Tabs\Shared\TweakHelpers.Controls.cs" />
-    <Compile Include="Tabs\Shared\TweakHelpers.TweakRow.cs" />
-    <Compile Include="Tabs\Shared\TweakHelpers.BulkActions.cs" />
-    <Compile Include="Tabs\Shared\TweakHelpers.QuickActions.cs" />
-    <Compile Include="Tabs\Shared\TweakRegistry.cs" />
-    <Compile Include="Tabs\Shared\RestorePointHelper.cs" />
-    <Compile Include="Tabs\Shared\SystemStateReader.cs" />
-    <Compile Include="Tabs\Shared\SystemStateReader.Customize.cs" />
-    <Compile Include="Tabs\Shared\SystemStateReader.Desktop.cs" />
-    <Compile Include="Tabs\Shared\SystemStateReader.GamingOs.cs" />
-    <Compile Include="Tabs\Shared\SystemStateReader.PowerDropdowns.cs" />
-    <Compile Include="Tabs\Shared\SystemStateReader.ServicePreset.cs" />
-    <Compile Include="Tabs\Shared\SystemStateReader.TaskbarExplorer.cs" />
-    <Compile Include="Tabs\Notifications\Notificationstab.xaml.cs" />
-    <Page    Include="Tabs\Notifications\NotificationsTab.xaml" />
-    <Compile Include="Tabs\Sound\SoundTab.xaml.cs" />
-    <Page    Include="Tabs\Sound\SoundTab.xaml" />
-  </ItemGroup>
-
-  <!-- ─── TAB BATCH 2: Update + Debloat ─────────────────────────────────────── -->
-  <ItemGroup>
-    <Compile Include="Tabs\Update\UpdateTab.xaml.cs" />
-    <Page    Include="Tabs\Update\UpdateTab.xaml" />
-    <Compile Include="Tabs\Debloat\DebloatTab.xaml.cs" />
-    <Page    Include="Tabs\Debloat\DebloatTab.xaml" />
-  </ItemGroup>
-
-  <!-- ─── TAB BATCH 3: Privacy + Gaming ──────────────────────────────────────
-       NOTE: Tabs\Gaming\Catalog\GamingTweaks.Security.cs carries the LIVE
-       Defender disable toggle (gaming-disable-defender -> DefenderService.SetAsync).
-       Its only migration change was deleting 3 vestigial unused `using System.Windows*`
-       lines (diff: 0 additions, 3 deletions); all Defender logic is byte-identical.
-       It cannot be excluded — GamingTab.Build() calls GamingTweaks.Security(Log). -->
-  <ItemGroup>
-    <Compile Include="Tabs\Privacy\PrivacyTab.xaml.cs" />
-    <Page    Include="Tabs\Privacy\PrivacyTab.xaml" />
-    <Compile Include="Tabs\Privacy\Catalog\**\*.cs" />
-    <Compile Include="Tabs\Gaming\GamingTab.xaml.cs" />
-    <Compile Include="Tabs\Gaming\GamingTab.ScheduledTasks.cs" />
-    <Compile Include="Tabs\Gaming\GamingTab.SystemRestore.cs" />
-    <Compile Include="Tabs\Gaming\GamingTab.SystemServices.cs" />
-    <Page    Include="Tabs\Gaming\GamingTab.xaml" />
-    <Compile Include="Tabs\Gaming\Catalog\**\*.cs" />
-  </ItemGroup>
-
-  <!-- ─── TAB BATCH 4: Customize + Power ─────────────────────────────────────
-       Power's powercfg / scheme-drift logic is logic-layer: carried over
-       byte-identical (only framework usings + control construction changed). -->
-  <ItemGroup>
-    <Compile Include="Tabs\Customize\**\*.cs" />
-    <Page    Include="Tabs\Customize\CustomizeTab.xaml" />
-    <Compile Include="Tabs\Power\**\*.cs" />
-    <Page    Include="Tabs\Power\PowerTab.xaml" />
-  </ItemGroup>
-
-  <!-- ─── TAB BATCH 5: Home + Tools + AppUpdate ──────────────────────────────
-       AppUpdate's GitHub Releases / download / installer-launch logic is
-       logic-layer and carried over byte-identical. The STARTUP update-check
-       trigger (MainWindow Loaded → UpdateService.CheckAsync) is deliberately
-       NOT wired — it belongs to the deferred startup-orchestration sub-phase. -->
-  <ItemGroup>
-    <Compile Include="Tabs\Home\HomeTab.xaml.cs" />
-    <Page    Include="Tabs\Home\HomeTab.xaml" />
-    <Compile Include="Tabs\Tools\ToolsTab.xaml.cs" />
-    <Page    Include="Tabs\Tools\ToolsTab.xaml" />
-    <Compile Include="Tabs\AppUpdate\AppUpdateTab.xaml.cs" />
-    <Page    Include="Tabs\AppUpdate\AppUpdateTab.xaml" />
-  </ItemGroup>
-
-  <!-- ─── TAB BATCH 6: AkariOS + Advanced Tools ──────────────────────────────
-       NOTE: Tabs\OSTweaks\** is deliberately NOT migrated and stays excluded by
-       the blanket Tabs\**\*.cs Remove above. OSTweaksTab is dead code (never
-       instantiated); its last live tweak (os-set-utc) was relocated to
-       CustomizeTab.Desktop.Regional.cs. The folder ALSO contains the superseded
-       Defender implementation (OSTweaksTab.Defender.cs / .Security.cs), which
-       CLAUDE.md forbids deleting without explicit sign-off — so the files are
-       left on disk, unreferenced and uncompiled, for deletion in the cleanup
-       pass. See MIGRATION_LOG "OSTweaks disposition". -->
-  <ItemGroup>
-    <Compile Include="Tabs\AkariOS\**\*.cs" />
-    <Page    Include="Tabs\AkariOS\AkariOSTab.xaml" />
-    <Compile Include="Tabs\AdvanceTools\**\*.cs" />
-    <Page    Include="Tabs\AdvanceTools\AdvancedToolsTab.xaml" />
-    <!-- Logic-only Shared deps these tabs need (unchanged from WPF), plus the new
-         WinUI file/folder picker helper that replaces Microsoft.Win32 dialogs. -->
-    <Compile Include="Tabs\Shared\FilePickers.cs" />
-    <Compile Include="Tabs\Shared\ServicesPreset.cs" />
-    <Compile Include="Tabs\Shared\ServicesPreset.Stock.cs" />
-    <Compile Include="Tabs\Shared\ServicesPreset.AkariOs.cs" />
-    <Compile Include="Tabs\Shared\PlaybookTweaks.cs" />
-    <Compile Include="Tabs\Shared\PlaybookTweaks.Autologgers.cs" />
-    <Compile Include="Tabs\Shared\PlaybookTweaks.EnvFsutil.cs" />
-    <Compile Include="Tabs\Shared\PlaybookTweaks.Ifeo.cs" />
-    <Compile Include="Tabs\Shared\PlaybookTweaks.MiscCommands.cs" />
-    <Compile Include="Tabs\Shared\PlaybookTweaks.Registry.cs" />
-    <Compile Include="Tabs\Shared\PlaybookTweaks.ScheduledTasks.cs" />
-    <Compile Include="Tabs\Shared\BcdBackup.cs" />
-    <Compile Include="Tabs\Shared\DriftScanner.cs" />
-  </ItemGroup>
-
-  <!-- ─── TAB BATCH 7: Software (destructive removal flow) ────────────────────
-       Removal/**, SoftwareAppService.cs and AppModels.cs are NOT listed here —
-       they have been in the compile set since Phase 0 (as AutounattendService
-       dependencies) and remain byte-identical to the WPF baseline. Only the
-       selection/trigger UI is migrated. -->
-  <ItemGroup>
-    <!-- WinUI has no UniformGrid; this is the API-compatible replacement panel. -->
-    <Compile Include="Tabs\Shared\UniformGrid.cs" />
-    <Compile Include="Tabs\Software\SoftwareTab.xaml.cs" />
-    <Compile Include="Tabs\Software\SoftwareTab.Cards.cs" />
-    <Compile Include="Tabs\Software\SoftwareTab.ExternalApps.cs" />
-    <Compile Include="Tabs\Software\SoftwareTab.InstallQueue.cs" />
-    <Compile Include="Tabs\Software\SoftwareTab.UiHelpers.cs" />
-    <Compile Include="Tabs\Software\SoftwareTab.WindowsApps.cs" />
-    <Compile Include="Tabs\Software\AppIconService.cs" />
-    <Compile Include="Tabs\Software\Catalog\**\*.cs" />
-    <Page    Include="Tabs\Software\SoftwareTab.xaml" />
-  </ItemGroup>
-
-  <!-- ─── TAB BATCH 8: Backup & Restore ─────────────────────────────────────
-       TweakRegistry.cs (all export/import serialization) and RestorePointHelper.cs
-       are NOT listed here — they have been compiling unchanged since Tab Batch 1. -->
-  <ItemGroup>
-    <Compile Include="Tabs\Backup\BackupTab.xaml.cs" />
-    <Compile Include="Tabs\Backup\ImportReviewDialog.cs" />
-    <Page    Include="Tabs\Backup\BackupTab.xaml" />
-  </ItemGroup>
-
-  <!-- ─── TAB BATCH 9: Verify (final tab) ───────────────────────── -->
-  <ItemGroup>
-    <Compile Include="Tabs\Verify\VerifyTab.xaml.cs" />
-    <Page    Include="Tabs\Verify\VerifyTab.xaml" />
-  </ItemGroup>
-
-  <!-- ─── Embedded payloads (logic layer; unchanged) ────────────────────────── -->
+  <!-- Embedded payloads the ported LOGIC loads at runtime via GetManifestResourceStream
+       (ToolService scripts, DefenderService cab+ps1, NvidiaProfileService .nip). Resource
+       names + folder layout match the net8 build so the lookups resolve identically. -->
   <ItemGroup>
     <EmbeddedResource Include="Scripts\*.ps1" />
     <EmbeddedResource Include="Scripts\Network\*.bat" />
@@ -243,20 +77,4 @@
     <EmbeddedResource Include="Defender\DisableDefender.ps1" />
     <EmbeddedResource Include="Nvidia\Settings.nip" Condition="Exists('Nvidia\Settings.nip')" />
   </ItemGroup>
-
-  <!-- ─── Fonts / icons / images as ms-appx Content ─────────────────────────── -->
-  <ItemGroup>
-    <Content Include="Fonts\*.ttf" />
-    <Content Include="Resource\AkariLogo.ico" />
-    <Content Include="Resource\AkariLogo.png" />
-    <Content Include="Resource\AkariLogoLight.png" />
-    <Content Include="Resource\NavIcons\*.png" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260710003" />
-    <PackageReference Include="System.Management" Version="8.0.0" />
-    <PackageReference Include="System.ServiceProcess.ServiceController" Version="8.0.1" />
-  </ItemGroup>
-
 </Project>

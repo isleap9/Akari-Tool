@@ -19,6 +19,14 @@ namespace AkariTool.Tabs
         public const string FormatName = "akari-tool-settings";
         public const int FormatVersion = 1;
 
+        /// <summary>
+        /// Raised after an import applies tweaks, so the rendering layer can refresh
+        /// aggregate UI (the net8 build's per-section "pending" pills). MVVM PORT: this
+        /// replaces a direct TweakHelpers.RefreshAllSectionPills() call, keeping this
+        /// logic type free of any view dependency. Null while headless.
+        /// </summary>
+        public static event Action? SectionsNeedRefresh;
+
         private static readonly List<(TweakDefinition Def, Action Refresh)> _entries = new();
 
         /// <summary>Called by TweakHelpers.AddTweakRow for every rendered tweak.</summary>
@@ -42,6 +50,23 @@ namespace AkariTool.Tabs
         {
             if (_entries.Count > start) _tabRanges.Add((tag, label, start, _entries.Count));
         }
+
+        /// <summary>One tab's claimed [Start, End) slice of the entries list.</summary>
+        public readonly record struct TabRange(string Tag, string Label, int Start, int End)
+        {
+            public int Count => End - Start;
+        }
+
+        /// <summary>
+        /// A read-only snapshot of every claimed tab range, in Build() order.
+        /// Diagnostics only (the startup warm-up guard) — Mark/ClaimRange are the
+        /// only writers and their semantics are unchanged. Note ClaimRange never
+        /// records an empty range, so a tab that registered zero rows is ABSENT
+        /// here rather than present-and-empty — the guard cross-checks tags to
+        /// catch that case.
+        /// </summary>
+        public static IReadOnlyList<TabRange> TabRanges =>
+            _tabRanges.Select(r => new TabRange(r.Tag, r.Label, r.Start, r.End)).ToList();
 
         public readonly record struct SearchHit(string Id, string Name, string Description, string TabTag, string TabLabel);
 
@@ -309,8 +334,12 @@ namespace AkariTool.Tabs
             }
             finally { DriftBaseline.EndBatch(); }
 
-            // Update every section's pending pill to reflect imported state
-            TweakHelpers.RefreshAllSectionPills();
+            // Update every section's pending pill to reflect imported state.
+            // MVVM PORT SEAM: the net8 build called TweakHelpers.RefreshAllSectionPills()
+            // directly — a rendering call inside the import (logic) path. Replaced with a
+            // hook so the logic layer stays view-free; the rendering layer subscribes to
+            // it when it is rebuilt. No subscriber = no-op (correct while headless).
+            SectionsNeedRefresh?.Invoke();
 
             return new ImportResult(applied, alreadySet, unknown, failed);
         }

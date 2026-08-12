@@ -1,0 +1,385 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+    THE TWEAK RENDERING LAYER (MVVM replacement for the net8 TweakHelpers factory).
+
+    One render path for every tweak tab: a section card template, two row templates
+    (toggle / dropdown) chosen by TweakRowTemplateSelector, and four badge templates
+    chosen by TweakBadgeTemplateSelector. A tab supplies only data — so a change
+    made here propagates to every tab, which is exactly the leverage the imperative
+    factory had.
+
+    COLOURS: stock Fluent {ThemeResource} brushes. The Akari crimson token
+    dictionary (PillAccentBg / StarGold / WinBlueIcon / Hairline …) has NOT been
+    ported into this build yet — see MIGRATION_LOG. Everything here is a
+    one-dictionary swap away once it is.
+-->
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="using:WinUI.Framework.Converters"
+    xmlns:selectors="using:AkariTool.Views.Selectors">
+
+    <converters:BooleanToVisibilityConverter x:Key="BoolToVis" />
+
+    <!-- The ⊞ "Windows default" mark keeps the Windows-brand blue in BOTH themes —
+         it is NOT the Akari accent, so it must NOT follow the crimson accent tokens. -->
+    <SolidColorBrush x:Key="AkariWindowsLogoBrush" Color="#FF0078D4" />
+
+    <!-- Chromeless host for quick-set / bulk / header buttons: the content (glyph
+         or pill) is the only visible chrome. Hover keeps the native WinUI subtle
+         fill rather than net8's fully-nulled hover — a deliberate native-first
+         deviation, flagged in MIGRATION_LOG. -->
+    <Style x:Key="AkariChromelessButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="UseSystemFocusVisuals" Value="True" />
+    </Style>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         BADGE PILLS  (one template per kind so colours stay live {ThemeResource})
+         ══════════════════════════════════════════════════════════════════════ -->
+
+    <DataTemplate x:Key="BadgeRecommendedTemplate">
+        <Border
+            Background="{ThemeResource AccentFillColorSelectedTextBackgroundBrush}"
+            BorderBrush="{ThemeResource AccentFillColorDefaultBrush}"
+            BorderThickness="1"
+            CornerRadius="8"
+            Padding="10,2"
+            Margin="0,0,6,0"
+            Opacity="{Binding PillOpacity}"
+            ToolTipService.ToolTip="{Binding Tooltip}">
+            <TextBlock
+                Text="{Binding Label}"
+                FontSize="10"
+                FontWeight="SemiBold"
+                Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                VerticalAlignment="Center" />
+        </Border>
+    </DataTemplate>
+
+    <DataTemplate x:Key="BadgeDefaultTemplate">
+        <Border
+            Background="Transparent"
+            BorderBrush="{ThemeResource TextFillColorSecondaryBrush}"
+            BorderThickness="1"
+            CornerRadius="8"
+            Padding="10,2"
+            Margin="0,0,6,0"
+            Opacity="{Binding PillOpacity}"
+            ToolTipService.ToolTip="{Binding Tooltip}">
+            <TextBlock
+                Text="{Binding Label}"
+                FontSize="10"
+                FontWeight="SemiBold"
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                VerticalAlignment="Center" />
+        </Border>
+    </DataTemplate>
+
+    <DataTemplate x:Key="BadgeCustomTemplate">
+        <Border
+            Background="Transparent"
+            BorderBrush="{ThemeResource TextFillColorTertiaryBrush}"
+            BorderThickness="1"
+            CornerRadius="8"
+            Padding="10,2"
+            Margin="0,0,6,0"
+            Opacity="{Binding PillOpacity}"
+            ToolTipService.ToolTip="{Binding Tooltip}">
+            <TextBlock
+                Text="{Binding Label}"
+                FontSize="10"
+                FontWeight="SemiBold"
+                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                VerticalAlignment="Center" />
+        </Border>
+    </DataTemplate>
+
+    <DataTemplate x:Key="BadgePreferenceTemplate">
+        <Border
+            Background="Transparent"
+            BorderBrush="{ThemeResource TextFillColorDisabledBrush}"
+            BorderThickness="1"
+            CornerRadius="8"
+            Padding="10,2"
+            Margin="0,0,6,0"
+            Opacity="{Binding PillOpacity}"
+            ToolTipService.ToolTip="{Binding Tooltip}">
+            <TextBlock
+                Text="{Binding Label}"
+                FontSize="10"
+                FontWeight="SemiBold"
+                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                VerticalAlignment="Center" />
+        </Border>
+    </DataTemplate>
+
+    <selectors:TweakBadgeTemplateSelector
+        x:Key="BadgeSelector"
+        RecommendedTemplate="{StaticResource BadgeRecommendedTemplate}"
+        DefaultTemplate="{StaticResource BadgeDefaultTemplate}"
+        CustomTemplate="{StaticResource BadgeCustomTemplate}"
+        PreferenceTemplate="{StaticResource BadgePreferenceTemplate}" />
+
+    <ItemsPanelTemplate x:Key="HorizontalItemsPanel">
+        <StackPanel Orientation="Horizontal" />
+    </ItemsPanelTemplate>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         TWEAK ROWS
+         ══════════════════════════════════════════════════════════════════════ -->
+
+    <DataTemplate x:Key="TweakToggleRowTemplate">
+        <Border
+            BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+            BorderThickness="0,1,0,0"
+            Visibility="{Binding IsVisible, Converter={StaticResource BoolToVis}}">
+            <Grid Margin="0,13,0,13">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                    <TextBlock
+                        Text="{Binding Name}"
+                        FontSize="13.5"
+                        FontWeight="SemiBold"
+                        Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                        TextWrapping="Wrap" />
+                    <TextBlock
+                        Text="{Binding Description}"
+                        FontSize="12"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Margin="0,2,0,0"
+                        TextWrapping="Wrap" />
+                    <ItemsControl
+                        ItemsSource="{Binding Badges}"
+                        ItemsPanel="{StaticResource HorizontalItemsPanel}"
+                        ItemTemplateSelector="{StaticResource BadgeSelector}"
+                        Margin="0,5,0,0"
+                        Visibility="{Binding HasBadges, Converter={StaticResource BoolToVis}}" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- ★ apply recommended -->
+                    <Button
+                        Style="{StaticResource AkariChromelessButtonStyle}"
+                        Width="28" Height="28"
+                        Command="{Binding ApplyRecommendedCommand}"
+                        ToolTipService.ToolTip="{Binding RecommendedTooltip}"
+                        AutomationProperties.Name="{Binding RecommendedTooltip}"
+                        Visibility="{Binding HasRecommendedQuickSet, Converter={StaticResource BoolToVis}}">
+                        <FontIcon
+                            FontFamily="Segoe Fluent Icons"
+                            Glyph="&#xE735;"
+                            FontSize="15"
+                            Foreground="{ThemeResource SystemFillColorCautionBrush}" />
+                    </Button>
+                    <!-- ⊞ apply Windows default (2x2 logo mark) -->
+                    <Button
+                        Style="{StaticResource AkariChromelessButtonStyle}"
+                        Width="28" Height="28"
+                        Command="{Binding ApplyDefaultCommand}"
+                        ToolTipService.ToolTip="{Binding DefaultTooltip}"
+                        AutomationProperties.Name="{Binding DefaultTooltip}"
+                        Visibility="{Binding HasDefaultQuickSet, Converter={StaticResource BoolToVis}}">
+                        <Grid Width="13" Height="13">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="6" />
+                                <ColumnDefinition Width="1" />
+                                <ColumnDefinition Width="6" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="6" />
+                                <RowDefinition Height="1" />
+                                <RowDefinition Height="6" />
+                            </Grid.RowDefinitions>
+                            <Rectangle Grid.Row="0" Grid.Column="0" Fill="{StaticResource AkariWindowsLogoBrush}" />
+                            <Rectangle Grid.Row="0" Grid.Column="2" Fill="{StaticResource AkariWindowsLogoBrush}" />
+                            <Rectangle Grid.Row="2" Grid.Column="0" Fill="{StaticResource AkariWindowsLogoBrush}" />
+                            <Rectangle Grid.Row="2" Grid.Column="2" Fill="{StaticResource AkariWindowsLogoBrush}" />
+                        </Grid>
+                    </Button>
+
+                    <ToggleSwitch
+                        IsOn="{Binding IsOn, Mode=TwoWay}"
+                        OnContent=""
+                        OffContent=""
+                        MinWidth="0"
+                        Margin="12,0,0,0"
+                        VerticalAlignment="Center"
+                        AutomationProperties.Name="{Binding Name}" />
+                </StackPanel>
+            </Grid>
+        </Border>
+    </DataTemplate>
+
+    <DataTemplate x:Key="TweakDropdownRowTemplate">
+        <Border
+            BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+            BorderThickness="0,1,0,0"
+            Visibility="{Binding IsVisible, Converter={StaticResource BoolToVis}}">
+            <Grid Margin="0,13,0,13">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                    <TextBlock
+                        Text="{Binding Name}"
+                        FontSize="13.5"
+                        FontWeight="SemiBold"
+                        Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                        TextWrapping="Wrap" />
+                    <TextBlock
+                        Text="{Binding Description}"
+                        FontSize="12"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Margin="0,2,0,0"
+                        TextWrapping="Wrap" />
+                    <ItemsControl
+                        ItemsSource="{Binding Badges}"
+                        ItemsPanel="{StaticResource HorizontalItemsPanel}"
+                        ItemTemplateSelector="{StaticResource BadgeSelector}"
+                        Margin="0,5,0,0"
+                        Visibility="{Binding HasBadges, Converter={StaticResource BoolToVis}}" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button
+                        Style="{StaticResource AkariChromelessButtonStyle}"
+                        Width="28" Height="28"
+                        Command="{Binding ApplyRecommendedCommand}"
+                        ToolTipService.ToolTip="{Binding RecommendedTooltip}"
+                        AutomationProperties.Name="{Binding RecommendedTooltip}"
+                        Visibility="{Binding HasRecommendedQuickSet, Converter={StaticResource BoolToVis}}">
+                        <FontIcon
+                            FontFamily="Segoe Fluent Icons"
+                            Glyph="&#xE735;"
+                            FontSize="15"
+                            Foreground="{ThemeResource SystemFillColorCautionBrush}" />
+                    </Button>
+                    <Button
+                        Style="{StaticResource AkariChromelessButtonStyle}"
+                        Width="28" Height="28"
+                        Command="{Binding ApplyDefaultCommand}"
+                        ToolTipService.ToolTip="{Binding DefaultTooltip}"
+                        AutomationProperties.Name="{Binding DefaultTooltip}"
+                        Visibility="{Binding HasDefaultQuickSet, Converter={StaticResource BoolToVis}}">
+                        <Grid Width="13" Height="13">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="6" />
+                                <ColumnDefinition Width="1" />
+                                <ColumnDefinition Width="6" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="6" />
+                                <RowDefinition Height="1" />
+                                <RowDefinition Height="6" />
+                            </Grid.RowDefinitions>
+                            <Rectangle Grid.Row="0" Grid.Column="0" Fill="{StaticResource AkariWindowsLogoBrush}" />
+                            <Rectangle Grid.Row="0" Grid.Column="2" Fill="{StaticResource AkariWindowsLogoBrush}" />
+                            <Rectangle Grid.Row="2" Grid.Column="0" Fill="{StaticResource AkariWindowsLogoBrush}" />
+                            <Rectangle Grid.Row="2" Grid.Column="2" Fill="{StaticResource AkariWindowsLogoBrush}" />
+                        </Grid>
+                    </Button>
+
+                    <!-- SelectedIndex = -1 is a REAL state: the machine's value matches
+                         no listed option. Leave it unselected; the Custom badge lights. -->
+                    <ComboBox
+                        ItemsSource="{Binding Options}"
+                        SelectedIndex="{Binding SelectedIndex, Mode=TwoWay}"
+                        MinWidth="210"
+                        Margin="12,0,0,0"
+                        VerticalAlignment="Center"
+                        AutomationProperties.Name="{Binding Name}" />
+                </StackPanel>
+            </Grid>
+        </Border>
+    </DataTemplate>
+
+    <selectors:TweakRowTemplateSelector
+        x:Key="TweakRowSelector"
+        ToggleTemplate="{StaticResource TweakToggleRowTemplate}"
+        DropdownTemplate="{StaticResource TweakDropdownRowTemplate}" />
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         SECTION CARD  (header + bulk bar + rows)
+         ══════════════════════════════════════════════════════════════════════ -->
+
+    <DataTemplate x:Key="TweakSectionTemplate">
+        <Border
+            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            CornerRadius="8"
+            Margin="0,0,0,16"
+            Visibility="{Binding IsVisible, Converter={StaticResource BoolToVis}}">
+            <StackPanel Margin="18,14,18,14">
+
+                <!-- Flat header: title (left) + bulk actions (right). No collapse. -->
+                <Grid Margin="0,0,0,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock
+                        Grid.Column="0"
+                        Text="{Binding Title}"
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                        VerticalAlignment="Center" />
+
+                    <!-- Bulk bar: pending text + ★ Recommended + Defaults. Shown only
+                         when the section has recommended targets (HasBulkBar). -->
+                    <StackPanel
+                        Grid.Column="1"
+                        Orientation="Horizontal"
+                        Spacing="8"
+                        VerticalAlignment="Center"
+                        Visibility="{Binding HasBulkBar, Converter={StaticResource BoolToVis}}">
+
+                        <TextBlock
+                            Text="{Binding PendingText}"
+                            FontSize="11"
+                            VerticalAlignment="Center"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Opacity="{Binding PendingOpacity}"
+                            ToolTipService.ToolTip="{Binding PendingTooltip}" />
+
+                        <Button
+                            Style="{StaticResource AccentButtonStyle}"
+                            Command="{Binding ApplyRecommendedCommand}"
+                            ToolTipService.ToolTip="Apply the recommended value to every setting in this section"
+                            AutomationProperties.Name="Apply recommended values to this section">
+                            <StackPanel Orientation="Horizontal">
+                                <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE735;"
+                                          FontSize="12" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                <TextBlock Text="Recommended" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button
+                            Command="{Binding ApplyDefaultsCommand}"
+                            Content="Defaults"
+                            ToolTipService.ToolTip="Reset every setting in this section to its Windows default"
+                            AutomationProperties.Name="Reset this section to Windows defaults" />
+                    </StackPanel>
+                </Grid>
+
+                <!-- Body: always visible (collapse removed). -->
+                <ItemsControl
+                    ItemsSource="{Binding Items}"
+                    ItemTemplateSelector="{StaticResource TweakRowSelector}" />
+            </StackPanel>
+        </Border>
+    </DataTemplate>
+
+</ResourceDictionary>
