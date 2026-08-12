@@ -32,6 +32,7 @@ namespace AkariTool.Tabs
 
         // ── Commonly referenced paths (derived from LocalRoot) ────────────────
         public static string MinSudoPath => Path.Combine(LocalRoot, @"Tweaks\MinSudo.exe");
+        public static string NSudoPath => Path.Combine(LocalRoot, @"Tweaks\NSudo.exe");
         public static string PowerRunPath => Path.Combine(LocalRoot, @"Tweaks\PowerRun.exe");
         public static string NoDefenderPath => Path.Combine(LocalRoot, @"Defender\NoDefender.cab");
 
@@ -118,7 +119,7 @@ namespace AkariTool.Tabs
             "Resync/resync.bat",
             "Services/AkariOS-Default-services.reg",
             "Services/Windows-Default-services.reg",
-            "Services/win11_stock_services.reg",
+            "Services/AkariOS-Daily-services.reg",
             "Services/exes enable.bat",
             "Services/exes.bat",
             "Services/minimal-services.reg",
@@ -219,6 +220,7 @@ namespace AkariTool.Tabs
         // ── Public API ────────────────────────────────────────────────────────
 
         public static bool MinSudoPresent => File.Exists(MinSudoPath);
+        public static bool NSudoPresent => File.Exists(NSudoPath);
         public static bool PowerRunPresent => File.Exists(PowerRunPath);
         public static bool NoDefenderPresent => File.Exists(NoDefenderPath);
 

@@ -71,6 +71,7 @@ public sealed partial class AkariOSPage : Page
     private void Build()
     {
         BuildPostInstallBanner(RootPanel);                                     // PORTED (Phase 11)
+        BuildPlaybookServicesSection(RootPanel);                               // AME Playbook service-list picker (AkariOS-volume gated) — reuses the native ServicesPreset pipeline
         BuildPresetsCard(RootPanel);                                           // PORTED (Phase 15: Service Preset + Playbook + BCD grouped under the shared warning banner)
         BuildShaderCacheCard(RootPanel);                                       // PORTED (Phase 16)
         RootPanel.Children.Add(BuildUtilityCard("Competitive Mode", BuildCompetitiveContent)); // PORTED (Phase 21, sub-part A: picker; B–D stubbed)
@@ -211,6 +212,202 @@ public sealed partial class AkariOSPage : Page
     //  ⚠ The banner's 2nd TextBlock carries the 2nd Defender-protection string
     //  ("Defender and boot-critical services are never touched") — ported verbatim.
     // ══════════════════════════════════════════════════════════════════════
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  AKARIOS PLAYBOOK SERVICES  (real feature — AkariOS-volume gated)
+    //
+    //  Lets a user ON AN ACTUAL AkariOS-built machine pick one of the AME Playbook's
+    //  own service-list .reg files (C:\PostInstall\Services\*.reg) and apply it through
+    //  Akari Tool's EXISTING native service pipeline (ServicesPreset.ApplyPlaybookFileAsync
+    //  → the same Apply + ApplyLockedServicesAsync + StampPreset the built-in presets use).
+    //  No MinSudo, no regedit.exe.
+    //
+    //  GATING (mandatory, runs first): ServicesPreset.IsAkariOsVolume() — the C: volume
+    //  label must be exactly "AkariOS". This is STRONGER than "PostInstall exists": a stock
+    //  Windows user who downloaded PostInstall via the app's own button must NOT get this.
+    //  Three states, each rendered disabled-with-a-reason (never hidden), each with distinct
+    //  copy so they are never confused:
+    //    • not AkariOS            → "Only available on AkariOS-built systems."
+    //    • AkariOS, no .reg files → "No service lists found in C:\PostInstall\Services."
+    //    • AkariOS, files present → dropdown populated; Apply enabled once a list is picked.
+    //  The "not AkariOS" state is deliberately NOT the PostInstall-missing banner/download
+    //  pattern — that is a different condition.
+    //
+    //  ⚠ Independent of the Service Preset section below it — this neither touches nor
+    //  depends on Apply Gaming / Daily / Restore Stock. Status is reported on THIS section's
+    //  own line (see the label note in the report); the shared "Current: …" preset label is
+    //  intentionally left untouched.
+    //
+    //  Placed between the PostInstall banner and the presets card (whose first element is the
+    //  shared "166 service startup types" warning). Mirrors BuildServicePresetSection's shape:
+    //  an info column (title + description + status line) beside a right-aligned control column,
+    //  wrapped in a standalone card like the page's other cards, with a trailing hairline divider.
+    // ══════════════════════════════════════════════════════════════════════
+
+    // Per-user setting: the RAW filename (e.g. "AkariOS-Daily-services.reg") of the last
+    // dropdown choice. Stored raw — never the display name — so it survives a label rename.
+    private const string PlaybookServicesSettingKey = "AkariOSPlaybookServicesFile";
+
+    private void BuildPlaybookServicesSection(StackPanel panel)
+    {
+        var card = new Border
+        {
+            Background      = Res("CardBackgroundFillColorDefaultBrush"),
+            BorderBrush     = Res("CardStrokeColorDefaultBrush"),
+            BorderThickness = new Thickness(1),
+            CornerRadius    = new CornerRadius(8),
+            Margin          = new Thickness(0, 0, 0, 16),
+        };
+        var inner = new StackPanel();
+        card.Child = inner;
+
+        var section = new Grid { Margin = new Thickness(20, 18, 20, 18) };
+        section.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        section.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var info = new StackPanel();
+        Grid.SetColumn(info, 0);
+        info.Children.Add(new TextBlock { Text = "AkariOS Playbook Services", FontSize = 14, FontWeight = FontWeights.SemiBold, Foreground = Res("TextFillColorPrimaryBrush") });
+        info.Children.Add(new TextBlock
+        {
+            Text = "Apply a service-startup list shipped by the AkariOS AME Playbook " +
+                   "(C:\\PostInstall\\Services). Machine-wide changes to service startup types — restart required.",
+            FontSize = 12, Foreground = Res("TextFillColorSecondaryBrush"), Margin = new Thickness(0, 2, 0, 0), TextWrapping = TextWrapping.Wrap
+        });
+
+        // This section's own status/reason line (italic, like the Service Preset "Current:"
+        // label). Carries the gated-off reason OR the post-apply result — this section reports
+        // its own state and does NOT feed the shared preset-detection label.
+        var status = new TextBlock
+        {
+            FontSize = 12,
+            Foreground = Res("TextFillColorSecondaryBrush"),
+            Margin = new Thickness(0, 4, 0, 0),
+            FontStyle = Windows.UI.Text.FontStyle.Italic,
+            TextWrapping = TextWrapping.Wrap,
+        };
+        info.Children.Add(status);
+
+        // ── Control column: dropdown + explicit Apply button ──────────────
+        var controls = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 0, 0) };
+        Grid.SetColumn(controls, 1);
+
+        var combo = new ComboBox
+        {
+            PlaceholderText          = "Select a service list",
+            FontSize                 = 13,
+            MinWidth                 = 200,
+            MinHeight                = 36,
+            VerticalContentAlignment = VerticalAlignment.Center,
+            Margin                   = new Thickness(0, 0, 6, 0),
+        };
+
+        // Explicit Apply — never on SelectionChanged (arrow-keying must not fire a
+        // machine-wide, restart-required write). Styled like the Service Preset buttons.
+        var applyBtn = new Button
+        {
+            Content = "Apply",
+            Style   = (Style)Application.Current.Resources["AccentButtonStyle"],
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+
+        controls.Children.Add(combo);
+        controls.Children.Add(applyBtn);
+
+        section.Children.Add(info);
+        section.Children.Add(controls);
+        inner.Children.Add(section);
+        inner.Children.Add(new Border { Background = Res("DividerStrokeColorDefaultBrush"), Height = 1 });
+        panel.Children.Add(card);
+
+        // ── Gate: volume label FIRST, then folder/file presence ───────────
+        if (!ServicesPreset.IsAkariOsVolume())
+        {
+            status.Text     = "Only available on AkariOS-built systems.";
+            combo.IsEnabled = false;
+            applyBtn.IsEnabled = false;
+            return;
+        }
+
+        var files = ServicesPreset.DiscoverPlaybookServiceFiles();
+        if (files.Count == 0)
+        {
+            status.Text     = $"No service lists found in {ServicesPreset.PlaybookServicesDir}.";
+            combo.IsEnabled = false;
+            applyBtn.IsEnabled = false;
+            return;
+        }
+
+        // Curated display names on top of dynamic discovery: known files get a friendly label
+        // (ServicesPreset.PlaybookDisplayName), unknown files still show under their raw name so
+        // a newly-shipped playbook file never silently vanishes. The display string is COSMETIC —
+        // shown[idx].Path is the real on-disk file that parses/applies, and shown[idx].File (the
+        // raw filename) is what persistence stores/compares.
+        var shown = files
+            .Select(p => (Path: p, File: Path.GetFileName(p)))
+            .ToList();
+
+        foreach (var s in shown)
+            combo.Items.Add(ServicesPreset.PlaybookDisplayName(Path.GetFileNameWithoutExtension(s.File)));
+
+        // Fix 1 — restore the last-chosen file. Match on the RAW filename, not an index: the
+        // discovered list can change as files are added/removed. Set BEFORE wiring the handler so
+        // the restore itself doesn't re-persist. Saved file gone → leave nothing selected.
+        var settings = ServiceLocator.GetService<ISettingsService>();
+        var savedFile = settings.Get(PlaybookServicesSettingKey, "");
+        if (!string.IsNullOrEmpty(savedFile))
+        {
+            int savedIdx = shown.FindIndex(s => string.Equals(s.File, savedFile, StringComparison.OrdinalIgnoreCase));
+            if (savedIdx >= 0) combo.SelectedIndex = savedIdx;
+        }
+
+        applyBtn.IsEnabled = combo.SelectedIndex >= 0;   // may already be pre-selected from settings
+
+        combo.SelectionChanged += (_, _) =>
+        {
+            applyBtn.IsEnabled = combo.SelectedIndex >= 0;
+            // Persist the RAW filename on every selection change (mirrors the old Companion —
+            // "remember what's picked", not "what was last applied").
+            if (combo.SelectedIndex >= 0 && combo.SelectedIndex < shown.Count)
+                settings.Set(PlaybookServicesSettingKey, shown[combo.SelectedIndex].File);
+        };
+
+        applyBtn.Click += async (_, _) =>
+        {
+            int idx = combo.SelectedIndex;
+            if (idx < 0 || idx >= shown.Count) return;
+
+            var path    = shown[idx].Path;                              // real file — never the display name
+            var name    = Path.GetFileNameWithoutExtension(path);
+            var display = ServicesPreset.PlaybookDisplayName(name);     // cosmetic label for the status line
+
+            combo.IsEnabled = false;
+            applyBtn.IsEnabled = false;
+            var prevContent = applyBtn.Content;
+            applyBtn.Content = "Applying\u2026";
+            status.Text = $"Applying {display}\u2026";
+            status.Foreground = Res("TextFillColorSecondaryBrush");
+
+            try
+            {
+                bool ok = await ServicesPreset.ApplyPlaybookFileAsync(path, Service!);
+                status.Text = ok
+                    ? $"Applied {display}. Restart to take full effect."
+                    : $"Apply failed for {display} — see log.";
+            }
+            catch (Exception ex)
+            {
+                status.Text = $"Apply failed: {ex.Message}";
+                Service?.Log($"[SERVICES] Playbook apply failed for {name}: {ex.Message}");
+            }
+            finally
+            {
+                applyBtn.Content = prevContent;
+                combo.IsEnabled = true;
+                applyBtn.IsEnabled = combo.SelectedIndex >= 0;
+            }
+        };
+    }
 
     private void BuildPresetsCard(StackPanel panel)
     {

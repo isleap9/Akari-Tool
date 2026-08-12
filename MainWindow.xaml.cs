@@ -1,4 +1,4 @@
-using Microsoft.UI.Xaml;
+﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
@@ -37,7 +37,18 @@ public sealed partial class MainWindow : Window
         ["Notifications"] = typeof(NotificationsPage),
         ["Update"] = typeof(UpdatePage),
         ["Privacy"] = typeof(PrivacyPage),
+        // "Customize" is a single flat rail item landing on the card hub. The 6
+        // category tags have NO rail item — they exist here only so the global-search
+        // fallback and Home cards can navigate the content Frame straight to a category
+        // page by tag. All 7 pages report the "Customize" tag from TagForPage, so the
+        // one Customize rail item stays highlighted throughout.
         ["Customize"] = typeof(CustomizePage),
+        ["Taskbar"] = typeof(TaskbarPage),
+        ["Explorer"] = typeof(ExplorerPage),
+        ["ContextMenu"] = typeof(ContextMenuPage),
+        ["Appearance"] = typeof(AppearancePage),
+        ["StartMenu"] = typeof(StartMenuPage),
+        ["Desktop"] = typeof(DesktopPage),
         ["Power"] = typeof(PowerPage),
         ["AppInstaller"] = typeof(ExternalAppsPage),
         ["Bloatware"] = typeof(WindowsAppsPage),
@@ -45,6 +56,7 @@ public sealed partial class MainWindow : Window
         ["Backup"] = typeof(BackupPage),
         ["Advanced"] = typeof(AdvancedToolsPage),
         ["Tools"] = typeof(ToolsPage),
+        ["Verify"] = typeof(VerifyPage),
         ["Settings"] = typeof(SettingsPage),
         ["AkariOS"] = typeof(AkariOSPage),
     };
@@ -57,6 +69,9 @@ public sealed partial class MainWindow : Window
     private readonly ISettingsService _settings;
     private readonly ToolService _tool;
     private readonly IFileService _files;
+
+    // Named (not a lambda) so OnClosed can unsubscribe the exact same delegate instance.
+    private readonly EventHandler<AppTheme> _themeChangedHandler;
 
     public MainWindow(
         INavigationService navigation,
@@ -76,6 +91,7 @@ public sealed partial class MainWindow : Window
         _settings = settings;
         _tool = tool;
         _files = files;
+        _themeChangedHandler = (_, _) => UpdateThemeVisuals();
 
         InitializeComponent();
 
@@ -113,6 +129,12 @@ public sealed partial class MainWindow : Window
         {
             _themes.ApplyTheme(AppTheme.Dark);
         }
+
+        // Keep the title-bar logo/glyph in sync with theme changes from ANY source —
+        // the title-bar toggle button, the Settings page theme picker, etc. Previously
+        // UpdateThemeVisuals() only ran from ThemeToggle_Click, so switching theme via
+        // Settings left the title bar logo showing the wrong (illegible) variant.
+        _themes.ThemeChanged += _themeChangedHandler;
 
         // Navigation shell.
         _navigation.Frame = ContentFrame;
@@ -189,7 +211,12 @@ public sealed partial class MainWindow : Window
 
         if (PageMap.TryGetValue(tag, out var pageType))
         {
-            if (ContentFrame.CurrentSourcePageType != pageType)
+            // Guard on the tag the CURRENT page belongs to, not on an exact page-type
+            // match: 6 category pages (Taskbar…Desktop) all report the "Customize" tag,
+            // so if we're already on one of them and "Customize" is (re)selected, we must
+            // NOT navigate to the hub — that would bounce a search landing back to the
+            // card grid. Only navigate when the current page belongs to a different tag.
+            if (TagForPage(ContentFrame.Content) != tag)
             {
                 _navigation.NavigateTo(pageType);
             }
@@ -216,31 +243,48 @@ public sealed partial class MainWindow : Window
     /// </summary>
     private void SyncSelectedItem()
     {
-        string? tag = ContentFrame.Content switch
-        {
-            HomePage => "Home",
-            GamingPage => "Gaming",
-            SoundPage => "Sound",
-            NotificationsPage => "Notifications",
-            UpdatePage => "Update",
-            PrivacyPage => "Privacy",
-            CustomizePage => "Customize",
-            PowerPage => "Power",
-            ExternalAppsPage => "AppInstaller",
-            WindowsAppsPage => "Bloatware",
-            DebloatPage => "Debloat",
-            BackupPage => "Backup",
-            AdvancedToolsPage => "Advanced",
-            ToolsPage => "Tools",
-            AkariOSPage => "AkariOS",
-            PlaceholderPage p => p.ViewModel.TabTag,
-            _ => null,
-        };
+        string? tag = TagForPage(ContentFrame.Content);
 
         if (tag is null) return;
         var item = AllNavItems().FirstOrDefault(i => (i.Tag as string) == tag);
         if (item is not null) Nav.SelectedItem = item;
     }
+
+    /// <summary>
+    /// The rail tag a given content page belongs to. Usually 1:1 with the page type,
+    /// but the 6 Customize category pages (Taskbar…Desktop) AND the CustomizePage hub
+    /// all map to the single "Customize" rail item — the same way Advanced Tools keeps
+    /// one rail item highlighted across its internal panel swaps. Shared by
+    /// <see cref="SyncSelectedItem"/> (which rail item to highlight) and
+    /// <see cref="Nav_SelectionChanged"/> (whether a nav is even needed).
+    /// </summary>
+    private static string? TagForPage(object? content) => content switch
+    {
+        HomePage => "Home",
+        GamingPage => "Gaming",
+        SoundPage => "Sound",
+        NotificationsPage => "Notifications",
+        UpdatePage => "Update",
+        PrivacyPage => "Privacy",
+        CustomizePage => "Customize",
+        TaskbarPage => "Customize",
+        ExplorerPage => "Customize",
+        ContextMenuPage => "Customize",
+        AppearancePage => "Customize",
+        StartMenuPage => "Customize",
+        DesktopPage => "Customize",
+        PowerPage => "Power",
+        ExternalAppsPage => "AppInstaller",
+        WindowsAppsPage => "Bloatware",
+        DebloatPage => "Debloat",
+        BackupPage => "Backup",
+        AdvancedToolsPage => "Advanced",
+        ToolsPage => "Tools",
+        VerifyPage => "Verify",
+        AkariOSPage => "AkariOS",
+        PlaceholderPage p => p.ViewModel.TabTag,
+        _ => null,
+    };
 
     /// <summary>
     /// Selects a rail item by tag, which triggers the normal Nav routing (real page or
@@ -250,7 +294,22 @@ public sealed partial class MainWindow : Window
     public void SelectRailTag(string tag)
     {
         var item = AllNavItems().FirstOrDefault(i => (i.Tag as string) == tag);
-        if (item is not null) Nav.SelectedItem = item;
+        if (item is not null)
+        {
+            Nav.SelectedItem = item;
+            return;
+        }
+
+        // No rail item carries this tag — this happens for the 6 Customize category
+        // tags (Taskbar…Desktop), which have no sidebar entry any more. Navigate the
+        // content Frame straight to the page instead. SyncSelectedItem then highlights
+        // the "Customize" rail item (TagForPage maps all 6 to "Customize"), and
+        // Nav_SelectionChanged's tag-based guard keeps us on the category page rather
+        // than bouncing back to the hub.
+        if (PageMap.TryGetValue(tag, out var pageType))
+        {
+            _navigation.NavigateTo(pageType);
+        }
     }
 
     // ── Global search (rail AutoSuggestBox → TweakRegistry.Search) ─────────────
@@ -304,8 +363,9 @@ public sealed partial class MainWindow : Window
 
     private void ThemeToggle_Click(object sender, RoutedEventArgs e)
     {
+        // UpdateThemeVisuals() runs via the ThemeChanged subscription set up in the
+        // constructor — no need to call it here too.
         _themes.ApplyTheme(_themes.CurrentTheme == AppTheme.Light ? AppTheme.Dark : AppTheme.Light);
-        UpdateThemeVisuals();
     }
 
     private void UpdateThemeVisuals()
@@ -313,12 +373,9 @@ public sealed partial class MainWindow : Window
         // Sun glyph while dark (tap → light); moon glyph while light (tap → dark).
         ThemeToggleIcon.Glyph = _themes.CurrentTheme == AppTheme.Light ? "\uE708" : "\uE706";
 
-        // The title logo is a bitmap; swap to the light variant when the app is
-        // light so it stays legible (native-only: no theme dictionary involved).
-        TitleLogo.Source = new BitmapImage(
-            new Uri(_themes.CurrentTheme == AppTheme.Light
-                ? "ms-appx:///Assets/AkariLogoLight.png"
-                : "ms-appx:///Assets/AkariLogo.png"));
+        // The title-bar logo is now a vector Path (see MainWindow.xaml) filled with
+        // ThemeResource brushes, so it repaints itself automatically whenever
+        // RootElement.RequestedTheme changes — no bitmap swap needed here any more.
     }
 
     // ── Log dock toggle ───────────────────────────────────────────────────
@@ -375,6 +432,7 @@ public sealed partial class MainWindow : Window
 
     private void OnClosed(object sender, WindowEventArgs args)
     {
+        _themes.ThemeChanged -= _themeChangedHandler;
         _settings.Set("WindowWidth", AppWindow.Size.Width);
         _settings.Set("WindowHeight", AppWindow.Size.Height);
         _log.Info("Akari Tool closed.");

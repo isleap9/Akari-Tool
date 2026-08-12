@@ -151,7 +151,17 @@ public partial class App : Application
         services.AddSingleton<NotificationsViewModel>();
         services.AddSingleton<UpdateViewModel>();
         services.AddSingleton<PrivacyViewModel>();
-        services.AddSingleton<CustomizeViewModel>();
+        // Customize is now a landing HUB (no tweaks of its own); its tweaks live on six
+        // category sub-pages, each a tweak-page VM. Registration order here = warm-up
+        // order = TweakRegistry range order, and matches the old CustomizeViewModel
+        // section order (Taskbar → Explorer → Context Menu → Appearance → Start Menu →
+        // Desktop) so the flat Backup export stays byte-identical.
+        services.AddSingleton<TaskbarViewModel>();
+        services.AddSingleton<ExplorerViewModel>();
+        services.AddSingleton<ContextMenuViewModel>();
+        services.AddSingleton<AppearanceViewModel>();
+        services.AddSingleton<StartMenuViewModel>();
+        services.AddSingleton<DesktopViewModel>();
         services.AddSingleton<PowerViewModel>();
 
         // ⚠ BESPOKE PAGE — deliberately NOT registered under TweakPageViewModel below.
@@ -163,6 +173,7 @@ public partial class App : Application
         services.AddSingleton<WindowsAppsViewModel>();
         services.AddSingleton<DebloatViewModel>();
         services.AddSingleton<AkariTool.ViewModels.Backup.BackupViewModel>();
+        services.AddSingleton<AkariTool.ViewModels.Verify.VerifyViewModel>();
         services.AddSingleton<AkariTool.ViewModels.AdvancedTools.AdvancedToolsViewModel>();
         services.AddSingleton<AkariTool.ViewModels.AkariOS.AkariOSViewModel>();
 
@@ -178,7 +189,12 @@ public partial class App : Application
         services.AddSingleton<TweakPageViewModel>(sp => sp.GetRequiredService<NotificationsViewModel>());
         services.AddSingleton<TweakPageViewModel>(sp => sp.GetRequiredService<UpdateViewModel>());
         services.AddSingleton<TweakPageViewModel>(sp => sp.GetRequiredService<PrivacyViewModel>());
-        services.AddSingleton<TweakPageViewModel>(sp => sp.GetRequiredService<CustomizeViewModel>());
+        services.AddSingleton<TweakPageViewModel>(sp => sp.GetRequiredService<TaskbarViewModel>());
+        services.AddSingleton<TweakPageViewModel>(sp => sp.GetRequiredService<ExplorerViewModel>());
+        services.AddSingleton<TweakPageViewModel>(sp => sp.GetRequiredService<ContextMenuViewModel>());
+        services.AddSingleton<TweakPageViewModel>(sp => sp.GetRequiredService<AppearanceViewModel>());
+        services.AddSingleton<TweakPageViewModel>(sp => sp.GetRequiredService<StartMenuViewModel>());
+        services.AddSingleton<TweakPageViewModel>(sp => sp.GetRequiredService<DesktopViewModel>());
         services.AddSingleton<TweakPageViewModel>(sp => sp.GetRequiredService<PowerViewModel>());
 
         var provider = services.BuildServiceProvider();

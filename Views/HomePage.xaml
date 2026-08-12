@@ -31,7 +31,10 @@
                     TextWrapping="Wrap" />
             </StackPanel>
 
-            <!-- System information banner -->
+            <!-- System information banner (restored old layout: big edition/version
+                 header over a 3-column Processor/Graphics/Memory stat row, in place
+                 of the newly-ported label-value grid — same ViewModel bindings,
+                 different presentation only). -->
             <Border
                 Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                 BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
@@ -39,30 +42,76 @@
                 CornerRadius="8"
                 Padding="20,16,20,16"
                 Margin="0,0,0,16">
-                <Grid ColumnSpacing="24" RowSpacing="6">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
+                <StackPanel>
+                    <TextBlock
+                        Text="{x:Bind ViewModel.Edition, Mode=OneWay}"
+                        FontSize="20"
+                        FontWeight="SemiBold"
+                        Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
+                    <TextBlock
+                        Text="{x:Bind ViewModel.Version, Mode=OneWay}"
+                        FontSize="12.5"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Margin="0,2,0,0" />
 
-                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Edition" FontFamily="Consolas" FontSize="12.5" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{x:Bind ViewModel.Edition, Mode=OneWay}" FontFamily="Consolas" FontSize="12.5" Foreground="{ThemeResource TextFillColorPrimaryBrush}" TextWrapping="Wrap" />
-                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Version" FontFamily="Consolas" FontSize="12.5" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{x:Bind ViewModel.Version, Mode=OneWay}" FontFamily="Consolas" FontSize="12.5" Foreground="{ThemeResource TextFillColorPrimaryBrush}" TextWrapping="Wrap" />
-                    <TextBlock Grid.Row="2" Grid.Column="0" Text="CPU" FontFamily="Consolas" FontSize="12.5" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{x:Bind ViewModel.Cpu, Mode=OneWay}" FontFamily="Consolas" FontSize="12.5" Foreground="{ThemeResource TextFillColorPrimaryBrush}" TextWrapping="Wrap" />
-                    <TextBlock Grid.Row="3" Grid.Column="0" Text="GPU" FontFamily="Consolas" FontSize="12.5" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                    <TextBlock Grid.Row="3" Grid.Column="1" Text="{x:Bind ViewModel.Gpu, Mode=OneWay}" FontFamily="Consolas" FontSize="12.5" Foreground="{ThemeResource TextFillColorPrimaryBrush}" TextWrapping="Wrap" />
-                    <TextBlock Grid.Row="4" Grid.Column="0" Text="Memory" FontFamily="Consolas" FontSize="12.5" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                    <TextBlock Grid.Row="4" Grid.Column="1" Text="{x:Bind ViewModel.Memory, Mode=OneWay}" FontFamily="Consolas" FontSize="12.5" Foreground="{ThemeResource TextFillColorPrimaryBrush}" TextWrapping="Wrap" />
-                </Grid>
+                    <Border
+                        Height="1"
+                        Background="{ThemeResource DividerStrokeColorDefaultBrush}"
+                        Margin="0,14,0,14" />
+
+                    <Grid ColumnSpacing="24">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0">
+                            <TextBlock
+                                Text="PROCESSOR"
+                                FontFamily="Consolas"
+                                FontSize="10"
+                                FontWeight="Medium"
+                                Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                            <TextBlock
+                                Text="{x:Bind ViewModel.Cpu, Mode=OneWay}"
+                                FontSize="13"
+                                Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                TextWrapping="Wrap"
+                                Margin="0,3,0,0" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1">
+                            <TextBlock
+                                Text="GRAPHICS"
+                                FontFamily="Consolas"
+                                FontSize="10"
+                                FontWeight="Medium"
+                                Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                            <TextBlock
+                                Text="{x:Bind ViewModel.Gpu, Mode=OneWay}"
+                                FontSize="13"
+                                Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                TextWrapping="Wrap"
+                                Margin="0,3,0,0" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2">
+                            <TextBlock
+                                Text="MEMORY"
+                                FontFamily="Consolas"
+                                FontSize="10"
+                                FontWeight="Medium"
+                                Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                            <TextBlock
+                                Text="{x:Bind ViewModel.Memory, Mode=OneWay}"
+                                FontSize="13"
+                                Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                TextWrapping="Wrap"
+                                Margin="0,3,0,0" />
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
             </Border>
 
             <!-- Global search across every tab (TweakRegistry.Search) -->

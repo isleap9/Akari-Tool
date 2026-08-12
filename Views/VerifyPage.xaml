@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Verify (rail tag "Verify") — drift report page. MVVM port of net8 Tabs/Verify/VerifyTab.
+    Header + status card via x:Bind; the two variable-length result groups (Reverted /
+    Changed) render through data-bound ItemsControls + a row DataTemplate — the data-bound
+    bucket this codebase uses for runtime-variable lists (like TweakPageViewModel.Sections),
+    not the code-behind card building used for fixed destination grids.
+
+    NOT a tweak page — registers nothing with TweakRegistry, so [WARMUP] total is unchanged.
+-->
+<Page
+    x:Class="AkariTool.Views.VerifyPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:AkariTool.ViewModels.Verify"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    NavigationCacheMode="Required">
+
+    <Page.Resources>
+        <!-- One drifted tweak: name + detail line (+ optional across-update note) on the
+             left, Re-apply + Stop tracking on the right. Buttons bind to the row VM's own
+             commands, which delegate to the parent VerifyViewModel. -->
+        <DataTemplate x:Key="DriftRowTemplate" x:DataType="vm:DriftRowViewModel">
+            <Grid Margin="0,6,0,6">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,12,0">
+                    <TextBlock
+                        Text="{x:Bind Name}"
+                        FontSize="13.5"
+                        FontWeight="SemiBold"
+                        Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                        TextWrapping="Wrap" />
+                    <TextBlock
+                        FontSize="11.5"
+                        Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                        TextWrapping="Wrap"
+                        Margin="0,2,0,0">
+                        <Run Text="{x:Bind DetailText}" />
+                    </TextBlock>
+                    <TextBlock
+                        Text="· changed across an OS update"
+                        FontSize="11.5"
+                        Foreground="{ThemeResource SystemFillColorCautionBrush}"
+                        Visibility="{x:Bind AcrossOsUpdate, Converter={StaticResource BoolToVis}}"
+                        Margin="0,1,0,0" />
+                </StackPanel>
+
+                <Button
+                    Grid.Column="1"
+                    Content="Re-apply"
+                    VerticalAlignment="Center"
+                    Margin="8,0,0,0"
+                    Command="{x:Bind ReapplyCommand}" />
+
+                <Button
+                    Grid.Column="2"
+                    Content="Stop tracking"
+                    VerticalAlignment="Center"
+                    Margin="6,0,0,0"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                    ToolTipService.ToolTip="Stop tracking this tweak — it will no longer be checked for drift"
+                    Command="{x:Bind StopTrackingCommand}" />
+            </Grid>
+        </DataTemplate>
+    </Page.Resources>
+
+    <ScrollViewer>
+        <StackPanel Padding="32,24,32,24" MaxWidth="900" HorizontalAlignment="Center">
+
+            <!-- ── Header ──────────────────────────────────────────────────── -->
+            <StackPanel Margin="0,0,0,20">
+                <TextBlock
+                    Text="{x:Bind ViewModel.Title}"
+                    FontSize="26"
+                    FontWeight="SemiBold"
+                    Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
+                <TextBlock
+                    Text="{x:Bind ViewModel.Subtitle}"
+                    FontSize="13"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Margin="0,4,0,0"
+                    TextWrapping="Wrap" />
+            </StackPanel>
+
+            <!-- ── Status / Baseline card ──────────────────────────────────── -->
+            <Border
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="20,16,20,16"
+                Margin="0,0,0,14">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                        <FontIcon
+                            Glyph="&#xE9D9;"
+                            FontFamily="Segoe Fluent Icons"
+                            FontSize="16"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Margin="0,0,10,0"
+                            VerticalAlignment="Center" />
+                        <TextBlock
+                            Text="{x:Bind ViewModel.BaselineCardTitle}"
+                            FontSize="15"
+                            FontWeight="SemiBold"
+                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                            VerticalAlignment="Center" />
+                    </StackPanel>
+                    <TextBlock
+                        Text="{x:Bind ViewModel.BaselineCardDescription}"
+                        FontSize="13"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        TextWrapping="Wrap"
+                        Margin="0,0,0,12" />
+                    <TextBlock
+                        Text="{x:Bind ViewModel.StatusText, Mode=OneWay}"
+                        FontSize="12"
+                        FontFamily="Consolas"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        TextWrapping="Wrap"
+                        Margin="0,0,0,12" />
+                    <Button
+                        Content="Scan now"
+                        HorizontalAlignment="Left"
+                        Command="{x:Bind ViewModel.ScanCommand}" />
+                </StackPanel>
+            </Border>
+
+            <!-- ── Empty state: nothing tracked ────────────────────────────── -->
+            <Border
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="20,16,20,16"
+                Margin="0,0,0,14"
+                Visibility="{x:Bind ViewModel.NothingTracked, Mode=OneWay, Converter={StaticResource BoolToVis}}">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                        <FontIcon Glyph="&#xE9D9;" FontFamily="Segoe Fluent Icons" FontSize="16"
+                                  Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="0,0,10,0" VerticalAlignment="Center" />
+                        <TextBlock Text="Nothing tracked yet" FontSize="15" FontWeight="SemiBold"
+                                   Foreground="{ThemeResource TextFillColorPrimaryBrush}" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <TextBlock Text="Apply a tweak and it will be checked here from then on."
+                               FontSize="13" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+
+            <!-- ── Empty state: everything matches ─────────────────────────── -->
+            <Border
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="20,16,20,16"
+                Margin="0,0,0,14"
+                Visibility="{x:Bind ViewModel.EverythingMatches, Mode=OneWay, Converter={StaticResource BoolToVis}}">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                        <FontIcon Glyph="&#xE73E;" FontFamily="Segoe Fluent Icons" FontSize="16"
+                                  Foreground="{ThemeResource SystemFillColorSuccessBrush}" Margin="0,0,10,0" VerticalAlignment="Center" />
+                        <TextBlock Text="Everything matches" FontSize="15" FontWeight="SemiBold"
+                                   Foreground="{ThemeResource TextFillColorPrimaryBrush}" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <TextBlock Text="{x:Bind ViewModel.EverythingMatchesText, Mode=OneWay}"
+                               FontSize="13" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+
+            <!-- ── Reverted group ──────────────────────────────────────────── -->
+            <Border
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="20,16,20,16"
+                Margin="0,0,0,14"
+                Visibility="{x:Bind ViewModel.HasReverted, Mode=OneWay, Converter={StaticResource BoolToVis}}">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                        <FontIcon Glyph="&#xE7BA;" FontFamily="Segoe Fluent Icons" FontSize="16"
+                                  Foreground="{ThemeResource SystemFillColorCautionBrush}" Margin="0,0,10,0" VerticalAlignment="Center" />
+                        <TextBlock Text="{x:Bind ViewModel.RevertedHeader, Mode=OneWay}" FontSize="15" FontWeight="SemiBold"
+                                   Foreground="{ThemeResource TextFillColorPrimaryBrush}" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <TextBlock Text="{x:Bind ViewModel.RevertedGroupDescription}"
+                               FontSize="13" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" Margin="0,0,0,12" />
+                    <Button
+                        Content="Re-apply all"
+                        Style="{StaticResource AccentButtonStyle}"
+                        HorizontalAlignment="Left"
+                        Margin="0,0,0,6"
+                        Command="{x:Bind ViewModel.ReapplyAllRevertedCommand}" />
+                    <ItemsControl
+                        ItemsSource="{x:Bind ViewModel.Reverted, Mode=OneWay}"
+                        ItemTemplate="{StaticResource DriftRowTemplate}" />
+                </StackPanel>
+            </Border>
+
+            <!-- ── Changed group (no bulk re-apply — usually deliberate) ─────── -->
+            <Border
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="20,16,20,16"
+                Margin="0,0,0,14"
+                Visibility="{x:Bind ViewModel.HasChanged, Mode=OneWay, Converter={StaticResource BoolToVis}}">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                        <FontIcon Glyph="&#xE7BA;" FontFamily="Segoe Fluent Icons" FontSize="16"
+                                  Foreground="{ThemeResource SystemFillColorCautionBrush}" Margin="0,0,10,0" VerticalAlignment="Center" />
+                        <TextBlock Text="{x:Bind ViewModel.ChangedHeader, Mode=OneWay}" FontSize="15" FontWeight="SemiBold"
+                                   Foreground="{ThemeResource TextFillColorPrimaryBrush}" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <TextBlock Text="{x:Bind ViewModel.ChangedGroupDescription}"
+                               FontSize="13" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" Margin="0,0,0,6" />
+                    <ItemsControl
+                        ItemsSource="{x:Bind ViewModel.Changed, Mode=OneWay}"
+                        ItemTemplate="{StaticResource DriftRowTemplate}" />
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</Page>

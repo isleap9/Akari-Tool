@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="AkariTool.Views.StartMenuPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    NavigationCacheMode="Required">
+
+    <!-- NavigationCacheMode="Required": the page view model is a DI SINGLETON
+         (rows register once with TweakRegistry and there is no unregister), so the
+         Frame must reuse this page instance rather than rebuild it per navigation.
+         Layout is identical to GamingPage â every binding targets TweakPageViewModel
+         base members, so this is a pure copy+retitle. -->
+
+    <ScrollViewer>
+        <StackPanel Padding="32,24,32,24" MaxWidth="1100" HorizontalAlignment="Center">
+
+            <!-- ââ Page header: title + search + Quick actions ââââââââââââââââ -->
+            <Grid Margin="0,0,0,20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Margin="0,0,16,0">
+                    <HyperlinkButton
+                        Content="← Customize"
+                        Click="BackToCustomize_Click"
+                        Padding="0,0,0,2"
+                        Margin="0,0,0,4"
+                        FontSize="12"
+                        AutomationProperties.Name="Back to Customize" />
+                    <TextBlock
+                        Text="{x:Bind ViewModel.Title, Mode=OneWay}"
+                        FontSize="26"
+                        FontWeight="SemiBold"
+                        Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
+                    <TextBlock
+                        Text="{x:Bind ViewModel.Subtitle, Mode=OneWay}"
+                        FontSize="13"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Margin="0,4,0,0"
+                        TextWrapping="Wrap" />
+                </StackPanel>
+
+                <StackPanel
+                    Grid.Column="1"
+                    Orientation="Horizontal"
+                    Spacing="10"
+                    VerticalAlignment="Top">
+
+                    <AutoSuggestBox
+                        x:Name="SearchBox"
+                        Width="240"
+                        PlaceholderText="Find a settingâ¦"
+                        QueryIcon="Find"
+                        Text="{x:Bind ViewModel.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        AutomationProperties.Name="Find a setting on this page" />
+
+                    <Button
+                        x:Name="QuickActionsButton"
+                        Padding="12,7,10,7"
+                        CornerRadius="8"
+                        AutomationProperties.Name="Quick actions"
+                        ToolTipService.ToolTip="Bulk actions for every tweak on this page">
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon
+                                FontFamily="Segoe Fluent Icons"
+                                Glyph="&#xE945;"
+                                FontSize="12"
+                                Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                Margin="0,0,7,0"
+                                VerticalAlignment="Center" />
+                            <TextBlock
+                                Text="Quick actions"
+                                FontSize="12"
+                                FontWeight="SemiBold"
+                                VerticalAlignment="Center" />
+                            <FontIcon
+                                FontFamily="Segoe Fluent Icons"
+                                Glyph="&#xE70D;"
+                                FontSize="10"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Margin="7,1,0,0"
+                                VerticalAlignment="Center" />
+                        </StackPanel>
+
+                        <Button.Flyout>
+                            <Flyout x:Name="QuickActionsFlyout" Opening="QuickActionsFlyout_Opening">
+                                <StackPanel MinWidth="280">
+
+                                    <Button
+                                        Click="QuickActionItem_Click"
+                                        Command="{x:Bind ViewModel.ApplyAllRecommendedCommand}"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Padding="6,4"
+                                        HorizontalAlignment="Stretch"
+                                        HorizontalContentAlignment="Left">
+                                        <StackPanel Orientation="Horizontal">
+                                            <FontIcon
+                                                FontFamily="Segoe Fluent Icons"
+                                                Glyph="&#xE735;"
+                                                FontSize="14"
+                                                Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                                Margin="2,0,10,0"
+                                                VerticalAlignment="Center" />
+                                            <StackPanel Margin="0,4">
+                                                <TextBlock
+                                                    Text="Apply all recommended"
+                                                    FontSize="13"
+                                                    FontWeight="SemiBold" />
+                                                <TextBlock
+                                                    Text="{x:Bind ViewModel.RecommendedPendingSubtitle, Mode=OneWay}"
+                                                    FontSize="11"
+                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                    Margin="0,1,0,0" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Button>
+
+                                    <Button
+                                        Click="QuickActionItem_Click"
+                                        Command="{x:Bind ViewModel.RestoreDefaultsCommand}"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Padding="6,4"
+                                        HorizontalAlignment="Stretch"
+                                        HorizontalContentAlignment="Left">
+                                        <StackPanel Orientation="Horizontal">
+                                            <FontIcon
+                                                FontFamily="Segoe Fluent Icons"
+                                                Glyph="&#xE777;"
+                                                FontSize="14"
+                                                Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                                Margin="2,0,10,0"
+                                                VerticalAlignment="Center" />
+                                            <StackPanel Margin="0,4">
+                                                <TextBlock
+                                                    Text="Restore Windows defaults"
+                                                    FontSize="13"
+                                                    FontWeight="SemiBold" />
+                                                <TextBlock
+                                                    Text="{x:Bind ViewModel.DefaultPendingSubtitle, Mode=OneWay}"
+                                                    FontSize="11"
+                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                    Margin="0,1,0,0" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Button>
+
+                                    <Border
+                                        Height="1"
+                                        Background="{ThemeResource DividerStrokeColorDefaultBrush}"
+                                        Margin="4" />
+
+                                    <Button
+                                        Click="QuickActionItem_Click"
+                                        Command="{x:Bind ViewModel.CreateRestorePointCommand}"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Padding="6,4"
+                                        HorizontalAlignment="Stretch"
+                                        HorizontalContentAlignment="Left">
+                                        <StackPanel Orientation="Horizontal">
+                                            <FontIcon
+                                                FontFamily="Segoe Fluent Icons"
+                                                Glyph="&#xE7B8;"
+                                                FontSize="14"
+                                                Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                                Margin="2,0,10,0"
+                                                VerticalAlignment="Center" />
+                                            <StackPanel Margin="0,4">
+                                                <TextBlock
+                                                    Text="Create restore point"
+                                                    FontSize="13"
+                                                    FontWeight="SemiBold" />
+                                                <TextBlock
+                                                    Text="System snapshot before you change anything"
+                                                    FontSize="11"
+                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                    Margin="0,1,0,0" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+                            </Flyout>
+                        </Button.Flyout>
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <!-- ââ Sections âââââââââââââââââââââââââââââââââââââââââââââââââââ -->
+            <ItemsControl
+                ItemsSource="{x:Bind ViewModel.Sections, Mode=OneWay}"
+                ItemTemplate="{StaticResource TweakSectionTemplate}" />
+
+        </StackPanel>
+    </ScrollViewer>
+</Page>

@@ -27,12 +27,30 @@
             Height="48"
             Padding="14,0,8,0">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <Image
-                    x:Name="TitleLogo"
-                    Height="24"
+                <!-- Vector logo (traced from the source artwork): resolution-independent,
+                     so it's pixel-crisp at any size/DPI with no raster scaling involved.
+                     Fills are ThemeResource brushes, so light/dark switching is automatic —
+                     no code-behind bitmap swap needed any more.
+                     Height=15: the trimmed source art has ~0% padding now (unlike the old
+                     PNG, where the visible mark was only ~50% of a 24px box), so this needs
+                     to be sized much smaller than the old Image's Height to land on the same
+                     apparent size — measured against the original screenshots (~10px visible
+                     glyph) with a little headroom since it no longer needs padding to survive
+                     downscaling. -->
+                <Viewbox
+                    Height="15"
                     Stretch="Uniform"
                     VerticalAlignment="Center"
-                    Margin="0,0,9,0" />
+                    Margin="0,-10,7,0">
+                    <Canvas Width="634" Height="639">
+                        <Path
+                            Fill="{ThemeResource TextFillColorPrimaryBrush}"
+                            Data="M 402.933333333,90.2666666666 c -8.13333333333,16.8 -29.3333333333,59.7333333333 -47.0666666667,95.7333333333 c -35.3333333333,71.8666666666 -61.3333333333,124.533333333 -81.2,165.333333333 c -7.2,14.6666666667 -20.9333333333,42.8 -30.6666666667,62.6666666667 c -28,57.0666666667 -48.6666666667,99.3333333333 -62,126.666666667 c -6.8,13.8666666667 -29.8666666667,61.0666666667 -51.3333333333,104.666666667 c -21.4666666667,43.6 -46.4,94.5333333333 -55.4666666667,113.066666667 l -16.4,33.6 l 57.6,0 l 57.6,0 l 32.6666666667,-67.0666666666 c 17.8666666667,-36.8 74,-149.866666667 124.666666667,-251.2 l 92,-184.4 l 41.7333333333,83.0666666666 c 77.4666666666,154.266666667 83.0666666666,165.2 84.9333333333,164.4 c 0.933333333333,-0.266666666667 7.6,-5.06666666667 14.9333333333,-10.4 c 7.2,-5.46666666667 24.6666666667,-18.5333333333 38.6666666667,-29.0666666667 l 25.7333333333,-19.0666666667 l -64.1333333333,-127.466666667 c -108.533333333,-215.466666667 -145.6,-288.8 -146.533333333,-289.866666667 c -0.4,-0.533333333333 -7.46666666666,12.6666666667 -15.7333333333,29.3333333333 z" />
+                        <Path
+                            Fill="{ThemeResource AccentFillColorDefaultBrush}"
+                            Data="M 630.666666667,540.266666667 c -43.8666666667,33.7333333333 -118.933333333,92.1333333333 -146.533333333,113.733333333 c -15.8666666667,12.5333333333 -46.5333333333,36.5333333333 -68.1333333333,53.4666666667 c -79.2,61.8666666667 -102.533333333,80.1333333333 -105.866666667,83.3333333333 c -0.8,0.666666666667 23.8666666667,1.2 58.6666666667,1.2 l 60,0 l 18.5333333333,-14.2666666667 c 10.2666666667,-7.73333333333 44.1333333333,-33.3333333333 75.3333333333,-56.9333333333 c 31.2,-23.4666666667 62.9333333333,-47.4666666667 70.6666666666,-53.4666666667 c 7.73333333333,-5.86666666667 14.6666666667,-11.2 15.4666666667,-11.7333333333 c 1.46666666667,-0.8 14.8,24.1333333333 60.8,113.333333333 l 11.8666666667,23.0666666667 l 52.6666666667,0 c 29.0666666667,0 52.5333333333,-0.533333333333 52.2666666667,-1.06666666667 c -2.4,-5.86666666667 -131.733333333,-261.6 -133.6,-264.4 c -1.33333333333,-1.86666666667 -4.26666666667,-0.133333333333 -22.1333333333,13.7333333333 z" />
+                    </Canvas>
+                </Viewbox>
                 <Ellipse
                     x:Name="TitleDot"
                     Width="5"
@@ -144,18 +162,13 @@
                         <FontIcon Glyph="&#xE945;" />
                     </muxc:NavigationViewItem.Icon>
                 </muxc:NavigationViewItem>
+                <!-- Single flat entry (like Advanced Tools): no children, no chevron.
+                     Category selection happens in the content area — CustomizePage is a
+                     card hub that navigates the content Frame to the 6 category pages. -->
                 <muxc:NavigationViewItem Content="Customize" Tag="Customize">
                     <muxc:NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE790;" />
                     </muxc:NavigationViewItem.Icon>
-                    <muxc:NavigationViewItem.MenuItems>
-                        <muxc:NavigationViewItem Content="Taskbar" Tag="Taskbar" />
-                        <muxc:NavigationViewItem Content="Explorer" Tag="Explorer" />
-                        <muxc:NavigationViewItem Content="Context Menu" Tag="ContextMenu" />
-                        <muxc:NavigationViewItem Content="Appearance" Tag="Appearance" />
-                        <muxc:NavigationViewItem Content="Start Menu" Tag="StartMenu" />
-                        <muxc:NavigationViewItem Content="Desktop" Tag="Desktop" />
-                    </muxc:NavigationViewItem.MenuItems>
                 </muxc:NavigationViewItem>
                 <muxc:NavigationViewItem Content="Tools" Tag="Tools">
                     <muxc:NavigationViewItem.Icon>

@@ -27,6 +27,14 @@ namespace AkariTool.Tabs
         /// </summary>
         public static event Action? SectionsNeedRefresh;
 
+        /// <summary>
+        /// Raises <see cref="SectionsNeedRefresh"/> from outside an import — used by the
+        /// Verify page after a re-apply so every tab's section "pending" pills + quick-action
+        /// counts refresh (the MVVM seam net8 covered with TweakHelpers.RefreshAllSectionPills()).
+        /// Additive only; the event's existing import raise is unchanged.
+        /// </summary>
+        public static void NotifySectionsNeedRefresh() => SectionsNeedRefresh?.Invoke();
+
         private static readonly List<(TweakDefinition Def, Action Refresh)> _entries = new();
 
         /// <summary>Called by TweakHelpers.AddTweakRow for every rendered tweak.</summary>

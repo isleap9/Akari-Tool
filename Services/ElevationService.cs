@@ -37,6 +37,13 @@ namespace AkariTool.Services
         private const int TokenImpersonation    = 2;   // TOKEN_TYPE
 
         private const string SE_DEBUG_NAME       = "SeDebugPrivilege";
+        // SeBackup/SeRestore give the token DACL-bypass on registry keys via Windows'
+        // backup/restore semantics — the same privileges regedit.exe enables when it
+        // imports a .reg under sufficient rights. SYSTEM holds both but they are DISABLED
+        // by default; enabling them is what lets our native writes hit the handful of
+        // unusually-locked keys a normal SYSTEM access check (no bypass) can't clear.
+        private const string SE_BACKUP_NAME      = "SeBackupPrivilege";
+        private const string SE_RESTORE_NAME     = "SeRestorePrivilege";
         private const uint   SE_PRIVILEGE_ENABLED = 0x0002;
 
         private const uint SERVICE_QUERY_STATUS = 0x0004;
@@ -129,8 +136,15 @@ namespace AkariTool.Services
         /// token duplicated from winlogon.exe. All registry writes inside the action go
         /// through <see cref="Registry"/> and inherit SYSTEM rights.
         /// </summary>
+        /// <param name="enableBackupRestore">
+        /// When true, enables SeBackupPrivilege + SeRestorePrivilege on the impersonated
+        /// SYSTEM token before the action runs, giving registry writes DACL-bypass (the same
+        /// bypass regedit.exe uses on .reg import). OPT-IN — off by default so existing callers
+        /// (Defender disable, built-in preset locked-service writes) are untouched; only paths
+        /// that write a full uncurated key dump (the AkariOS playbook import) need it.
+        /// </param>
         /// <returns>true when the impersonation was established and the action ran to completion.</returns>
-        public static bool RunAsSystem(Action action, Action<string>? log = null)
+        public static bool RunAsSystem(Action action, Action<string>? log = null, bool enableBackupRestore = false)
         {
             try
             {
@@ -145,7 +159,7 @@ namespace AkariTool.Services
                     return false;
                 }
 
-                return RunAsProcessToken(winlogon[0].Id, action, "SYSTEM", log);
+                return RunAsProcessToken(winlogon[0].Id, action, "SYSTEM", log, enableBackupRestore);
             }
             catch (Exception ex)
             {
@@ -205,7 +219,8 @@ namespace AkariTool.Services
         /// released and <c>RevertToSelf</c> is called in a finally block — a leaked
         /// impersonation token would leave the whole thread running elevated.
         /// </summary>
-        private static bool RunAsProcessToken(int pid, Action action, string label, Action<string>? log)
+        private static bool RunAsProcessToken(int pid, Action action, string label, Action<string>? log,
+                                              bool enableBackupRestore = false)
         {
             IntPtr process = IntPtr.Zero, token = IntPtr.Zero, dup = IntPtr.Zero;
             bool impersonating = false;
@@ -241,6 +256,19 @@ namespace AkariTool.Services
                 }
                 impersonating = true;
 
+                // Enable SeBackup/SeRestore on the SAME token now attached to the thread
+                // (dup) — NOT the process token — so the action's registry writes get the
+                // DACL bypass. Logged rather than fatal: if enablement fails we still want
+                // the action to run and surface which specific writes then fail.
+                if (enableBackupRestore)
+                {
+                    bool b = EnablePrivilegeOnToken(dup, SE_BACKUP_NAME, log);
+                    bool r = EnablePrivilegeOnToken(dup, SE_RESTORE_NAME, log);
+                    log?.Invoke($"Elevation: DACL-bypass on {label} token — " +
+                                $"SeBackupPrivilege={(b ? "enabled" : "FAILED")}, " +
+                                $"SeRestorePrivilege={(r ? "enabled" : "FAILED")}.");
+                }
+
                 action();
                 return true;
             }
@@ -264,7 +292,8 @@ namespace AkariTool.Services
         /// <summary>
         /// Enables a named privilege on the current process token (SeDebugPrivilege is
         /// present-but-disabled by default for elevated processes, so it only needs to be
-        /// switched on, not granted).
+        /// switched on, not granted). Opens the process token then delegates the actual
+        /// LookupPrivilegeValue/AdjustTokenPrivileges work to <see cref="EnablePrivilegeOnToken"/>.
         /// </summary>
         private static bool EnablePrivilege(string privilege, Action<string>? log)
         {
@@ -277,35 +306,7 @@ namespace AkariTool.Services
                     return false;
                 }
 
-                if (!LookupPrivilegeValue(null, privilege, out var luid))
-                {
-                    log?.Invoke($"Elevation: LookupPrivilegeValue({privilege}) failed — {Win32Error()}");
-                    return false;
-                }
-
-                var tp = new TOKEN_PRIVILEGES
-                {
-                    PrivilegeCount = 1,
-                    Privilege = new LUID_AND_ATTRIBUTES { Luid = luid, Attributes = SE_PRIVILEGE_ENABLED }
-                };
-
-                // AdjustTokenPrivileges reports success even when the privilege was not
-                // held, so the last error has to be checked explicitly.
-                if (!AdjustTokenPrivileges(token, false, ref tp, (uint)Marshal.SizeOf<TOKEN_PRIVILEGES>(),
-                                           IntPtr.Zero, IntPtr.Zero))
-                {
-                    log?.Invoke($"Elevation: AdjustTokenPrivileges({privilege}) failed — {Win32Error()}");
-                    return false;
-                }
-
-                int err = Marshal.GetLastWin32Error();
-                if (err != 0) // ERROR_NOT_ALL_ASSIGNED (1300) lands here
-                {
-                    log?.Invoke($"Elevation: {privilege} not assigned — run as Administrator (error {err}).");
-                    return false;
-                }
-
-                return true;
+                return EnablePrivilegeOnToken(token, privilege, log);
             }
             catch (Exception ex)
             {
@@ -316,6 +317,47 @@ namespace AkariTool.Services
             {
                 if (token != IntPtr.Zero) CloseHandle(token);
             }
+        }
+
+        /// <summary>
+        /// Enables a named privilege on an ALREADY-OPEN token handle (which must carry
+        /// TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY). This is the shared core used by both
+        /// <see cref="EnablePrivilege"/> (process token) and the SeBackup/SeRestore
+        /// enablement inside <see cref="RunAsProcessToken"/> (the duplicated impersonation
+        /// token attached to the thread) — one mechanism, two token sources. The caller owns
+        /// the handle's lifetime; this method does not close it.
+        /// </summary>
+        private static bool EnablePrivilegeOnToken(IntPtr token, string privilege, Action<string>? log)
+        {
+            if (!LookupPrivilegeValue(null, privilege, out var luid))
+            {
+                log?.Invoke($"Elevation: LookupPrivilegeValue({privilege}) failed — {Win32Error()}");
+                return false;
+            }
+
+            var tp = new TOKEN_PRIVILEGES
+            {
+                PrivilegeCount = 1,
+                Privilege = new LUID_AND_ATTRIBUTES { Luid = luid, Attributes = SE_PRIVILEGE_ENABLED }
+            };
+
+            // AdjustTokenPrivileges reports success even when the privilege was not held,
+            // so the last error has to be checked explicitly.
+            if (!AdjustTokenPrivileges(token, false, ref tp, (uint)Marshal.SizeOf<TOKEN_PRIVILEGES>(),
+                                       IntPtr.Zero, IntPtr.Zero))
+            {
+                log?.Invoke($"Elevation: AdjustTokenPrivileges({privilege}) failed — {Win32Error()}");
+                return false;
+            }
+
+            int err = Marshal.GetLastWin32Error();
+            if (err != 0) // ERROR_NOT_ALL_ASSIGNED (1300) lands here
+            {
+                log?.Invoke($"Elevation: {privilege} not assigned (error {err}).");
+                return false;
+            }
+
+            return true;
         }
 
         /// <summary>

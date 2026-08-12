@@ -53,6 +53,21 @@ public class SettingsService : ISettingsService
 
         try
         {
+            // File-store values round-trip through System.Text.Json, so on a fresh launch
+            // they come back as JsonElement rather than the original CLR type. Convert them
+            // to T directly — without this, Convert.ChangeType below throws (JsonElement is
+            // not IConvertible) and every persisted setting silently reverts to its default
+            // after a restart.
+            if (value is JsonElement element)
+            {
+                if (target.IsEnum)
+                {
+                    return (T)Enum.Parse(target, element.GetString() ?? element.ToString());
+                }
+
+                return element.Deserialize<T>() ?? defaultValue;
+            }
+
             if (target.IsEnum)
             {
                 return (T)Enum.Parse(target, value.ToString()!);
