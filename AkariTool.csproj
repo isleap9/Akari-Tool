@@ -1,5 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <Version>2.0.0</Version>
+    <!-- vendor/ holds the vendored WinUI.Framework project (consumed via
+         ProjectReference). Exclude it from this project's default source/XAML
+         globs so its types are not ALSO compiled into AkariTool (CS0121). -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);vendor\**</DefaultItemExcludes>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>

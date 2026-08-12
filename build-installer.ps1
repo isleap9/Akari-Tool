@@ -12,7 +12,7 @@
 # MSIX dependency, so the target machine may have neither the .NET Desktop
 # Runtime nor the Windows App Runtime installed. The publish therefore bundles
 # BOTH:
-#   * SelfContained=true              -> the .NET 8 runtime ships in-app
+#   * SelfContained=true              -> the .NET 10 runtime ships in-app
 #   * WindowsAppSDKSelfContained=true -> the Windows App SDK runtime ships in-app
 # The installer then just xcopy-deploys the whole publish folder. No prerequisite
 # install, no Windows App Runtime bootstrapper on the target. (The csproj keeps
@@ -29,7 +29,7 @@
 
 $ErrorActionPreference = "Stop"
 $root = $PSScriptRoot
-$tfm  = "net8.0-windows10.0.19041.0"   # keep in sync with <TargetFramework>
+$tfm  = "net10.0-windows10.0.26100.0"   # keep in sync with <TargetFramework>
 $publishDir = Join-Path $root "bin\x64\Release\$tfm\win-x64\publish"
 $buildDir   = Join-Path $root "bin\x64\Release\$tfm\win-x64"
 
@@ -53,6 +53,12 @@ $msbuild = & $vswhere -latest -prerelease -products * `
     -find "MSBuild\**\Bin\MSBuild.exe" | Select-Object -First 1
 if (-not $msbuild) { Write-Error "MSBuild.exe not found via vswhere. Is the .NET desktop / WinUI workload installed?" }
 Write-Host "Using MSBuild: $msbuild" -ForegroundColor DarkGray
+
+# --- 2a. Restore (a clean clone has no obj\project.assets.json) --------------
+& $msbuild $csproj /t:Restore `
+    /p:Configuration=Release /p:Platform=x64 /p:RuntimeIdentifier=win-x64 `
+    /v:minimal /nologo
+if ($LASTEXITCODE -ne 0) { Write-Error "MSBuild restore failed." }
 
 # --- 3. Publish (VS MSBuild, self-contained .NET + Windows App SDK) ----------
 & $msbuild $csproj `
