@@ -43,7 +43,7 @@
 
     <DataTemplate x:Key="BadgeRecommendedTemplate">
         <Border
-            Background="{ThemeResource AccentFillColorSelectedTextBackgroundBrush}"
+            Background="Transparent"
             BorderBrush="{ThemeResource AccentFillColorDefaultBrush}"
             BorderThickness="1"
             CornerRadius="8"

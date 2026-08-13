@@ -62,7 +62,17 @@ public partial class App : Application
         // see every tab even if the user never navigates to it. Sequential (never
         // parallel) — see TweakRegistryWarmUp for the threading rationale. This is
         // also the seam the future staged-progress splash will hook into.
-        _ = Task.Run(() => TweakRegistryWarmUp.Run(Services, log));
+        var shell = MainWindow as MainWindow;
+        _ = Task.Run(() =>
+        {
+            TweakRegistryWarmUp.Run(Services, log);
+
+            // Drift check runs ONLY after warm-up: DriftScanner resolves each baseline
+            // entry against TweakRegistry, so scanning before every page's Build() has
+            // registered its rows would orphan (and silently miss) most tweaks. Marshal
+            // back to the UI thread — it flips the title-bar drift banner's IsOpen.
+            shell?.DispatcherQueue.TryEnqueue(() => shell.RunDriftCheck());
+        });
 
         if (competitiveExe is not null)
         {

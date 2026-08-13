@@ -186,7 +186,7 @@
                     ItemsSource="{x:Bind VisibleCards}"
                     ItemTemplate="{StaticResource WinAppCardTemplate}">
                     <ItemsRepeater.Layout>
-                        <UniformGridLayout MinItemWidth="340" MinItemHeight="104" ItemsStretch="Fill" />
+                        <UniformGridLayout MinItemWidth="340" MinItemHeight="150" ItemsStretch="Fill" />
                     </ItemsRepeater.Layout>
                 </ItemsRepeater>
             </StackPanel>

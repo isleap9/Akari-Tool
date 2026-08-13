@@ -190,7 +190,7 @@
                     <ItemsRepeater.Layout>
                         <UniformGridLayout
                             MinItemWidth="340"
-                            MinItemHeight="104"
+                            MinItemHeight="150"
                             ItemsStretch="Fill" />
                     </ItemsRepeater.Layout>
                 </ItemsRepeater>

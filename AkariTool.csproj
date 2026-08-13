@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Version>2.0.1</Version>
+    <Version>2.0.2</Version>
     <!-- vendor/ holds the vendored WinUI.Framework project (consumed via
          ProjectReference). Exclude it from this project's default source/XAML
          globs so its types are not ALSO compiled into AkariTool (CS0121). -->

@@ -205,15 +205,32 @@
             <!-- Page host + docked live log console. -->
             <Grid>
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <Frame x:Name="ContentFrame" Grid.Row="0" />
+                <!-- Drift notification: lives inside the content area (above the page
+                     Frame, right of the nav rail). Hidden until the post-warm-up drift
+                     scan finds tweaks Windows silently reverted to their factory
+                     defaults. "Review" jumps to the Verify page. -->
+                <muxc:InfoBar
+                    x:Name="DriftBanner"
+                    Grid.Row="0"
+                    IsOpen="False"
+                    Severity="Warning"
+                    Title="Settings reverted"
+                    Margin="12,12,12,0">
+                    <muxc:InfoBar.ActionButton>
+                        <Button Content="Review" Click="DriftBanner_Review_Click" />
+                    </muxc:InfoBar.ActionButton>
+                </muxc:InfoBar>
+
+                <Frame x:Name="ContentFrame" Grid.Row="1" />
 
                 <Border
                     x:Name="TxtLogPanel"
-                    Grid.Row="1"
+                    Grid.Row="2"
                     Visibility="Collapsed"
                     Background="{ThemeResource LayerFillColorDefaultBrush}"
                     BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"

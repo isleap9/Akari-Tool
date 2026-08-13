@@ -387,6 +387,44 @@ public sealed partial class MainWindow : Window
         LogToggleIcon.Glyph = show ? "\uE70D" : "\uE70E";   // ChevronDown (visible) / ChevronUp (hidden)
     }
 
+    // ── Drift notification banner ──────────────────────────────────────────
+    // Mirrors the old Akari Tool's title-bar drift alert: on startup, compare the
+    // baseline of what Akari applied against live system state, and if Windows has
+    // silently rolled any tweak back to its factory default, surface a banner just
+    // under the title bar. Only "reverted to Windows default" drift raises it — a
+    // "changed to some other value" is usually a deliberate user edit, not a rollback.
+
+    /// <summary>
+    /// Runs a drift scan and opens the banner if any tracked tweak has reverted to its
+    /// Windows default. Called by App AFTER the tweak-registry warm-up completes — a scan
+    /// before then can't resolve most baseline entries and would report no drift.
+    /// </summary>
+    public void RunDriftCheck()
+    {
+        try
+        {
+            var result = DriftScanner.Scan();
+            int reverted = result.RevertedCount;
+            if (reverted <= 0) return;
+
+            DriftBanner.Message = reverted == 1
+                ? "1 tweak has reverted to its Windows default — usually the signature of a Windows Update rollback."
+                : $"{reverted} tweaks have reverted to their Windows defaults — usually the signature of a Windows Update rollback.";
+            DriftBanner.IsOpen = true;
+        }
+        catch (Exception ex)
+        {
+            // Diagnostics only — a failed drift check must never break the shell.
+            _log.Error("Startup drift scan failed.", ex);
+        }
+    }
+
+    private void DriftBanner_Review_Click(object sender, RoutedEventArgs e)
+    {
+        DriftBanner.IsOpen = false;
+        SelectRailTag("Verify");   // Verify page re-scans on navigation and shows the details.
+    }
+
     private async void InfoDialog_Click(object sender, RoutedEventArgs e)
         => await _dialogs.ShowInfoAsync(
             "Akari Tool",
