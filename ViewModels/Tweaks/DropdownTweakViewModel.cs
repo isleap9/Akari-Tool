@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using AkariTool.Services;
 using AkariTool.Tabs;
+using AkariTool.Core.Tweaks;
 
 namespace AkariTool.ViewModels.Tweaks;
 

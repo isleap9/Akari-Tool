@@ -4,7 +4,7 @@ using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace AkariTool.Services
+namespace AkariTool.Core.Competitive
 {
     public sealed record SuspendedProcess(int Pid, string Name);
 

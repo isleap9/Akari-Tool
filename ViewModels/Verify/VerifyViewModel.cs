@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using AkariTool.Services;
 using AkariTool.Tabs;
 using WinUI.Framework.Services;
+using AkariTool.Core.Tweaks;
 
 namespace AkariTool.ViewModels.Verify;
 

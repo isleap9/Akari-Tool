@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Microsoft.Win32;
 using AkariTool.Services;
+using AkariTool.Core.Tweaks;
 
 namespace AkariTool.Tabs.Power
 {

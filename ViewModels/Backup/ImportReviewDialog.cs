@@ -1,8 +1,9 @@
-﻿using Microsoft.UI.Text;
+using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using AkariTool.Tabs;
+using AkariTool.Core.Tweaks;
 
 namespace AkariTool.ViewModels.Backup;
 

@@ -1,3 +1,5 @@
+using AkariTool.Core.Tweaks;
+
 namespace AkariTool.Tabs.Power
 {
     // MVVM PORT: extracted verbatim from net8 PowerTab.Battery.cs.

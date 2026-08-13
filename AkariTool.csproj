@@ -59,6 +59,7 @@
       Switch to a local NuGet feed (pack WinUI.Framework) before releasing.
     -->
     <ProjectReference Include="vendor\WinUI.Framework\WinUI.Framework.csproj" />
+    <ProjectReference Include="src\AkariTool.Core\AkariTool.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

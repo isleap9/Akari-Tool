@@ -1,4 +1,4 @@
-namespace AkariTool.Tabs
+namespace AkariTool.Core.Tweaks
 {
     /// <summary>
     /// Target resolution + mismatch predicates shared by every bulk surface

@@ -1,0 +1,49 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AkariTool", "AkariTool.csproj", "{C514611D-FAF3-4E61-9469-629CD3F35931}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AkariTool.Core", "src\AkariTool.Core\AkariTool.Core.csproj", "{510D67F4-23AB-4721-9984-167AB7F1480C}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AkariTool.Infrastructure", "src\AkariTool.Infrastructure\AkariTool.Infrastructure.csproj", "{EF2C04C9-2649-4CBD-8DDF-C9D1B6D3D14E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AkariTool.Core.Tests", "tests\AkariTool.Core.Tests\AkariTool.Core.Tests.csproj", "{50A5C729-E7C6-48D1-BF65-F600EF79D233}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AkariTool.Infrastructure.Tests", "tests\AkariTool.Infrastructure.Tests\AkariTool.Infrastructure.Tests.csproj", "{1A474F6C-6041-44E5-A102-C4A2ADC74CA3}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C514611D-FAF3-4E61-9469-629CD3F35931}.Debug|x64.ActiveCfg = Debug|x64
+		{C514611D-FAF3-4E61-9469-629CD3F35931}.Debug|x64.Build.0 = Debug|x64
+		{C514611D-FAF3-4E61-9469-629CD3F35931}.Release|x64.ActiveCfg = Release|x64
+		{C514611D-FAF3-4E61-9469-629CD3F35931}.Release|x64.Build.0 = Release|x64
+		{510D67F4-23AB-4721-9984-167AB7F1480C}.Debug|x64.ActiveCfg = Debug|AnyCPU
+		{510D67F4-23AB-4721-9984-167AB7F1480C}.Debug|x64.Build.0 = Debug|AnyCPU
+		{510D67F4-23AB-4721-9984-167AB7F1480C}.Release|x64.ActiveCfg = Release|AnyCPU
+		{510D67F4-23AB-4721-9984-167AB7F1480C}.Release|x64.Build.0 = Release|AnyCPU
+		{EF2C04C9-2649-4CBD-8DDF-C9D1B6D3D14E}.Debug|x64.ActiveCfg = Debug|AnyCPU
+		{EF2C04C9-2649-4CBD-8DDF-C9D1B6D3D14E}.Debug|x64.Build.0 = Debug|AnyCPU
+		{EF2C04C9-2649-4CBD-8DDF-C9D1B6D3D14E}.Release|x64.ActiveCfg = Release|AnyCPU
+		{EF2C04C9-2649-4CBD-8DDF-C9D1B6D3D14E}.Release|x64.Build.0 = Release|AnyCPU
+		{50A5C729-E7C6-48D1-BF65-F600EF79D233}.Debug|x64.ActiveCfg = Debug|AnyCPU
+		{50A5C729-E7C6-48D1-BF65-F600EF79D233}.Debug|x64.Build.0 = Debug|AnyCPU
+		{50A5C729-E7C6-48D1-BF65-F600EF79D233}.Release|x64.ActiveCfg = Release|AnyCPU
+		{50A5C729-E7C6-48D1-BF65-F600EF79D233}.Release|x64.Build.0 = Release|AnyCPU
+		{1A474F6C-6041-44E5-A102-C4A2ADC74CA3}.Debug|x64.ActiveCfg = Debug|AnyCPU
+		{1A474F6C-6041-44E5-A102-C4A2ADC74CA3}.Debug|x64.Build.0 = Debug|AnyCPU
+		{1A474F6C-6041-44E5-A102-C4A2ADC74CA3}.Release|x64.ActiveCfg = Release|AnyCPU
+		{1A474F6C-6041-44E5-A102-C4A2ADC74CA3}.Release|x64.Build.0 = Release|AnyCPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {3F8A2D1C-9B4E-4A6F-8C7D-1E2F3A4B5C6D}
+	EndGlobalSection
+EndGlobal

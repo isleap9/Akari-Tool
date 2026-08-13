@@ -1,4 +1,5 @@
 using AkariTool.Services;
+using AkariTool.Core.Tweaks;
 
 namespace AkariTool.Tabs.Gaming
 {

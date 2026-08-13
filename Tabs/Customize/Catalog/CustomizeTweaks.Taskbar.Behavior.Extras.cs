@@ -1,3 +1,5 @@
+using AkariTool.Core.Tweaks;
+
 namespace AkariTool.Tabs
 {
     // MVVM PORT: extracted verbatim from net8 CustomizeTab.Taskbar.Behavior.Extras.cs.

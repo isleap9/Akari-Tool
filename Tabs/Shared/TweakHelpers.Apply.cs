@@ -1,3 +1,5 @@
+using AkariTool.Core.Tweaks;
+
 namespace AkariTool.Tabs
 {
     public static partial class TweakHelpers

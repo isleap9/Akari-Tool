@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using AkariTool.Core.Competitive;
 
 namespace AkariTool.Services
 {

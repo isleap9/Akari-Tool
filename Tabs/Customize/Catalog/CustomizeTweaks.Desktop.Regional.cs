@@ -1,5 +1,6 @@
 using System.Linq;
 using Microsoft.Win32;
+using AkariTool.Core.Tweaks;
 
 namespace AkariTool.Tabs
 {

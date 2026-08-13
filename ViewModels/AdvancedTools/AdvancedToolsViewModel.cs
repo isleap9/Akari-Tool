@@ -1,5 +1,6 @@
 using AkariTool.Services;
 using AkariTool.Tabs;
+using AkariTool.Core.Tweaks;
 
 namespace AkariTool.ViewModels.AdvancedTools;
 

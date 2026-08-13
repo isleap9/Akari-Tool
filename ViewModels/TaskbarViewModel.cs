@@ -2,6 +2,7 @@ using System.Linq;
 using AkariTool.Services;
 using AkariTool.Tabs;
 using AkariTool.ViewModels.Tweaks;
+using AkariTool.Core.Tweaks;
 
 namespace AkariTool.ViewModels;
 

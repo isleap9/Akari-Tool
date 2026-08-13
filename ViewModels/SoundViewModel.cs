@@ -2,6 +2,7 @@ using AkariTool.Services;
 using AkariTool.Tabs;
 using AkariTool.Tabs.Sound;
 using AkariTool.ViewModels.Tweaks;
+using AkariTool.Core.Tweaks;
 
 namespace AkariTool.ViewModels;
 

@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using AkariTool.Services;
+using AkariTool.Core.Tweaks;
 
 namespace AkariTool.ViewModels.Software;
 

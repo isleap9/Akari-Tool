@@ -11,6 +11,7 @@ using AkariTool.Services;
 using AkariTool.Tabs;
 using WinUI.Framework.IoC;
 using WinUI.Framework.Services;
+using AkariTool.Core.Competitive;
 
 namespace AkariTool.ViewModels.AkariOS;
 

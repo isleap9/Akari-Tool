@@ -2,6 +2,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using AkariTool.Tabs;
 using AkariTool.ViewModels.Tweaks;
+using AkariTool.Core.Tweaks;
 
 namespace AkariTool.Views.Selectors;
 

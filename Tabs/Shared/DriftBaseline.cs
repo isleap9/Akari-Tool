@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.Win32;
 using AkariTool.Services;
+using AkariTool.Core.Tweaks;
 namespace AkariTool.Tabs
 {
     /// <summary>

@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml.Media;
 using AkariTool.Services;
 using AkariTool.Tabs;
 using AkariTool.Tabs.Power;
+using AkariTool.Core.Tweaks;
 
 namespace AkariTool.ViewModels;
 

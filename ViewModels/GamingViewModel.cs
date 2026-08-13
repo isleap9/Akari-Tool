@@ -2,6 +2,7 @@ using AkariTool.Services;
 using AkariTool.Tabs;
 using AkariTool.Tabs.Gaming;
 using AkariTool.ViewModels.Tweaks;
+using AkariTool.Core.Tweaks;
 
 namespace AkariTool.ViewModels;
 

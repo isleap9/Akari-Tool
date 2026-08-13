@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using AkariTool.Core.Tweaks;
 
 namespace AkariTool.Tabs
 {

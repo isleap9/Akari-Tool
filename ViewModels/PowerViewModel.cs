@@ -3,6 +3,7 @@ using AkariTool.Services;
 using AkariTool.Tabs;
 using AkariTool.Tabs.Power;
 using AkariTool.ViewModels.Tweaks;
+using AkariTool.Core.Tweaks;
 
 namespace AkariTool.ViewModels;
 

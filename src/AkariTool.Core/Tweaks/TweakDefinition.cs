@@ -1,4 +1,4 @@
-namespace AkariTool.Tabs
+namespace AkariTool.Core.Tweaks
 {
     /// <summary>
     /// Badge kinds — mirrors Winhance's SettingBadgeKind.

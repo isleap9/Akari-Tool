@@ -1,4 +1,4 @@
-namespace AkariTool.Services
+namespace AkariTool.Core.Competitive
 {
     /// <summary>
     /// Priority classes offered for the game process. Realtime is deliberately

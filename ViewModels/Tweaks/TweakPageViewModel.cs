@@ -7,6 +7,7 @@ using AkariTool.Services;
 using AkariTool.Tabs;
 using WinUI.Framework.Mvvm;
 using WinUI.Framework.Services;
+using AkariTool.Core.Tweaks;
 
 namespace AkariTool.ViewModels.Tweaks;
 

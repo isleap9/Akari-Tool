@@ -1,4 +1,5 @@
 using Microsoft.Win32;
+using AkariTool.Core.Tweaks;
 
 namespace AkariTool.Tabs.Update
 {

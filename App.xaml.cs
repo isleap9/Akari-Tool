@@ -8,6 +8,7 @@ using AkariTool.ViewModels.Software;
 using AkariTool.ViewModels.Tweaks;
 using WinUI.Framework.IoC;
 using WinUI.Framework.Services;
+using AkariTool.Core.Tweaks;
 
 namespace AkariTool;
 
