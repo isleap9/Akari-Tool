@@ -12,6 +12,7 @@ using Microsoft.Win32;
 using AkariTool.Services;
 using AkariTool.Tabs;
 using AkariTool.ViewModels.AkariOS;
+using AkariTool.Core.Models.ShaderCache;
 using WinUI.Framework.IoC;
 using WinUI.Framework.Services;
 using AkariTool.Core.Competitive;

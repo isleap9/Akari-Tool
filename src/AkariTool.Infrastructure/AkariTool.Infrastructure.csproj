@@ -10,6 +10,9 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.10" />
     <PackageReference Include="System.ServiceProcess.ServiceController" Version="10.0.0" />
     <PackageReference Include="System.Management" Version="10.0.0" />
+    <!-- System.Net.Http and System.Text.Json are provided by the net10.0 shared
+         framework (NuGet NU1510) — no explicit PackageReference required. -->
+
   </ItemGroup>
 
   <ItemGroup>

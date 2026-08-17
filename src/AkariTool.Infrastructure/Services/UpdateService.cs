@@ -3,37 +3,10 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text.Json;
+using AkariTool.Core.Models.Update;
 
 namespace AkariTool.Services
 {
-    public enum UpdateStatus
-    {
-        UpToDate,          // latest release <= current version
-        UpdateAvailable,   // latest release > current version
-        NoReleases,        // repo has no published releases yet (404)
-        Error              // network / API failure
-    }
-
-    public sealed class UpdateCheckResult
-    {
-        public UpdateStatus Status { get; init; }
-        public string? LatestTag { get; init; }        // e.g. "v2.1.0"
-        public string? ReleaseName { get; init; }      // release title
-        public string? ReleaseNotes { get; init; }     // markdown body
-        public string? ReleasePageUrl { get; init; }   // html_url — always safe to open
-        public string? InstallerUrl { get; init; }     // AkariTool-Setup-*.exe asset, if present
-        public string? ErrorMessage { get; init; }
-    }
-
-    public sealed class ReleaseInfo
-    {
-        public string Tag { get; init; } = "";         // "v2.0.0"
-        public string Name { get; init; } = "";
-        public string Body { get; init; } = "";        // release notes (markdown)
-        public DateTime PublishedUtc { get; init; }
-        public bool IsCurrent { get; init; }
-    }
-
     /// <summary>
     /// GitHub Releases integration for isleap9/Akari-Tool:
     ///   CheckAsync()             — is a newer version published?

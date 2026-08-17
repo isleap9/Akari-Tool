@@ -9,6 +9,8 @@ using AkariTool.ViewModels.Tweaks;
 using WinUI.Framework.IoC;
 using WinUI.Framework.Services;
 using AkariTool.Core.Tweaks;
+using AkariTool.Core.Interfaces;
+using AkariTool.Infrastructure.Services;
 
 namespace AkariTool;
 
@@ -142,6 +144,14 @@ public partial class App : Application
             var log = sp.GetRequiredService<ILogService>();
             return new ToolService(line => log.Info(line));
         });
+        // Same instance resolves for both IToolService and the concrete ToolService.
+        services.AddSingleton<IToolService>(sp => sp.GetRequiredService<ToolService>());
+
+        // Interface wrappers over the static services (Infrastructure).
+        services.AddSingleton<IUpdateService, UpdateServiceWrapper>();
+        services.AddSingleton<IToolFetchService, ToolFetchServiceWrapper>();
+        services.AddSingleton<ISystemInfoService, SystemInfoServiceWrapper>();
+        services.AddSingleton<IShaderCacheService, ShaderCacheServiceWrapper>();
 
         // Dialog helper for tweak confirmations (serializes ContentDialogs).
         services.AddSingleton<TweakDialogs>();

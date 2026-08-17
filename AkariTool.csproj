@@ -60,6 +60,7 @@
     -->
     <ProjectReference Include="vendor\WinUI.Framework\WinUI.Framework.csproj" />
     <ProjectReference Include="src\AkariTool.Core\AkariTool.Core.csproj" />
+    <ProjectReference Include="src\AkariTool.Infrastructure\AkariTool.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -6,30 +6,10 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Win32;
+using AkariTool.Core.Models.ShaderCache;
 
 namespace AkariTool.Services
 {
-    /// <summary>One cleanable shader cache vendor and every directory it owns.</summary>
-    public sealed record ShaderCacheTarget(
-        string Id,
-        string DisplayName,
-        IReadOnlyList<string> Paths);
-
-    /// <summary>Result of measuring a target without touching anything.</summary>
-    public sealed record ShaderCacheScanResult(
-        string TargetId,
-        long TotalBytes,
-        int FileCount,
-        bool Exists);
-
-    /// <summary>Result of clearing a target. <see cref="Error"/> is null on success.</summary>
-    public sealed record ShaderCacheCleanResult(
-        string TargetId,
-        long BytesFreed,
-        int FilesDeleted,
-        int FilesSkipped,
-        string? Error);
-
     /// <summary>
     /// Clears GPU/driver and Steam per-game shader caches. Every method is
     /// best-effort: an unreadable subtree or a locked file is skipped, never

@@ -6,6 +6,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using AkariTool.Core.Interfaces;
 
 namespace AkariTool.Services
 {
@@ -47,7 +48,7 @@ namespace AkariTool.Services
                          "AkariTool", "Tools");
 
         /// <summary>Ensures the tool is cached (downloading + extracting if needed), then launches it. Safe to call repeatedly.</summary>
-        public static async Task LaunchAsync(string key, ToolService log)
+        public static async Task LaunchAsync(string key, IToolService log)
         {
             if (!Tools.TryGetValue(key, out var tool))
             {
@@ -143,7 +144,7 @@ namespace AkariTool.Services
             catch { return null; }
         }
 
-        private static bool Launch(string exe, ToolService log)
+        private static bool Launch(string exe, IToolService log)
         {
             try
             {

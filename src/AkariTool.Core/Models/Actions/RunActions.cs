@@ -1,4 +1,4 @@
-namespace AkariTool.Services
+namespace AkariTool.Core.Models.Actions
 {
     /// <summary>
     /// Base type for anything a row button can execute.

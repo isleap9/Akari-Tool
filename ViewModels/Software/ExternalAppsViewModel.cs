@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using AkariTool.Services;
 using AkariTool.Tabs;
 using AkariTool.Core.Tweaks;
+using AkariTool.Core.Models.Actions;
 
 namespace AkariTool.ViewModels.Software;
 

@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using AkariTool.Services;
+using AkariTool.Core.Models.Update;
 using WinUI.Framework.Mvvm;
 using WinUI.Framework.Services;
 

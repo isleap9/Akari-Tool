@@ -2,6 +2,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Text;
+using AkariTool.Core.Models.Actions;
+using AkariTool.Core.Interfaces;
 
 namespace AkariTool.Services
 {
@@ -21,7 +23,7 @@ namespace AkariTool.Services
     /// Dropped: <c>BrushFrom(string)</c> — returned a WinUI SolidColorBrush; pure view
     /// concern with no callers in the ported logic layer.
     /// </summary>
-    public class ToolService
+    public class ToolService : IToolService
     {
         private int _activeProcessCount;
 

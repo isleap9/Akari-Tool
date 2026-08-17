@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using AkariTool.Services;
 using AkariTool.Core.Tweaks;
+using AkariTool.Core.Models.Actions;
 
 namespace AkariTool.ViewModels.Software;
 
