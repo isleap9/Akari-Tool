@@ -17,3 +17,6 @@ installer-output/
 
 # Archives / local blobs
 *.7z
+
+# Claude Code context (machine-local, not for source control)
+CLAUDE.md
