@@ -1,10 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <Version>2.0.2</Version>
-    <!-- vendor/ holds the vendored WinUI.Framework project (consumed via
-         ProjectReference). Exclude it from this project's default source/XAML
-         globs so its types are not ALSO compiled into AkariTool (CS0121). -->
-    <DefaultItemExcludes>$(DefaultItemExcludes);vendor\**</DefaultItemExcludes>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
@@ -58,9 +54,9 @@
       self-contained PriIndexName fix and any framework changes flow into the build.
       Switch to a local NuGet feed (pack WinUI.Framework) before releasing.
     -->
-    <ProjectReference Include="vendor\WinUI.Framework\WinUI.Framework.csproj" />
-    <ProjectReference Include="src\AkariTool.Core\AkariTool.Core.csproj" />
-    <ProjectReference Include="src\AkariTool.Infrastructure\AkariTool.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\vendor\WinUI.Framework\WinUI.Framework.csproj" />
+    <ProjectReference Include="..\AkariTool.Core\AkariTool.Core.csproj" />
+    <ProjectReference Include="..\AkariTool.Infrastructure\AkariTool.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

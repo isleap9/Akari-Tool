@@ -30,11 +30,11 @@
 $ErrorActionPreference = "Stop"
 $root = $PSScriptRoot
 $tfm  = "net10.0-windows10.0.26100.0"   # keep in sync with <TargetFramework>
-$publishDir = Join-Path $root "bin\x64\Release\$tfm\win-x64\publish"
-$buildDir   = Join-Path $root "bin\x64\Release\$tfm\win-x64"
+$publishDir = Join-Path $root "src\AkariTool.App\bin\x64\Release\$tfm\win-x64\publish"
+$buildDir   = Join-Path $root "src\AkariTool.App\bin\x64\Release\$tfm\win-x64"
 
 # --- 1. Read version from csproj (single source of truth) -------------------
-$csproj = Join-Path $root "AkariTool.csproj"
+$csproj = Join-Path $root "src\AkariTool.App\AkariTool.csproj"
 $version = ([xml](Get-Content $csproj)).Project.PropertyGroup.Version |
     Where-Object { $_ } | Select-Object -First 1
 if (-not $version) {

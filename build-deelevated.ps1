@@ -42,7 +42,7 @@ $binDir = Join-Path $root 'bin\DeElevated\'
 New-Item -ItemType Directory -Force -Path $objDir | Out-Null
 
 # Generate the asInvoker manifest from app.manifest INTO the isolated leaf obj.
-$manifest = (Get-Content (Join-Path $root 'app.manifest') -Raw) `
+$manifest = (Get-Content (Join-Path $root 'src\AkariTool.App\app.manifest') -Raw) `
     -replace 'level="requireAdministrator"', 'level="asInvoker"'
 $manifestPath = Join-Path $objDir 'app.asinvoker.manifest'
 Set-Content -Path $manifestPath -Value $manifest -Encoding utf8
@@ -51,12 +51,12 @@ Write-Host "De-elevated build -> IntermediateOutputPath: $objDir  OutputPath: $b
 
 # Restore first (shared obj\ assets), as a SEPARATE pass — a combined /t:Restore,Rebuild
 # breaks WinUI XAML codegen (see Phase 6).
-& $msbuild 'AkariTool.csproj' /t:Restore `
+& $msbuild 'src\AkariTool.App\AkariTool.csproj' /t:Restore `
     /p:Configuration=$Configuration /p:Platform=$Platform `
     /v:minimal /nologo
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-& $msbuild 'AkariTool.csproj' /t:Rebuild `
+& $msbuild 'src\AkariTool.App\AkariTool.csproj' /t:Rebuild `
     /p:Configuration=$Configuration /p:Platform=$Platform `
     /p:DeElevatedTest=true `
     /p:ApplicationManifest="$manifestPath" `
