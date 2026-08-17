@@ -2,7 +2,7 @@
 #
 #   .\build-installer.ps1
 #
-# Reads the version from <Version> in AkariTool.csproj, publishes a FULLY
+# Reads the version from <Version> in AkariTool.App.csproj, publishes a FULLY
 # SELF-CONTAINED unpackaged WinUI 3 (win-x64) build, then compiles the Inno
 # Setup installer to installer-output\AkariTool-Setup-vX.Y.Z.exe - that file is
 # what you upload as the GitHub release asset.
@@ -34,11 +34,11 @@ $publishDir = Join-Path $root "src\AkariTool.App\bin\x64\Release\$tfm\win-x64\pu
 $buildDir   = Join-Path $root "src\AkariTool.App\bin\x64\Release\$tfm\win-x64"
 
 # --- 1. Read version from csproj (single source of truth) -------------------
-$csproj = Join-Path $root "src\AkariTool.App\AkariTool.csproj"
+$csproj = Join-Path $root "src\AkariTool.App\AkariTool.App.csproj"
 $version = ([xml](Get-Content $csproj)).Project.PropertyGroup.Version |
     Where-Object { $_ } | Select-Object -First 1
 if (-not $version) {
-    Write-Error ("No Version found in AkariTool.csproj - add e.g. " +
+    Write-Error ("No Version found in AkariTool.App.csproj - add e.g. " +
         "<Version>2.0.0</Version> to the first PropertyGroup.")
 }
 Write-Host "Building Akari Tool v$version (unpackaged WinUI 3, fully self-contained)" -ForegroundColor Cyan

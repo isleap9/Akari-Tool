@@ -51,12 +51,12 @@ Write-Host "De-elevated build -> IntermediateOutputPath: $objDir  OutputPath: $b
 
 # Restore first (shared obj\ assets), as a SEPARATE pass — a combined /t:Restore,Rebuild
 # breaks WinUI XAML codegen (see Phase 6).
-& $msbuild 'src\AkariTool.App\AkariTool.csproj' /t:Restore `
+& $msbuild 'src\AkariTool.App\AkariTool.App.csproj' /t:Restore `
     /p:Configuration=$Configuration /p:Platform=$Platform `
     /v:minimal /nologo
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-& $msbuild 'src\AkariTool.App\AkariTool.csproj' /t:Rebuild `
+& $msbuild 'src\AkariTool.App\AkariTool.App.csproj' /t:Rebuild `
     /p:Configuration=$Configuration /p:Platform=$Platform `
     /p:DeElevatedTest=true `
     /p:ApplicationManifest="$manifestPath" `

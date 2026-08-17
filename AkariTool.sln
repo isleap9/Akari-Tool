@@ -1,9 +1,8 @@
-
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AkariTool", "src\AkariTool.App\AkariTool.csproj", "{C514611D-FAF3-4E61-9469-629CD3F35931}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AkariTool.App", "src\AkariTool.App\AkariTool.App.csproj", "{C514611D-FAF3-4E61-9469-629CD3F35931}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AkariTool.Core", "src\AkariTool.Core\AkariTool.Core.csproj", "{510D67F4-23AB-4721-9984-167AB7F1480C}"
 EndProject
