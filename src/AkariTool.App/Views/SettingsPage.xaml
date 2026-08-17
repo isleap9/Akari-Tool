@@ -139,41 +139,54 @@
                         Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                         BorderThickness="1">
-                        <ItemsControl ItemsSource="{x:Bind ViewModel.Changelog}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="vm:ReleaseNote">
-                                    <Grid Margin="0,14,0,14" ColumnSpacing="0">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="56" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock
-                                            Grid.Column="0"
-                                            Text="{x:Bind Version}"
-                                            FontFamily="Consolas" FontSize="13" FontWeight="SemiBold"
-                                            VerticalAlignment="Top"
-                                            Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
-                                        <StackPanel Grid.Column="1" Spacing="4">
-                                            <Border
-                                                Visibility="{x:Bind CurrentPillVisibility}"
-                                                HorizontalAlignment="Left"
-                                                Padding="9,2,9,2"
-                                                CornerRadius="4"
-                                                Background="{ThemeResource SystemFillColorSuccessBackgroundBrush}"
-                                                BorderBrush="{ThemeResource SystemFillColorSuccessBrush}"
-                                                BorderThickness="1">
-                                                <TextBlock Text="CURRENT" FontFamily="Consolas" FontSize="9"
-                                                           Foreground="{ThemeResource SystemFillColorSuccessBrush}" />
-                                            </Border>
-                                            <ItemsControl
-                                                ItemsSource="{x:Bind Lines}"
-                                                ItemTemplateSelector="{StaticResource ChangelogLineSelector}" />
-                                        </StackPanel>
-                                    </Grid>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+                        <ScrollViewer
+                            x:Name="ChangelogScroller"
+                            MaxHeight="320"
+                            VerticalScrollBarVisibility="Auto"
+                            HorizontalScrollBarVisibility="Disabled">
+                            <ItemsControl ItemsSource="{x:Bind ViewModel.Changelog}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:ReleaseNote">
+                                        <Grid Margin="0,14,0,14" ColumnSpacing="0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="56" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock
+                                                Grid.Column="0"
+                                                Text="{x:Bind Version}"
+                                                FontFamily="Consolas" FontSize="13" FontWeight="SemiBold"
+                                                VerticalAlignment="Top"
+                                                Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                                            <StackPanel Grid.Column="1" Spacing="4">
+                                                <Border
+                                                    Visibility="{x:Bind CurrentPillVisibility}"
+                                                    HorizontalAlignment="Left"
+                                                    Padding="9,2,9,2"
+                                                    CornerRadius="4"
+                                                    Background="{ThemeResource SystemFillColorSuccessBackgroundBrush}"
+                                                    BorderBrush="{ThemeResource SystemFillColorSuccessBrush}"
+                                                    BorderThickness="1">
+                                                    <TextBlock Text="CURRENT" FontFamily="Consolas" FontSize="9"
+                                                               Foreground="{ThemeResource SystemFillColorSuccessBrush}" />
+                                                </Border>
+                                                <ItemsControl
+                                                    ItemsSource="{x:Bind Lines}"
+                                                    ItemTemplateSelector="{StaticResource ChangelogLineSelector}" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
                     </Border>
+                    <HyperlinkButton
+                        x:Name="ChangelogToggle"
+                        Content="Show more"
+                        HorizontalAlignment="Left"
+                        Padding="0,2,0,2"
+                        Margin="0,-4,0,0"
+                        Click="ChangelogToggle_Click" />
                 </StackPanel>
 
                 <!-- Right column: About (cards built in code-behind → AboutHost) -->

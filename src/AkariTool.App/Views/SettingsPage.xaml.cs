@@ -137,11 +137,6 @@ public sealed partial class SettingsPage : Page
                    "NVIDIA profile applied with nvidiaProfileInspector by Orbmu2k (MIT). " +
                    "Made for the AkariOS ecosystem.",
         });
-        body.Inlines.Add(new Run { Text = " Sidebar icons by " });
-        var icons8 = new Hyperlink { NavigateUri = new Uri("https://icons8.com") };
-        icons8.Inlines.Add(new Run { Text = "Icons8" });
-        body.Inlines.Add(icons8);
-        body.Inlines.Add(new Run { Text = "." });
         creditsStack.Children.Add(body);
         var credits = Card(new Thickness(18, 16, 18, 16), new Thickness(0), creditsStack);
         Grid.SetColumn(credits, 1);
@@ -209,6 +204,16 @@ public sealed partial class SettingsPage : Page
         Foreground = Res("TextFillColorTertiaryBrush"),
         Margin = new Thickness(0, 0, 0, 10),
     };
+
+    // ── Changelog expand / collapse ───────────────────────────────────────────
+    private bool _changelogExpanded;
+
+    private void ChangelogToggle_Click(object sender, RoutedEventArgs e)
+    {
+        _changelogExpanded = !_changelogExpanded;
+        ChangelogScroller.MaxHeight = _changelogExpanded ? double.PositiveInfinity : 320;
+        ChangelogToggle.Content = _changelogExpanded ? "Show less" : "Show more";
+    }
 
     private static Brush Res(string key) => (Brush)Application.Current.Resources[key];
 }
