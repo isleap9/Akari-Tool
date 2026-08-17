@@ -13,9 +13,10 @@ namespace AkariTool.DI;
 /// DI registrations for the UI layer: the shell window, view models, and the
 /// tweak-page warm-up enumeration.
 ///
-/// Also hosts ToolService, IToolService, and TweakDialogs — these are logically
-/// infrastructure services, but their types live in the main app project (the
-/// Infrastructure project cannot reference them), so they are registered here.
+/// Also hosts ToolService, IToolService, and TweakDialogs. ToolService now lives
+/// in the Infrastructure project (referenced via ProjectReference); it is wired up
+/// here because its construction needs the UI-layer ILogService sink. TweakDialogs
+/// still lives in the main app project, so it must be registered here regardless.
 /// </summary>
 public static class UIServiceExtensions
 {

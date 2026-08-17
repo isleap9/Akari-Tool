@@ -27,7 +27,8 @@ namespace AkariTool.Services
     {
         private int _activeProcessCount;
 
-        private static readonly Assembly AppAssembly = typeof(ToolService).Assembly;
+        private static readonly Assembly AppAssembly = Assembly.GetEntryAssembly()
+                ?? typeof(ToolService).Assembly; // fallback if called before entry point
 
         /// <summary>Raised for every log line (on whatever thread logged).</summary>
         public event Action<string>? LineLogged;
