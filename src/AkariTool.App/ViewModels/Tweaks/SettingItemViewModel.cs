@@ -126,8 +126,8 @@ public sealed partial class SettingItemViewModel : ObservableObject
         RefreshBadges();
     }
 
-    // Per-setting toggle warnings are wired in Phase 4; none for now.
-    private string? GetToggleWarning(bool newState) => null;
+    // Per-state toggle warning copy (Akari extension). ON shows EnableWarning, OFF DisableWarning.
+    private string? GetToggleWarning(bool newState) => newState ? Definition.EnableWarning : Definition.DisableWarning;
 
     // ── System-state read-back ─────────────────────────────────────────────────
     public void RefreshFromSystem()

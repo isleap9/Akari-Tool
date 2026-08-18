@@ -95,4 +95,13 @@ public sealed record SettingDefinition : BaseDefinition, ISettingItem
     public IReadOnlyList<BcdOperation>? BcdOperations { get; init; }
     public IReadOnlyList<PlaybookTweakAction>? PlaybookActions { get; init; }
     public ServicePresetKind? ServicePreset { get; init; }
+
+    // ── Akari warning extensions ──────────────────────────────────────────────
+    // Per-state confirmation copy for Toggle/CheckBox settings. When set, the row's
+    // apply path shows the matching warning before switching (EnableWarning when
+    // turning ON, DisableWarning when turning OFF); null = no warning for that
+    // direction. Not in Winhance — Winhance carries only a bool RequiresConfirmation
+    // and per-ComboBoxOption Warning; these give toggles a one-directional message.
+    public string? EnableWarning { get; init; }
+    public string? DisableWarning { get; init; }
 }
