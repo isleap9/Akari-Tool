@@ -1,44 +1,37 @@
+using System.Collections.Generic;
+using WinUI.Framework.Mvvm;
+using AkariTool.Core.Features.Common.Models;
+using AkariTool.Core.Features.Common.Interfaces;
+using AkariTool.Infrastructure.Features.Common.Interfaces;
 using AkariTool.Services;
-using AkariTool.Tabs;
 using AkariTool.Tabs.Notifications;
 using AkariTool.ViewModels.Tweaks;
-using AkariTool.Core.Tweaks;
 
 namespace AkariTool.ViewModels;
 
 /// <summary>
-/// Notifications page. First-wave rollout tab — a single-catalog, standard
-/// tweak-row tab with no bespoke sections, reusing the Gaming rendering layer.
+/// Notifications page — ported to the declarative SettingDefinition model
+/// (Track A Phase 4). Builds its sections from <see cref="NotificationsOptimizations.Build"/>.
 ///
-/// Section order matches net8's NotificationsTab.Build() exactly: General →
-/// Additional Settings → System Notifications → Privacy Notifications → Security
-/// Notifications.
-///
-/// ⚠ The Security Notifications section contains Windows Defender *notification*
+/// ⚠ The Security Notifications group contains Windows Defender *notification*
 /// toggles (`notifications-windows-security`). These only touch notification
 /// registry keys — they do NOT disable, arm, or otherwise alter Defender
-/// protection. They are the same rows the net8 build ships and are fine to render
-/// unchanged; nothing Defender-protective is touched here.
+/// protection.
 /// </summary>
-public sealed partial class NotificationsViewModel : TweakPageViewModel
+public sealed partial class NotificationsViewModel : SettingPageViewModel
 {
-    public NotificationsViewModel(TweakDialogs dialogs, ToolService tool) : base(dialogs, tool)
+    public NotificationsViewModel(
+        ISettingStateReader stateReader,
+        ISettingOperationExecutor executor,
+        TweakDialogs dialogs)
+        : base(stateReader, executor, dialogs)
     {
         Title = "Notifications";
-        Subtitle = "Control system, app, and lock-screen notification behaviour.";
+        Subtitle = "Notification behavior and system alerts";
     }
 
     public override string NavTag => "Notifications";
     public override string NavLabel => "Notifications";
 
-    protected override IEnumerable<(string Title, TweakDefinition[] Tweaks)> BuildCatalog()
-    {
-        Action<string> log = Tool.Log;
-
-        yield return ("General", NotificationsTweaks.General(log));
-        yield return ("Additional Settings", NotificationsTweaks.AdditionalSettings(log));
-        yield return ("System Notifications", NotificationsTweaks.SystemNotifications(log));
-        yield return ("Privacy Notifications", NotificationsTweaks.PrivacyNotifications(log));
-        yield return ("Security Notifications", NotificationsTweaks.SecurityNotifications(log));
-    }
+    protected override IReadOnlyList<SettingGroup> BuildSettingGroups() => NotificationsOptimizations.Build();
 }

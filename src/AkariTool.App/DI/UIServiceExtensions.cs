@@ -89,7 +89,7 @@ public static class UIServiceExtensions
         // order = TweakRegistry range order; add each new tweak page to BOTH lists.
         services.AddSingleton<TweakPageViewModel>(sp => sp.GetRequiredService<GamingViewModel>());
         services.AddSingleton<SettingPageViewModel>(sp => sp.GetRequiredService<SoundViewModel>());
-        services.AddSingleton<TweakPageViewModel>(sp => sp.GetRequiredService<NotificationsViewModel>());
+        services.AddSingleton<SettingPageViewModel>(sp => sp.GetRequiredService<NotificationsViewModel>());
         services.AddSingleton<TweakPageViewModel>(sp => sp.GetRequiredService<UpdateViewModel>());
         services.AddSingleton<TweakPageViewModel>(sp => sp.GetRequiredService<PrivacyViewModel>());
         services.AddSingleton<TweakPageViewModel>(sp => sp.GetRequiredService<TaskbarViewModel>());
