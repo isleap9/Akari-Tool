@@ -319,7 +319,7 @@
             BorderThickness="1"
             CornerRadius="8"
             Margin="0,0,0,16"
-            Visibility="{Binding IsVisible, Converter={StaticResource BoolToVis}}">
+            Visibility="{Binding IsVisible, Converter={StaticResource BoolToVis}, TargetNullValue=Visible, FallbackValue=Visible}">
             <StackPanel Margin="18,14,18,14">
 
                 <!-- Flat header: title (left) + bulk actions (right). No collapse. -->

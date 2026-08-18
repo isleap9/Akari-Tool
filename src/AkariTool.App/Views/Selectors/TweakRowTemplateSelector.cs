@@ -3,6 +3,8 @@ using Microsoft.UI.Xaml.Controls;
 using AkariTool.Tabs;
 using AkariTool.ViewModels.Tweaks;
 using AkariTool.Core.Tweaks;
+using AkariTool.Core.Features.Common.Models;
+using AkariTool.Core.Features.Common.Enums;
 
 namespace AkariTool.Views.Selectors;
 
@@ -21,6 +23,7 @@ public sealed partial class TweakRowTemplateSelector : DataTemplateSelector
     {
         DropdownTweakViewModel => DropdownTemplate,
         ToggleTweakViewModel => ToggleTemplate,
+        SettingItemViewModel s => s.InputType == InputType.Selection ? DropdownTemplate : ToggleTemplate,
         _ => ToggleTemplate,
     };
 
@@ -42,6 +45,13 @@ public sealed partial class TweakBadgeTemplateSelector : DataTemplateSelector
 
     protected override DataTemplate? SelectTemplateCore(object item)
     {
+        if (item is BadgePillState pill) return pill.Kind switch
+        {
+            SettingBadgeKind.Recommended => RecommendedTemplate,
+            SettingBadgeKind.Default => DefaultTemplate,
+            SettingBadgeKind.Preference => PreferenceTemplate,
+            _ => CustomTemplate,
+        };
         if (item is not TweakBadgeViewModel badge) return CustomTemplate;
         return badge.Kind switch
         {

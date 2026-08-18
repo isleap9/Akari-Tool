@@ -30,4 +30,10 @@ public sealed partial class SettingSectionViewModel : ObservableObject
     }
 
     public bool HasVisibleItems => Items.Any(i => i.IsVisible);
+
+    /// <summary>
+    /// Alias so the shared TweakSectionTemplate (which binds <c>IsVisible</c> for the old
+    /// TweakSectionViewModel) resolves against this new VM too.
+    /// </summary>
+    public bool IsVisible => HasVisibleItems;
 }

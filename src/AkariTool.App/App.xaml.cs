@@ -71,6 +71,7 @@ public partial class App : Application
         _ = Task.Run(() =>
         {
             TweakRegistryWarmUp.Run(Services, log);
+            SettingPageWarmUp.Run(Services, log);
 
             // Drift check runs ONLY after warm-up: DriftScanner resolves each baseline
             // entry against TweakRegistry, so scanning before every page's Build() has
