@@ -1652,11 +1652,650 @@ public static class PrivacyOptimizations
         },
     ];
 
-    private static IReadOnlyList<SettingGroup> BuildWindowsAI()
-    {
-        // TODO: Group 11 (Windows AI) — PrivacyTweaks.WindowsAI.cs
-        return [];
-    }
+    private static IReadOnlyList<SettingGroup> BuildWindowsAI() =>
+    [
+        // ══════════════════════════════════════════════════════════════════
+        // GROUP 11 — Windows AI
+        // ══════════════════════════════════════════════════════════════════
+        new SettingGroup
+        {
+            Name = "Windows AI",
+            FeatureId = "privacy-windows-ai",
+            Settings = new[]
+            {
+                // privacy-turn-off-copilot — HKCU primary + HKLM secondary WindowsCopilot policy; {0,null}/{1}
+                new SettingDefinition
+                {
+                    Id = "privacy-turn-off-copilot",
+                    Name = "Windows Copilot",
+                    Description = "Controls whether Windows Copilot is available system-wide",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Policies\Microsoft\Windows\WindowsCopilot",
+                            ValueName = "TurnOffWindowsCopilot",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 0, null },
+                            DisabledValue = new object?[] { 1 },
+                            IsPrimary = true,
+                        },
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\WindowsCopilot",
+                            ValueName = "TurnOffWindowsCopilot",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 0, null },
+                            DisabledValue = new object?[] { 1 },
+                        },
+                    },
+                },
+                // privacy-disable-ai-data-analysis — Pattern A
+                new SettingDefinition
+                {
+                    Id = "privacy-disable-ai-data-analysis",
+                    Name = "AI Data Analysis",
+                    Description = "Controls whether Windows AI can analyze user data for personalization and recommendations",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WindowsAI",
+                            ValueName = "DisableAIDataAnalysis",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 0, null },
+                            DisabledValue = new object?[] { 1 },
+                        },
+                    },
+                },
+                // privacy-block-recall-enablement — Pattern B
+                new SettingDefinition
+                {
+                    Id = "privacy-block-recall-enablement",
+                    Name = "Recall Enablement",
+                    Description = "Controls whether Windows Recall can be enabled via policy",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WindowsAI",
+                            ValueName = "AllowRecallEnablement",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 1, null },
+                            DisabledValue = new object?[] { 0 },
+                        },
+                    },
+                },
+                // privacy-disable-recall-snapshots — Pattern A
+                new SettingDefinition
+                {
+                    Id = "privacy-disable-recall-snapshots",
+                    Name = "Recall Saving Snapshots",
+                    Description = "Allows Windows Recall to save screenshots of your activity for later recall",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WindowsAI",
+                            ValueName = "TurnOffSavingSnapshots",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 0, null },
+                            DisabledValue = new object?[] { 1 },
+                        },
+                    },
+                },
+                // privacy-disable-click-to-do — Pattern A
+                new SettingDefinition
+                {
+                    Id = "privacy-disable-click-to-do",
+                    Name = "Click to Do",
+                    Description = "Controls whether the Click to Do AI feature is available in Windows",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WindowsAI",
+                            ValueName = "DisableClickToDo",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 0, null },
+                            DisabledValue = new object?[] { 1 },
+                        },
+                    },
+                },
+                // privacy-disable-settings-agent — Pattern A
+                new SettingDefinition
+                {
+                    Id = "privacy-disable-settings-agent",
+                    Name = "AI Settings Agent",
+                    Description = "Controls whether the AI-powered Settings Agent is available in Windows",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WindowsAI",
+                            ValueName = "DisableSettingsAgent",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 0, null },
+                            DisabledValue = new object?[] { 1 },
+                        },
+                    },
+                },
+                // privacy-disable-agent-connectors — Pattern A
+                new SettingDefinition
+                {
+                    Id = "privacy-disable-agent-connectors",
+                    Name = "AI Agent Connectors",
+                    Description = "Controls whether AI agents can use connectors to access external services",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WindowsAI",
+                            ValueName = "DisableAgentConnectors",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 0, null },
+                            DisabledValue = new object?[] { 1 },
+                        },
+                    },
+                },
+                // privacy-disable-agent-workspaces — Pattern A
+                new SettingDefinition
+                {
+                    Id = "privacy-disable-agent-workspaces",
+                    Name = "AI Agent Workspaces",
+                    Description = "Controls whether AI Agent Workspaces are available in Windows",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WindowsAI",
+                            ValueName = "DisableAgentWorkspaces",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 0, null },
+                            DisabledValue = new object?[] { 1 },
+                        },
+                    },
+                },
+                // privacy-disable-remote-agent-connectors — Pattern A
+                new SettingDefinition
+                {
+                    Id = "privacy-disable-remote-agent-connectors",
+                    Name = "Remote AI Agent Connectors",
+                    Description = "Controls whether AI agents can use remote connectors to access remote services",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WindowsAI",
+                            ValueName = "DisableRemoteAgentConnectors",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 0, null },
+                            DisabledValue = new object?[] { 1 },
+                        },
+                    },
+                },
+                // privacy-disable-copilot-hardware-key — REG_SZ; enabled=absent, disabled=""
+                new SettingDefinition
+                {
+                    Id = "privacy-disable-copilot-hardware-key",
+                    Name = "Copilot Hardware Key",
+                    Description = "Controls whether the dedicated Copilot key on keyboards opens Copilot",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\CopilotKey",
+                            ValueName = "SetCopilotHardwareKey",
+                            ValueType = RegistryValueKind.String,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { null },
+                            DisabledValue = new object?[] { "" },
+                        },
+                    },
+                },
+                // privacy-disable-copilot-runtime — Pattern B
+                new SettingDefinition
+                {
+                    Id = "privacy-disable-copilot-runtime",
+                    Name = "Copilot Runtime",
+                    Description = "Controls whether the Copilot runtime is allowed to run via policy",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WindowsAI",
+                            ValueName = "AllowCopilotRuntime",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 1, null },
+                            DisabledValue = new object?[] { 0 },
+                        },
+                    },
+                },
+                // privacy-copilot-unavailable — HKCU Shell, delete-on-enable
+                new SettingDefinition
+                {
+                    Id = "privacy-copilot-unavailable",
+                    Name = "Copilot Availability",
+                    Description = "Controls whether Copilot is available in the Windows Shell",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\Shell\Copilot",
+                            ValueName = "IsCopilotAvailable",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { null },
+                            DisabledValue = new object?[] { 0 },
+                        },
+                    },
+                },
+                // privacy-disable-bing-chat — HKCU Shell, delete-on-enable
+                new SettingDefinition
+                {
+                    Id = "privacy-disable-bing-chat",
+                    Name = "Bing Chat Eligibility",
+                    Description = "Controls whether the user is eligible for Bing Chat and Copilot in Search",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\Shell\Copilot\BingChat",
+                            ValueName = "IsUserEligible",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { null },
+                            DisabledValue = new object?[] { 0 },
+                        },
+                    },
+                },
+                // privacy-deny-generative-ai-access — ConsentStore\generativeAI (REG_SZ) + AppPrivacy policy {0}/{2}
+                new SettingDefinition
+                {
+                    Id = "privacy-deny-generative-ai-access",
+                    Name = "Generative AI Access",
+                    Description = "Controls whether apps can access the generative AI capability on your device",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\generativeAI",
+                            ValueName = "Value",
+                            ValueType = RegistryValueKind.String,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { "Allow", null },
+                            DisabledValue = new object?[] { "Deny" },
+                            IsPrimary = true,
+                        },
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy",
+                            ValueName = "LetAppsAccessGenerativeAI",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 0 },
+                            DisabledValue = new object?[] { 2 },
+                        },
+                    },
+                },
+                // privacy-deny-system-ai-models — ConsentStore\systemAIModels (REG_SZ) + AppPrivacy policy {0}/{2} + RecordUsageData {1}/{0}
+                new SettingDefinition
+                {
+                    Id = "privacy-deny-system-ai-models",
+                    Name = "System AI Models Access",
+                    Description = "Controls whether apps can access system AI models on your device",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\systemAIModels",
+                            ValueName = "Value",
+                            ValueType = RegistryValueKind.String,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { "Allow", null },
+                            DisabledValue = new object?[] { "Deny" },
+                            IsPrimary = true,
+                        },
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy",
+                            ValueName = "LetAppsAccessSystemAIModels",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 0 },
+                            DisabledValue = new object?[] { 2 },
+                        },
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\systemAIModels",
+                            ValueName = "RecordUsageData",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 1 },
+                            DisabledValue = new object?[] { 0 },
+                        },
+                    },
+                },
+                // privacy-deny-copilot-microphone — two per-app ConsentStore microphone subkeys (REG_SZ Allow/Deny)
+                new SettingDefinition
+                {
+                    Id = "privacy-deny-copilot-microphone",
+                    Name = "Copilot Microphone Access",
+                    Description = "Controls whether Copilot and Office Hub apps have microphone permission",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\microphone\Microsoft.Copilot_8wekyb3d8bbwe",
+                            ValueName = "Value",
+                            ValueType = RegistryValueKind.String,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { "Allow", null },
+                            DisabledValue = new object?[] { "Deny" },
+                            IsPrimary = true,
+                        },
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\microphone\Microsoft.MicrosoftOfficeHub_8wekyb3d8bbwe",
+                            ValueName = "Value",
+                            ValueType = RegistryValueKind.String,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { "Allow", null },
+                            DisabledValue = new object?[] { "Deny" },
+                        },
+                    },
+                },
+                // privacy-disable-input-insights — {1}/{0}
+                new SettingDefinition
+                {
+                    Id = "privacy-disable-input-insights",
+                    Name = "Input Insights",
+                    Description = "Controls whether Windows Input Insights can track typing patterns and provide suggestions",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\input\Settings",
+                            ValueName = "InsightsEnabled",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 1, null },
+                            DisabledValue = new object?[] { 0 },
+                        },
+                    },
+                },
+                // privacy-disable-copilot-nudges — HKCU Advanced, delete-on-enable
+                new SettingDefinition
+                {
+                    Id = "privacy-disable-copilot-nudges",
+                    Name = "Copilot Nudges",
+                    Description = "Controls whether Copilot promotional nudges and background task notifications are shown",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced",
+                            ValueName = "ShowCopilotNudges",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { null },
+                            DisabledValue = new object?[] { 0 },
+                        },
+                    },
+                },
+                // privacy-disable-consumer-ai-content — Pattern A
+                new SettingDefinition
+                {
+                    Id = "privacy-disable-consumer-ai-content",
+                    Name = "AI Consumer Content",
+                    Description = "Controls whether AI-driven consumer account content recommendations are shown",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\CloudContent",
+                            ValueName = "DisableConsumerAccountStateContent",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 0, null },
+                            DisabledValue = new object?[] { 1 },
+                        },
+                    },
+                },
+                // privacy-disable-paint-ai-image-creator — Pattern A
+                new SettingDefinition
+                {
+                    Id = "privacy-disable-paint-ai-image-creator",
+                    Name = "Paint AI Image Creator",
+                    Description = "Controls whether the AI Image Creator feature is available in Microsoft Paint",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Paint",
+                            ValueName = "DisableImageCreator",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 0, null },
+                            DisabledValue = new object?[] { 1 },
+                        },
+                    },
+                },
+                // privacy-disable-paint-ai-cocreator — Pattern A
+                new SettingDefinition
+                {
+                    Id = "privacy-disable-paint-ai-cocreator",
+                    Name = "Paint AI Cocreator",
+                    Description = "Controls whether the AI Cocreator feature is available in Microsoft Paint",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Paint",
+                            ValueName = "DisableCocreator",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 0, null },
+                            DisabledValue = new object?[] { 1 },
+                        },
+                    },
+                },
+                // privacy-disable-paint-generative-fill — Pattern A
+                new SettingDefinition
+                {
+                    Id = "privacy-disable-paint-generative-fill",
+                    Name = "Paint Generative Fill",
+                    Description = "Controls whether the AI Generative Fill feature is available in Microsoft Paint",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Paint",
+                            ValueName = "DisableGenerativeFill",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 0, null },
+                            DisabledValue = new object?[] { 1 },
+                        },
+                    },
+                },
+                // privacy-disable-paint-generative-erase — Pattern A
+                new SettingDefinition
+                {
+                    Id = "privacy-disable-paint-generative-erase",
+                    Name = "Paint Generative Erase",
+                    Description = "Controls whether the AI Generative Erase feature is available in Microsoft Paint",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Paint",
+                            ValueName = "DisableGenerativeErase",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 0, null },
+                            DisabledValue = new object?[] { 1 },
+                        },
+                    },
+                },
+                // privacy-disable-paint-remove-background — Pattern A
+                new SettingDefinition
+                {
+                    Id = "privacy-disable-paint-remove-background",
+                    Name = "Paint Remove Background",
+                    Description = "Controls whether the AI Remove Background feature is available in Microsoft Paint",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Paint",
+                            ValueName = "DisableRemoveBackground",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 0, null },
+                            DisabledValue = new object?[] { 1 },
+                        },
+                    },
+                },
+            },
+        },
+    ];
 
     private static IReadOnlyList<SettingGroup> BuildEdgeAI()
     {
