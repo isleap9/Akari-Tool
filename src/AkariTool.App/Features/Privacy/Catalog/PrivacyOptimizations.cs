@@ -2297,15 +2297,497 @@ public static class PrivacyOptimizations
         },
     ];
 
-    private static IReadOnlyList<SettingGroup> BuildEdgeAI()
-    {
-        // TODO: Group 12 (Edge AI) — PrivacyTweaks.EdgeAI.cs
-        return [];
-    }
+    private static IReadOnlyList<SettingGroup> BuildEdgeAI() =>
+    [
+        // ══════════════════════════════════════════════════════════════════
+        // GROUP 12 — Microsoft Edge AI
+        // ══════════════════════════════════════════════════════════════════
+        new SettingGroup
+        {
+            Name = "Microsoft Edge AI",
+            FeatureId = "privacy-edge-ai",
+            Settings = new[]
+            {
+                // privacy-edge-copilot-cdp-page-context — standard {1,null}/{0}
+                new SettingDefinition
+                {
+                    Id = "privacy-edge-copilot-cdp-page-context",
+                    Name = "Edge Copilot CDP Page Context",
+                    Description = "Controls whether Copilot can use CDP to access page content in Microsoft Edge",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge",
+                            ValueName = "CopilotCDPPageContext",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 1, null },
+                            DisabledValue = new object?[] { 0 },
+                        },
+                    },
+                },
+                // privacy-edge-copilot-page-context — standard {1,null}/{0}
+                new SettingDefinition
+                {
+                    Id = "privacy-edge-copilot-page-context",
+                    Name = "Edge Copilot Page Context",
+                    Description = "Controls whether Copilot can read page content in Microsoft Edge",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge",
+                            ValueName = "CopilotPageContext",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 1, null },
+                            DisabledValue = new object?[] { 0 },
+                        },
+                    },
+                },
+                // privacy-edge-copilot-sidebar — standard {1,null}/{0}
+                new SettingDefinition
+                {
+                    Id = "privacy-edge-copilot-sidebar",
+                    Name = "Edge Copilot Sidebar",
+                    Description = "Controls whether the Copilot sidebar is available in Microsoft Edge",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge",
+                            ValueName = "HubsSidebarEnabled",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 1, null },
+                            DisabledValue = new object?[] { 0 },
+                        },
+                    },
+                },
+                // privacy-edge-entra-copilot — standard {1,null}/{0}
+                new SettingDefinition
+                {
+                    Id = "privacy-edge-entra-copilot",
+                    Name = "Edge Entra Copilot Page Context",
+                    Description = "Controls whether Entra Copilot can access page context in Microsoft Edge",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge",
+                            ValueName = "EdgeEntraCopilotPageContext",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 1, null },
+                            DisabledValue = new object?[] { 0 },
+                        },
+                    },
+                },
+                // privacy-edge-m365-copilot-icon — standard {1,null}/{0}
+                new SettingDefinition
+                {
+                    Id = "privacy-edge-m365-copilot-icon",
+                    Name = "Edge M365 Copilot Chat Icon",
+                    Description = "Controls whether the Microsoft 365 Copilot chat icon is shown in Microsoft Edge",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge",
+                            ValueName = "Microsoft365CopilotChatIconEnabled",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 1, null },
+                            DisabledValue = new object?[] { 0 },
+                        },
+                    },
+                },
+                // privacy-edge-ai-history-search — standard {1,null}/{0}
+                new SettingDefinition
+                {
+                    Id = "privacy-edge-ai-history-search",
+                    Name = "Edge AI History Search",
+                    Description = "Controls whether AI-powered history search is available in Microsoft Edge",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge",
+                            ValueName = "EdgeHistoryAISearchEnabled",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 1, null },
+                            DisabledValue = new object?[] { 0 },
+                        },
+                    },
+                },
+                // privacy-edge-inline-compose — standard {1,null}/{0}
+                new SettingDefinition
+                {
+                    Id = "privacy-edge-inline-compose",
+                    Name = "Edge Inline AI Compose",
+                    Description = "Controls whether AI-powered inline compose suggestions are available in Microsoft Edge",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge",
+                            ValueName = "ComposeInlineEnabled",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 1, null },
+                            DisabledValue = new object?[] { 0 },
+                        },
+                    },
+                },
+                // privacy-edge-local-ai-model — DisabledValue override {1} (source read v!=1)
+                new SettingDefinition
+                {
+                    Id = "privacy-edge-local-ai-model",
+                    Name = "Edge Local AI Model Settings",
+                    Description = "Controls whether local AI model settings are available in Microsoft Edge",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge",
+                            ValueName = "GenAILocalFoundationalModelSettings",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 0, null },
+                            DisabledValue = new object?[] { 1 },
+                        },
+                    },
+                },
+                // privacy-edge-builtin-ai-apis — standard {1,null}/{0}
+                new SettingDefinition
+                {
+                    Id = "privacy-edge-builtin-ai-apis",
+                    Name = "Edge Built-in AI APIs",
+                    Description = "Controls whether built-in AI APIs are available in Microsoft Edge for websites to use",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge",
+                            ValueName = "BuiltInAIAPIsEnabled",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 1, null },
+                            DisabledValue = new object?[] { 0 },
+                        },
+                    },
+                },
+                // privacy-edge-ai-themes — standard {1,null}/{0}
+                new SettingDefinition
+                {
+                    Id = "privacy-edge-ai-themes",
+                    Name = "Edge AI Generated Themes",
+                    Description = "Controls whether AI-generated themes are available in Microsoft Edge",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge",
+                            ValueName = "AIGenThemesEnabled",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 1, null },
+                            DisabledValue = new object?[] { 0 },
+                        },
+                    },
+                },
+                // privacy-edge-devtools-ai — DisabledValue override {2} (source read v!=2)
+                new SettingDefinition
+                {
+                    Id = "privacy-edge-devtools-ai",
+                    Name = "Edge DevTools AI",
+                    Description = "Controls whether AI features are available in Edge DevTools",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge",
+                            ValueName = "DevToolsGenAiSettings",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 1, null },
+                            DisabledValue = new object?[] { 2 },
+                        },
+                    },
+                },
+                // privacy-edge-share-history-copilot — standard {1,null}/{0}
+                new SettingDefinition
+                {
+                    Id = "privacy-edge-share-history-copilot",
+                    Name = "Edge Share History with Copilot",
+                    Description = "Controls whether browsing history is shared with Copilot search in Microsoft Edge",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge",
+                            ValueName = "ShareBrowsingHistoryWithCopilotSearchAllowed",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 1, null },
+                            DisabledValue = new object?[] { 0 },
+                        },
+                    },
+                },
+            },
+        },
+    ];
 
-    private static IReadOnlyList<SettingGroup> BuildOfficeAI()
-    {
-        // TODO: Group 13 (Office AI) — PrivacyTweaks.OfficeAI.cs
-        return [];
-    }
+    private static IReadOnlyList<SettingGroup> BuildOfficeAI() =>
+    [
+        // ══════════════════════════════════════════════════════════════════
+        // GROUP 13 — Microsoft Office AI
+        // ══════════════════════════════════════════════════════════════════
+        new SettingGroup
+        {
+            Name = "Microsoft Office AI",
+            FeatureId = "privacy-office-ai",
+            Settings = new[]
+            {
+                // privacy-office-ai-training — delete-on-enable, set 0 on disable
+                new SettingDefinition
+                {
+                    Id = "privacy-office-ai-training",
+                    Name = "Office AI Training",
+                    Description = "Controls whether Office collects AI training data from your usage",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Policies\Microsoft\office\16.0\common\ai\training",
+                            ValueName = "optionalconnectedexperiencesenabled",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { null },
+                            DisabledValue = new object?[] { 0 },
+                        },
+                    },
+                },
+                // privacy-office-connected-services — two values; delete-on-enable, set 2 on disable
+                new SettingDefinition
+                {
+                    Id = "privacy-office-connected-services",
+                    Name = "Office Connected Services",
+                    Description = "Controls whether Office connected experiences and AI-powered services are available",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Policies\Microsoft\office\16.0\common\privacy",
+                            ValueName = "controllerconnectedservicesenabled",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { null },
+                            DisabledValue = new object?[] { 2 },
+                            IsPrimary = true,
+                        },
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Policies\Microsoft\office\16.0\common\privacy",
+                            ValueName = "usercontentdisabled",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { null },
+                            DisabledValue = new object?[] { 2 },
+                        },
+                    },
+                },
+                // privacy-word-copilot — delete-on-enable, set 0 on disable
+                new SettingDefinition
+                {
+                    Id = "privacy-word-copilot",
+                    Name = "Word Copilot",
+                    Description = "Controls whether Copilot AI features are available in Microsoft Word",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\Office\16.0\Word\Options",
+                            ValueName = "EnableCopilot",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { null },
+                            DisabledValue = new object?[] { 0 },
+                        },
+                    },
+                },
+                // privacy-excel-copilot — delete-on-enable, set 0 on disable
+                new SettingDefinition
+                {
+                    Id = "privacy-excel-copilot",
+                    Name = "Excel Copilot",
+                    Description = "Controls whether Copilot AI features are available in Microsoft Excel",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\Office\16.0\Excel\Options",
+                            ValueName = "EnableCopilot",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { null },
+                            DisabledValue = new object?[] { 0 },
+                        },
+                    },
+                },
+                // privacy-onenote-copilot — three values; delete-on-enable, set 0 on disable
+                new SettingDefinition
+                {
+                    Id = "privacy-onenote-copilot",
+                    Name = "OneNote Copilot",
+                    Description = "Controls whether Copilot AI features, Copilot notebooks, and Copilot skittle are available in Microsoft OneNote",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\Office\16.0\OneNote\Options\Other",
+                            ValueName = "EnableCopilot",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { null },
+                            DisabledValue = new object?[] { 0 },
+                            IsPrimary = true,
+                        },
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\Office\16.0\OneNote\Options\Other",
+                            ValueName = "EnableCopilotNotebooks",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { null },
+                            DisabledValue = new object?[] { 0 },
+                        },
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\Office\16.0\OneNote\Options\Other",
+                            ValueName = "EnableCopilotSkittle",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { null },
+                            DisabledValue = new object?[] { 0 },
+                        },
+                    },
+                },
+                // privacy-office-content-safety-ai — delete-on-enable, set 0 on disable
+                new SettingDefinition
+                {
+                    Id = "privacy-office-content-safety-ai",
+                    Name = "Office AI Content Safety",
+                    Description = "Controls whether AI content safety features are available in Office apps",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Policies\Microsoft\office\16.0\common\ai",
+                            ValueName = "contentsafetyserviceenabled",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { null },
+                            DisabledValue = new object?[] { 0 },
+                        },
+                    },
+                },
+            },
+        },
+    ];
 }
