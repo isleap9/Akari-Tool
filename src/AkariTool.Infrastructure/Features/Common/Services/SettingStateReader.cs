@@ -1,8 +1,10 @@
 using System;
 using System.Linq;
 using Microsoft.Win32;
+using AkariTool.Core.Features.Common.Constants;
 using AkariTool.Core.Features.Common.Interfaces;
 using AkariTool.Core.Features.Common.Models;
+using AkariTool.Infrastructure.Features.Common.Utilities;
 
 namespace AkariTool.Infrastructure.Features.Common.Services;
 
@@ -59,31 +61,58 @@ public sealed class SettingStateReader : ISettingStateReader
             if (options == null || options.Count == 0)
                 return -1;
 
-            var registrySetting = SettingDefinitionToggleState.GetPrimaryRegistrySetting(setting);
-            if (registrySetting == null)
-                return -1;
-
-            if (!TryOpenSubkey(registrySetting.KeyPath, out var subkey))
-                return -1;
-
-            using (subkey)
+            // Read the live value of every backing registry setting into a
+            // ValueName-keyed map (missing/unopenable = null).
+            var currentValues = new Dictionary<string, object?>();
+            foreach (var registrySetting in setting.RegistrySettings)
             {
-                var currentValue = subkey?.GetValue(registrySetting.ValueName);
-
-                var mappingKey = registrySetting.ValueName ?? "KeyExists";
-                for (int i = 0; i < options.Count; i++)
+                object? readValue = null;
+                if (TryOpenSubkey(registrySetting.KeyPath, out var subkey))
                 {
-                    var mappings = options[i].ValueMappings;
-                    if (mappings != null
-                        && mappings.TryGetValue(mappingKey, out var mappedValue)
-                        && ValuesEqual(currentValue, mappedValue))
+                    using (subkey)
                     {
-                        return i;
+                        readValue = subkey?.GetValue(registrySetting.ValueName);
                     }
                 }
 
-                return -1;
+                currentValues[registrySetting.ValueName ?? "KeyExists"] = readValue;
             }
+
+            // Whole-map match: an option wins only when every value it maps
+            // equals the corresponding live value.
+            for (int i = 0; i < options.Count; i++)
+            {
+                var mappings = options[i].ValueMappings;
+                if (mappings == null)
+                    continue;
+
+                bool allMatch = true;
+                foreach (var expected in mappings)
+                {
+                    currentValues.TryGetValue(expected.Key, out var currentValue);
+                    if (!ValueComparer.ValuesAreEqual(currentValue, expected.Value))
+                    {
+                        allMatch = false;
+                        break;
+                    }
+                }
+
+                if (allMatch && mappings.Count > 0)
+                    return i;
+            }
+
+            // No option matched. A pristine system (all backing values absent)
+            // resolves to the IsDefault option; otherwise it is a custom state.
+            if (currentValues.Count > 0 && currentValues.Values.All(v => v is null))
+            {
+                for (int i = 0; i < options.Count; i++)
+                {
+                    if (options[i].IsDefault)
+                        return i;
+                }
+            }
+
+            return ComboBoxConstants.CustomStateIndex;
         }
         catch
         {
