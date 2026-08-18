@@ -1,3 +1,4 @@
+// NOTE: updates-policy-mode retained here pending custom detection implementation. All other tweaks migrated to UpdateOptimizations.cs.
 using Microsoft.Win32;
 using AkariTool.Core.Tweaks;
 
