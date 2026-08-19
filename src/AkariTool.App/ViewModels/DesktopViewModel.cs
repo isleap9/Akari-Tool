@@ -1,7 +1,11 @@
+using System.Collections.Generic;
+using WinUI.Framework.Mvvm;
+using AkariTool.Core.Features.Common.Models;
+using AkariTool.Core.Features.Common.Interfaces;
+using AkariTool.Infrastructure.Features.Common.Interfaces;
 using AkariTool.Services;
-using AkariTool.Tabs;
+using AkariTool.Tabs.Customize;
 using AkariTool.ViewModels.Tweaks;
-using AkariTool.Core.Tweaks;
 
 namespace AkariTool.ViewModels;
 
@@ -11,9 +15,13 @@ namespace AkariTool.ViewModels;
 /// hub or the Desktop sub-nav rail item. Section order and every TweakDefinition
 /// Id are preserved byte-for-byte from CustomizeViewModel.
 /// </summary>
-public sealed partial class DesktopViewModel : TweakPageViewModel
+public sealed partial class DesktopViewModel : SettingPageViewModel
 {
-    public DesktopViewModel(TweakDialogs dialogs, ToolService tool) : base(dialogs, tool)
+    public DesktopViewModel(
+        ISettingStateReader stateReader,
+        ISettingOperationExecutor executor,
+        TweakDialogs dialogs)
+        : base(stateReader, executor, dialogs)
     {
         Title = "Desktop";
         Subtitle = "Desktop icons, shortcuts, startup, devices, lock screen, and regional settings.";
@@ -22,15 +30,5 @@ public sealed partial class DesktopViewModel : TweakPageViewModel
     public override string NavTag => "Desktop";
     public override string NavLabel => "Desktop";
 
-    protected override IEnumerable<(string Title, TweakDefinition[] Tweaks)> BuildCatalog()
-    {
-        Action<string> log = Tool.Log;
-
-        yield return ("Desktop Icons", CustomizeTweaks.DesktopIcons(log));
-        yield return ("Shortcuts", CustomizeTweaks.DesktopShortcuts(log));
-        yield return ("Startup", CustomizeTweaks.DesktopStartup(log));
-        yield return ("Devices", CustomizeTweaks.DesktopDevices(log));
-        yield return ("Lock Screen", CustomizeTweaks.DesktopLockScreen(log));
-        yield return ("Regional Settings", CustomizeTweaks.RegionalSettings(log)); // contains os-set-utc
-    }
+    protected override IReadOnlyList<SettingGroup> BuildSettingGroups() => DesktopOptimizations.Build();
 }

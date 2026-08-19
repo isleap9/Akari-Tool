@@ -1,7 +1,11 @@
+using System.Collections.Generic;
+using WinUI.Framework.Mvvm;
+using AkariTool.Core.Features.Common.Models;
+using AkariTool.Core.Features.Common.Interfaces;
+using AkariTool.Infrastructure.Features.Common.Interfaces;
 using AkariTool.Services;
-using AkariTool.Tabs;
+using AkariTool.Tabs.Customize;
 using AkariTool.ViewModels.Tweaks;
-using AkariTool.Core.Tweaks;
 
 namespace AkariTool.ViewModels;
 
@@ -11,9 +15,13 @@ namespace AkariTool.ViewModels;
 /// landing hub or the Context Menu sub-nav rail item. Every TweakDefinition Id is
 /// preserved byte-for-byte from CustomizeViewModel.
 /// </summary>
-public sealed partial class ContextMenuViewModel : TweakPageViewModel
+public sealed partial class ContextMenuViewModel : SettingPageViewModel
 {
-    public ContextMenuViewModel(TweakDialogs dialogs, ToolService tool) : base(dialogs, tool)
+    public ContextMenuViewModel(
+        ISettingStateReader stateReader,
+        ISettingOperationExecutor executor,
+        TweakDialogs dialogs)
+        : base(stateReader, executor, dialogs)
     {
         Title = "Context Menu";
         Subtitle = "Right-click menu entries.";
@@ -22,10 +30,5 @@ public sealed partial class ContextMenuViewModel : TweakPageViewModel
     public override string NavTag => "ContextMenu";
     public override string NavLabel => "Context Menu";
 
-    protected override IEnumerable<(string Title, TweakDefinition[] Tweaks)> BuildCatalog()
-    {
-        Action<string> log = Tool.Log;
-
-        yield return ("Entries", CustomizeTweaks.ContextMenuEntries(log));
-    }
+    protected override IReadOnlyList<SettingGroup> BuildSettingGroups() => ContextMenuOptimizations.Build();
 }

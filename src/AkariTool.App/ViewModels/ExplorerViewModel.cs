@@ -1,8 +1,11 @@
-using System.Linq;
+using System.Collections.Generic;
+using WinUI.Framework.Mvvm;
+using AkariTool.Core.Features.Common.Models;
+using AkariTool.Core.Features.Common.Interfaces;
+using AkariTool.Infrastructure.Features.Common.Interfaces;
 using AkariTool.Services;
-using AkariTool.Tabs;
+using AkariTool.Tabs.Customize;
 using AkariTool.ViewModels.Tweaks;
-using AkariTool.Core.Tweaks;
 
 namespace AkariTool.ViewModels;
 
@@ -16,9 +19,13 @@ namespace AkariTool.ViewModels;
 /// section). Section order and every TweakDefinition Id are preserved
 /// byte-for-byte from CustomizeViewModel.
 /// </summary>
-public sealed partial class ExplorerViewModel : TweakPageViewModel
+public sealed partial class ExplorerViewModel : SettingPageViewModel
 {
-    public ExplorerViewModel(TweakDialogs dialogs, ToolService tool) : base(dialogs, tool)
+    public ExplorerViewModel(
+        ISettingStateReader stateReader,
+        ISettingOperationExecutor executor,
+        TweakDialogs dialogs)
+        : base(stateReader, executor, dialogs)
     {
         Title = "Explorer";
         Subtitle = "File Explorer view, behavior, associations, and This PC folders.";
@@ -27,15 +34,5 @@ public sealed partial class ExplorerViewModel : TweakPageViewModel
     public override string NavTag => "Explorer";
     public override string NavLabel => "Explorer";
 
-    protected override IEnumerable<(string Title, TweakDefinition[] Tweaks)> BuildCatalog()
-    {
-        Action<string> log = Tool.Log;
-
-        yield return ("View",
-            CustomizeTweaks.ExplorerView(log).Concat(CustomizeTweaks.ExplorerViewFolderOptions(log)).ToArray());
-        yield return ("Behavior", CustomizeTweaks.ExplorerBehavior(log));
-        yield return ("File Associations", CustomizeTweaks.ExplorerAssociations(log));
-        yield return ("Sidebar", CustomizeTweaks.ExplorerSidebar(log));
-        yield return ("This PC Folders", CustomizeTweaks.ExplorerThisPc(log));
-    }
+    protected override IReadOnlyList<SettingGroup> BuildSettingGroups() => ExplorerOptimizations.Build();
 }

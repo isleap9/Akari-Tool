@@ -92,12 +92,12 @@ public static class UIServiceExtensions
         services.AddSingleton<SettingPageViewModel>(sp => sp.GetRequiredService<NotificationsViewModel>());
         services.AddSingleton<TweakPageViewModel>(sp => sp.GetRequiredService<UpdateViewModel>());
         services.AddSingleton<SettingPageViewModel>(sp => sp.GetRequiredService<PrivacyViewModel>());
-        services.AddSingleton<TweakPageViewModel>(sp => sp.GetRequiredService<TaskbarViewModel>());
-        services.AddSingleton<TweakPageViewModel>(sp => sp.GetRequiredService<ExplorerViewModel>());
-        services.AddSingleton<TweakPageViewModel>(sp => sp.GetRequiredService<ContextMenuViewModel>());
-        services.AddSingleton<TweakPageViewModel>(sp => sp.GetRequiredService<AppearanceViewModel>());
-        services.AddSingleton<TweakPageViewModel>(sp => sp.GetRequiredService<StartMenuViewModel>());
-        services.AddSingleton<TweakPageViewModel>(sp => sp.GetRequiredService<DesktopViewModel>());
+        services.AddSingleton<SettingPageViewModel>(sp => sp.GetRequiredService<TaskbarViewModel>());
+        services.AddSingleton<SettingPageViewModel>(sp => sp.GetRequiredService<ExplorerViewModel>());
+        services.AddSingleton<SettingPageViewModel>(sp => sp.GetRequiredService<ContextMenuViewModel>());
+        services.AddSingleton<SettingPageViewModel>(sp => sp.GetRequiredService<AppearanceViewModel>());
+        services.AddSingleton<SettingPageViewModel>(sp => sp.GetRequiredService<StartMenuViewModel>());
+        services.AddSingleton<SettingPageViewModel>(sp => sp.GetRequiredService<DesktopViewModel>());
         services.AddSingleton<TweakPageViewModel>(sp => sp.GetRequiredService<PowerViewModel>());
 
         return services;

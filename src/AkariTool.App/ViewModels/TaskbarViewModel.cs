@@ -1,8 +1,11 @@
-using System.Linq;
+using System.Collections.Generic;
+using WinUI.Framework.Mvvm;
+using AkariTool.Core.Features.Common.Models;
+using AkariTool.Core.Features.Common.Interfaces;
+using AkariTool.Infrastructure.Features.Common.Interfaces;
 using AkariTool.Services;
-using AkariTool.Tabs;
+using AkariTool.Tabs.Customize;
 using AkariTool.ViewModels.Tweaks;
-using AkariTool.Core.Tweaks;
 
 namespace AkariTool.ViewModels;
 
@@ -17,9 +20,13 @@ namespace AkariTool.ViewModels;
 /// TweakDefinitions (Phase 17). Section order and every TweakDefinition Id are
 /// preserved byte-for-byte from CustomizeViewModel.
 /// </summary>
-public sealed partial class TaskbarViewModel : TweakPageViewModel
+public sealed partial class TaskbarViewModel : SettingPageViewModel
 {
-    public TaskbarViewModel(TweakDialogs dialogs, ToolService tool) : base(dialogs, tool)
+    public TaskbarViewModel(
+        ISettingStateReader stateReader,
+        ISettingOperationExecutor executor,
+        TweakDialogs dialogs)
+        : base(stateReader, executor, dialogs)
     {
         Title = "Taskbar";
         Subtitle = "Layout, behavior, and button grouping.";
@@ -28,13 +35,5 @@ public sealed partial class TaskbarViewModel : TweakPageViewModel
     public override string NavTag => "Taskbar";
     public override string NavLabel => "Taskbar";
 
-    protected override IEnumerable<(string Title, TweakDefinition[] Tweaks)> BuildCatalog()
-    {
-        Action<string> log = Tool.Log;
-
-        yield return ("Layout", CustomizeTweaks.TaskbarLayout(log));
-        yield return ("Behavior",
-            CustomizeTweaks.TaskbarBehavior(log).Concat(CustomizeTweaks.TaskbarBehaviorExtras(log)).ToArray());
-        yield return ("Button Grouping", CustomizeTweaks.TaskbarButtonGrouping(log));
-    }
+    protected override IReadOnlyList<SettingGroup> BuildSettingGroups() => TaskbarOptimizations.Build();
 }
