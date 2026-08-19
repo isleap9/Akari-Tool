@@ -2155,11 +2155,251 @@ public static class GamingOptimizations
         },
     ];
 
-    private static IReadOnlyList<SettingGroup> BuildScheduledTasks()
-    {
-        // TODO: Scheduled Tasks — GamingTweaks.ScheduledTasks.cs
-        return [];
-    }
+    private static IReadOnlyList<SettingGroup> BuildScheduledTasks() =>
+    [
+        new SettingGroup
+        {
+            Name = "Scheduled Tasks",
+            FeatureId = "gaming-scheduled-tasks",
+            Settings =
+            [
+                new SettingDefinition
+                {
+                    Id = "gaming-task-compatibility-appraiser",
+                    Name = "Microsoft Compatibility Appraiser",
+                    Description = "Collects program compatibility telemetry for Windows upgrades. Disable to reduce telemetry",
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = [],
+                    ScheduledTaskSettings =
+                    [
+                        new ScheduledTaskSetting { Id = "gaming-task-compatibility-appraiser", TaskPath = @"\Microsoft\Windows\Application Experience\Microsoft Compatibility Appraiser", RecommendedState = false, DefaultState = true },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-task-program-data-updater",
+                    Name = "Program Data Updater",
+                    Description = "Updates the program compatibility database with information about installed applications",
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = [],
+                    ScheduledTaskSettings =
+                    [
+                        new ScheduledTaskSetting { Id = "gaming-task-program-data-updater", TaskPath = @"\Microsoft\Windows\Application Experience\ProgramDataUpdater", RecommendedState = false, DefaultState = true },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-task-ceip-consolidator",
+                    Name = "CEIP Consolidator",
+                    Description = "Consolidates and uploads usage data as part of the Customer Experience Improvement Program",
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = [],
+                    ScheduledTaskSettings =
+                    [
+                        new ScheduledTaskSetting { Id = "gaming-task-ceip-consolidator", TaskPath = @"\Microsoft\Windows\Customer Experience Improvement Program\Consolidator", RecommendedState = false, DefaultState = true },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-task-usb-ceip",
+                    Name = "USB CEIP",
+                    Description = "Collects USB device-related telemetry for the Customer Experience Improvement Program",
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = [],
+                    ScheduledTaskSettings =
+                    [
+                        new ScheduledTaskSetting { Id = "gaming-task-usb-ceip", TaskPath = @"\Microsoft\Windows\Customer Experience Improvement Program\UsbCeip", RecommendedState = false, DefaultState = true },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-task-disk-diagnostic",
+                    Name = "Disk Diagnostic Data Collector",
+                    Description = "Collects disk diagnostic information and S.M.A.R.T. data for Microsoft",
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = [],
+                    ScheduledTaskSettings =
+                    [
+                        new ScheduledTaskSetting { Id = "gaming-task-disk-diagnostic", TaskPath = @"\Microsoft\Windows\DiskDiagnostic\Microsoft-Windows-DiskDiagnosticDataCollector", RecommendedState = false, DefaultState = true },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-task-feedback-dmclient",
+                    Name = "Feedback DmClient",
+                    Description = "Collects feedback and diagnostic data for Microsoft",
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = [],
+                    ScheduledTaskSettings =
+                    [
+                        new ScheduledTaskSetting { Id = "gaming-task-feedback-dmclient", TaskPath = @"\Microsoft\Windows\Feedback\Siuf\DmClient", RecommendedState = false, DefaultState = true },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-task-feedback-dmclient-download",
+                    Name = "Feedback DmClient Scenario Download",
+                    Description = "Downloads feedback scenarios and configuration data from Microsoft",
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = [],
+                    ScheduledTaskSettings =
+                    [
+                        new ScheduledTaskSetting { Id = "gaming-task-feedback-dmclient-download", TaskPath = @"\Microsoft\Windows\Feedback\Siuf\DmClientOnScenarioDownload", RecommendedState = false, DefaultState = true },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-task-error-reporting-queue",
+                    Name = "Windows Error Reporting Queue",
+                    Description = "Queues crash reports and error data to send to Microsoft",
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = [],
+                    ScheduledTaskSettings =
+                    [
+                        new ScheduledTaskSetting { Id = "gaming-task-error-reporting-queue", TaskPath = @"\Microsoft\Windows\Windows Error Reporting\QueueReporting", RecommendedState = false, DefaultState = true },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-task-sqm",
+                    Name = "Software Quality Metrics",
+                    Description = "Collects software quality metrics and reliability data for Microsoft telemetry",
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = [],
+                    ScheduledTaskSettings =
+                    [
+                        new ScheduledTaskSetting { Id = "gaming-task-sqm", TaskPath = @"\Microsoft\Windows\PI\Sqm-Tasks", RecommendedState = false, DefaultState = true },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-task-mare-backup",
+                    Name = "MAR Backup",
+                    Description = "Backs up Microsoft Assisted Recovery data. Disable to reduce background system activity",
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = [],
+                    ScheduledTaskSettings =
+                    [
+                        new ScheduledTaskSetting { Id = "gaming-task-mare-backup", TaskPath = @"\Microsoft\Windows\Application Experience\MareBackup", RecommendedState = false, DefaultState = true },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-task-startup-app",
+                    Name = "Startup App Task",
+                    Description = "Tracks and monitors startup applications for telemetry and diagnostics",
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = [],
+                    ScheduledTaskSettings =
+                    [
+                        new ScheduledTaskSetting { Id = "gaming-task-startup-app", TaskPath = @"\Microsoft\Windows\Application Experience\StartupAppTask", RecommendedState = false, DefaultState = true },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-task-maps-update",
+                    Name = "Maps Update",
+                    Description = "Updates offline maps data for the Windows Maps app. Disable if you don't use the Maps app",
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = [],
+                    ScheduledTaskSettings =
+                    [
+                        new ScheduledTaskSetting { Id = "gaming-task-maps-update", TaskPath = @"\Microsoft\Windows\Maps\MapsUpdateTask", RecommendedState = false, DefaultState = true },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-task-autochk-proxy",
+                    Name = "AutoChk Proxy",
+                    Description = "Performs disk checking operations and collects diagnostic data",
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = [],
+                    ScheduledTaskSettings =
+                    [
+                        new ScheduledTaskSetting { Id = "gaming-task-autochk-proxy", TaskPath = @"\Microsoft\Windows\Autochk\Proxy", RecommendedState = false, DefaultState = true },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-task-power-efficiency",
+                    Name = "Power Efficiency Diagnostics",
+                    Description = "Analyzes system power consumption and collects energy efficiency data",
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = [],
+                    ScheduledTaskSettings =
+                    [
+                        new ScheduledTaskSetting { Id = "gaming-task-power-efficiency", TaskPath = @"\Microsoft\Windows\Power Efficiency Diagnostics\AnalyzeSystem", RecommendedState = false, DefaultState = true },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-task-windows-ai-recall-config",
+                    Name = "Windows AI Recall Configuration",
+                    Description = "Windows AI Recall configuration task. Disable to prevent Recall from being configured in the background",
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = [],
+                    ScheduledTaskSettings =
+                    [
+                        new ScheduledTaskSetting { Id = "gaming-task-windows-ai-recall-config", TaskPath = @"\Microsoft\Windows\WindowsAI\RecallConfiguration", RecommendedState = false, DefaultState = true },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-task-windows-ai-recall-pipeline",
+                    Name = "Windows AI Recall Pipeline",
+                    Description = "Windows AI Recall pipeline task. Disable to prevent Recall snapshot pipeline from running in the background",
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = [],
+                    ScheduledTaskSettings =
+                    [
+                        new ScheduledTaskSetting { Id = "gaming-task-windows-ai-recall-pipeline", TaskPath = @"\Microsoft\Windows\WindowsAI\RecallPipeline", RecommendedState = false, DefaultState = true },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-task-office-actions-server",
+                    Name = "Office Actions Server",
+                    Description = "Office AI Actions Server scheduled task. Disable to prevent Office AI from running in the background",
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = [],
+                    ScheduledTaskSettings =
+                    [
+                        new ScheduledTaskSetting { Id = "gaming-task-office-actions-server", TaskPath = @"\Microsoft\Office\Office Actions Server", RecommendedState = false, DefaultState = true },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-task-family-safety",
+                    Name = "Family Safety Monitor Task",
+                    Description = "Monitors family safety settings and usage. Disable if you don't use family safety features",
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = [],
+                    ScheduledTaskSettings =
+                    [
+                        new ScheduledTaskSetting { Id = "gaming-task-family-safety", TaskPath = @"\Microsoft\Windows\Shell\FamilySafetyMonitor", RecommendedState = false, DefaultState = true },
+                    ],
+                },
+            ],
+        },
+    ];
 
     private static IReadOnlyList<SettingGroup> BuildSystemRestore()
     {
