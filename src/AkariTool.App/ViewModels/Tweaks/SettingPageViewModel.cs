@@ -69,6 +69,7 @@ public abstract partial class SettingPageViewModel : ViewModelBase
             }
 
             _built = true;
+            RefreshQuickActionCounts();
         }
     }
 
