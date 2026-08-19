@@ -775,11 +775,281 @@ public static class GamingOptimizations
         },
     ];
 
-    private static IReadOnlyList<SettingGroup> BuildGraphics()
-    {
-        // TODO: Graphics — GamingTweaks.Graphics.cs
-        return [];
-    }
+    private static IReadOnlyList<SettingGroup> BuildGraphics() =>
+    [
+        new SettingGroup
+        {
+            Name = "Graphics",
+            FeatureId = "gaming-graphics",
+            Settings =
+            [
+                new SettingDefinition
+                {
+                    Id = "gaming-gpu-scheduling",
+                    Name = "Hardware-Accelerated GPU Scheduling (HAGS)",
+                    Description = "Let your GPU manage its own memory and scheduling for reduced latency and improved performance",
+                    RequiresRestart = true,
+                    RecommendedToggleState = true,
+                    DefaultToggleState = true,
+                    RegistrySettings =
+                    [
+                        // Enable = delete HwSchMode (default = enabled); Disable = write 1
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\GraphicsDrivers",
+                            ValueName = "HwSchMode",
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { null },
+                            DisabledValue = new object?[] { 1 },
+                            ValueType = RegistryValueKind.DWord,
+                            IsPrimary = true,
+                        },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-directx-flip-model",
+                    Name = "Optimizations for Windowed Games",
+                    Description = "Reduce latency and use advanced features in compatible games by using DirectX flip presentation model",
+                    RecommendedToggleState = true,
+                    DefaultToggleState = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\DirectX\UserGpuPreferences",
+                            ValueName = "DirectXUserGlobalSettings",
+                            RecommendedValue = "1",
+                            DefaultValue = "1",
+                            EnabledValue = new object?[] { "1", null },
+                            DisabledValue = new object?[] { "0" },
+                            ValueType = RegistryValueKind.String,
+                            CompositeStringKey = "SwapEffectUpgradeEnable",
+                            IsPrimary = true,
+                        },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-directx-vrr-optimizations",
+                    Name = "Variable Refresh Rate (G-Sync/FreeSync)",
+                    Description = "Enable VRR optimizations for smoother gameplay. Requires a VRR-compatible monitor; has no effect if your monitor does not support VRR",
+                    IsSubjectivePreference = true,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\DirectX\UserGpuPreferences",
+                            ValueName = "DirectXUserGlobalSettings",
+                            RecommendedValue = "0",
+                            DefaultValue = "1",
+                            EnabledValue = new object?[] { "1", null },
+                            DisabledValue = new object?[] { "0" },
+                            ValueType = RegistryValueKind.String,
+                            CompositeStringKey = "VRROptimizeEnable",
+                            IsPrimary = true,
+                        },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-directx-auto-hdr",
+                    Name = "Auto HDR",
+                    Description = "Automatically convert SDR content to HDR for enhanced colors and brightness. Requires an HDR-capable display with HDR enabled",
+                    IsSubjectivePreference = true,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = false,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\DirectX\UserGpuPreferences",
+                            ValueName = "DirectXUserGlobalSettings",
+                            RecommendedValue = "0",
+                            DefaultValue = "0",
+                            EnabledValue = new object?[] { "1", null },
+                            DisabledValue = new object?[] { "0" },
+                            ValueType = RegistryValueKind.String,
+                            CompositeStringKey = "AutoHDREnable",
+                            IsPrimary = true,
+                        },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-nvidia-sharpening",
+                    Name = "Legacy NVIDIA Image Sharpening",
+                    Description = "Enable legacy NVIDIA image sharpening filter for enhanced visual clarity. Only works on older NVIDIA drivers; newer drivers should use NVIDIA Control Panel sharpening instead",
+                    IsSubjectivePreference = true,
+                    RecommendedToggleState = true,
+                    DefaultToggleState = false,
+                    RegistrySettings =
+                    [
+                        // Inverted: EnableGR535 = 0 means sharpening enabled
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\Software\NVIDIA Corporation\Global\FTS",
+                            ValueName = "EnableGR535",
+                            RecommendedValue = 0,
+                            DefaultValue = 1,
+                            EnabledValue = new object?[] { 0 },
+                            DisabledValue = new object?[] { 1 },
+                            ValueType = RegistryValueKind.DWord,
+                            IsPrimary = true,
+                        },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-fullscreen-optimizations",
+                    Name = "Fullscreen Optimizations",
+                    Description = "Allow Windows to optimize games running in fullscreen mode. Disabling can fix stuttering in some older games",
+                    RecommendedToggleState = true,
+                    DefaultToggleState = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\System\GameConfigStore",
+                            ValueName = "GameDVR_FSEBehaviorMode",
+                            RecommendedValue = 0,
+                            DefaultValue = 0,
+                            EnabledValue = new object?[] { 0, null },
+                            DisabledValue = new object?[] { 2 },
+                            ValueType = RegistryValueKind.DWord,
+                            IsPrimary = true,
+                        },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-performance-desktop-composition",
+                    Name = "Desktop Composition Effects",
+                    Description = "Enable visual effects managed by the Desktop Window Manager. Disabling may provide minor performance gains on older hardware but will break Aero effects",
+                    RecommendedToggleState = true,
+                    DefaultToggleState = true,
+                    RegistrySettings =
+                    [
+                        // Enable = delete CompositionPolicy (default = enabled); Disable = write 0
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\DWM",
+                            ValueName = "CompositionPolicy",
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { null },
+                            DisabledValue = new object?[] { 0 },
+                            ValueType = RegistryValueKind.DWord,
+                            IsPrimary = true,
+                        },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-auto-color-management",
+                    Name = "Auto Color Management",
+                    Description = "Allow Windows to automatically manage color profiles for all connected displays that support it",
+                    IsSubjectivePreference = true,
+                    RequiresRestart = true,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = false,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\GraphicsDrivers\MonitorDataStore",
+                            ValueName = "AutoColorManagementEnabled",
+                            RecommendedValue = 0,
+                            DefaultValue = 0,
+                            EnabledValue = new object?[] { 1 },
+                            DisabledValue = new object?[] { 0 },
+                            ValueType = RegistryValueKind.DWord,
+                            ApplyPerMonitor = true,
+                            IsPrimary = true,
+                        },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-disable-mpo",
+                    Name = "Multi-Plane Overlay (MPO)",
+                    Description = "Composite multiple display layers in hardware using the GPU. Disabling can fix screen flickering, black screens, and stuttering on multi-monitor setups",
+                    IsSubjectivePreference = true,
+                    RequiresRestart = true,
+                    RecommendedToggleState = true,
+                    DefaultToggleState = true,
+                    RegistrySettings =
+                    [
+                        // Enable = delete OverlayTestMode (default = enabled); Disable = write 5
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\Dwm",
+                            ValueName = "OverlayTestMode",
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { null },
+                            DisabledValue = new object?[] { 5 },
+                            ValueType = RegistryValueKind.DWord,
+                            IsPrimary = true,
+                        },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-disable-all-overlays",
+                    Name = "Hardware Overlays",
+                    Description = "Allow the graphics driver to use hardware overlay surfaces. Disabling forces software composition and is known to break Steam, Discord, and RTSS in-game overlays",
+                    IsSubjectivePreference = true,
+                    RequiresRestart = true,
+                    RecommendedToggleState = true,
+                    DefaultToggleState = true,
+                    RegistrySettings =
+                    [
+                        // Enable = delete DisableOverlays (default = enabled); Disable = write 1
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\GraphicsDrivers",
+                            ValueName = "DisableOverlays",
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { null },
+                            DisabledValue = new object?[] { 1 },
+                            ValueType = RegistryValueKind.DWord,
+                            IsPrimary = true,
+                        },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-disable-mpo-min-fps",
+                    Name = "MPO Minimum Frame Rate Requirement",
+                    Description = "Allow DWM to dynamically switch apps between overlay modes based on frame rate. Disabling can fix stuttering in browsers and Discord without fully disabling MPO",
+                    IsSubjectivePreference = true,
+                    RequiresRestart = true,
+                    RecommendedToggleState = true,
+                    DefaultToggleState = true,
+                    RegistrySettings =
+                    [
+                        // Enable = delete OverlayMinFPS (default = enabled); Disable = write 0
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\Dwm",
+                            ValueName = "OverlayMinFPS",
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { null },
+                            DisabledValue = new object?[] { 0 },
+                            ValueType = RegistryValueKind.DWord,
+                            IsPrimary = true,
+                        },
+                    ],
+                },
+            ],
+        },
+    ];
 
     private static IReadOnlyList<SettingGroup> BuildStorage() =>
     [
