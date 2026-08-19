@@ -115,6 +115,7 @@ public abstract partial class SettingPageViewModel : ViewModelBase
             foreach (var item in section.Items)
                 if (item.HasRecommendedQuickSet)
                     await item.ApplyRecommendedCommand.ExecuteAsync(null);
+        RefreshQuickActionCounts();
     }
 
     [RelayCommand]
@@ -124,6 +125,7 @@ public abstract partial class SettingPageViewModel : ViewModelBase
             foreach (var item in section.Items)
                 if (item.HasDefaultQuickSet)
                     await item.ApplyDefaultCommand.ExecuteAsync(null);
+        RefreshQuickActionCounts();
     }
 
     [RelayCommand]
