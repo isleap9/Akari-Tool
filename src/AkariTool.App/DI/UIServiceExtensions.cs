@@ -98,7 +98,7 @@ public static class UIServiceExtensions
         services.AddSingleton<SettingPageViewModel>(sp => sp.GetRequiredService<GamingViewModel>());
         services.AddSingleton<SettingPageViewModel>(sp => sp.GetRequiredService<SoundViewModel>());
         services.AddSingleton<SettingPageViewModel>(sp => sp.GetRequiredService<NotificationsViewModel>());
-        services.AddSingleton<TweakPageViewModel>(sp => sp.GetRequiredService<UpdateViewModel>());
+        services.AddSingleton<SettingPageViewModel>(sp => sp.GetRequiredService<UpdateViewModel>());
         services.AddSingleton<SettingPageViewModel>(sp => sp.GetRequiredService<PrivacyViewModel>());
         services.AddSingleton<SettingPageViewModel>(sp => sp.GetRequiredService<TaskbarViewModel>());
         services.AddSingleton<SettingPageViewModel>(sp => sp.GetRequiredService<ExplorerViewModel>());

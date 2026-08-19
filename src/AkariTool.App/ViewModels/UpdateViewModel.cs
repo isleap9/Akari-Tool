@@ -1,27 +1,31 @@
+using System.Collections.Generic;
+using AkariTool.Core.Features.Common.Models;
+using AkariTool.Core.Features.Common.Interfaces;
+using AkariTool.Infrastructure.Features.Common.Interfaces;
 using AkariTool.Services;
-using AkariTool.Tabs;
 using AkariTool.Tabs.Update;
 using AkariTool.ViewModels.Tweaks;
-using AkariTool.Core.Tweaks;
 
 namespace AkariTool.ViewModels;
 
 /// <summary>
-/// Windows Updates page. Wave-2 rollout tab — a single-catalog, standard
-/// tweak-row tab with no bespoke sections, reusing the Gaming rendering layer.
+/// Windows Updates page. Now on the declarative SettingDefinition path
+/// (Track A Phase 4) — the catalog is built from <see cref="UpdateOptimizations"/>
+/// rather than the delegate-based UpdateTweaks.
 ///
-/// Section order matches net8's UpdateTab.Build() exactly: Update Policy →
-/// Delivery &amp; Store → Update Behavior. Two of the rows are dropdowns
-/// ("Windows Update Policy", "Delivery Optimization").
-///
-/// Cosmetic note: the net8 UpdateTab centred its content at MaxWidth 860 (one of
-/// three intentionally-narrow tabs). This page uses the shared 1100-wide shell
-/// (copy of the wave-1 page); the narrower centring is a deferred cosmetic, not a
-/// functional difference. Flagged in MIGRATION_LOG.
+/// updates-policy-mode (the Windows Update Policy dropdown) is deferred: its
+/// detection requires a composite multi-value read (Paused/Disabled states
+/// collide under single-value matching), which the SettingDefinition stack
+/// cannot yet express. It stays out of the declarative catalog until a
+/// composite-detection implementation lands.
 /// </summary>
-public sealed partial class UpdateViewModel : TweakPageViewModel
+public sealed partial class UpdateViewModel : SettingPageViewModel
 {
-    public UpdateViewModel(TweakDialogs dialogs, ToolService tool) : base(dialogs, tool)
+    public UpdateViewModel(
+        ISettingStateReader stateReader,
+        ISettingOperationExecutor executor,
+        TweakDialogs dialogs)
+        : base(stateReader, executor, dialogs)
     {
         Title = "Windows Updates";
         Subtitle = "Update policy, delivery optimisation, and update behaviour controls.";
@@ -30,12 +34,5 @@ public sealed partial class UpdateViewModel : TweakPageViewModel
     public override string NavTag => "Update";
     public override string NavLabel => "Windows Updates";
 
-    protected override IEnumerable<(string Title, TweakDefinition[] Tweaks)> BuildCatalog()
-    {
-        Action<string> log = Tool.Log;
-
-        yield return ("Update Policy", UpdateTweaks.UpdatePolicy(log));
-        yield return ("Delivery & Store", UpdateTweaks.DeliveryAndStore(log));
-        yield return ("Update Behavior", UpdateTweaks.UpdateBehavior(log));
-    }
+    protected override IReadOnlyList<SettingGroup> BuildSettingGroups() => UpdateOptimizations.Build();
 }
