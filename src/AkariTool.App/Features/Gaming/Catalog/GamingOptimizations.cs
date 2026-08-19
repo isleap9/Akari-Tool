@@ -1342,11 +1342,818 @@ public static class GamingOptimizations
         },
     ];
 
-    private static IReadOnlyList<SettingGroup> BuildSystemServices()
-    {
-        // TODO: System Services — GamingTweaks.SystemServices.cs
-        return [];
-    }
+    private static IReadOnlyList<SettingGroup> BuildSystemServices() =>
+    [
+        new SettingGroup
+        {
+            Name = "System Services",
+            FeatureId = "gaming-system-services",
+            Settings =
+            [
+                new SettingDefinition
+                {
+                    Id = "gaming-sysmain-service",
+                    Name = "SysMain Service (Superfetch)",
+                    Description = "Preload frequently used applications into RAM for faster launch times. Automatic is recommended for HDD or mixed-storage systems; Manual or Disabled for SSD-only systems",
+                    InputType = InputType.Selection,
+                    IsSubjectivePreference = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\SysMain", ValueName = "Start", RecommendedValue = 4, DefaultValue = 2, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                    ],
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options =
+                        [
+                            new ComboBoxOption { DisplayName = "Disabled", IsRecommended = true, Warning = "Disabling SysMain on systems with a traditional hard drive (HDD) can noticeably reduce responsiveness and slow app launches. Recommended only for SSD-only systems.", ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
+                            new ComboBoxOption { DisplayName = "Manual", ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Automatic", IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
+                        ],
+                    },
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-windows-search-service",
+                    Name = "Windows Search Indexing Service",
+                    Description = "Indexes files and folders for faster search results. Disabling reduces background CPU and disk activity but breaks Outlook search and makes Start Menu and File Explorer search slow or unreliable",
+                    InputType = InputType.Selection,
+                    IsSubjectivePreference = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\WSearch", ValueName = "Start", RecommendedValue = 3, DefaultValue = 2, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                    ],
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options =
+                        [
+                            new ComboBoxOption { DisplayName = "Disabled", Warning = "Disabling Windows Search stops file content indexing. Outlook search, Start Menu search, and File Explorer search will become slow or return no results until re-enabled.", ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
+                            new ComboBoxOption { DisplayName = "Manual", IsRecommended = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Automatic", IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
+                        ],
+                    },
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-print-spooler-service",
+                    Name = "Print Spooler Service",
+                    Description = "Manages print jobs sent to printers. If you don't use a printer, set to Manual or Disabled to free up system resources",
+                    InputType = InputType.Selection,
+                    IsSubjectivePreference = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Spooler", ValueName = "Start", RecommendedValue = 3, DefaultValue = 2, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                    ],
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options =
+                        [
+                            new ComboBoxOption { DisplayName = "Disabled", ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
+                            new ComboBoxOption { DisplayName = "Manual", IsRecommended = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Automatic", IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
+                        ],
+                    },
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-telemetry-service",
+                    Name = "Connected User Experiences and Telemetry",
+                    Description = "Sends usage data and diagnostics to Microsoft. Setting to Manual or Disabled reduces background network and CPU usage",
+                    InputType = InputType.Selection,
+                    IsSubjectivePreference = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\DiagTrack", ValueName = "Start", RecommendedValue = 3, DefaultValue = 2, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                    ],
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options =
+                        [
+                            new ComboBoxOption { DisplayName = "Disabled", ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
+                            new ComboBoxOption { DisplayName = "Manual", IsRecommended = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Automatic", IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
+                        ],
+                    },
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-error-reporting-service",
+                    Name = "Windows Error Reporting Service",
+                    Description = "Collects and sends crash data to Microsoft. Disabling prevents crash reporting and reduces network traffic",
+                    InputType = InputType.Selection,
+                    IsSubjectivePreference = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\WerSvc", ValueName = "Start", RecommendedValue = 3, DefaultValue = 3, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                    ],
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options =
+                        [
+                            new ComboBoxOption { DisplayName = "Disabled", ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
+                            new ComboBoxOption { DisplayName = "Manual", IsRecommended = true, IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Automatic", ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
+                        ],
+                    },
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-geolocation-service",
+                    Name = "Geolocation Service",
+                    Description = "Tracks your physical location for apps and services. Disabling improves privacy and prevents location tracking",
+                    InputType = InputType.Selection,
+                    IsSubjectivePreference = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\lfsvc", ValueName = "Start", RecommendedValue = 3, DefaultValue = 3, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                    ],
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options =
+                        [
+                            new ComboBoxOption { DisplayName = "Disabled", ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
+                            new ComboBoxOption { DisplayName = "Manual", IsRecommended = true, IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Automatic", ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
+                        ],
+                    },
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-retail-demo-service",
+                    Name = "Retail Demo Service",
+                    Description = "Controls device activity when in retail demo mode. Safe to disable for personal computers",
+                    InputType = InputType.Selection,
+                    IsSubjectivePreference = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\RetailDemo", ValueName = "Start", RecommendedValue = 3, DefaultValue = 3, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                    ],
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options =
+                        [
+                            new ComboBoxOption { DisplayName = "Disabled", ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
+                            new ComboBoxOption { DisplayName = "Manual", IsRecommended = true, IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Automatic", ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
+                        ],
+                    },
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-insider-service",
+                    Name = "Windows Insider Service",
+                    Description = "Manages Windows Insider Program features and preview builds. Safe to disable if you're not in the Insider Program",
+                    InputType = InputType.Selection,
+                    IsSubjectivePreference = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\wisvc", ValueName = "Start", RecommendedValue = 3, DefaultValue = 3, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                    ],
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options =
+                        [
+                            new ComboBoxOption { DisplayName = "Disabled", ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
+                            new ComboBoxOption { DisplayName = "Manual", IsRecommended = true, IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Automatic", ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
+                        ],
+                    },
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-phone-service",
+                    Name = "Phone Service",
+                    Description = "Manages telephony state on the device. Safe to disable if you don't use phone connectivity features",
+                    InputType = InputType.Selection,
+                    IsSubjectivePreference = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\PhoneSvc", ValueName = "Start", RecommendedValue = 3, DefaultValue = 3, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                    ],
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options =
+                        [
+                            new ComboBoxOption { DisplayName = "Disabled", ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
+                            new ComboBoxOption { DisplayName = "Manual", IsRecommended = true, IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Automatic", ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
+                        ],
+                    },
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-wallet-service",
+                    Name = "Wallet Service",
+                    Description = "Provides wallet functionality for payment and NFC scenarios. Safe to disable if you don't use Microsoft Wallet",
+                    InputType = InputType.Selection,
+                    IsSubjectivePreference = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\WalletService", ValueName = "Start", RecommendedValue = 3, DefaultValue = 3, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                    ],
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options =
+                        [
+                            new ComboBoxOption { DisplayName = "Disabled", ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
+                            new ComboBoxOption { DisplayName = "Manual", IsRecommended = true, IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Automatic", ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
+                        ],
+                    },
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-maps-broker-service",
+                    Name = "Downloaded Maps Manager",
+                    Description = "Provides access to downloaded maps for applications. Set to Manual to allow map access when needed",
+                    InputType = InputType.Selection,
+                    IsSubjectivePreference = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\MapsBroker", ValueName = "Start", RecommendedValue = 3, DefaultValue = 2, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                    ],
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options =
+                        [
+                            new ComboBoxOption { DisplayName = "Disabled", ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
+                            new ComboBoxOption { DisplayName = "Manual", IsRecommended = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Automatic", IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
+                        ],
+                    },
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-fax-service",
+                    Name = "Fax Service",
+                    Description = "Enables sending and receiving faxes. Safe to disable for most users as fax functionality is rarely used",
+                    InputType = InputType.Selection,
+                    IsSubjectivePreference = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Fax", ValueName = "Start", RecommendedValue = 4, DefaultValue = 4, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                    ],
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options =
+                        [
+                            new ComboBoxOption { DisplayName = "Disabled", IsRecommended = true, IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
+                            new ComboBoxOption { DisplayName = "Manual", ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Automatic", ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
+                        ],
+                    },
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-wmp-network-service",
+                    Name = "Windows Media Player Network Sharing",
+                    Description = "Shares Windows Media Player libraries to other networked players and media devices",
+                    InputType = InputType.Selection,
+                    IsSubjectivePreference = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\WMPNetworkSvc", ValueName = "Start", RecommendedValue = 4, DefaultValue = 3, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                    ],
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options =
+                        [
+                            new ComboBoxOption { DisplayName = "Disabled", IsRecommended = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
+                            new ComboBoxOption { DisplayName = "Manual", IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Automatic", ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
+                        ],
+                    },
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-mixed-reality-service",
+                    Name = "Windows Mixed Reality OpenXR Service",
+                    Description = "Runs OpenXR applications on Windows Mixed Reality devices. Safe to disable if you don't use VR or AR headsets",
+                    InputType = InputType.Selection,
+                    IsSubjectivePreference = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\MixedRealityOpenXRSvc", ValueName = "Start", RecommendedValue = 3, DefaultValue = 4, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                    ],
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options =
+                        [
+                            new ComboBoxOption { DisplayName = "Disabled", ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
+                            new ComboBoxOption { DisplayName = "Manual", IsRecommended = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Automatic", ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
+                        ],
+                    },
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-mobile-hotspot-service",
+                    Name = "Windows Mobile Hotspot Service",
+                    Description = "Provides ability to share internet connection with other devices",
+                    InputType = InputType.Selection,
+                    IsSubjectivePreference = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\icssvc", ValueName = "Start", RecommendedValue = 3, DefaultValue = 3, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                    ],
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options =
+                        [
+                            new ComboBoxOption { DisplayName = "Disabled", ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
+                            new ComboBoxOption { DisplayName = "Manual", IsRecommended = true, IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Automatic", ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
+                        ],
+                    },
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-sms-router-service",
+                    Name = "SMS Router Service",
+                    Description = "Routes SMS messages according to rules. Safe to disable if you don't use SMS features on your PC",
+                    InputType = InputType.Selection,
+                    IsSubjectivePreference = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\SmsRouter", ValueName = "Start", RecommendedValue = 3, DefaultValue = 3, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                    ],
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options =
+                        [
+                            new ComboBoxOption { DisplayName = "Disabled", ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
+                            new ComboBoxOption { DisplayName = "Manual", IsRecommended = true, IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Automatic", ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
+                        ],
+                    },
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-parental-controls-service",
+                    Name = "Parental Controls Service",
+                    Description = "Enables parental controls and family safety features. Safe to disable if you don't use parental controls",
+                    InputType = InputType.Selection,
+                    IsSubjectivePreference = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\WpcMonSvc", ValueName = "Start", RecommendedValue = 3, DefaultValue = 3, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                    ],
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options =
+                        [
+                            new ComboBoxOption { DisplayName = "Disabled", ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
+                            new ComboBoxOption { DisplayName = "Manual", IsRecommended = true, IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Automatic", ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
+                        ],
+                    },
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-payments-nfc-service",
+                    Name = "Payments and NFC/SE Manager",
+                    Description = "Manages payments and Near Field Communication secure elements. Safe to disable if you don't use NFC payments",
+                    InputType = InputType.Selection,
+                    IsSubjectivePreference = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\SEMgrSvc", ValueName = "Start", RecommendedValue = 3, DefaultValue = 3, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                    ],
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options =
+                        [
+                            new ComboBoxOption { DisplayName = "Disabled", ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
+                            new ComboBoxOption { DisplayName = "Manual", IsRecommended = true, IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Automatic", ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
+                        ],
+                    },
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-biometric-service",
+                    Name = "Windows Biometric Service",
+                    Description = "Enables fingerprint and facial recognition login via Windows Hello. Safe to disable on desktop systems without biometric hardware",
+                    InputType = InputType.Selection,
+                    IsSubjectivePreference = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\WbioSrvc", ValueName = "Start", RecommendedValue = 3, DefaultValue = 3, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                    ],
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options =
+                        [
+                            new ComboBoxOption { DisplayName = "Disabled", ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
+                            new ComboBoxOption { DisplayName = "Manual", IsRecommended = true, IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Automatic", ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
+                        ],
+                    },
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-remote-access-manager",
+                    Name = "Remote Access Connection Manager",
+                    Description = "Manages VPN and dial-up connections. Set to Manual to reduce background activity while keeping VPN available",
+                    InputType = InputType.Selection,
+                    IsSubjectivePreference = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\RasMan", ValueName = "Start", RecommendedValue = 3, DefaultValue = 3, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                    ],
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options =
+                        [
+                            new ComboBoxOption { DisplayName = "Disabled", ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
+                            new ComboBoxOption { DisplayName = "Manual", IsRecommended = true, IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Automatic", ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
+                        ],
+                    },
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-remote-access-auto",
+                    Name = "Remote Access Auto Connection Manager",
+                    Description = "Automatically connects to remote networks when programs reference remote resources",
+                    InputType = InputType.Selection,
+                    IsSubjectivePreference = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\RasAuto", ValueName = "Start", RecommendedValue = 3, DefaultValue = 3, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                    ],
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options =
+                        [
+                            new ComboBoxOption { DisplayName = "Disabled", ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
+                            new ComboBoxOption { DisplayName = "Manual", IsRecommended = true, IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Automatic", ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
+                        ],
+                    },
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-remote-desktop-services",
+                    Name = "Remote Desktop Services",
+                    Description = "Allows users to connect interactively to a remote computer",
+                    InputType = InputType.Selection,
+                    IsSubjectivePreference = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\TermService", ValueName = "Start", RecommendedValue = 3, DefaultValue = 3, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                    ],
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options =
+                        [
+                            new ComboBoxOption { DisplayName = "Disabled", ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
+                            new ComboBoxOption { DisplayName = "Manual", IsRecommended = true, IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Automatic", ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
+                        ],
+                    },
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-remote-desktop-configuration",
+                    Name = "Remote Desktop Configuration",
+                    Description = "Manages Remote Desktop Services and Remote Desktop related configurations",
+                    InputType = InputType.Selection,
+                    IsSubjectivePreference = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\SessionEnv", ValueName = "Start", RecommendedValue = 3, DefaultValue = 3, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                    ],
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options =
+                        [
+                            new ComboBoxOption { DisplayName = "Disabled", ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
+                            new ComboBoxOption { DisplayName = "Manual", IsRecommended = true, IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Automatic", ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
+                        ],
+                    },
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-compatibility-assistant-service",
+                    Name = "Program Compatibility Assistant Service",
+                    Description = "Monitors programs for compatibility issues and suggests fixes. Disabling prevents compatibility prompts",
+                    InputType = InputType.Selection,
+                    IsSubjectivePreference = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\PcaSvc", ValueName = "Start", RecommendedValue = 3, DefaultValue = 2, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                    ],
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options =
+                        [
+                            new ComboBoxOption { DisplayName = "Disabled", ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
+                            new ComboBoxOption { DisplayName = "Manual", IsRecommended = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Automatic", IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
+                        ],
+                    },
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-ai-fabric-service",
+                    Name = "Windows AI Fabric Service",
+                    Description = "Windows AI Fabric Service (WSAIFabricSvc) manages AI workloads. Disable if you don't use Windows AI features",
+                    InputType = InputType.Selection,
+                    IsSubjectivePreference = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\WSAIFabricSvc", ValueName = "Start", RecommendedValue = 4, DefaultValue = 2, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                    ],
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options =
+                        [
+                            new ComboBoxOption { DisplayName = "Disabled", IsRecommended = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
+                            new ComboBoxOption { DisplayName = "Manual", ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Automatic", IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
+                        ],
+                    },
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-sensor-monitoring-service",
+                    Name = "Sensor Monitoring Service",
+                    Description = "Monitors various sensors like ambient light and orientation. Safe to disable on desktop systems without sensor hardware",
+                    InputType = InputType.Selection,
+                    IsSubjectivePreference = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\SensrSvc", ValueName = "Start", RecommendedValue = 3, DefaultValue = 3, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                    ],
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options =
+                        [
+                            new ComboBoxOption { DisplayName = "Disabled", ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
+                            new ComboBoxOption { DisplayName = "Manual", IsRecommended = true, IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Automatic", ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
+                        ],
+                    },
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-sensor-data-service",
+                    Name = "Sensor Data Service",
+                    Description = "Delivers data from a variety of sensors to applications. Safe to disable on desktop systems without sensor hardware",
+                    InputType = InputType.Selection,
+                    IsSubjectivePreference = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\SensorDataService", ValueName = "Start", RecommendedValue = 3, DefaultValue = 3, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                    ],
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options =
+                        [
+                            new ComboBoxOption { DisplayName = "Disabled", ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
+                            new ComboBoxOption { DisplayName = "Manual", IsRecommended = true, IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Automatic", ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
+                        ],
+                    },
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-telephony-service",
+                    Name = "Telephony Service",
+                    Description = "Manages telephony (TAPI) for Phone Link audio relay, modems, fax, and VoIP softphones. Leave at Manual unless you use no telephony software",
+                    InputType = InputType.Selection,
+                    IsSubjectivePreference = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\TapiSrv", ValueName = "Start", RecommendedValue = 3, DefaultValue = 3, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                    ],
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options =
+                        [
+                            new ComboBoxOption { DisplayName = "Disabled", Warning = "Disabling Telephony breaks Phone Link audio relay, fax software, dial-up modems, and VoIP softphones (e.g. 3CX, Cisco Jabber).", ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
+                            new ComboBoxOption { DisplayName = "Manual", IsRecommended = true, IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Automatic", ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
+                        ],
+                    },
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-connected-devices-platform-service",
+                    Name = "Connected Devices Platform Service",
+                    Description = "Enables cross-device experiences like phone linking and nearby sharing. Note: can break Windows Night Light. Use Automatic if you use Night Light.",
+                    InputType = InputType.Selection,
+                    IsSubjectivePreference = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\CDPSvc", ValueName = "Start", RecommendedValue = 3, DefaultValue = 2, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                    ],
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options =
+                        [
+                            new ComboBoxOption { DisplayName = "Disabled", Warning = "Disabling the Connected Devices Platform can break Windows Night Light and cross-device features (Phone Link, Nearby Sharing, clipboard sync). Manual keeps these working — it effectively auto-starts with your session.", ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
+                            new ComboBoxOption { DisplayName = "Manual", IsRecommended = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Automatic", IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
+                        ],
+                    },
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-smart-card-services",
+                    Name = "Smart Card Services",
+                    Description = "Enables smart card reader functionality. Safe to disable if you don't use physical smart cards.",
+                    InputType = InputType.Selection,
+                    IsSubjectivePreference = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\SCardSvr", ValueName = "Start", RecommendedValue = 4, DefaultValue = 3, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                    ],
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options =
+                        [
+                            new ComboBoxOption { DisplayName = "Disabled", IsRecommended = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
+                            new ComboBoxOption { DisplayName = "Manual", IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Automatic", ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
+                        ],
+                    },
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-spot-verifier-service",
+                    Name = "Spot Verifier Service",
+                    Description = "Verifies potential file system corruptions. Set to Manual to allow verification when needed.",
+                    InputType = InputType.Selection,
+                    IsSubjectivePreference = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\svsvc", ValueName = "Start", RecommendedValue = 3, DefaultValue = 3, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                    ],
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options =
+                        [
+                            new ComboBoxOption { DisplayName = "Disabled", ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
+                            new ComboBoxOption { DisplayName = "Manual", IsRecommended = true, IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Automatic", ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
+                        ],
+                    },
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-remote-desktop-port-redirector",
+                    Name = "Remote Desktop Services UserMode Port Redirector",
+                    Description = "Allows local device redirection for Remote Desktop connections. Safe to disable if you don't use Remote Desktop.",
+                    InputType = InputType.Selection,
+                    IsSubjectivePreference = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\UmRdpService", ValueName = "Start", RecommendedValue = 3, DefaultValue = 3, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                    ],
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options =
+                        [
+                            new ComboBoxOption { DisplayName = "Disabled", ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
+                            new ComboBoxOption { DisplayName = "Manual", IsRecommended = true, IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Automatic", ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
+                        ],
+                    },
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-touch-keyboard-service",
+                    Name = "Touch Keyboard and Handwriting Panel Service",
+                    Description = "Manages Windows touch keyboard, pen/stylus, and handwriting panel. Safe to disable on desktop systems without touch input.",
+                    InputType = InputType.Selection,
+                    IsSubjectivePreference = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\TabletInputService", ValueName = "Start", RecommendedValue = 4, DefaultValue = 3, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                    ],
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options =
+                        [
+                            new ComboBoxOption { DisplayName = "Disabled", IsRecommended = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
+                            new ComboBoxOption { DisplayName = "Manual", IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Automatic", ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
+                        ],
+                    },
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-input-app-preload",
+                    Name = "Input App Preload",
+                    Description = "Preload the Windows Input Experience (touch keyboard, emoji panel) at sign-in. Disable alongside the Touch Keyboard service to stop it running in the background",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = true,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\input",
+                            ValueName = "IsInputAppPreloadEnabled",
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 1, null },
+                            DisabledValue = new object?[] { 0 },
+                            ValueType = RegistryValueKind.DWord,
+                            IsPrimary = true,
+                        },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-xbox-auth-manager",
+                    Name = "Xbox Live Auth Manager",
+                    Description = "Provides authentication for Xbox Live. Safe to disable if you don't use Xbox Game Pass or Microsoft Store games.",
+                    InputType = InputType.Selection,
+                    IsSubjectivePreference = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\XblAuthManager", ValueName = "Start", RecommendedValue = 4, DefaultValue = 3, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                    ],
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options =
+                        [
+                            new ComboBoxOption { DisplayName = "Disabled", IsRecommended = true, Warning = "Disabling will prevent Xbox Game Pass and Microsoft Store games from signing in or launching.", ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
+                            new ComboBoxOption { DisplayName = "Manual", IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Automatic", ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
+                        ],
+                    },
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-xbox-game-save",
+                    Name = "Xbox Live Game Save",
+                    Description = "Syncs game saves to Xbox Live cloud. Only needed for Xbox Game Pass and Microsoft Store games with cloud saves.",
+                    InputType = InputType.Selection,
+                    IsSubjectivePreference = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\XblGameSave", ValueName = "Start", RecommendedValue = 4, DefaultValue = 3, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                    ],
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options =
+                        [
+                            new ComboBoxOption { DisplayName = "Disabled", IsRecommended = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
+                            new ComboBoxOption { DisplayName = "Manual", IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Automatic", ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
+                        ],
+                    },
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-xbox-networking",
+                    Name = "Xbox Live Networking Service",
+                    Description = "Supports Xbox Live multiplayer networking. Not needed for Steam or Epic games.",
+                    InputType = InputType.Selection,
+                    IsSubjectivePreference = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\XboxNetApiSvc", ValueName = "Start", RecommendedValue = 4, DefaultValue = 3, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                    ],
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options =
+                        [
+                            new ComboBoxOption { DisplayName = "Disabled", IsRecommended = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
+                            new ComboBoxOption { DisplayName = "Manual", IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Automatic", ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
+                        ],
+                    },
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-midi-service",
+                    Name = "Windows MIDI Service",
+                    Description = "Routes MIDI data for connected musical instruments and audio interfaces. Safe to disable if you don't use MIDI hardware; set to Manual to allow it to start on demand",
+                    InputType = InputType.Selection,
+                    IsSubjectivePreference = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\midisrv", ValueName = "Start", RecommendedValue = 3, DefaultValue = 3, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                    ],
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options =
+                        [
+                            new ComboBoxOption { DisplayName = "Disabled", ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
+                            new ComboBoxOption { DisplayName = "Manual", IsRecommended = true, IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Automatic", ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
+                        ],
+                    },
+                },
+            ],
+        },
+    ];
 
     private static IReadOnlyList<SettingGroup> BuildScheduledTasks()
     {
