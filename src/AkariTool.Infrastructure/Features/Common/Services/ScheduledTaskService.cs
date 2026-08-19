@@ -7,10 +7,6 @@ using AkariTool.Infrastructure.Features.Common.Interfaces;
 
 namespace AkariTool.Infrastructure.Features.Common.Services;
 
-/// <summary>
-/// Enables and disables Windows scheduled tasks via the Task Scheduler COM API.
-/// Ported from Winhance's ScheduledTaskService (enable/disable path only).
-/// </summary>
 public sealed class ScheduledTaskService : IScheduledTaskService
 {
     private readonly IAkariLogService _log;
@@ -73,6 +69,6 @@ public sealed class ScheduledTaskService : IScheduledTaskService
     private static void ReleaseComObject(object? comObject)
     {
         if (comObject != null)
-            try { Marshal.ReleaseComObject(comObject); } catch { /* best-effort */ }
+            try { Marshal.ReleaseComObject(comObject); } catch { }
     }
 }

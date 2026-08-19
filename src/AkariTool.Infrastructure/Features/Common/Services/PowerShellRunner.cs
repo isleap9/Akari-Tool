@@ -7,10 +7,6 @@ using AkariTool.Infrastructure.Features.Common.Interfaces;
 
 namespace AkariTool.Infrastructure.Features.Common.Services;
 
-/// <summary>
-/// Runs PowerShell scripts in-memory via -EncodedCommand.
-/// Shells out to Windows PowerShell 5.1.
-/// </summary>
 public sealed class PowerShellRunner : IPowerShellRunner
 {
     private readonly IAkariLogService _log;
@@ -30,31 +26,29 @@ public sealed class PowerShellRunner : IPowerShellRunner
         var psi = new ProcessStartInfo(PowerShellPath,
             $"-NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand {encoded}")
         {
-            UseShellExecute       = false,
+            UseShellExecute        = false,
             RedirectStandardOutput = true,
             RedirectStandardError  = true,
-            CreateNoWindow        = true,
+            CreateNoWindow         = true,
         };
 
         try
         {
             using var process = Process.Start(psi)
-                ?? throw new InvalidOperationException("Failed to start PowerShell process.");
-
+                ?? throw new InvalidOperationException("Failed to start PowerShell.");
             var stdout = await process.StandardOutput.ReadToEndAsync().ConfigureAwait(false);
             var stderr = await process.StandardError.ReadToEndAsync().ConfigureAwait(false);
             await process.WaitForExitAsync().ConfigureAwait(false);
-
             if (!string.IsNullOrWhiteSpace(stdout))
                 _log.Log(LogLevel.Info, $"[PowerShell] {stdout.Trim()}");
             if (!string.IsNullOrWhiteSpace(stderr))
                 _log.Log(LogLevel.Warning, $"[PowerShell] {stderr.Trim()}");
             if (process.ExitCode != 0)
-                _log.Log(LogLevel.Warning, $"[PowerShell] Script exited with code {process.ExitCode}");
+                _log.Log(LogLevel.Warning, $"[PowerShell] Exited with code {process.ExitCode}");
         }
         catch (Exception ex)
         {
-            _log.Log(LogLevel.Error, $"[PowerShell] Failed to run script: {ex.Message}");
+            _log.Log(LogLevel.Error, $"[PowerShell] Failed: {ex.Message}");
         }
     }
 }

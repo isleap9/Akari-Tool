@@ -1,6 +1,5 @@
 using System;
 using System.Diagnostics;
-using System.Linq;
 using System.ServiceProcess;
 using System.Threading.Tasks;
 using AkariTool.Core.Features.Common.Enums;
@@ -9,11 +8,6 @@ using AkariTool.Infrastructure.Features.Common.Interfaces;
 
 namespace AkariTool.Infrastructure.Features.Common.Services;
 
-/// <summary>
-/// Restarts processes and services after a setting is applied.
-/// Reads RestartProcess and RestartService from SettingDefinition.
-/// Explorer restart is handled specially (kill + let Windows relaunch).
-/// </summary>
 public sealed class ProcessRestartManager : IProcessRestartManager
 {
     private readonly IAkariLogService _log;
@@ -54,14 +48,11 @@ public sealed class ProcessRestartManager : IProcessRestartManager
                     }
                     finally { p.Dispose(); }
                 }
-
                 if (name.Equals("explorer", StringComparison.OrdinalIgnoreCase))
                 {
-                    // Windows auto-relaunches Explorer after all instances exit.
                     _log.Log(LogLevel.Info, "[ProcessRestart] Explorer killed — Windows will relaunch it.");
                     return;
                 }
-
                 Process.Start(new ProcessStartInfo(processName) { UseShellExecute = true });
                 _log.Log(LogLevel.Info, $"[ProcessRestart] Restarted: {processName}");
             }
