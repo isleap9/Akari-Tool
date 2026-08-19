@@ -6,6 +6,8 @@ using AkariTool.ViewModels.Tweaks;
 using WinUI.Framework.Services;
 using AkariTool.Core.Tweaks;
 using AkariTool.Core.Interfaces;
+using AkariTool.Infrastructure.Features.Common.Services;
+using AkariTool.Infrastructure.Features.Common.Interfaces;
 
 namespace AkariTool.DI;
 
@@ -34,6 +36,12 @@ public static class UIServiceExtensions
         });
         // Same instance resolves for both IToolService and the concrete ToolService.
         services.AddSingleton<IToolService>(sp => sp.GetRequiredService<ToolService>());
+
+        services.AddSingleton<IAkariLogService>(sp =>
+        {
+            var tool = sp.GetRequiredService<ToolService>();
+            return new AkariLogService(line => tool.Log(line));
+        });
 
         // Dialog helper for tweak confirmations (serializes ContentDialogs).
         services.AddSingleton<TweakDialogs>();

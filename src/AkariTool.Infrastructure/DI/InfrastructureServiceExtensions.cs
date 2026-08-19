@@ -43,7 +43,6 @@ public static class InfrastructureServiceExtensions
         services.AddSingleton<IProcessExecutor, ProcessExecutor>();
         services.AddSingleton<IPowerShellRunner, PowerShellRunner>();
         services.AddSingleton<IFileSystemService, FileSystemService>();
-        services.AddSingleton<IAkariLogService, AkariLogService>();
 
         return services;
     }
