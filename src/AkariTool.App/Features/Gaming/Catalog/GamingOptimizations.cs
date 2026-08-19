@@ -1159,17 +1159,188 @@ public static class GamingOptimizations
         },
     ];
 
-    private static IReadOnlyList<SettingGroup> BuildXbox()
-    {
-        // TODO: Xbox — GamingTweaks.Xbox.cs
-        return [];
-    }
+    private static IReadOnlyList<SettingGroup> BuildXbox() =>
+    [
+        new SettingGroup
+        {
+            Name = "Xbox",
+            FeatureId = "gaming-xbox",
+            Settings =
+            [
+                new SettingDefinition
+                {
+                    Id = "gaming-xbox-game-dvr",
+                    Name = "Xbox Game DVR",
+                    Description = "Record gameplay clips and take screenshots using the Xbox Game Bar overlay. Disabling reduces CPU/GPU usage and can improve frame rates",
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\System\GameConfigStore",
+                            ValueName = "GameDVR_Enabled",
+                            RecommendedValue = 0,
+                            DefaultValue = 1,
+                            EnabledValue = new object?[] { 1, null },
+                            DisabledValue = new object?[] { 0 },
+                            ValueType = RegistryValueKind.DWord,
+                            IsPrimary = true,
+                        },
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\GameDVR",
+                            ValueName = "AppCaptureEnabled",
+                            RecommendedValue = 0,
+                            DefaultValue = 1,
+                            EnabledValue = new object?[] { 1 },
+                            DisabledValue = new object?[] { 0 },
+                            ValueType = RegistryValueKind.DWord,
+                        },
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\GameDVR",
+                            ValueName = "AllowGameDVR",
+                            RecommendedValue = 0,
+                            DefaultValue = 1,
+                            EnabledValue = new object?[] { 1 },
+                            DisabledValue = new object?[] { 0 },
+                            ValueType = RegistryValueKind.DWord,
+                        },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-game-bar-controller",
+                    Name = "Game Bar Controller Access",
+                    Description = "Allow your Xbox/compatible controller to open Game Bar by pressing the Xbox button. Disable to prevent accidental Game Bar activation during gaming",
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings =
+                    [
+                        // Enable = delete UseNexusForGameBarEnabled (default = enabled); Disable = write 0
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\GameBar",
+                            ValueName = "UseNexusForGameBarEnabled",
+                            RecommendedValue = 0,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { null },
+                            DisabledValue = new object?[] { 0 },
+                            ValueType = RegistryValueKind.DWord,
+                            IsPrimary = true,
+                        },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-game-bar-tips",
+                    Name = "Game Bar Tips and Hints",
+                    Description = "Show tips and hints about Game Bar features when opening the overlay. Disabling reduces distractions during gameplay",
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings =
+                    [
+                        // Enable = delete ShowStartupPanel (default = enabled); Disable = write 0
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\GameBar",
+                            ValueName = "ShowStartupPanel",
+                            RecommendedValue = 0,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { null },
+                            DisabledValue = new object?[] { 0 },
+                            ValueType = RegistryValueKind.DWord,
+                            IsPrimary = true,
+                        },
+                    ],
+                },
+            ],
+        },
+    ];
 
-    private static IReadOnlyList<SettingGroup> BuildSecurity()
-    {
-        // TODO: Security — GamingTweaks.Security.cs
-        return [];
-    }
+    private static IReadOnlyList<SettingGroup> BuildSecurity() =>
+    [
+        new SettingGroup
+        {
+            Name = "Security",
+            FeatureId = "gaming-security",
+            Settings =
+            [
+                new SettingDefinition
+                {
+                    Id = "gaming-virtualization-based-security",
+                    Name = "Virtualization Based Security (VBS)",
+                    Description = "Isolates parts of memory to protect the system from vulnerabilities. Disabling can improve gaming performance but reduces system security",
+                    IsSubjectivePreference = true,
+                    RequiresRestart = true,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\DeviceGuard",
+                            ValueName = "EnableVirtualizationBasedSecurity",
+                            RecommendedValue = 0,
+                            DefaultValue = 1,
+                            EnabledValue = new object?[] { 1, null },
+                            DisabledValue = new object?[] { 0 },
+                            ValueType = RegistryValueKind.DWord,
+                            IsPrimary = true,
+                        },
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\DeviceGuard",
+                            ValueName = "RequirePlatformSecurityFeatures",
+                            RecommendedValue = 0,
+                            DefaultValue = 1,
+                            EnabledValue = new object?[] { 1 },
+                            DisabledValue = new object?[] { 0 },
+                            ValueType = RegistryValueKind.DWord,
+                        },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "gaming-memory-integrity",
+                    Name = "Memory Integrity (HVCI)",
+                    Description = "Prevents malicious code from being inserted into high-security processes. Disabling can improve gaming performance but reduces system security",
+                    IsSubjectivePreference = true,
+                    RequiresRestart = true,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity",
+                            ValueName = "Enabled",
+                            RecommendedValue = 0,
+                            DefaultValue = 1,
+                            EnabledValue = new object?[] { 1, null },
+                            DisabledValue = new object?[] { 0 },
+                            ValueType = RegistryValueKind.DWord,
+                            IsPrimary = true,
+                        },
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity",
+                            ValueName = "WasEnabledBy",
+                            RecommendedValue = 0,
+                            DefaultValue = 2,
+                            EnabledValue = new object?[] { 2 },
+                            DisabledValue = new object?[] { 0 },
+                            ValueType = RegistryValueKind.DWord,
+                        },
+                    ],
+                },
+                // [DEFERRED: gaming-disable-defender — Apply calls DefenderService.SetAsync
+                //  (reboot-based servicing-package removal), not a registry value write; also
+                //  covered by the Defender do-not-touch rule in CLAUDE.md]
+            ],
+        },
+    ];
 
     private static IReadOnlyList<SettingGroup> BuildSystemServices()
     {
@@ -1189,11 +1360,156 @@ public static class GamingOptimizations
         return [];
     }
 
-    private static IReadOnlyList<SettingGroup> BuildAccessibility()
-    {
-        // TODO: Accessibility — GamingTweaks.Accessibility.cs
-        return [];
-    }
+    private static IReadOnlyList<SettingGroup> BuildAccessibility() =>
+    [
+        new SettingGroup
+        {
+            Name = "Accessibility",
+            FeatureId = "gaming-accessibility",
+            Settings =
+            [
+                new SettingDefinition
+                {
+                    Id = "gaming-narrator-hotkey",
+                    Name = "Narrator Win+Ctrl+Enter Hotkey",
+                    Description = "Enable the Win+Ctrl+Enter keyboard shortcut to quickly launch Windows Narrator screen reader",
+                    IsSubjectivePreference = true,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings =
+                    [
+                        // Enable = delete WinEnterLaunchEnabled (default = enabled); Disable = write 0
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\Narrator\NoRoam",
+                            ValueName = "WinEnterLaunchEnabled",
+                            RecommendedValue = 0,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { null },
+                            DisabledValue = new object?[] { 0 },
+                            ValueType = RegistryValueKind.DWord,
+                            IsPrimary = true,
+                        },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "accessibility-stickykeys-hotkey",
+                    Name = "StickyKeys Hotkey (Shift×5)",
+                    Description = "Enable the keyboard shortcut to activate StickyKeys by pressing the Shift key five times",
+                    IsSubjectivePreference = true,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Control Panel\Accessibility\StickyKeys",
+                            ValueName = "Flags",
+                            RecommendedValue = "2",
+                            DefaultValue = "510",
+                            EnabledValue = new object?[] { "510", null },
+                            DisabledValue = new object?[] { "2" },
+                            ValueType = RegistryValueKind.String,
+                            IsPrimary = true,
+                        },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "accessibility-filterkeys-hotkey",
+                    Name = "FilterKeys Hotkey (Right Shift 8s)",
+                    Description = "Enable the keyboard shortcut to activate FilterKeys by holding the right Shift key for 8 seconds",
+                    IsSubjectivePreference = true,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Control Panel\Accessibility\Keyboard Response",
+                            ValueName = "Flags",
+                            RecommendedValue = "2",
+                            DefaultValue = "126",
+                            EnabledValue = new object?[] { "126", null },
+                            DisabledValue = new object?[] { "2" },
+                            ValueType = RegistryValueKind.String,
+                            IsPrimary = true,
+                        },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "accessibility-togglekeys-hotkey",
+                    Name = "ToggleKeys Hotkey (Num Lock 5s)",
+                    Description = "Enable the keyboard shortcut to activate ToggleKeys by holding Num Lock for 5 seconds",
+                    IsSubjectivePreference = true,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Control Panel\Accessibility\ToggleKeys",
+                            ValueName = "Flags",
+                            RecommendedValue = "34",
+                            DefaultValue = "62",
+                            EnabledValue = new object?[] { "62", null },
+                            DisabledValue = new object?[] { "34" },
+                            ValueType = RegistryValueKind.String,
+                            IsPrimary = true,
+                        },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "accessibility-highcontrast-hotkey",
+                    Name = "High Contrast Hotkey (Alt+Shift+PrtScn)",
+                    Description = "Enable the keyboard shortcut to activate High Contrast mode by pressing Left Alt + Left Shift + Print Screen",
+                    IsSubjectivePreference = true,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Control Panel\Accessibility\HighContrast",
+                            ValueName = "Flags",
+                            RecommendedValue = "4194",
+                            DefaultValue = "126",
+                            EnabledValue = new object?[] { "126", null },
+                            DisabledValue = new object?[] { "4194" },
+                            ValueType = RegistryValueKind.String,
+                            IsPrimary = true,
+                        },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "accessibility-mousekeys-hotkey",
+                    Name = "MouseKeys Hotkey (Alt+Shift+NumLock)",
+                    Description = "Enable the keyboard shortcut to activate MouseKeys, which lets the numeric keypad control the mouse pointer",
+                    IsSubjectivePreference = true,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Control Panel\Accessibility\MouseKeys",
+                            ValueName = "Flags",
+                            RecommendedValue = "130",
+                            DefaultValue = "126",
+                            EnabledValue = new object?[] { "126", null },
+                            DisabledValue = new object?[] { "130" },
+                            ValueType = RegistryValueKind.String,
+                            IsPrimary = true,
+                        },
+                    ],
+                },
+            ],
+        },
+    ];
 
     private static IReadOnlyList<SettingGroup> BuildVisualEffects()
     {
