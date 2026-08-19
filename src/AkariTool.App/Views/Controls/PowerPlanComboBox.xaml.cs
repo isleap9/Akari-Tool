@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Windows.Input;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
@@ -35,7 +37,52 @@ public sealed partial class PowerPlanComboBox : UserControl
             nameof(ItemsSource),
             typeof(object),
             typeof(PowerPlanComboBox),
-            new PropertyMetadata(null));
+            new PropertyMetadata(null, OnItemsSourceChanged));
+
+    // Tracks the last CollectionChanged handler so we can unsubscribe when the collection changes
+    private NotifyCollectionChangedEventHandler? _collectionChangedHandler;
+
+    private static void OnItemsSourceChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is not PowerPlanComboBox control) return;
+
+        // Unsubscribe from the old collection
+        if (e.OldValue is ObservableCollection<PowerPlanComboBoxOption> oldCollection && control._collectionChangedHandler != null)
+        {
+            oldCollection.CollectionChanged -= control._collectionChangedHandler;
+            control._collectionChangedHandler = null;
+        }
+
+        if (e.NewValue is ObservableCollection<PowerPlanComboBoxOption> newCollection)
+        {
+            // Debounced handler (Winhance 1:1): only re-apply SelectedIndex once after
+            // all items are added, instead of on every individual Add (which caused
+            // redundant deferred tasks during refresh).
+            DispatcherQueueTimer? debounceTimer = null;
+
+            control._collectionChangedHandler = (s, args) =>
+            {
+                if (args.Action == NotifyCollectionChangedAction.Add)
+                {
+                    debounceTimer?.Stop();
+                    debounceTimer = control.DispatcherQueue.CreateTimer();
+                    debounceTimer.Interval = TimeSpan.FromMilliseconds(50);
+                    debounceTimer.IsRepeating = false;
+                    debounceTimer.Tick += (t, _) =>
+                    {
+                        debounceTimer.Stop();
+                        if (control.SelectedIndex >= 0 && control.PowerPlanSelector != null)
+                        {
+                            control.PowerPlanSelector.SelectedIndex = control.SelectedIndex;
+                        }
+                    };
+                    debounceTimer.Start();
+                }
+            };
+
+            newCollection.CollectionChanged += control._collectionChangedHandler;
+        }
+    }
 
     public static readonly DependencyProperty SelectedIndexProperty =
         DependencyProperty.Register(
