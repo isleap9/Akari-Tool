@@ -183,6 +183,57 @@
                 </StackPanel>
             </Grid>
 
+            <!-- ── Security: Windows Defender bespoke row ───────────────────── -->
+            <Border
+                Margin="0,0,0,24"
+                Padding="16,14,16,14"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="8">
+                <StackPanel>
+                    <TextBlock
+                        Text="Security"
+                        FontSize="13"
+                        FontWeight="SemiBold"
+                        Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                        Margin="0,0,0,10" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,16,0">
+                            <TextBlock
+                                Text="Windows Defender"
+                                FontSize="13"
+                                FontWeight="SemiBold"
+                                Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
+                            <TextBlock
+                                Text="Removes Windows Defender using the NoDefender CAB. Requires Tamper Protection to be off in Windows Security first. A reboot is required to complete."
+                                FontSize="12"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                TextWrapping="Wrap"
+                                Margin="0,2,0,0" />
+                            <TextBlock
+                                Text="⚠ Tamper Protection is ON — disable it in Windows Security before proceeding."
+                                FontSize="12"
+                                Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                                TextWrapping="Wrap"
+                                Margin="0,6,0,0"
+                                Visibility="{x:Bind ViewModel.TamperWarningVisibility, Mode=OneWay}" />
+                        </StackPanel>
+                        <Button
+                            Grid.Column="1"
+                            Content="{x:Bind ViewModel.DefenderButtonLabel, Mode=OneWay}"
+                            Command="{x:Bind ViewModel.ToggleDefenderCommand}"
+                            IsEnabled="{x:Bind ViewModel.IsDefenderReady, Mode=OneWay}"
+                            VerticalAlignment="Center"
+                            MinWidth="180" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+
             <!-- ── Sections ─────────────────────────────────────────────────── -->
             <ItemsControl
                 ItemsSource="{x:Bind ViewModel.Sections, Mode=OneWay}"
