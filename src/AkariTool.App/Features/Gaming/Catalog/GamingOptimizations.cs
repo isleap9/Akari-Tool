@@ -2401,11 +2401,64 @@ public static class GamingOptimizations
         },
     ];
 
-    private static IReadOnlyList<SettingGroup> BuildSystemRestore()
-    {
-        // TODO: System Restore — GamingTweaks.SystemRestore.cs
-        return [];
-    }
+    private static IReadOnlyList<SettingGroup> BuildSystemRestore() =>
+    [
+        new SettingGroup
+        {
+            Name = "System Restore",
+            FeatureId = "gaming-system-restore",
+            Settings =
+            [
+                new SettingDefinition
+                {
+                    Id = "system-restore-protection",
+                    Name = "System Protection (Restore Points)",
+                    Description = "Allow Windows to automatically create restore points for the C: drive",
+                    IsSubjectivePreference = true,
+                    RecommendedToggleState = true,
+                    DefaultToggleState = true,
+                    DisableWarning = "Turning off System Protection will delete all existing restore points on this drive. Continue?",
+                    // State read via RPSessionInterval (enabled = value > 0, a threshold not an exact
+                    // match) and apply is a PowerShell Enable/Disable-ComputerRestore call — neither is a
+                    // plain registry value write, so RegistrySettings is left empty (state detection deferred).
+                    RegistrySettings = [],
+                    PowerShellScripts =
+                    [
+                        new PowerShellScriptSetting
+                        {
+                            EnabledScript = @"Enable-ComputerRestore -Drive ""C:\""",
+                            DisabledScript = @"Disable-ComputerRestore -Drive ""C:\""",
+                            RequiresElevation = true,
+                            Purpose = "Enable or disable System Protection for C: drive",
+                        },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "fs-long-paths",
+                    Name = "Enable Long File Paths",
+                    Description = "Removes the 260-character path limit (MAX_PATH) for apps that support it — useful for deep mod folders and dev projects",
+                    RequiresRestart = true,
+                    RecommendedToggleState = true,
+                    DefaultToggleState = false,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem",
+                            ValueName = "LongPathsEnabled",
+                            RecommendedValue = 1,
+                            DefaultValue = 0,
+                            EnabledValue = new object?[] { 1 },
+                            DisabledValue = new object?[] { 0 },
+                            ValueType = RegistryValueKind.DWord,
+                            IsPrimary = true,
+                        },
+                    ],
+                },
+            ],
+        },
+    ];
 
     private static IReadOnlyList<SettingGroup> BuildAccessibility() =>
     [
@@ -2558,9 +2611,499 @@ public static class GamingOptimizations
         },
     ];
 
-    private static IReadOnlyList<SettingGroup> BuildVisualEffects()
-    {
-        // TODO: Visual Effects — GamingTweaks.VisualEffects.cs
-        return [];
-    }
+    private static IReadOnlyList<SettingGroup> BuildVisualEffects() =>
+    [
+        new SettingGroup
+        {
+            Name = "Visual Effects",
+            FeatureId = "gaming-visual-effects",
+            Settings =
+            [
+                new SettingDefinition
+                {
+                    Id = "visual-effects-mode",
+                    Name = "Visual Effects Mode",
+                    Description = "Control the overall level of Windows visual effects — trading appearance for performance",
+                    InputType = InputType.Selection,
+                    IsSubjectivePreference = true,
+                    // Primary value only. "Best appearance" (1) and "Best performance" (2) also write
+                    // several secondary keys (ListviewAlphaSelect/ListviewShadow/TaskbarAnimations/
+                    // DragFullWindows/MinAnimate) in the source ApplyIndex; those conditional side-effect
+                    // writes are not modeled per-option here.
+                    RegistrySettings =
+                    [
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects",
+                            ValueName = "VisualFXSetting",
+                            RecommendedValue = 2,
+                            DefaultValue = 0,
+                            EnabledValue = null,
+                            DisabledValue = null,
+                            ValueType = RegistryValueKind.DWord,
+                            IsPrimary = true,
+                        },
+                    ],
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options =
+                        [
+                            new ComboBoxOption { DisplayName = "Let Windows choose (Default)", IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["VisualFXSetting"] = 0 } },
+                            new ComboBoxOption { DisplayName = "Best appearance", ValueMappings = new Dictionary<string, object?> { ["VisualFXSetting"] = 1 } },
+                            new ComboBoxOption { DisplayName = "Best performance (Recommended)", IsRecommended = true, ValueMappings = new Dictionary<string, object?> { ["VisualFXSetting"] = 2 } },
+                            new ComboBoxOption { DisplayName = "Custom", ValueMappings = new Dictionary<string, object?> { ["VisualFXSetting"] = 3 } },
+                        ],
+                    },
+                },
+                new SettingDefinition
+                {
+                    Id = "drag-full-windows",
+                    Name = "Show window contents while dragging",
+                    Description = "Show the full window content while dragging instead of just an outline",
+                    IsSubjectivePreference = true,
+                    RecommendedToggleState = true,
+                    DefaultToggleState = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Control Panel\Desktop",
+                            ValueName = "DragFullWindows",
+                            RecommendedValue = "1",
+                            DefaultValue = "1",
+                            EnabledValue = new object?[] { "1", null },
+                            DisabledValue = new object?[] { "0" },
+                            ValueType = RegistryValueKind.String,
+                            IsPrimary = true,
+                        },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "window-animation",
+                    Name = "Animate windows when minimizing and maximizing",
+                    Description = "Show smooth animation when windows are minimized or maximized",
+                    IsSubjectivePreference = true,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Control Panel\Desktop\WindowMetrics",
+                            ValueName = "MinAnimate",
+                            RecommendedValue = "0",
+                            DefaultValue = "1",
+                            EnabledValue = new object?[] { "1", null },
+                            DisabledValue = new object?[] { "0" },
+                            ValueType = RegistryValueKind.String,
+                            IsPrimary = true,
+                        },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "taskbar-animations",
+                    Name = "Taskbar animations",
+                    Description = "Show animations in the taskbar when apps open, close, or flash for attention",
+                    IsSubjectivePreference = true,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced",
+                            ValueName = "TaskbarAnimations",
+                            RecommendedValue = 0,
+                            DefaultValue = 1,
+                            EnabledValue = new object?[] { 1, null },
+                            DisabledValue = new object?[] { 0 },
+                            ValueType = RegistryValueKind.DWord,
+                            IsPrimary = true,
+                        },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "font-smoothing",
+                    Name = "Smooth edges of screen fonts (ClearType)",
+                    Description = "Apply ClearType anti-aliasing to make text appear smoother on screen",
+                    IsSubjectivePreference = true,
+                    RecommendedToggleState = true,
+                    DefaultToggleState = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Control Panel\Desktop",
+                            ValueName = "FontSmoothing",
+                            RecommendedValue = 2,
+                            DefaultValue = 2,
+                            EnabledValue = new object?[] { 2, null },
+                            DisabledValue = new object?[] { 0 },
+                            ValueType = RegistryValueKind.DWord,
+                            IsPrimary = true,
+                        },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "drop-shadows",
+                    Name = "Drop shadows under mouse pointer",
+                    Description = "Show a drop shadow beneath the mouse cursor for better visibility",
+                    IsSubjectivePreference = true,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Control Panel\Desktop",
+                            ValueName = "CursorShadow",
+                            RecommendedValue = 0,
+                            DefaultValue = 1,
+                            EnabledValue = new object?[] { 1, null },
+                            DisabledValue = new object?[] { 0 },
+                            ValueType = RegistryValueKind.DWord,
+                            IsPrimary = true,
+                        },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "show-thumbnails",
+                    Name = "Show thumbnails instead of icons",
+                    Description = "Display thumbnail previews for image, video, and document files in File Explorer",
+                    IsSubjectivePreference = true,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings =
+                    [
+                        // Inverted: IconsOnly = 0 means thumbnails enabled
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced",
+                            ValueName = "IconsOnly",
+                            RecommendedValue = 1,
+                            DefaultValue = 0,
+                            EnabledValue = new object?[] { 0, null },
+                            DisabledValue = new object?[] { 1 },
+                            ValueType = RegistryValueKind.DWord,
+                            IsPrimary = true,
+                        },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "taskbar-thumbnails",
+                    Name = "Save taskbar thumbnail previews",
+                    Description = "Cache taskbar thumbnail previews. Disabling saves a small amount of memory",
+                    IsSubjectivePreference = true,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = false,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\DWM",
+                            ValueName = "AlwaysHibernateThumbnails",
+                            RecommendedValue = 0,
+                            DefaultValue = 0,
+                            EnabledValue = new object?[] { 1 },
+                            DisabledValue = new object?[] { 0, null },
+                            ValueType = RegistryValueKind.DWord,
+                            IsPrimary = true,
+                        },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "enable-peek",
+                    Name = "Enable Peek",
+                    Description = "Temporarily preview the desktop or a window when hovering over the Show Desktop button or a taskbar thumbnail",
+                    IsSubjectivePreference = true,
+                    RecommendedToggleState = true,
+                    DefaultToggleState = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\DWM",
+                            ValueName = "EnableAeroPeek",
+                            RecommendedValue = 1,
+                            DefaultValue = 1,
+                            EnabledValue = new object?[] { 1, null },
+                            DisabledValue = new object?[] { 0 },
+                            ValueType = RegistryValueKind.DWord,
+                            IsPrimary = true,
+                        },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "ui-effects",
+                    Name = "Animate controls and elements inside windows",
+                    Description = "Fade/animate controls and elements inside windows",
+                    IsSubjectivePreference = true,
+                    RequiresRestart = true,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Control Panel\Desktop",
+                            ValueName = "UserPreferencesMask",
+                            RecommendedValue = null,
+                            DefaultValue = (byte)0x02,
+                            EnabledValue = new object?[] { (byte)0x02 },
+                            DisabledValue = new object?[] { (byte)0 },
+                            ValueType = RegistryValueKind.Binary,
+                            BinaryByteIndex = 4,
+                            BitMask = 0x02,
+                            ModifyByteOnly = true,
+                            IsPrimary = true,
+                        },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "menu-animation",
+                    Name = "Fade or slide menus into view",
+                    Description = "Animate menus with a fade or slide when they open",
+                    IsSubjectivePreference = true,
+                    RequiresRestart = true,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Control Panel\Desktop",
+                            ValueName = "UserPreferencesMask",
+                            RecommendedValue = null,
+                            DefaultValue = (byte)0x02,
+                            EnabledValue = new object?[] { (byte)0x02 },
+                            DisabledValue = new object?[] { (byte)0 },
+                            ValueType = RegistryValueKind.Binary,
+                            BinaryByteIndex = 0,
+                            BitMask = 0x02,
+                            ModifyByteOnly = true,
+                            IsPrimary = true,
+                        },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "combo-box-animation",
+                    Name = "Slide open combo boxes",
+                    Description = "Animate combo boxes with a sliding effect when opened",
+                    IsSubjectivePreference = true,
+                    RequiresRestart = true,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Control Panel\Desktop",
+                            ValueName = "UserPreferencesMask",
+                            RecommendedValue = null,
+                            DefaultValue = (byte)0x04,
+                            EnabledValue = new object?[] { (byte)0x04 },
+                            DisabledValue = new object?[] { (byte)0 },
+                            ValueType = RegistryValueKind.Binary,
+                            BinaryByteIndex = 0,
+                            BitMask = 0x04,
+                            ModifyByteOnly = true,
+                            IsPrimary = true,
+                        },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "smooth-scroll-listboxes",
+                    Name = "Smooth-scroll list boxes",
+                    Description = "Smooth scrolling in list boxes instead of jumping",
+                    IsSubjectivePreference = true,
+                    RequiresRestart = true,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Control Panel\Desktop",
+                            ValueName = "UserPreferencesMask",
+                            RecommendedValue = null,
+                            DefaultValue = (byte)0x08,
+                            EnabledValue = new object?[] { (byte)0x08 },
+                            DisabledValue = new object?[] { (byte)0 },
+                            ValueType = RegistryValueKind.Binary,
+                            BinaryByteIndex = 0,
+                            BitMask = 0x08,
+                            ModifyByteOnly = true,
+                            IsPrimary = true,
+                        },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "fade-menu-items",
+                    Name = "Fade out menu items after clicking",
+                    Description = "Fade menu items after selection before the menu closes",
+                    IsSubjectivePreference = true,
+                    RequiresRestart = true,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Control Panel\Desktop",
+                            ValueName = "UserPreferencesMask",
+                            RecommendedValue = null,
+                            DefaultValue = (byte)0x04,
+                            EnabledValue = new object?[] { (byte)0x04 },
+                            DisabledValue = new object?[] { (byte)0 },
+                            ValueType = RegistryValueKind.Binary,
+                            BinaryByteIndex = 1,
+                            BitMask = 0x04,
+                            ModifyByteOnly = true,
+                            IsPrimary = true,
+                        },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "fade-tooltip",
+                    Name = "Fade or slide ToolTips into view",
+                    Description = "Animate tooltips with a fade or slide when they appear",
+                    IsSubjectivePreference = true,
+                    RequiresRestart = true,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Control Panel\Desktop",
+                            ValueName = "UserPreferencesMask",
+                            RecommendedValue = null,
+                            DefaultValue = (byte)0x08,
+                            EnabledValue = new object?[] { (byte)0x08 },
+                            DisabledValue = new object?[] { (byte)0 },
+                            ValueType = RegistryValueKind.Binary,
+                            BinaryByteIndex = 1,
+                            BitMask = 0x08,
+                            ModifyByteOnly = true,
+                            IsPrimary = true,
+                        },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "mouse-shadow",
+                    Name = "Show shadows under mouse pointer",
+                    Description = "Display a shadow effect underneath the mouse cursor",
+                    IsSubjectivePreference = true,
+                    RequiresRestart = true,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Control Panel\Desktop",
+                            ValueName = "UserPreferencesMask",
+                            RecommendedValue = null,
+                            DefaultValue = (byte)0x20,
+                            EnabledValue = new object?[] { (byte)0x20 },
+                            DisabledValue = new object?[] { (byte)0 },
+                            ValueType = RegistryValueKind.Binary,
+                            BinaryByteIndex = 1,
+                            BitMask = 0x20,
+                            ModifyByteOnly = true,
+                            IsPrimary = true,
+                        },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "window-shadows",
+                    Name = "Show shadows under windows",
+                    Description = "Display shadow effects underneath windows",
+                    IsSubjectivePreference = true,
+                    RequiresRestart = true,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Control Panel\Desktop",
+                            ValueName = "UserPreferencesMask",
+                            RecommendedValue = null,
+                            DefaultValue = (byte)0x04,
+                            EnabledValue = new object?[] { (byte)0x04 },
+                            DisabledValue = new object?[] { (byte)0 },
+                            ValueType = RegistryValueKind.Binary,
+                            BinaryByteIndex = 2,
+                            BitMask = 0x04,
+                            ModifyByteOnly = true,
+                            IsPrimary = true,
+                        },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "listview-alpha-select",
+                    Name = "Translucent selection rectangle",
+                    Description = "Show a semi-transparent rectangle when selecting multiple files in Explorer instead of a solid box",
+                    IsSubjectivePreference = true,
+                    RecommendedToggleState = true,
+                    DefaultToggleState = true,
+                    RegistrySettings =
+                    [
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced",
+                            ValueName = "ListviewAlphaSelect",
+                            RecommendedValue = 1,
+                            DefaultValue = 1,
+                            EnabledValue = new object?[] { 1, null },
+                            DisabledValue = new object?[] { 0 },
+                            ValueType = RegistryValueKind.DWord,
+                            IsPrimary = true,
+                        },
+                    ],
+                },
+                new SettingDefinition
+                {
+                    Id = "keyboard-delay",
+                    Name = "Reduce keyboard repeat delay",
+                    Description = "Sets keyboard initial repeat delay to its shortest value (0) for faster key response",
+                    IsSubjectivePreference = true,
+                    RecommendedToggleState = true,
+                    DefaultToggleState = false,
+                    RegistrySettings =
+                    [
+                        // Enabled = KeyboardDelay 0 (shortest); absent reads as disabled
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Control Panel\Keyboard",
+                            ValueName = "KeyboardDelay",
+                            RecommendedValue = 0,
+                            DefaultValue = 1,
+                            EnabledValue = new object?[] { 0 },
+                            DisabledValue = new object?[] { 1, null },
+                            ValueType = RegistryValueKind.DWord,
+                            IsPrimary = true,
+                        },
+                    ],
+                },
+            ],
+        },
+    ];
 }
