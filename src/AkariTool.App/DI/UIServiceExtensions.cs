@@ -87,7 +87,7 @@ public static class UIServiceExtensions
         // in Backup exports and global search (rows register inside Build(), which
         // otherwise only runs on first navigation). Registration order = warm-up
         // order = TweakRegistry range order; add each new tweak page to BOTH lists.
-        services.AddSingleton<TweakPageViewModel>(sp => sp.GetRequiredService<GamingViewModel>());
+        services.AddSingleton<SettingPageViewModel>(sp => sp.GetRequiredService<GamingViewModel>());
         services.AddSingleton<SettingPageViewModel>(sp => sp.GetRequiredService<SoundViewModel>());
         services.AddSingleton<SettingPageViewModel>(sp => sp.GetRequiredService<NotificationsViewModel>());
         services.AddSingleton<TweakPageViewModel>(sp => sp.GetRequiredService<UpdateViewModel>());
