@@ -21,7 +21,7 @@ namespace AkariTool.ViewModels.Tweaks;
 /// <see cref="ISettingOperationExecutor"/>, and computes its own info-badge row from the
 /// <see cref="SettingDefinition"/>. No TweakRegistry / page wiring yet (Phase 3b-ii).
 /// </summary>
-public sealed partial class SettingItemViewModel : ObservableObject
+public sealed partial class SettingItemViewModel : ObservableObject, ISettingRowViewModel
 {
     private readonly ISettingStateReader _stateReader;
     private readonly ISettingOperationExecutor _executor;

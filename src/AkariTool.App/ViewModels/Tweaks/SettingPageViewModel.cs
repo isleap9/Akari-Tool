@@ -95,7 +95,7 @@ public abstract partial class SettingPageViewModel : ViewModelBase
     {
         int rec = 0, def = 0;
         foreach (var section in Sections)
-            foreach (var item in section.Items)
+            foreach (var item in section.Items.OfType<SettingItemViewModel>())
             {
                 if (item.HasRecommendedQuickSet
                     && !item.Badges.Any(b => b.Kind == AkariTool.Core.Features.Common.Enums.SettingBadgeKind.Recommended && b.IsHighlighted))
@@ -112,7 +112,7 @@ public abstract partial class SettingPageViewModel : ViewModelBase
     public async Task ApplyAllRecommendedAsync()
     {
         foreach (var section in Sections)
-            foreach (var item in section.Items)
+            foreach (var item in section.Items.OfType<SettingItemViewModel>())
                 if (item.HasRecommendedQuickSet)
                     await item.ApplyRecommendedCommand.ExecuteAsync(null);
         RefreshQuickActionCounts();
@@ -122,7 +122,7 @@ public abstract partial class SettingPageViewModel : ViewModelBase
     public async Task RestoreDefaultsAsync()
     {
         foreach (var section in Sections)
-            foreach (var item in section.Items)
+            foreach (var item in section.Items.OfType<SettingItemViewModel>())
                 if (item.HasDefaultQuickSet)
                     await item.ApplyDefaultCommand.ExecuteAsync(null);
         RefreshQuickActionCounts();

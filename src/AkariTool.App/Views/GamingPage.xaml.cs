@@ -27,6 +27,7 @@ public sealed partial class GamingPage : Page
 
         // Build once. Safe to call repeatedly — Build() is idempotent.
         ViewModel.Build();
+        ViewModel.AddDefenderRow();
     }
 
     /// <summary>
