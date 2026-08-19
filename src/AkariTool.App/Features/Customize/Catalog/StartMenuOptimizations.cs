@@ -13,15 +13,352 @@ public static class StartMenuOptimizations
         .. BuildBehavior(),
     ];
 
-    private static IReadOnlyList<SettingGroup> BuildLayout()
-    {
-        // TODO: Start Menu Layout — CustomizeTweaks.StartMenu.cs
-        return [];
-    }
+    private static IReadOnlyList<SettingGroup> BuildLayout() =>
+    [
+        new SettingGroup
+        {
+            Name = "Layout",
+            FeatureId = "customize-startmenu-layout",
+            Settings = new[]
+            {
+                // [DEFERRED: customize-start-clean-pins — enable writes ConfigureStartPins (REG_SZ)
+                //  to HKLM Policies\...\Explorer + PolicyManager\...\Start (value-expressible), but
+                //  ALSO runs a PowerShell cache-flush (delete each profile's start*.bin + Stop-Process
+                //  StartMenuExperienceHost) — non-value-write Apply, not reproducible in the model]
 
-    private static IReadOnlyList<SettingGroup> BuildBehavior()
-    {
-        // TODO: Start Menu Behavior — CustomizeTweaks.StartMenu.cs
-        return [];
-    }
+                // customize-start-hide-recommended-policy — HideRecommendedSection written to three
+                //   keys + IsEducationEnvironment to a fourth; enable=1/disable=0. Reader checks
+                //   HKLM Policies\...\Explorer HideRecommendedSection == 1 (primary, first).
+                new SettingDefinition
+                {
+                    Id = "customize-start-hide-recommended-policy",
+                    Name = "Hide Recommended Section (Policy)",
+                    Description = "Completely removes the Recommended section from Start using the Education-SKU policy trick",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    DefaultToggleState = false,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Explorer",
+                            ValueName = "HideRecommendedSection",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 1 },
+                            DisabledValue = new object?[] { 0 },
+                            IsPrimary = true,
+                        },
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\SOFTWARE\Policies\Microsoft\Windows\Explorer",
+                            ValueName = "HideRecommendedSection",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 1 },
+                            DisabledValue = new object?[] { 0 },
+                        },
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\PolicyManager\current\device\Start",
+                            ValueName = "HideRecommendedSection",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 1 },
+                            DisabledValue = new object?[] { 0 },
+                        },
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\PolicyManager\current\device\Education",
+                            ValueName = "IsEducationEnvironment",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 1 },
+                            DisabledValue = new object?[] { 0 },
+                        },
+                    },
+                },
+                // customize-start-more-pins — Start_Layout: on=1/off=0.
+                new SettingDefinition
+                {
+                    Id = "customize-start-more-pins",
+                    Name = "More Pins (Less Recommendations)",
+                    Description = "Sets Start Menu layout to show more pinned apps and fewer recommendations",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    DefaultToggleState = false,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced",
+                            ValueName = "Start_Layout",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 1 },
+                            DisabledValue = new object?[] { 0 },
+                        },
+                    },
+                },
+                // customize-start-disable-recommended — Start_IrisRecommendations (inverted):
+                //   hide (on) = 0 / show (off) = 1. Reader: IrisRecommendations == 0 → hidden.
+                new SettingDefinition
+                {
+                    Id = "customize-start-disable-recommended",
+                    Name = "Disable Recommended Section",
+                    Description = "Hides the Recommended apps/files section from the Start Menu",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = true,
+                    DefaultToggleState = false,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced",
+                            ValueName = "Start_IrisRecommendations",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 0 },
+                            DisabledValue = new object?[] { 1 },
+                        },
+                    },
+                },
+                // customize-start-show-recent-apps — ShowRecentList: on=1/off=0; absent = shown.
+                new SettingDefinition
+                {
+                    Id = "customize-start-show-recent-apps",
+                    Name = "Show Recently Added Apps",
+                    Description = "Show a recently added apps list at the top of the Start menu",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Start",
+                            ValueName = "ShowRecentList",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 1, null },
+                            DisabledValue = new object?[] { 0 },
+                        },
+                    },
+                },
+                // customize-start-show-most-used — ShowFrequentList: on=1/off=0; absent = shown.
+                new SettingDefinition
+                {
+                    Id = "customize-start-show-most-used",
+                    Name = "Show Most Used Apps",
+                    Description = "Show a most-used apps list in the Start menu",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Start",
+                            ValueName = "ShowFrequentList",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 1, null },
+                            DisabledValue = new object?[] { 0 },
+                        },
+                    },
+                },
+                // customize-start-show-suggestions — SubscribedContent-338388Enabled: on=1/off=0; absent = shown.
+                new SettingDefinition
+                {
+                    Id = "customize-start-show-suggestions",
+                    Name = "Show Suggestions in Start",
+                    Description = "Show occasional app and tip suggestions in the Start menu",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager",
+                            ValueName = "SubscribedContent-338388Enabled",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 1, null },
+                            DisabledValue = new object?[] { 0 },
+                        },
+                    },
+                },
+                // customize-start-all-apps-view — Selection: AllAppsViewMode (Category=0 / Grid=1 / List=2 default)
+                new SettingDefinition
+                {
+                    Id = "customize-start-all-apps-view",
+                    Name = "All Apps View",
+                    Description = "How the All apps list is displayed in the Start menu",
+                    InputType = InputType.Selection,
+                    IsSubjectivePreference = true,
+                    ResolveUnmatchedToDefault = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Start",
+                            ValueName = "AllAppsViewMode",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = null,
+                            DisabledValue = null,
+                            IsPrimary = true,
+                        },
+                    },
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options = new[]
+                        {
+                            new ComboBoxOption { DisplayName = "Category", ValueMappings = new Dictionary<string, object?> { ["AllAppsViewMode"] = 0 } },
+                            new ComboBoxOption { DisplayName = "Grid", ValueMappings = new Dictionary<string, object?> { ["AllAppsViewMode"] = 1 } },
+                            new ComboBoxOption { DisplayName = "List", IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["AllAppsViewMode"] = 2 } },
+                        },
+                    },
+                },
+            },
+        },
+    ];
+
+    private static IReadOnlyList<SettingGroup> BuildBehavior() =>
+    [
+        new SettingGroup
+        {
+            Name = "Behavior",
+            FeatureId = "customize-startmenu-behavior",
+            Settings = new[]
+            {
+                // customize-start-disable-bing-search — two keys with opposite polarity:
+                //   policy DisableSearchBoxSuggestions on=1/off=0 (primary — reader checks it first),
+                //   BingSearchEnabled on=0/off=1 (secondary fallback).
+                new SettingDefinition
+                {
+                    Id = "customize-start-disable-bing-search",
+                    Name = "Disable Bing Search in Start",
+                    Description = "Removes web (Bing) search results from the Start Menu search box",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = true,
+                    DefaultToggleState = false,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Policies\Microsoft\Windows",
+                            ValueName = "DisableSearchBoxSuggestions",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 1 },
+                            DisabledValue = new object?[] { 0 },
+                            IsPrimary = true,
+                        },
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Search",
+                            ValueName = "BingSearchEnabled",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 0 },
+                            DisabledValue = new object?[] { 1 },
+                        },
+                    },
+                },
+                // customize-start-disable-account-notifications — Start_AccountNotifications (inverted):
+                //   disable (on) = 0 / enable (off) = 1. Reader: Start_AccountNotifications == 0 → disabled.
+                new SettingDefinition
+                {
+                    Id = "customize-start-disable-account-notifications",
+                    Name = "Disable Account-Related Notifications",
+                    Description = "Removes 'Add an account' and Microsoft account prompts from Start",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = true,
+                    DefaultToggleState = false,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced",
+                            ValueName = "Start_AccountNotifications",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 0 },
+                            DisabledValue = new object?[] { 1 },
+                        },
+                    },
+                },
+                // customize-start-disable-web-suggestions — CortanaConsent (inverted):
+                //   disable (on) = 0 / enable (off) = 1. Reader: CortanaConsent == 0 → disabled.
+                new SettingDefinition
+                {
+                    Id = "customize-start-disable-web-suggestions",
+                    Name = "Disable Web Suggestions in Search",
+                    Description = "Prevents Windows Search from showing online/web suggestions",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = true,
+                    DefaultToggleState = false,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Search",
+                            ValueName = "CortanaConsent",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 0 },
+                            DisabledValue = new object?[] { 1 },
+                        },
+                    },
+                },
+                // customize-start-show-recently-opened-items — Start_TrackDocs: on=1/off=0; absent = shown.
+                new SettingDefinition
+                {
+                    Id = "customize-start-show-recently-opened-items",
+                    Name = "Show Recently Opened Items",
+                    Description = "Shows recently opened files in Start, Jump Lists and File Explorer Quick Access",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced",
+                            ValueName = "Start_TrackDocs",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 1, null },
+                            DisabledValue = new object?[] { 0 },
+                        },
+                    },
+                },
+            },
+        },
+    ];
 }
