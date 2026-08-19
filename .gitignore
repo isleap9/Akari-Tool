@@ -21,3 +21,4 @@ installer-output/
 # Claude Code context (machine-local, not for source control)
 CLAUDE.md
 SESSION.md
+OPENCODE.md
