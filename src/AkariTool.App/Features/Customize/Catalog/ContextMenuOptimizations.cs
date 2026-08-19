@@ -14,7 +14,9 @@ public static class ContextMenuOptimizations
 
     private static IReadOnlyList<SettingGroup> BuildEntries()
     {
-        // TODO: Context Menu Entries + Verbs — ContextMenu.cs + Verbs.Shell + Verbs.Tools
+        // All 17 entries deferred — shell-verb subkey create/delete tree, not value writes.
+        // Detect uses subkey existence (OpenSubKey != null), not named-value reads.
+        // [DEFERRED: all customize-context-menu-* entries]
         return [];
     }
 }
