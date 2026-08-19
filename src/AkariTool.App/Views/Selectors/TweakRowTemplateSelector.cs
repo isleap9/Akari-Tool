@@ -18,11 +18,13 @@ public sealed partial class TweakRowTemplateSelector : DataTemplateSelector
 {
     public DataTemplate? ToggleTemplate { get; set; }
     public DataTemplate? DropdownTemplate { get; set; }
+    public DataTemplate? PlanTemplate { get; set; }
 
     protected override DataTemplate? SelectTemplateCore(object item) => item switch
     {
         DropdownTweakViewModel => DropdownTemplate,
         ToggleTweakViewModel => ToggleTemplate,
+        SettingItemViewModel s when s.IsPowerPlanSetting => PlanTemplate,
         SettingItemViewModel s => s.InputType == InputType.Selection ? DropdownTemplate : ToggleTemplate,
         _ => ToggleTemplate,
     };

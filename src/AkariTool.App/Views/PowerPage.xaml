@@ -5,135 +5,14 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:selectors="using:AkariTool.Views.Selectors"
     mc:Ignorable="d"
     NavigationCacheMode="Required">
 
-    <Page.Resources>
-        <!-- Bespoke Plan Selector + Persist Indicator card (Power-only, Phase 21).
-             Faithful to net8: 3 fixed plan cards + a dynamic Custom card, each with an
-             ACTIVE tag + click-to-activate; below, the persistence indicator line and a
-             (no-confirmation) "Revert to Balanced" button. NOT tweak rows. -->
-        <DataTemplate x:Key="PowerPlanSelectorTemplate">
-            <Border
-                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1"
-                CornerRadius="8"
-                Margin="0,0,0,16">
-                <StackPanel Margin="18,16,18,16">
-                    <TextBlock
-                        Text="POWER PLAN"
-                        FontFamily="Consolas"
-                        FontSize="10"
-                        FontWeight="Medium"
-                        Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                        Margin="0,0,0,10" />
-
-                    <!-- Plan cards row -->
-                    <ItemsControl ItemsSource="{Binding Cards}">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <StackPanel Orientation="Horizontal" />
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Button
-                                    Command="{Binding ActivateCommand}"
-                                    Background="Transparent"
-                                    BorderThickness="0"
-                                    Padding="0"
-                                    Margin="0,0,9,0"
-                                    Width="210"
-                                    HorizontalContentAlignment="Stretch"
-                                    Visibility="{Binding IsVisible, Converter={StaticResource BoolToVis}}"
-                                    AutomationProperties.Name="{Binding Label}">
-                                    <Border
-                                        Background="{ThemeResource SubtleFillColorSecondaryBrush}"
-                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                        BorderThickness="1"
-                                        CornerRadius="8"
-                                        Padding="15,13">
-                                        <StackPanel>
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="Auto" />
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock
-                                                    Grid.Column="0"
-                                                    Text="{Binding Label}"
-                                                    FontSize="13"
-                                                    FontWeight="SemiBold"
-                                                    Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                                                    TextWrapping="Wrap"
-                                                    VerticalAlignment="Center" />
-                                                <TextBlock
-                                                    Grid.Column="1"
-                                                    Text="ACTIVE"
-                                                    FontFamily="Consolas"
-                                                    FontSize="9"
-                                                    FontWeight="SemiBold"
-                                                    Foreground="{ThemeResource SystemFillColorSuccessBrush}"
-                                                    VerticalAlignment="Center"
-                                                    Margin="6,0,0,0"
-                                                    Visibility="{Binding IsActive, Converter={StaticResource BoolToVis}}" />
-                                            </Grid>
-                                            <TextBlock
-                                                Text="{Binding Description}"
-                                                FontSize="11.5"
-                                                LineHeight="16"
-                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                TextWrapping="Wrap"
-                                                Margin="0,3,0,0" />
-                                        </StackPanel>
-                                    </Border>
-                                </Button>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-
-                    <!-- Persist indicator + Revert to Balanced -->
-                    <Grid Margin="0,10,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock
-                            Grid.Column="0"
-                            Text="{Binding PersistText}"
-                            Foreground="{Binding PersistBrush}"
-                            FontFamily="Consolas"
-                            FontSize="11"
-                            VerticalAlignment="Center"
-                            TextWrapping="Wrap" />
-                        <Button
-                            Grid.Column="1"
-                            Content="Revert to Balanced"
-                            FontSize="12"
-                            Padding="12,4"
-                            Command="{Binding RevertToBalancedCommand}"
-                            Visibility="{Binding RevertVisible, Converter={StaticResource BoolToVis}}"
-                            ToolTipService.ToolTip="Reactivate the Windows Balanced plan and delete the Akari Performance scheme" />
-                    </Grid>
-                </StackPanel>
-            </Border>
-        </DataTemplate>
-
-        <!-- Renders each DisplayItems entry by type: plan selector (above) or the
-             shared tweak-section card. -->
-        <selectors:PowerSectionTemplateSelector
-            x:Key="PowerSectionSelector"
-            SectionTemplate="{StaticResource TweakSectionTemplate}"
-            PlanSelectorTemplate="{StaticResource PowerPlanSelectorTemplate}" />
-    </Page.Resources>
-
-    <!-- NavigationCacheMode="Required": the page view model is a DI SINGLETON
-         (rows register once with TweakRegistry and there is no unregister), so the
-         Frame must reuse this page instance rather than rebuild it per navigation.
-         Layout is identical to GamingPage — every binding targets TweakPageViewModel
-         base members, so this is a pure copy+retitle. -->
+    <!-- NavigationCacheMode="Required": the page view model is a DI SINGLETON, so
+         the Frame must reuse this page instance rather than rebuild it per
+         navigation. Pure copy of GamingPage — every binding targets
+         SettingPageViewModel base members; the Power-specific content (plan row,
+         hardware gating) is data on the shared rendering layer. -->
 
     <ScrollViewer>
         <StackPanel Padding="32,24,32,24" MaxWidth="1100" HorizontalAlignment="Center">
@@ -306,10 +185,10 @@
                 </StackPanel>
             </Grid>
 
-            <!-- ── Plan Selector (top) + catalog sections ───────────────────── -->
+            <!-- ── Sections ─────────────────────────────────────────────────── -->
             <ItemsControl
-                ItemsSource="{x:Bind ViewModel.DisplayItems, Mode=OneWay}"
-                ItemTemplateSelector="{StaticResource PowerSectionSelector}" />
+                ItemsSource="{x:Bind ViewModel.Sections, Mode=OneWay}"
+                ItemTemplate="{StaticResource TweakSectionTemplate}" />
 
         </StackPanel>
     </ScrollViewer>

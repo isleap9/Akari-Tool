@@ -6,9 +6,11 @@ using WinUI.Framework.IoC;
 namespace AkariTool.Views;
 
 /// <summary>
-/// Power page. Copy of the wave-1 page — layout and behaviour live in the shared
-/// templates + <see cref="TweakPageViewModel"/>; only the concrete VM type and the
-/// flyout plumbing differ. (The PowerSchemeChanged subscriber lives on the VM.)
+/// Power page. Copy of the GamingPage shell — layout and behaviour live in the
+/// shared templates + <see cref="SettingPageViewModel"/>; only the concrete VM
+/// type and the flyout plumbing differ. (Power-specific content — the plan row
+/// and the hardware gating — is data on <see cref="PowerViewModel"/>, rendered by
+/// the shared rendering layer.)
 /// </summary>
 public sealed partial class PowerPage : Page
 {
@@ -18,22 +20,25 @@ public sealed partial class PowerPage : Page
     {
         InitializeComponent();
 
-        // SINGLETON: rows register with TweakRegistry on construction and there is
-        // no unregister, so the view model must not be rebuilt per navigation.
+        // SINGLETON: the view model owns the built catalog + row state, so the
+        // Frame must reuse this page instance rather than rebuild it per navigation.
         ViewModel = ServiceLocator.GetService<PowerViewModel>();
 
-        // Build once. Idempotent + thread-safe — the startup warm-up may already
-        // have built it before this navigation, in which case this is a no-op.
+        // Build once. Safe to call repeatedly — Build() is idempotent.
         ViewModel.Build();
-
-        // Compose DisplayItems (Plan Selector on top + catalog sections) and run the
-        // read-only plan/persist detection. UI thread; idempotent.
-        ViewModel.ComposeDisplay();
     }
 
+    /// <summary>
+    /// Counts are computed when the menu opens, using the same predicate the bulk
+    /// engine runs, so the menu can never advertise work the run then skips.
+    /// </summary>
     private void QuickActionsFlyout_Opening(object sender, object e)
         => ViewModel.RefreshQuickActionCounts();
 
+    /// <summary>
+    /// Dismiss the flyout before the command's dialog opens — a ContentDialog
+    /// shown while a Flyout is still up leaves the flyout floating over it.
+    /// </summary>
     private void QuickActionItem_Click(object sender, RoutedEventArgs e)
         => QuickActionsFlyout.Hide();
 }

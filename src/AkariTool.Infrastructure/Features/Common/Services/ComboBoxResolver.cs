@@ -38,6 +38,15 @@ public class ComboBoxResolver : IComboBoxResolver
         var mappings = ValueMappingsView(setting.ComboBox);
         if (mappings != null && mappings.TryGetValue(index, out var valueDict))
         {
+            // PowerCfg-backed options map ["PowerCfgValue"] = <uint>. Resolve that key
+            // specifically so the PowerCfgApplier writes the actual power value rather
+            // than whichever mapping happens to come first.
+            if (setting.PowerCfgSettings is { Count: > 0 } &&
+                valueDict.TryGetValue("PowerCfgValue", out var powerCfgValue))
+            {
+                return powerCfgValue is int intPowerCfg ? intPowerCfg : (powerCfgValue != null ? Convert.ToInt32(powerCfgValue) : index);
+            }
+
             var firstValue = valueDict.Values.FirstOrDefault();
             return firstValue is int intVal ? intVal : (firstValue != null ? Convert.ToInt32(firstValue) : index);
         }

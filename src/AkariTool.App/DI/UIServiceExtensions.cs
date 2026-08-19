@@ -88,13 +88,16 @@ public static class UIServiceExtensions
         services.AddSingleton<AkariTool.ViewModels.AdvancedTools.AdvancedToolsViewModel>();
         services.AddSingleton<AkariTool.ViewModels.AkariOS.AkariOSViewModel>();
 
-        // Enumerable marker for the startup warm-up: every tweak-page VM is ALSO
-        // registered under the TweakPageViewModel base type, resolving to the SAME
-        // singleton instance. TweakRegistryWarmUp does GetServices<TweakPageViewModel>()
-        // and Build()s each one at startup so a never-visited tab is still present
-        // in Backup exports and global search (rows register inside Build(), which
-        // otherwise only runs on first navigation). Registration order = warm-up
-        // order = TweakRegistry range order; add each new tweak page to BOTH lists.
+        // Enumerable marker for the startup warm-up: every declarative page VM is
+        // ALSO registered under the SettingPageViewModel base type, resolving to the
+        // SAME singleton instance. SettingPageWarmUp does GetServices<SettingPageViewModel>()
+        // and Build()s each one at startup so a never-visited tab is still populated
+        // when it is navigated. Registration order = warm-up order.
+        //
+        // Power moved here (Session C): its rows are no longer TweakDefinitions, so
+        // the TweakRegistry warm-up / Backup export / global search no longer carry
+        // them — the TweakPageViewModel marker registration that used to warm Power
+        // is gone and the legacy registry warm-up is now a no-op.
         services.AddSingleton<SettingPageViewModel>(sp => sp.GetRequiredService<GamingViewModel>());
         services.AddSingleton<SettingPageViewModel>(sp => sp.GetRequiredService<SoundViewModel>());
         services.AddSingleton<SettingPageViewModel>(sp => sp.GetRequiredService<NotificationsViewModel>());
@@ -106,7 +109,7 @@ public static class UIServiceExtensions
         services.AddSingleton<SettingPageViewModel>(sp => sp.GetRequiredService<AppearanceViewModel>());
         services.AddSingleton<SettingPageViewModel>(sp => sp.GetRequiredService<StartMenuViewModel>());
         services.AddSingleton<SettingPageViewModel>(sp => sp.GetRequiredService<DesktopViewModel>());
-        services.AddSingleton<TweakPageViewModel>(sp => sp.GetRequiredService<PowerViewModel>());
+        services.AddSingleton<SettingPageViewModel>(sp => sp.GetRequiredService<PowerViewModel>());
 
         return services;
     }

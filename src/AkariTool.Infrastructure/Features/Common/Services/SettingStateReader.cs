@@ -4,14 +4,26 @@ using Microsoft.Win32;
 using AkariTool.Core.Features.Common.Constants;
 using AkariTool.Core.Features.Common.Interfaces;
 using AkariTool.Core.Features.Common.Models;
+using AkariTool.Infrastructure.Features.Common.Interfaces;
 using AkariTool.Infrastructure.Features.Common.Utilities;
 
 namespace AkariTool.Infrastructure.Features.Common.Services;
 
-public sealed class SettingStateReader : ISettingStateReader
+public sealed class SettingStateReader(
+    IPowerSettingsQueryService powerSettingsQueryService) : ISettingStateReader
 {
     public bool ReadToggleState(SettingDefinition setting)
     {
+        // PowerCfg-only settings (no RegistrySettings) have no registry state to read.
+        // A non-zero active AC value counts as enabled (Winhance resolves the live
+        // PowerCfg state against the AC value for both Separate and non-Separate).
+        if (setting.PowerCfgSettings is { Count: > 0 } &&
+            (setting.RegistrySettings == null || setting.RegistrySettings.Count == 0))
+        {
+            var (acValue, _) = ReadPowerCfgValues(setting.PowerCfgSettings[0]);
+            return acValue.HasValue && acValue.Value != 0;
+        }
+
         try
         {
             var registrySetting = SettingDefinitionToggleState.GetPrimaryRegistrySetting(setting);
@@ -64,6 +76,14 @@ public sealed class SettingStateReader : ISettingStateReader
     {
         try
         {
+            // PowerCfg-only settings resolve their live index against the active
+            // scheme's AC value mapped through each option's "PowerCfgValue".
+            if (setting.PowerCfgSettings is { Count: > 0 } &&
+                (setting.RegistrySettings == null || setting.RegistrySettings.Count == 0))
+            {
+                return ReadPowerCfgSelectionIndex(setting);
+            }
+
             var options = setting.ComboBox?.Options;
             if (options == null || options.Count == 0)
                 return -1;
@@ -124,6 +144,80 @@ public sealed class SettingStateReader : ISettingStateReader
         catch
         {
             return -1;
+        }
+    }
+
+    /// <summary>
+    /// Resolves a PowerCfg-only Selection setting's live index from the active
+    /// scheme's AC value, matching each option's "PowerCfgValue" mapping.
+    /// Winhance resolves the index against the AC value for both Separate and
+    /// non-Separate settings (1:1 port). A null read (query failure) falls back to
+    /// the IsDefault option.
+    /// </summary>
+    private int ReadPowerCfgSelectionIndex(SettingDefinition setting)
+    {
+        var options = setting.ComboBox?.Options;
+        if (options == null || options.Count == 0)
+            return -1;
+
+        var (acValue, _) = ReadPowerCfgValues(setting.PowerCfgSettings![0]);
+
+        var currentValues = new Dictionary<string, object?>
+        {
+            ["PowerCfgValue"] = acValue
+        };
+
+        for (int i = 0; i < options.Count; i++)
+        {
+            var mappings = options[i].ValueMappings;
+            if (mappings == null)
+                continue;
+
+            bool allMatch = true;
+            foreach (var expected in mappings)
+            {
+                currentValues.TryGetValue(expected.Key, out var currentValue);
+                if (!ValueComparer.ValuesAreEqual(currentValue, expected.Value))
+                {
+                    allMatch = false;
+                    break;
+                }
+            }
+
+            if (allMatch && mappings.Count > 0)
+                return i;
+        }
+
+        // Query failed to produce a value: treat as a pristine/unknown state.
+        if (acValue == null)
+        {
+            for (int i = 0; i < options.Count; i++)
+            {
+                if (options[i].IsDefault)
+                    return i;
+            }
+        }
+
+        return ComboBoxConstants.CustomStateIndex;
+    }
+
+    /// <summary>
+    /// Reads the active scheme's AC/DC values for a PowerCfg setting. The query
+    /// service runs its native reads on a background thread, so blocking here is
+    /// safe (no sync context) and keeps the badge path synchronous.
+    /// </summary>
+    private (int? acValue, int? dcValue) ReadPowerCfgValues(PowerCfgSetting powerCfgSetting)
+    {
+        try
+        {
+            return powerSettingsQueryService
+                .GetPowerSettingACDCValuesAsync(powerCfgSetting)
+                .GetAwaiter()
+                .GetResult();
+        }
+        catch
+        {
+            return (null, null);
         }
     }
 

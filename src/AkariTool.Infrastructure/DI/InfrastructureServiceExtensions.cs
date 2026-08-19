@@ -44,6 +44,14 @@ public static class InfrastructureServiceExtensions
         services.AddSingleton<IPowerShellRunner, PowerShellRunner>();
         services.AddSingleton<IFileSystemService, FileSystemService>();
 
+        // Power (Track A Power tab — Winhance 1:1 port). All implementations live.
+        services.AddSingleton<IPowerSettingsQueryService, PowerSettingsQueryService>();
+        services.AddSingleton<IPowerSchemeOperations, PowerSchemeOperations>();
+        services.AddSingleton<IPowerPlanComboBoxService, PowerPlanComboBoxService>();
+        services.AddSingleton<IHardwareDetectionService, HardwareDetectionService>();
+        services.AddSingleton<IPowerSettingsValidationService, PowerSettingsValidationService>();
+        services.AddSingleton<IPowerService, PowerService>();
+
         return services;
     }
 }

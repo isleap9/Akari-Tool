@@ -40,6 +40,27 @@ public abstract partial class SettingPageViewModel : ViewModelBase
 
     protected abstract IReadOnlyList<SettingGroup> BuildSettingGroups();
 
+    /// <summary>
+    /// Row factory. Virtual so a page (Power) can hand plan-special services to its
+    /// LoadDynamicOptions row without touching the shared Build path.
+    /// </summary>
+    protected virtual SettingItemViewModel CreateItem(SettingDefinition s)
+        => new(s, _stateReader, _executor, _dialogs);
+
+    /// <summary>
+    /// A Power Plan row landed a plan change: re-read every sibling PowerCfg row
+    /// (their values are scoped to the active plan). The plan row repopulates its
+    /// own dropdown and is skipped here.
+    /// </summary>
+    private void OnPowerPlanChanged()
+    {
+        foreach (var section in Sections)
+            foreach (var item in section.Items.OfType<SettingItemViewModel>())
+                if (!item.IsPowerPlanSetting)
+                    item.RefreshFromSystem();
+        RefreshQuickActionCounts();
+    }
+
     public ObservableCollection<SettingSectionViewModel> Sections { get; } = new();
 
     [ObservableProperty]
@@ -63,9 +84,15 @@ public abstract partial class SettingPageViewModel : ViewModelBase
 
             foreach (var group in BuildSettingGroups())
             {
-                IEnumerable<SettingItemViewModel> items =
-                    group.Settings.Select(s => new SettingItemViewModel(s, _stateReader, _executor, _dialogs));
-                Sections.Add(new SettingSectionViewModel(group.Name, items));
+                var items = group.Settings.Select(CreateItem).ToList();
+                var section = new SettingSectionViewModel(group.Name, items);
+                Sections.Add(section);
+
+                // Power Plan rows repopulate their own dropdown; the rest of the
+                // page must re-read after the active plan changes.
+                foreach (var item in items)
+                    if (item.IsPowerPlanSetting)
+                        item.PowerPlanChanged += OnPowerPlanChanged;
             }
 
             _built = true;

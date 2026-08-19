@@ -1,155 +1,122 @@
-using System.Collections.ObjectModel;
+using System.Collections.Generic;
+using System.Linq;
+using AkariTool.Core.Features.Common.Interfaces;
+using AkariTool.Core.Features.Common.Models;
 using AkariTool.Services;
-using AkariTool.Tabs;
 using AkariTool.Tabs.Power;
 using AkariTool.ViewModels.Tweaks;
-using AkariTool.Core.Tweaks;
 
 namespace AkariTool.ViewModels;
 
 /// <summary>
-/// Power page — standard catalog-only tab (the 15 powercfg tweak-row sections),
-/// reusing the Gaming rendering layer.
+/// Power page — ported to the declarative SettingDefinition model (Track A
+/// Phase 4 / Session C). Builds its sections from
+/// <see cref="PowerOptimizations.Build"/>, gated by hardware capability and
+/// PowerCfg setting existence, exactly like Winhance's PowerOptimizationsViewModel.
 ///
-/// Section order matches net8's PowerTab.Build() catalog order exactly (Display …
-/// Start Menu Power Options). Battery + GPU Power are hardware-gated inside their
-/// catalog methods (return empty on a battery-less / no-vendor-GPU machine), so
-/// those sections drop out via TweakPageViewModel.Build's `items.Count == 0`
-/// guard — the gating is preserved, not "fixed".
+/// The <c>power-plan-selection</c> row is the plan lifecycle row: its options are
+/// loaded dynamically from the system's power plans
+/// (<see cref="IPowerPlanComboBoxService"/>), activation runs through
+/// <see cref="IPowerService"/>, and it renders via the bespoke PowerPlanComboBox
+/// template (status dot, [Active] badge, per-plan delete) in the shared
+/// TweakTemplates.xaml rendering layer.
 ///
-/// The bespoke **Plan Selector + Persist Indicator** (Phase 21 — plan cards +
-/// persistent-scheme indicator + Revert to Balanced) render at the TOP, above the
-/// catalog sections, matching net8's PowerTab.Build order. That section is NOT a
-/// TweakDefinition and does NOT register with TweakRegistry (see
-/// <see cref="PowerPlanSectionViewModel"/>); it is interleaved via
-/// <see cref="DisplayItems"/> + a template selector.
+/// Gating happens here (in BuildSettingGroups, blocking on the async probe
+/// services — SettingPageViewModel.Build is synchronous) instead of the legacy
+/// "return empty catalog on a battery-less machine" pattern: the catalog is kept
+/// whole and rows are filtered. RequiresAdvancedUnlock rows stay visible without
+/// a lock UI (Akari deviation — Winhance gates them behind a one-time unlock
+/// dialog; the flag is preserved on the catalog for a later session).
 /// </summary>
-public sealed partial class PowerViewModel : TweakPageViewModel
+public sealed partial class PowerViewModel : SettingPageViewModel
 {
-    public PowerViewModel(TweakDialogs dialogs, ToolService tool) : base(dialogs, tool)
+    private readonly IHardwareDetectionService _hardware;
+    private readonly IPowerSettingsValidationService _validation;
+    private readonly IPowerPlanComboBoxService _planComboBoxService;
+    private readonly IPowerService _powerService;
+    private readonly IReadOnlyList<SettingDefinition> _powerCatalog;
+
+    public PowerViewModel(
+        ISettingStateReader stateReader,
+        ISettingOperationExecutor executor,
+        TweakDialogs dialogs,
+        IHardwareDetectionService hardware,
+        IPowerSettingsValidationService validation,
+        IPowerPlanComboBoxService planComboBoxService,
+        IPowerService powerService)
+        : base(stateReader, executor, dialogs)
     {
+        _hardware = hardware;
+        _validation = validation;
+        _planComboBoxService = planComboBoxService;
+        _powerService = powerService;
+
+        _powerCatalog = PowerOptimizations.Build().SelectMany(g => g.Settings).ToList();
+
         Title = "Power";
         Subtitle = "Power plan management and advanced power configuration.";
-
-        // Bespoke Plan Selector VM. Its Revert path re-reads the catalog rows (net8
-        // re-ran _refreshActions after revert), so it gets a read-only refresh callback.
-        PlanSection = new PowerPlanSectionViewModel(tool, RefreshCatalogRows);
-
-        // HEADLESS-EVENT SUBSCRIBER: PowerTweaks.PowerSchemeChanged. Static event +
-        // singleton VM → no unsubscribe needed. Subscribing in the ctor (runs during
-        // warm-up) is safe: the event only fires from a WRITE (a user applying a power
-        // tweak), never during Build(), and if it somehow fired before Build the
-        // handler just iterates an empty Sections collection.
-        PowerTweaks.PowerSchemeChanged += OnPowerSchemeChanged;
     }
 
     public override string NavTag => "Power";
     public override string NavLabel => "Power";
 
-    /// <summary>The bespoke Plan Selector + Persist Indicator section (top of page).</summary>
-    public PowerPlanSectionViewModel PlanSection { get; }
+    protected override IReadOnlyList<SettingGroup> BuildSettingGroups() => Gate(PowerOptimizations.Build());
 
-    /// <summary>
-    /// What the Power page's single ItemsControl binds to: the Plan Selector section
-    /// first, then the catalog <see cref="TweakSectionViewModel"/>s. A template
-    /// selector renders each by type. Kept separate from the base <c>Sections</c> so
-    /// search / Quick Actions never see the bespoke card and the tweak-row
-    /// registration / range tiling is untouched (Gaming/Phase-7 precedent).
-    /// </summary>
-    public ObservableCollection<object> DisplayItems { get; } = new();
-
-    private bool _composed;
-
-    /// <summary>
-    /// Builds <see cref="DisplayItems"/> (plan section, then the catalog sections) and
-    /// runs the read-only plan/persist detection. Call on the UI thread after
-    /// <c>Build()</c> (the page ctor does). Idempotent.
-    /// </summary>
-    public void ComposeDisplay()
+    protected override SettingItemViewModel CreateItem(SettingDefinition s)
     {
-        if (_composed) return;
-        _composed = true;
-
-        DisplayItems.Add(PlanSection);          // TOP — above the catalog sections
-        foreach (var section in Sections)
-            DisplayItems.Add(section);
-
-        PlanSection.Refresh();                  // read-only detection on load
+        if (s.Recommendation?.LoadDynamicOptions == true)
+            return new SettingItemViewModel(
+                s, _stateReader, _executor, _dialogs,
+                _planComboBoxService, _powerService, _powerCatalog);
+        return base.CreateItem(s);
     }
 
-    /// <summary>Read-only re-read of every catalog Power row (used by the Revert path).</summary>
-    private void RefreshCatalogRows()
+    /// <summary>
+    /// Applies the hardware + existence gate. Hardware flags (RequiresBattery,
+    /// RequiresLid, RequiresBrightnessSupport, RequiresHybridSleepCapable) filter
+    /// whole rows; ValidateExistence keeps only settings whose backing PowerCfg
+    /// subgroup/setting exists on this machine. Empty groups drop out (the shared
+    /// section template hides nothing — the base has no empty-section guard).
+    /// </summary>
+    private IReadOnlyList<SettingGroup> Gate(IReadOnlyList<SettingGroup> groups)
     {
-        foreach (var section in Sections)
+        // Blocking on the async probes is safe: the services ConfigureAwait(false)
+        // internally, and this runs once per Build (warm-up background thread or
+        // the page ctor).
+        bool battery = _hardware.HasBatteryAsync().GetAwaiter().GetResult();
+        bool lid = _hardware.HasLidAsync().GetAwaiter().GetResult();
+        bool brightness = _hardware.SupportsBrightnessControlAsync().GetAwaiter().GetResult();
+        bool hybrid = _hardware.SupportsHybridSleepAsync().GetAwaiter().GetResult();
+
+        var valid = _validation.FilterSettingsByExistenceAsync(
+                groups.SelectMany(g => g.Settings)).GetAwaiter().GetResult();
+        var validIds = new HashSet<string>(valid.Select(s => s.Id), System.StringComparer.Ordinal);
+
+        var result = new List<SettingGroup>();
+        foreach (var group in groups)
         {
-            foreach (var row in section.Items)
-                row.RefreshFromSystem();
-            section.RefreshPendingPill();
+            var kept = group.Settings
+                .Where(s => PassesGate(s, battery, lid, brightness, hybrid, validIds))
+                .ToList();
+            if (kept.Count == 0) continue;
+            result.Add(group with { Settings = kept });
         }
-        RefreshQuickActionCounts();
+        return result;
     }
 
-    protected override IEnumerable<(string Title, TweakDefinition[] Tweaks)> BuildCatalog()
+    private static bool PassesGate(
+        SettingDefinition s,
+        bool battery,
+        bool lid,
+        bool brightness,
+        bool hybrid,
+        HashSet<string> validIds)
     {
-        Action<string> log = Tool.Log;
-
-        yield return ("Display", PowerTweaks.Display(log));
-        yield return ("Hard Disk", PowerTweaks.HardDisk(log));
-        yield return ("Internet Explorer", PowerTweaks.InternetExplorer(log));
-        yield return ("Desktop Background Settings", PowerTweaks.DesktopBackground(log));
-        yield return ("Wireless Adapter Settings", PowerTweaks.WirelessAdapter(log));
-        yield return ("Sleep", PowerTweaks.Sleep(log));
-        yield return ("Battery", PowerTweaks.Battery(log));                       // hardware-gated
-        yield return ("USB Settings", PowerTweaks.USB(log));
-        yield return ("PCI Express", PowerTweaks.PciExpress(log));
-        yield return ("GPU Power", PowerTweaks.GpuPower(log));                    // hardware-gated
-        yield return ("Processor Power Management", PowerTweaks.ProcessorPower(log));
-        yield return ("Processor Advanced Settings", PowerTweaks.ProcessorAdvanced(log));
-        yield return ("Multimedia Settings", PowerTweaks.MultimediaSettings(log));
-        yield return ("Power Buttons and Lid", PowerTweaks.PowerButtons(log));
-        yield return ("Start Menu Power Options", PowerTweaks.StartMenuPower(log));
-    }
-
-    // ── PowerSchemeChanged subscriber — READ-ONLY (reviewed invariant) ────────
-    /// <summary>
-    /// Repaints the Power tab after a power write. **READ-ONLY** — this is the one
-    /// wrong-direction bug CLAUDE.md flags by name, so the invariant is explicit:
-    ///
-    /// PowerTweaks raises <c>PowerSchemeChanged</c> ONLY from its WRITE path
-    /// (<c>SetPowerCfg</c> / <c>EnsureAkariScheme</c>), AFTER the powercfg writes +
-    /// <c>/SETACTIVE</c> + drift-clear have already run. This handler only RE-READS
-    /// and repaints so sibling dropdowns reflect the now-active Akari Performance
-    /// scheme. Every call it makes is read-only:
-    ///   • <c>row.RefreshFromSystem()</c> → <c>ReadCurrentIndex</c> → <c>QueryPowerCfg</c>
-    ///     = <c>powercfg /QUERY</c> (read) + <c>ResolveSchemeTarget</c> (registry read);
-    ///     the row applies the read value through its SUPPRESSED setter, so re-reading
-    ///     never re-enters the apply path.
-    ///   • <c>section.RefreshPendingPill()</c> / <c>RefreshQuickActionCounts()</c> only
-    ///     read row state.
-    ///
-    /// It NEVER calls <c>SetPowerCfg</c>, <c>EnsureAkariScheme</c>, or
-    /// <c>powercfg /SETACTIVE</c> — it carries no power-state authority.
-    ///
-    /// Phase 21: it now ALSO calls <c>PlanSection.Refresh()</c> — the bespoke Plan
-    /// Selector + Persist Indicator repaint, which is likewise READ-ONLY
-    /// (RefreshActiveCard → ReadActivePowerPlan/ListPowerPlans reads;
-    /// RefreshPersistIndicator → ResolveSchemeTarget() + SchemeInactive reads). Still
-    /// nothing here writes / reactivates a scheme.
-    ///
-    /// Marshaled to the UI thread because it mutates bound collections/properties.
-    /// </summary>
-    private void OnPowerSchemeChanged()
-    {
-        App.DispatcherQueue?.TryEnqueue(() =>
-        {
-            foreach (var section in Sections)
-            {
-                foreach (var row in section.Items)
-                    row.RefreshFromSystem();   // read-only re-read (QueryPowerCfg)
-                section.RefreshPendingPill();
-            }
-            RefreshQuickActionCounts();
-            PlanSection.Refresh();             // read-only plan-card + persist-indicator repaint
-        });
+        if (s.RequiresBattery && !battery) return false;
+        if (s.RequiresLid && !lid) return false;
+        if (s.RequiresBrightnessSupport && !brightness) return false;
+        if (s.RequiresHybridSleepCapable && !hybrid) return false;
+        if (s.ValidateExistence && !validIds.Contains(s.Id)) return false;
+        return true;
     }
 }

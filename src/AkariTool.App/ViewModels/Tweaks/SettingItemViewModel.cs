@@ -26,6 +26,9 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
     private readonly ISettingStateReader _stateReader;
     private readonly ISettingOperationExecutor _executor;
     private readonly TweakDialogs _dialogs;
+    private readonly IPowerPlanComboBoxService? _powerPlanComboBoxService;
+    private readonly IPowerService? _powerService;
+    private readonly IReadOnlyList<SettingDefinition>? _powerCatalog;
 
     private bool _suppress;
     private int _lastIndex = -1;
@@ -34,17 +37,31 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
         SettingDefinition definition,
         ISettingStateReader stateReader,
         ISettingOperationExecutor executor,
-        TweakDialogs dialogs)
+        TweakDialogs dialogs,
+        IPowerPlanComboBoxService? powerPlanComboBoxService = null,
+        IPowerService? powerService = null,
+        IReadOnlyList<SettingDefinition>? powerCatalog = null)
     {
         Definition = definition;
         _stateReader = stateReader;
         _executor = executor;
         _dialogs = dialogs;
+        _powerPlanComboBoxService = powerPlanComboBoxService;
+        _powerService = powerService;
+        _powerCatalog = powerCatalog;
 
         Options = Definition.ComboBox?.Options?.Select(o => o.DisplayName).ToArray()
                   ?? Array.Empty<string>();
 
-        RefreshFromSystem();
+        if (IsPowerPlanSetting)
+        {
+            DeletePlanCommand = new AsyncRelayCommand<PowerPlanComboBoxOption>(DeletePlanAsync);
+            RefreshPlanOptions();
+        }
+        else
+        {
+            RefreshFromSystem();
+        }
     }
 
     // ── Static surface ─────────────────────────────────────────────────────────
@@ -54,6 +71,30 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
     public string Description => Definition.Description;
     public InputType InputType => Definition.InputType;
     public string[] Options { get; }
+
+    /// <summary>
+    /// True for the Power Plan row (<c>power-plan-selection</c>): a Selection
+    /// setting whose options are loaded at runtime from the system's power plans
+    /// (Recommendation.LoadDynamicOptions), not from static ComboBox metadata.
+    /// Rendered by a bespoke PowerPlanComboBox template, not the dropdown template.
+    /// </summary>
+    public bool IsPowerPlanSetting =>
+        InputType == InputType.Selection && Definition.Recommendation?.LoadDynamicOptions == true;
+
+    /// <summary>Dynamic Power Plan options backing the bespoke combo row.</summary>
+    public ObservableCollection<PowerPlanComboBoxOption> PlanOptions { get; } = new();
+
+    /// <summary>
+    /// Delete command for a non-active, installed plan in the Power Plan dropdown.
+    /// Null on every other row.
+    /// </summary>
+    public IAsyncRelayCommand<PowerPlanComboBoxOption>? DeletePlanCommand { get; }
+
+    /// <summary>
+    /// Raised after a plan activation / import / delete lands, so the page can
+    /// re-read sibling PowerCfg rows (values differ per active plan).
+    /// </summary>
+    public event Action? PowerPlanChanged;
 
     // ── Observable state ───────────────────────────────────────────────────────
     [ObservableProperty]
@@ -115,6 +156,12 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
     {
         if (newIndex < 0) return;
 
+        if (IsPowerPlanSetting)
+        {
+            await ApplyPowerPlanAsync(newIndex);
+            return;
+        }
+
         if (!await _dialogs.ConfirmWarningAsync(Name, null))
         {
             SetSelectedIndexSilently(_lastIndex);
@@ -126,12 +173,139 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
         RefreshBadges();
     }
 
+    // ── Power Plan row (dynamic options) ─────────────────────────────────────
+
+    /// <summary>
+    /// Blocking repopulation of <see cref="PlanOptions"/> + active-index resolution.
+    /// Runs in the row ctor (Build, on the warm-up background thread or the page
+    /// ctor) and after every successful plan write. The internal services
+    /// ConfigureAwait(false), so blocking here cannot deadlock a UI thread.
+    /// </summary>
+    private void RefreshPlanOptions()
+    {
+        if (_powerPlanComboBoxService == null || _powerService == null) return;
+
+        var options = _powerPlanComboBoxService.GetPowerPlanOptionsAsync().GetAwaiter().GetResult();
+        PlanOptions.Clear();
+        foreach (var option in options)
+            PlanOptions.Add(option);
+
+        int idx = 0;
+        var active = _powerService.GetActivePowerPlanAsync().GetAwaiter().GetResult();
+        if (active != null)
+        {
+            var match = options.FirstOrDefault(o =>
+                string.Equals(o.SystemPlan?.Guid, active.Guid, StringComparison.OrdinalIgnoreCase));
+            if (match != null) idx = match.Index;
+        }
+
+        SetSelectedIndexSilently(idx);
+        _lastIndex = idx;
+    }
+
+    /// <summary>
+    /// User picked a plan: activate it (importing the predefined plan first when it
+    /// is not yet on the system), then repopulate the dropdown and ask the page to
+    /// re-read sibling PowerCfg rows. Runs on the UI thread — no ConfigureAwait so
+    /// the bound-collection mutations stay on the dispatcher.
+    /// </summary>
+    private async Task ApplyPowerPlanAsync(int newIndex)
+    {
+        if (_powerService == null || _powerPlanComboBoxService == null) return;
+
+        var options = await _powerPlanComboBoxService.GetPowerPlanOptionsAsync();
+        if (newIndex < 0 || newIndex >= options.Count)
+        {
+            RefreshPlanOptions();
+            return;
+        }
+
+        var option = options[newIndex];
+        if (option.IsActive)
+        {
+            RefreshPlanOptions();
+            return;
+        }
+
+        string? guid = option.SystemPlan?.Guid ?? option.PredefinedPlan?.Guid;
+        if (string.IsNullOrEmpty(guid))
+        {
+            RefreshPlanOptions();
+            return;
+        }
+
+        bool ok;
+        if (option.ExistsOnSystem)
+        {
+            ok = await _powerService.ActivatePowerPlanAsync(guid);
+        }
+        else if (option.PredefinedPlan != null)
+        {
+            var import = await _powerService.ImportPowerPlanAsync(option.PredefinedPlan, _powerCatalog);
+            ok = import.Success;
+        }
+        else
+        {
+            ok = false;
+        }
+
+        if (!ok)
+        {
+            await _dialogs.InfoAsync("Power Plan", $"Could not activate the power plan \"{option.DisplayName}\".");
+            RefreshPlanOptions();
+            return;
+        }
+
+        RefreshPlanOptions();
+        PowerPlanChanged?.Invoke();
+    }
+
+    /// <summary>
+    /// Deletes an installed, non-active plan from the Power Plan dropdown. The
+    /// active plan and not-installed predefined plans are guarded.
+    /// </summary>
+    private async Task DeletePlanAsync(PowerPlanComboBoxOption? option)
+    {
+        if (option == null || _powerService == null) return;
+
+        if (!option.ExistsOnSystem || option.SystemPlan == null)
+        {
+            await _dialogs.InfoAsync("Power Plan", $"\"{option.DisplayName}\" is not installed on this system.");
+            return;
+        }
+
+        if (option.IsActive)
+        {
+            await _dialogs.InfoAsync("Power Plan", "You cannot delete the active power plan.");
+            return;
+        }
+
+        bool confirmed = await _dialogs.ConfirmAsync(
+            "Delete power plan", $"Delete the power plan \"{option.DisplayName}\"?", "Delete");
+        if (!confirmed) return;
+
+        bool ok = await _powerService.DeletePowerPlanAsync(option.SystemPlan.Guid);
+        if (!ok)
+        {
+            await _dialogs.InfoAsync("Power Plan", $"Could not delete the power plan \"{option.DisplayName}\".");
+            return;
+        }
+
+        RefreshPlanOptions();
+        PowerPlanChanged?.Invoke();
+    }
+
     // Per-state toggle warning copy (Akari extension). ON shows EnableWarning, OFF DisableWarning.
     private string? GetToggleWarning(bool newState) => newState ? Definition.EnableWarning : Definition.DisableWarning;
 
     // ── System-state read-back ─────────────────────────────────────────────────
     public void RefreshFromSystem()
     {
+        // The Power Plan row's state is managed by its apply path (RefreshPlanOptions
+        // repopulates + resolves the active index). _stateReader has no backing for it
+        // and would wrongly reset the selection to -1.
+        if (IsPowerPlanSetting) return;
+
         if (InputType == InputType.Toggle || InputType == InputType.CheckBox)
         {
             SetIsOnSilently(_stateReader.ReadToggleState(Definition));
