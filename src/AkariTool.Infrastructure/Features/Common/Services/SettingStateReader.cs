@@ -44,6 +44,13 @@ public sealed class SettingStateReader : ISettingStateReader
                     return registrySetting.EnabledValue?.Contains(null) == true;
                 }
 
+                if (currentValue is byte[] blob && registrySetting.BinaryByteIndex.HasValue && registrySetting.BitMask.HasValue)
+                {
+                    int byteIdx = registrySetting.BinaryByteIndex.Value;
+                    byte bitMask = registrySetting.BitMask.Value;
+                    return byteIdx < blob.Length && (blob[byteIdx] & bitMask) != 0;
+                }
+
                 return ValuesEqual(currentValue, registrySetting.EnabledValue?[0]);
             }
         }

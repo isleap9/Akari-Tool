@@ -250,7 +250,30 @@ public static class TaskbarOptimizations
             FeatureId = "customize-taskbar-behavior",
             Settings = new[]
             {
-                // [DEFERRED: customize-taskbar-auto-hide — StuckRects3 REG_BINARY blob (auto-hide = bit 0 of byte 8, read-modify-write); not expressible as a value write]
+                new SettingDefinition
+                {
+                    Id = "customize-taskbar-auto-hide",
+                    Name = "Auto-hide the Taskbar",
+                    Description = "Automatically hides the taskbar when not in use, revealing it when you move the cursor to the bottom of the screen.",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = true,
+                    DefaultToggleState = false,
+                    RestartProcess = "explorer",
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StuckRects3",
+                            ValueName = "Settings",
+                            ValueType = RegistryValueKind.Binary,
+                            BinaryByteIndex = 8,
+                            BitMask = 0x01,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            IsPrimary = true,
+                        },
+                    },
+                },
 
                 // customize-taskbar-end-task — TaskbarEndTask: enable=1/disable=0
                 new SettingDefinition
