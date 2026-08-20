@@ -2037,9 +2037,9 @@ public static class GamingOptimizations
                     {
                         Options =
                         [
-                            new ComboBoxOption { DisplayName = "Disabled", IsRecommended = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
-                            new ComboBoxOption { DisplayName = "Manual", IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
-                            new ComboBoxOption { DisplayName = "Automatic", ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
+                            new ComboBoxOption { DisplayName = "Disabled", IsRecommended = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 4, ["IsInputAppPreloadEnabled"] = (object?)0 } },
+                            new ComboBoxOption { DisplayName = "Manual", IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3, ["IsInputAppPreloadEnabled"] = (object?)null } },
+                            new ComboBoxOption { DisplayName = "Automatic", ValueMappings = new Dictionary<string, object?> { ["Start"] = 2, ["IsInputAppPreloadEnabled"] = (object?)null } },
                         ],
                     },
                 },
