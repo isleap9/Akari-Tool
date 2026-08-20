@@ -1968,14 +1968,14 @@ public static class GamingOptimizations
                     IsSubjectivePreference = true,
                     RegistrySettings =
                     [
-                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\SCardSvr", ValueName = "Start", RecommendedValue = 4, DefaultValue = 3, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\SCardSvr", ValueName = "Start", RecommendedValue = 3, DefaultValue = 3, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
                     ],
                     ComboBox = new ComboBoxMetadata
                     {
                         Options =
                         [
-                            new ComboBoxOption { DisplayName = "Disabled", IsRecommended = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
-                            new ComboBoxOption { DisplayName = "Manual", IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Disabled", ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
+                            new ComboBoxOption { DisplayName = "Manual", IsDefault = true, IsRecommended = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
                             new ComboBoxOption { DisplayName = "Automatic", ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
                         ],
                     },
@@ -2076,14 +2076,14 @@ public static class GamingOptimizations
                     IsSubjectivePreference = true,
                     RegistrySettings =
                     [
-                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\XblAuthManager", ValueName = "Start", RecommendedValue = 4, DefaultValue = 3, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\XblAuthManager", ValueName = "Start", RecommendedValue = 3, DefaultValue = 3, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
                     ],
                     ComboBox = new ComboBoxMetadata
                     {
                         Options =
                         [
-                            new ComboBoxOption { DisplayName = "Disabled", IsRecommended = true, Warning = "Disabling will prevent Xbox Game Pass and Microsoft Store games from signing in or launching.", ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
-                            new ComboBoxOption { DisplayName = "Manual", IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Disabled", Warning = "Disabling will prevent Xbox Game Pass and Microsoft Store games from signing in or launching.", ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
+                            new ComboBoxOption { DisplayName = "Manual", IsDefault = true, IsRecommended = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
                             new ComboBoxOption { DisplayName = "Automatic", ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
                         ],
                     },
@@ -2097,14 +2097,14 @@ public static class GamingOptimizations
                     IsSubjectivePreference = true,
                     RegistrySettings =
                     [
-                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\XblGameSave", ValueName = "Start", RecommendedValue = 4, DefaultValue = 3, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\XblGameSave", ValueName = "Start", RecommendedValue = 3, DefaultValue = 3, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
                     ],
                     ComboBox = new ComboBoxMetadata
                     {
                         Options =
                         [
-                            new ComboBoxOption { DisplayName = "Disabled", IsRecommended = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
-                            new ComboBoxOption { DisplayName = "Manual", IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Disabled", ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
+                            new ComboBoxOption { DisplayName = "Manual", IsDefault = true, IsRecommended = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
                             new ComboBoxOption { DisplayName = "Automatic", ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
                         ],
                     },
@@ -2118,14 +2118,14 @@ public static class GamingOptimizations
                     IsSubjectivePreference = true,
                     RegistrySettings =
                     [
-                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\XboxNetApiSvc", ValueName = "Start", RecommendedValue = 4, DefaultValue = 3, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\XboxNetApiSvc", ValueName = "Start", RecommendedValue = 3, DefaultValue = 3, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
                     ],
                     ComboBox = new ComboBoxMetadata
                     {
                         Options =
                         [
-                            new ComboBoxOption { DisplayName = "Disabled", IsRecommended = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
-                            new ComboBoxOption { DisplayName = "Manual", IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Disabled", ValueMappings = new Dictionary<string, object?> { ["Start"] = 4 } },
+                            new ComboBoxOption { DisplayName = "Manual", IsDefault = true, IsRecommended = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3 } },
                             new ComboBoxOption { DisplayName = "Automatic", ValueMappings = new Dictionary<string, object?> { ["Start"] = 2 } },
                         ],
                     },
@@ -2776,7 +2776,7 @@ public static class GamingOptimizations
                     Name = "Show thumbnails instead of icons",
                     Description = "Display thumbnail previews for image, video, and document files in File Explorer",
                     IsSubjectivePreference = true,
-                    RecommendedToggleState = false,
+                    RecommendedToggleState = true,
                     DefaultToggleState = true,
                     RegistrySettings =
                     [

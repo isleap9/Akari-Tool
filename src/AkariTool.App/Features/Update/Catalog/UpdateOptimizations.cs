@@ -93,7 +93,6 @@ public static class UpdateOptimizations
                             new ComboBoxOption
                             {
                                 DisplayName = "Local only",
-                                IsRecommended = true,
                                 ValueMappings = new Dictionary<string, object?> { ["DODownloadMode"] = null },
                             },
                             new ComboBoxOption
@@ -110,6 +109,7 @@ public static class UpdateOptimizations
                             new ComboBoxOption
                             {
                                 DisplayName = "Internet (Microsoft)",
+                                IsRecommended = true,
                                 ValueMappings = new Dictionary<string, object?> { ["DODownloadMode"] = 99 },
                             },
                         },

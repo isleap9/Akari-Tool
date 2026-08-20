@@ -54,7 +54,7 @@ public static class TaskbarOptimizations
                     Description = "Removes the search box/icon from the taskbar",
                     InputType = InputType.Toggle,
                     IsSubjectivePreference = false,
-                    RecommendedToggleState = false,
+                    RecommendedToggleState = true,
                     DefaultToggleState = false,
                     RegistrySettings = new[]
                     {

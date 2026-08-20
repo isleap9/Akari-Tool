@@ -76,7 +76,6 @@ public static class PrivacyOptimizations
                             {
                                 DisplayName = "Notify when apps make changes (Default)",
                                 IsDefault = true,
-                                IsRecommended = true,
                                 ValueMappings = new Dictionary<string, object?> { ["ConsentPromptBehaviorAdmin"] = 5, ["PromptOnSecureDesktop"] = 1 },
                             },
                             new ComboBoxOption
@@ -88,6 +87,7 @@ public static class PrivacyOptimizations
                             new ComboBoxOption
                             {
                                 DisplayName = "Never notify",
+                                IsRecommended = true,
                                 Warning = "Turns UAC prompts off entirely — anything running as your user can silently elevate to administrator. This significantly weakens system security and some apps (and the Microsoft Store) may misbehave. Not recommended.",
                                 ValueMappings = new Dictionary<string, object?> { ["ConsentPromptBehaviorAdmin"] = 0, ["PromptOnSecureDesktop"] = 0 },
                             },
@@ -610,7 +610,7 @@ public static class PrivacyOptimizations
                     Description = "Allows users to lock their computer using Windows+L, Start menu, or Ctrl+Alt+Del. Disabling prevents locking the workstation",
                     InputType = InputType.Toggle,
                     IsSubjectivePreference = true,
-                    RecommendedToggleState = true,
+                    RecommendedToggleState = false,
                     DefaultToggleState = true,
                     RegistrySettings = new[]
                     {
