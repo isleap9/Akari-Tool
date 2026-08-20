@@ -45,6 +45,7 @@ public static class UIServiceExtensions
 
         // Dialog helper for tweak confirmations (serializes ContentDialogs).
         services.AddSingleton<TweakDialogs>();
+        services.AddSingleton<SettingBackupService>();
 
         services.AddSingleton<MainWindow>();
         services.AddTransient<HomeViewModel>();

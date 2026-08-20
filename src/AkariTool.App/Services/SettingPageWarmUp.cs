@@ -19,8 +19,12 @@ public static class SettingPageWarmUp
         try
         {
             var pages = services.GetServices<SettingPageViewModel>().ToList();
+            var backup = services.GetRequiredService<SettingBackupService>();
             foreach (var page in pages)
+            {
                 page.Build();
+                backup.Register(page);
+            }
 
             log.Info($"[WARMUP] Setting pages warmed: {pages.Count} page(s).");
         }

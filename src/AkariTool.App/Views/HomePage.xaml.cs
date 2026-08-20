@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using AkariTool.Tabs;
+using AkariTool.Services;
 using AkariTool.ViewModels;
 using WinUI.Framework.IoC;
 
@@ -12,7 +13,7 @@ namespace AkariTool.Views;
 /// <summary>
 /// Home page. Banner is bound to <see cref="HomeViewModel"/>; the global search and the
 /// quick-nav card grid are built here in code (Phase 9 port of net8's HomeTab). Search is
-/// wired to the already-ported <see cref="TweakRegistry.Search"/>; cards route through
+/// wired to <see cref="SettingBackupService.Search"/>; cards route through
 /// <see cref="MainWindow.SelectRailTag"/>, which drives the same rail routing as a real
 /// click (so a card lands on the real page built in a prior wave, or PlaceholderPage for
 /// the still-unported tabs). Registers nothing.
@@ -21,11 +22,14 @@ public sealed partial class HomePage : Page
 {
     public HomeViewModel ViewModel { get; }
 
+    private readonly SettingBackupService _backup;
+
     private sealed record CardDef(string Title, string Glyph, string Desc, string Tag);
 
     public HomePage()
     {
         ViewModel = ServiceLocator.GetService<HomeViewModel>();
+        _backup = ServiceLocator.GetService<SettingBackupService>();
         InitializeComponent();
         BuildCards();
     }
@@ -182,9 +186,9 @@ public sealed partial class HomePage : Page
 
         CardsPanel.Visibility = Visibility.Collapsed;
 
-        // net8 grouped hits by tab; TweakRegistry.Search already returns TabLabel per hit,
-        // so group by it and render a header per group, rows navigating to TabTag.
-        var hits = TweakRegistry.Search(query, max: 40);
+        // net8 grouped hits by tab; SettingBackupService.Search already returns TabLabel
+        // per hit, so group by it and render a header per group, rows navigating to TabTag.
+        var hits = _backup.Search(query, max: 40);
         if (hits.Count == 0)
         {
             ResultsPanel.Children.Add(new TextBlock

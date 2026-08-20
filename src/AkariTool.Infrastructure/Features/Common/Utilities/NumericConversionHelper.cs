@@ -25,6 +25,24 @@ public static class NumericConversionHelper
         };
     }
 
+    /// <summary>
+    /// Converts a display-unit value back to the raw powercfg system value. Inverse of
+    /// <see cref="ConvertFromSystemUnits"/>; mirrors the private conversion on
+    /// PowerCfgApplier (minutes * 60, hours * 3600, milliseconds 1:1). Used by
+    /// SettingBackupService to store numeric power settings in system units (Winhance
+    /// parity — the config file carries raw seconds, not display units).
+    /// </summary>
+    public static int ConvertToSystemUnits(int displayValue, string? displayUnits)
+    {
+        return displayUnits?.ToLowerInvariant() switch
+        {
+            "minutes" => displayValue * 60,
+            "hours" => displayValue * 3600,
+            "milliseconds" => displayValue,
+            _ => displayValue
+        };
+    }
+
     public static int ConvertNumericValue(object value)
     {
         return value switch

@@ -9,10 +9,10 @@ namespace AkariTool.ViewModels.Backup;
 
 /// <summary>
 /// Backup &amp; Restore panel — MVVM port of net8 <c>Tabs/Backup/BackupTab.xaml.cs</c>.
-/// Two static cards (Export / Import) over the already-ported, format-identical
-/// <see cref="TweakRegistry"/> engine. This VM does NOT touch TweakRegistry.cs — it
-/// only calls its existing static entry points (<c>ExportToFile</c> /
-/// <c>PreviewImport</c> / <c>ImportFromFile</c>), exactly as net8 did.
+/// Two static cards (Export / Import) over the SettingDefinition-native
+/// <see cref="SettingBackupService"/> engine (Phase 3b-ii — the legacy TweakRegistry
+/// holds zero entries since the declarative migration). JSON format stays byte-identical
+/// to TweakRegistry so old backup files remain importable.
 ///
 /// ⚠ Bespoke, NOT a tweak page: registers nothing with TweakRegistry, so the
 /// <c>[WARMUP]</c> total is unchanged.
@@ -26,6 +26,7 @@ public sealed partial class BackupViewModel : ObservableObject
     private readonly ToolService _tool;
     private readonly IFileService _files;
     private readonly IDialogService _dialogs;
+    private readonly SettingBackupService _backup;
 
     public string Title => "Backup & Restore";
 
@@ -62,17 +63,18 @@ public sealed partial class BackupViewModel : ObservableObject
         (Microsoft.UI.Xaml.Media.Brush)Microsoft.UI.Xaml.Application.Current.Resources[
             ok ? "SystemFillColorSuccessBrush" : "SystemFillColorCriticalBrush"];
 
-    public BackupViewModel(ToolService tool, IFileService files, IDialogService dialogs)
+    public BackupViewModel(ToolService tool, IFileService files, IDialogService dialogs, SettingBackupService backup)
     {
         _tool = tool;
         _files = files;
         _dialogs = dialogs;
+        _backup = backup;
         RefreshSummary();
     }
 
     /// <summary>net8 refreshed the count on tab (re)load; the page calls this on Loaded.</summary>
     public void RefreshSummary() =>
-        SummaryText = $"{TweakRegistry.Count} tweaks are currently tracked and will be included in the export.";
+        SummaryText = $"{_backup.Count} tweaks are currently tracked and will be included in the export.";
 
     // ── Export ────────────────────────────────────────────────────────────────
 
@@ -89,7 +91,7 @@ public sealed partial class BackupViewModel : ObservableObject
 
         try
         {
-            var result = TweakRegistry.ExportToFile(file.Path);
+            var result = _backup.ExportToFile(file.Path);
             _tool.Log($"[Backup] Exported {result.Exported} tweak(s) → {file.Path}" +
                       (result.Skipped > 0 ? $" ({result.Skipped} skipped — state unreadable)" : ""));
             SetExport($"Exported {result.Exported} tweak(s) to {Path.GetFileName(file.Path)}.", ok: true);
@@ -113,7 +115,7 @@ public sealed partial class BackupViewModel : ObservableObject
         {
             // Review Mode: preview the file, show only the differing entries, let the
             // user uncheck what to keep — verbatim net8 flow.
-            var preview = TweakRegistry.PreviewImport(file.Path);
+            var preview = _backup.PreviewImport(file.Path);
             var differing = preview.Entries.Where(e => e.Differs).ToList();
 
             if (differing.Count == 0)
@@ -136,7 +138,7 @@ public sealed partial class BackupViewModel : ObservableObject
                 return;
             }
 
-            var r = TweakRegistry.ImportFromFile(file.Path, review.SelectedIds);
+            var r = await _backup.ImportFromFile(file.Path, review.SelectedIds);
             _tool.Log($"[Backup] Import complete — {r.Applied} applied, {r.AlreadySet} already set, " +
                       $"{r.Unknown} unknown, {r.Failed} failed (of {r.Total}).");
 

@@ -68,6 +68,7 @@ public sealed partial class MainWindow : Window
     private readonly ISettingsService _settings;
     private readonly ToolService _tool;
     private readonly IFileService _files;
+    private readonly SettingBackupService _backup;
 
     // Named (not a lambda) so OnClosed can unsubscribe the exact same delegate instance.
     private readonly EventHandler<AppTheme> _themeChangedHandler;
@@ -80,7 +81,8 @@ public sealed partial class MainWindow : Window
         AkariUiLogService uiLog,
         ISettingsService settings,
         ToolService tool,
-        IFileService files)
+        IFileService files,
+        SettingBackupService backup)
     {
         _navigation = navigation;
         _dialogs = dialogs;
@@ -90,6 +92,7 @@ public sealed partial class MainWindow : Window
         _settings = settings;
         _tool = tool;
         _files = files;
+        _backup = backup;
         _themeChangedHandler = (_, _) => UpdateThemeVisuals();
 
         InitializeComponent();
@@ -323,7 +326,7 @@ public sealed partial class MainWindow : Window
         var query = sender.Text.Trim();
         if (query.Length < 2) { sender.ItemsSource = null; return; }
 
-        sender.ItemsSource = TweakRegistry.Search(query, max: 10)
+        sender.ItemsSource = _backup.Search(query, max: 10)
             .Select(h => new SearchResult($"{h.Name}  —  {h.TabLabel}", h.TabTag, h.Name))
             .ToList();
     }
@@ -333,7 +336,7 @@ public sealed partial class MainWindow : Window
         // A tapped/entered suggestion arrives as ChosenSuggestion; a bare Enter (no pick)
         // falls back to the top hit for the typed text.
         var result = args.ChosenSuggestion as SearchResult
-            ?? TweakRegistry.Search(sender.Text.Trim(), max: 1)
+            ?? _backup.Search(sender.Text.Trim(), max: 1)
                   .Select(h => new SearchResult($"{h.Name}  —  {h.TabLabel}", h.TabTag, h.Name))
                   .FirstOrDefault();
         if (result is null) return;
@@ -345,7 +348,7 @@ public sealed partial class MainWindow : Window
         //    DI SINGLETONS keyed by NavTag, so we set SearchText on the singleton (which
         //    persists into the page whenever it renders) — no page-instance handle needed.
         //    OnSearchTextChanged → ApplySearch already filters to the matched row.
-        var vm = App.Services.GetServices<TweakPageViewModel>()
+        var vm = App.Services.GetServices<SettingPageViewModel>()
                              .FirstOrDefault(v => v.NavTag == result.Tag);
         if (vm is not null) vm.SearchText = result.Name;
     }

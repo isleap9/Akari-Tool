@@ -359,6 +359,38 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
     }
 
     /// <summary>
+    /// Backup-restore seam: activates/imports the plan matching <paramref name="guid"/>
+    /// (by system plan GUID or predefined plan GUID), reusing the same apply path as a
+    /// user pick. Returns false when no option carries that GUID, or the activation
+    /// failed. Also raises <see cref="PowerPlanChanged"/> so sibling PowerCfg rows
+    /// re-read under the newly active plan.
+    /// </summary>
+    public async Task<bool> ApplyPowerPlanByGuidAsync(string guid)
+    {
+        if (_powerPlanComboBoxService == null) return false;
+
+        var options = await _powerPlanComboBoxService.GetPowerPlanOptionsAsync();
+        int index = -1;
+        for (int i = 0; i < options.Count; i++)
+        {
+            var o = options[i];
+            if (string.Equals(o.SystemPlan?.Guid, guid, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(o.PredefinedPlan?.Guid, guid, StringComparison.OrdinalIgnoreCase))
+            {
+                index = i;
+                break;
+            }
+        }
+        if (index < 0) return false;
+
+        var active = options[index];
+        if (active.IsActive) return true; // already active — nothing to do
+
+        await ApplyPowerPlanAsync(index);
+        return true;
+    }
+
+    /// <summary>
     /// Deletes an installed, non-active plan from the Power Plan dropdown. The
     /// active plan and not-installed predefined plans are guarded.
     /// </summary>
