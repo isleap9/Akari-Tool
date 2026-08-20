@@ -1,9 +1,11 @@
+using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using AkariTool.Core.Interfaces;
 using AkariTool.Core.Features.Common.Interfaces;
 using AkariTool.Infrastructure.Services;
 using AkariTool.Infrastructure.Features.Common.Interfaces;
 using AkariTool.Infrastructure.Features.Common.Services;
+using AkariTool.Infrastructure.Features.Optimize.Services;
 
 namespace AkariTool.Infrastructure.DI;
 
@@ -26,6 +28,15 @@ public static class InfrastructureServiceExtensions
         services.AddSingleton<IToolFetchService, ToolFetchServiceWrapper>();
         services.AddSingleton<ISystemInfoService, SystemInfoServiceWrapper>();
         services.AddSingleton<IShaderCacheService, ShaderCacheServiceWrapper>();
+
+        // Special-setting handlers (composite apply/detect paths the generic
+        // executor cannot express — e.g. the Windows Update policy dropdown).
+        services.AddSingleton<WindowsUpdatePolicyHandler>();
+        services.AddSingleton<ISpecialSettingHandlerRegistry>(sp => new SpecialSettingHandlerRegistry(
+            new Dictionary<string, ISpecialSettingHandler>
+            {
+                ["updates-policy-mode"] = sp.GetRequiredService<WindowsUpdatePolicyHandler>()
+            }));
 
         // Declarative SettingDefinition stack (Track A).
         services.AddSingleton<ISettingStateReader, SettingStateReader>();

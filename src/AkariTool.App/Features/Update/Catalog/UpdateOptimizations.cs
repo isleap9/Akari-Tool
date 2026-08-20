@@ -1,6 +1,7 @@
 using AkariTool.Core.Features.Common.Models;
 using AkariTool.Core.Features.Common.Enums;
 using Microsoft.Win32;
+using System;
 using System.Collections.Generic;
 
 namespace AkariTool.Tabs.Update;
@@ -25,6 +26,37 @@ public static class UpdateOptimizations
 {
     public static IReadOnlyList<SettingGroup> Build() => new[]
     {
+        // ══════════════════════════════════════════════════════════════════════
+        // UPDATE POLICY
+        // ══════════════════════════════════════════════════════════════════════
+        new SettingGroup
+        {
+            Name = "Update Policy",
+            FeatureId = "update-policy",
+            Settings = new[]
+            {
+                new SettingDefinition
+                {
+                    Id = "updates-policy-mode",
+                    Name = "Windows Update Policy",
+                    Description = "Control how Windows updates are installed on your system",
+                    InputType = InputType.Selection,
+                    IsSubjectivePreference = true,
+                    RegistrySettings = Array.Empty<RegistrySetting>(),
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options = new[]
+                        {
+                            new ComboBoxOption { DisplayName = "Normal (Windows Default)", IsDefault = true },
+                            new ComboBoxOption { DisplayName = "Security Updates Only (Recommended)", IsRecommended = true },
+                            new ComboBoxOption { DisplayName = "Paused for a long time (Unpause in Settings)" },
+                            new ComboBoxOption { DisplayName = "Disabled (NOT Recommended, Security Risk)" },
+                        },
+                    },
+                },
+            },
+        },
+
         // ══════════════════════════════════════════════════════════════════════
         // DELIVERY & STORE
         // ══════════════════════════════════════════════════════════════════════

@@ -21,11 +21,25 @@ public class SettingOperationExecutor(
     IProcessExecutor processExecutor,
     IPowerShellRunner powerShellRunner,
     IFileSystemService fileSystemService,
-    IAkariLogService logService) : ISettingOperationExecutor
+    IAkariLogService logService,
+    ISpecialSettingHandlerRegistry specialHandlerRegistry) : ISettingOperationExecutor
 {
+    private readonly ISpecialSettingHandlerRegistry _specialHandlerRegistry = specialHandlerRegistry;
+
     public async Task<OperationResult> ApplySettingOperationsAsync(SettingDefinition setting, bool enable, object? value, bool resetToDefault = false)
     {
         logService.Log(LogLevel.Info, $"[SettingOperationExecutor] Processing operations for '{setting.Id}' - Type: {setting.InputType}{(resetToDefault ? " (resetting to default values)" : "")}");
+
+        // Special-setting handlers own their full apply path (services/tasks/DLLs/registry).
+        if (_specialHandlerRegistry.TryGet(setting.Id) is { } handler)
+        {
+            var handled = await handler.TryApplySpecialSettingAsync(setting, value).ConfigureAwait(false);
+            if (handled)
+            {
+                await processRestartManager.HandleProcessAndServiceRestartsAsync(setting).ConfigureAwait(false);
+                return OperationResult.Succeeded();
+            }
+        }
 
         bool allSucceeded = true;
         var failedOperations = new List<string>();

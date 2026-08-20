@@ -1,147 +1,14 @@
-// NOTE: updates-policy-mode retained here pending custom detection implementation. All other tweaks migrated to UpdateOptimizations.cs.
 using Microsoft.Win32;
 using AkariTool.Core.Tweaks;
 
 namespace AkariTool.Tabs.Update
 {
-    // MVVM PORT: extracted verbatim from the net8 UpdateTab.xaml.cs. TweakDefinition data
-    // (and the ReadDword/ReadString read helpers) moved here unchanged; only the rendering
-    // scaffolding (BaseTab, PageHeader, AddSection wrapper, InitializeComponent,
-    // _refreshActions) was left behind. Section titles are the method names:
-    // "Update Policy" → UpdatePolicy, "Delivery & Store" → DeliveryAndStore,
-    // "Update Behavior" → UpdateBehavior.
+    // Legacy TweakDefinition data for the Update tab. Only the DeliveryAndStore and
+    // UpdateBehavior sections (plus the ReadDword read helper) remain here; the Update
+    // Policy dropdown now lives on the declarative SettingDefinition stack
+    // (UpdateOptimizations catalog + WindowsUpdatePolicyHandler).
     public static partial class UpdateTweaks
     {
-        // ══════════════════════════════════════════════════════════════════════
-        // UPDATE POLICY
-        // ══════════════════════════════════════════════════════════════════════
-
-        public static TweakDefinition[] UpdatePolicy(Action<string> Log)
-        {
-            const string AUSubHKLM = @"SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU";
-            const string UXSub     = @"SOFTWARE\Microsoft\WindowsUpdate\UX\Settings";
-            const string AUKEYHLM  = @"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU";
-            const string AUKEYHKCU = @"HKEY_CURRENT_USER\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU";
-            const string UXKEY     = @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\WindowsUpdate\UX\Settings";
-
-            return new[]
-            {
-                new TweakDefinition
-                {
-                    Id          = "updates-policy-mode",
-                    Name        = "Windows Update Policy",
-                    Description = "Control how Windows updates are installed on your system",
-                    IsPreference = true,
-                    InputKind   = TweakInputKind.Dropdown,
-                    Options = new[]
-                    {
-                        new TweakDropdownOption("Normal (Windows Default)",                       0, IsDefault: true),
-                        new TweakDropdownOption("Security Updates Only (Recommended)",            1, IsRecommended: true),
-                        new TweakDropdownOption("Paused for a long time (Unpause in Settings)",  2),
-                        new TweakDropdownOption("Disabled (NOT Recommended, Security Risk)",      3),
-                    },
-                    ReadCurrentIndex = () =>
-                    {
-                        var noAuto  = ReadDword(RegistryHive.LocalMachine, AUSubHKLM, "NoAutoUpdate");
-                        var auOpts  = ReadDword(RegistryHive.LocalMachine, AUSubHKLM, "AUOptions");
-                        var deferF  = ReadDword(RegistryHive.LocalMachine, UXSub, "DeferFeatureUpdates");
-                        var pauseF  = ReadString(RegistryHive.LocalMachine, UXSub, "PauseFeatureUpdatesEndTime");
-
-                        // Paused until 2051
-                        if (pauseF != null && pauseF.StartsWith("2051")) return 2;
-                        // Disabled: NoAutoUpdate=1, AUOptions=1, no defer
-                        if (noAuto == 1 && auOpts == 1 && deferF == null) return 3;
-                        // Security only: AUOptions=2, DeferFeatureUpdates=1
-                        if (auOpts == 2 && deferF == 1) return 1;
-                        // Normal: nothing set
-                        return 0;
-                    },
-                    ApplyIndex = idx =>
-                    {
-                        // Clear all first
-                        void ClearAU()
-                        {
-                            foreach (var (hive, hkey) in new[] {
-                                (RegistryHive.LocalMachine, AUKEYHLM),
-                                (RegistryHive.CurrentUser,  AUKEYHKCU) })
-                            {
-                                var k = RegistryKey.OpenBaseKey(hive, RegistryView.Default)
-                                                   .OpenSubKey(@"SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU", true);
-                                if (k != null)
-                                    foreach (var v in new[] { "NoAutoUpdate","AUOptions","NoAUShutdownOption","AlwaysAutoRebootAtScheduledTime","AutoInstallMinorUpdates","UseWUServer" })
-                                        k.DeleteValue(v, false);
-                            }
-                            var ux = Registry.LocalMachine.OpenSubKey(UXSub, true);
-                            if (ux != null)
-                                foreach (var v in new[] { "BranchReadinessLevel","DeferFeatureUpdates","DeferFeatureUpdatesPeriodInDays","DeferQualityUpdates","DeferQualityUpdatesPeriodInDays",
-                                    "PauseFeatureUpdatesStartTime","PauseFeatureUpdatesEndTime","PauseQualityUpdatesStartTime","PauseQualityUpdatesEndTime",
-                                    "PauseUpdatesStartTime","PauseUpdatesExpiryTime","PausedQualityDate","PausedFeatureDate","FlightSettingsMaxPauseDays",
-                                    "PausedFeatureStatus","PausedQualityStatus" })
-                                    ux.DeleteValue(v, false);
-                        }
-
-                        ClearAU();
-
-                        if (idx == 0) // Normal — already cleared
-                        {
-                            Log("Windows Update: restored to Normal (Windows default).");
-                        }
-                        else if (idx == 1) // Security only
-                        {
-                            Registry.SetValue(AUKEYHLM,  "AUOptions", 2, RegistryValueKind.DWord);
-                            Registry.SetValue(AUKEYHKCU, "AUOptions", 2, RegistryValueKind.DWord);
-                            Registry.SetValue(UXKEY, "BranchReadinessLevel",           20,  RegistryValueKind.DWord);
-                            Registry.SetValue(UXKEY, "DeferFeatureUpdates",             1,  RegistryValueKind.DWord);
-                            Registry.SetValue(UXKEY, "DeferFeatureUpdatesPeriodInDays", 365, RegistryValueKind.DWord);
-                            Registry.SetValue(UXKEY, "DeferQualityUpdates",             1,  RegistryValueKind.DWord);
-                            Registry.SetValue(UXKEY, "DeferQualityUpdatesPeriodInDays", 7,  RegistryValueKind.DWord);
-                            Log("Windows Update: Security Updates Only — feature updates deferred 365 days, quality 7 days.");
-                        }
-                        else if (idx == 2) // Paused until 2051
-                        {
-                            Registry.SetValue(AUKEYHLM,  "NoAutoUpdate", 1, RegistryValueKind.DWord);
-                            Registry.SetValue(AUKEYHKCU, "NoAutoUpdate", 1, RegistryValueKind.DWord);
-                            Registry.SetValue(AUKEYHLM,  "AUOptions",    1, RegistryValueKind.DWord);
-                            Registry.SetValue(AUKEYHKCU, "AUOptions",    1, RegistryValueKind.DWord);
-                            Registry.SetValue(AUKEYHLM,  "NoAUShutdownOption",          1, RegistryValueKind.DWord);
-                            Registry.SetValue(AUKEYHKCU, "NoAUShutdownOption",          1, RegistryValueKind.DWord);
-                            Registry.SetValue(AUKEYHLM,  "AlwaysAutoRebootAtScheduledTime", 0, RegistryValueKind.DWord);
-                            Registry.SetValue(AUKEYHKCU, "AlwaysAutoRebootAtScheduledTime", 0, RegistryValueKind.DWord);
-                            Registry.SetValue(AUKEYHLM,  "AutoInstallMinorUpdates",    0, RegistryValueKind.DWord);
-                            Registry.SetValue(AUKEYHKCU, "AutoInstallMinorUpdates",    0, RegistryValueKind.DWord);
-                            Registry.SetValue(AUKEYHLM,  "UseWUServer",                0, RegistryValueKind.DWord);
-                            Registry.SetValue(AUKEYHKCU, "UseWUServer",                0, RegistryValueKind.DWord);
-                            foreach (var (name, val) in new[] {
-                                ("PauseFeatureUpdatesStartTime",  "2025-01-01T00:00:00Z"),
-                                ("PauseFeatureUpdatesEndTime",    "2051-12-31T00:00:00Z"),
-                                ("PauseQualityUpdatesStartTime",  "2025-01-01T00:00:00Z"),
-                                ("PauseQualityUpdatesEndTime",    "2051-12-31T00:00:00Z"),
-                                ("PauseUpdatesStartTime",         "2025-01-01T00:00:00Z"),
-                                ("PauseUpdatesExpiryTime",        "2051-12-31T00:00:00Z"),
-                                ("PausedQualityDate",             "2025-01-01T00:00:00Z"),
-                                ("PausedFeatureDate",             "2025-01-01T00:00:00Z"),
-                            })
-                                Registry.SetValue(UXKEY, name, val, RegistryValueKind.String);
-                            Registry.SetValue(UXKEY, "FlightSettingsMaxPauseDays", 10023, RegistryValueKind.DWord);
-                            Registry.SetValue(UXKEY, "PausedFeatureStatus",            1, RegistryValueKind.DWord);
-                            Registry.SetValue(UXKEY, "PausedQualityStatus",            1, RegistryValueKind.DWord);
-                            Log("WARNING: Windows Update paused until 2051. Unpause manually in Settings > Windows Update.");
-                        }
-                        else if (idx == 3) // Disabled
-                        {
-                            Registry.SetValue(AUKEYHLM,  "NoAutoUpdate", 1, RegistryValueKind.DWord);
-                            Registry.SetValue(AUKEYHKCU, "NoAutoUpdate", 1, RegistryValueKind.DWord);
-                            Registry.SetValue(AUKEYHLM,  "AUOptions",    1, RegistryValueKind.DWord);
-                            Registry.SetValue(AUKEYHKCU, "AUOptions",    1, RegistryValueKind.DWord);
-                            Registry.SetValue(AUKEYHLM,  "UseWUServer",  0, RegistryValueKind.DWord);
-                            Registry.SetValue(AUKEYHKCU, "UseWUServer",  0, RegistryValueKind.DWord);
-                            Log("WARNING: Windows Update disabled. Your system is now vulnerable to security threats.");
-                        }
-                    }
-                },
-            };
-        }
-
         // ══════════════════════════════════════════════════════════════════════
         // DELIVERY & STORE
         // ══════════════════════════════════════════════════════════════════════
@@ -460,12 +327,6 @@ namespace AkariTool.Tabs.Update
         private static int? ReadDword(RegistryHive hive, string subKey, string valueName)
         {
             try { using var k = RegistryKey.OpenBaseKey(hive, RegistryView.Default).OpenSubKey(subKey); return k?.GetValue(valueName) is int i ? i : (int?)null; }
-            catch { return null; }
-        }
-
-        private static string? ReadString(RegistryHive hive, string subKey, string valueName)
-        {
-            try { using var k = RegistryKey.OpenBaseKey(hive, RegistryView.Default).OpenSubKey(subKey); return k?.GetValue(valueName) as string; }
             catch { return null; }
         }
     }

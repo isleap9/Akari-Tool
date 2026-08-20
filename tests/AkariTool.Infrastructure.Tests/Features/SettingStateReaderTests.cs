@@ -44,8 +44,12 @@ public class SettingStateReaderTests
         };
     }
 
-    private static SettingStateReader MakeReader(IPowerSettingsQueryService queryService) =>
-        new(queryService);
+    private static SettingStateReader MakeReader(IPowerSettingsQueryService queryService)
+    {
+        var specialHandlerRegistry = Substitute.For<ISpecialSettingHandlerRegistry>();
+        specialHandlerRegistry.TryGet(Arg.Any<string>()).Returns((ISpecialSettingHandler?)null);
+        return new(queryService, specialHandlerRegistry);
+    }
 
     [Fact]
     public void ReadSelectionIndex_PowerCfgValueMatchesOption_ReturnsThatIndex()

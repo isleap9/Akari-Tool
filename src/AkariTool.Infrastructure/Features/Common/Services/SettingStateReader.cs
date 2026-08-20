@@ -10,8 +10,11 @@ using AkariTool.Infrastructure.Features.Common.Utilities;
 namespace AkariTool.Infrastructure.Features.Common.Services;
 
 public sealed class SettingStateReader(
-    IPowerSettingsQueryService powerSettingsQueryService) : ISettingStateReader
+    IPowerSettingsQueryService powerSettingsQueryService,
+    ISpecialSettingHandlerRegistry specialHandlerRegistry) : ISettingStateReader
 {
+    private readonly ISpecialSettingHandlerRegistry _specialHandlerRegistry = specialHandlerRegistry;
+
     public bool ReadToggleState(SettingDefinition setting)
     {
         // PowerCfg-only settings (no RegistrySettings) have no registry state to read.
@@ -76,6 +79,16 @@ public sealed class SettingStateReader(
     {
         try
         {
+            // Special-setting handlers own their own composite detection (e.g. the
+            // Windows Update policy dropdown, whose Paused/Disabled states collide
+            // under single-value matching). Delegate before any generic read.
+            if (_specialHandlerRegistry.TryGet(setting.Id) is { } handler)
+            {
+                var disc = handler.DiscoverSpecialSettingsAsync(new[] { setting }).GetAwaiter().GetResult();
+                if (disc.TryGetValue(setting.Id, out var vals) && vals.TryGetValue("CurrentPolicyIndex", out var raw) && raw is int i)
+                    return i;
+            }
+
             // PowerCfg-only settings resolve their live index against the active
             // scheme's AC value mapped through each option's "PowerCfgValue".
             if (setting.PowerCfgSettings is { Count: > 0 } &&

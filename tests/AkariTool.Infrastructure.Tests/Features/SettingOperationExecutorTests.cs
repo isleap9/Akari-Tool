@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using AkariTool.Core.Features.Common.Enums;
+using AkariTool.Core.Features.Common.Interfaces;
 using AkariTool.Core.Features.Common.Models;
 using AkariTool.Infrastructure.Features.Common.Interfaces;
 using AkariTool.Infrastructure.Features.Common.Services;
@@ -22,6 +23,8 @@ public class SettingOperationExecutorTests
         var powerShellRunner = Substitute.For<IPowerShellRunner>();
         var fileSystemService = Substitute.For<IFileSystemService>();
         var logService = Substitute.For<IAkariLogService>();
+        var specialHandlerRegistry = Substitute.For<ISpecialSettingHandlerRegistry>();
+        specialHandlerRegistry.TryGet(Arg.Any<string>()).Returns((ISpecialSettingHandler?)null);
 
         return new SettingOperationExecutor(
             registryService,
@@ -32,7 +35,8 @@ public class SettingOperationExecutorTests
             processExecutor,
             powerShellRunner,
             fileSystemService,
-            logService);
+            logService,
+            specialHandlerRegistry);
     }
 
     private static SettingDefinition MakeToggleSetting(string id) =>

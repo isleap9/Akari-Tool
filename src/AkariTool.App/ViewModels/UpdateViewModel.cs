@@ -9,15 +9,14 @@ using AkariTool.ViewModels.Tweaks;
 namespace AkariTool.ViewModels;
 
 /// <summary>
-/// Windows Updates page. Now on the declarative SettingDefinition path
+/// Windows Updates page. Fully on the declarative SettingDefinition path
 /// (Track A Phase 4) — the catalog is built from <see cref="UpdateOptimizations"/>
 /// rather than the delegate-based UpdateTweaks.
 ///
-/// updates-policy-mode (the Windows Update Policy dropdown) is deferred: its
-/// detection requires a composite multi-value read (Paused/Disabled states
-/// collide under single-value matching), which the SettingDefinition stack
-/// cannot yet express. It stays out of the declarative catalog until a
-/// composite-detection implementation lands.
+/// updates-policy-mode (the Windows Update Policy dropdown) is included in the
+/// declarative catalog; its composite multi-value detection and apply path
+/// (Paused/Disabled states collide under single-value matching) are handled by
+/// WindowsUpdatePolicyHandler via the ISpecialSettingHandler registry.
 /// </summary>
 public sealed partial class UpdateViewModel : SettingPageViewModel
 {
