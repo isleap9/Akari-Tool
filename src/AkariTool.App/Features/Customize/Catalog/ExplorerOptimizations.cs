@@ -972,26 +972,28 @@ public static class ExplorerOptimizations
                         },
                     },
                 },
-                // customize-explorer-show-drive-letters-first — ShowDriveLettersFirst: on=4/off=0.
-                //   Winhance's [null]/[2] model doesn't line up with 4/0 → no Recommended/Default state.
                 new SettingDefinition
                 {
                     Id = "customize-explorer-show-drive-letters-first",
                     Name = "Show Drive Letters First",
-                    Description = "Displays drive letters before the drive name (e.g. C: Windows instead of Windows (C:))",
+                    Description = "Displays drive letters before the drive name in File Explorer (e.g. C: Windows instead of Windows (C:))",
                     InputType = InputType.Toggle,
-                    IsSubjectivePreference = false,
+                    IsSubjectivePreference = true,
+                    RecommendedToggleState = true,
+                    DefaultToggleState = true,
+                    ResolveUnmatchedToDefault = true,
                     RegistrySettings = new[]
                     {
                         new RegistrySetting
                         {
-                            KeyPath = @"HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer",
+                            KeyPath = @"HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced",
                             ValueName = "ShowDriveLettersFirst",
                             ValueType = RegistryValueKind.DWord,
                             RecommendedValue = null,
                             DefaultValue = null,
-                            EnabledValue = new object?[] { 4 },
-                            DisabledValue = new object?[] { 0 },
+                            EnabledValue = new object?[] { null },
+                            DisabledValue = new object?[] { 2 },
+                            IsPrimary = true,
                         },
                     },
                 },
