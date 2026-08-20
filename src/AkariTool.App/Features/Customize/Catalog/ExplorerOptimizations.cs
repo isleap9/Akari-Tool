@@ -560,6 +560,30 @@ public static class ExplorerOptimizations
 
                 // ── ExplorerViewFolderOptions (CustomizeTweaks.Explorer.View.FolderOptions.cs) ──
 
+                new SettingDefinition
+                {
+                    Id = "customize-explorer-sync-provider-notifications",
+                    Name = "Sync Provider Notifications",
+                    Description = "Show notifications from sync providers like OneDrive in File Explorer",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced",
+                            ValueName = "ShowSyncProviderNotifications",
+                            ValueType = RegistryValueKind.DWord,
+                            EnabledValue = new object?[] { 1, null },
+                            DisabledValue = new object?[] { 0 },
+                            RecommendedValue = 0,
+                            DefaultValue = 1,
+                            IsPrimary = true,
+                        }
+                    },
+                },
                 // customize-explorer-checkbox-select — AutoCheckSelect: on=1/off=0
                 new SettingDefinition
                 {
@@ -1011,13 +1035,41 @@ public static class ExplorerOptimizations
         },
     ];
 
-    private static IReadOnlyList<SettingGroup> BuildAssociations()
-    {
-        // Both settings deferred — non-value-write Apply logic:
-        // [DEFERRED: customize-explorer-enable-photo-viewer — per-extension ProgId subkey writes]
-        // [DEFERRED: customize-explorer-legacy-notepad — App Paths subkey delete]
-        return [];
-    }
+    private static IReadOnlyList<SettingGroup> BuildAssociations() =>
+    [
+        new SettingGroup
+        {
+            Name = "File Associations",
+            FeatureId = "customize-explorer-associations",
+            Settings = new[]
+            {
+                new SettingDefinition
+                {
+                    Id = "customize-explorer-enable-photo-viewer",
+                    Name = "Windows Photo Viewer",
+                    Description = "Restores Windows Photo Viewer as an option for opening image files (BMP, GIF, JPG, PNG, TIF)",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = true,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = false,
+                    RegistrySettings = new[] { new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Photo Viewer\Capabilities\FileAssociations", ValueName = null, ValueType = RegistryValueKind.None, RecommendedValue = null, DefaultValue = null, EnabledValue = null, DisabledValue = null, IsPrimary = true } },
+                    RegContents = new[] { new RegContentSetting { EnabledContent = "Windows Registry Editor Version 5.00\r\n\r\n[HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows Photo Viewer\\Capabilities\\FileAssociations]\r\n\".bmp\"=\"PhotoViewer.FileAssoc.Tiff\"\r\n\".gif\"=\"PhotoViewer.FileAssoc.Tiff\"\r\n\".jpg\"=\"PhotoViewer.FileAssoc.Tiff\"\r\n\".jpeg\"=\"PhotoViewer.FileAssoc.Tiff\"\r\n\".png\"=\"PhotoViewer.FileAssoc.Tiff\"\r\n\".tif\"=\"PhotoViewer.FileAssoc.Tiff\"\r\n\".tiff\"=\"PhotoViewer.FileAssoc.Tiff\"\r\n\r\n[HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows Photo Viewer\\Capabilities\\FileAssociations]\r\n\".bmp\"=\"PhotoViewer.FileAssoc.Tiff\"\r\n\".gif\"=\"PhotoViewer.FileAssoc.Tiff\"\r\n\".jpg\"=\"PhotoViewer.FileAssoc.Tiff\"\r\n\".jpeg\"=\"PhotoViewer.FileAssoc.Tiff\"\r\n\".png\"=\"PhotoViewer.FileAssoc.Tiff\"\r\n\".tif\"=\"PhotoViewer.FileAssoc.Tiff\"\r\n\".tiff\"=\"PhotoViewer.FileAssoc.Tiff\"\r\n", DisabledContent = "Windows Registry Editor Version 5.00\r\n\r\n[-HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows Photo Viewer\\Capabilities\\FileAssociations]\r\n\r\n[-HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows Photo Viewer\\Capabilities\\FileAssociations]\r\n" } },
+                },
+                new SettingDefinition
+                {
+                    Id = "customize-explorer-legacy-notepad",
+                    Name = "Use Legacy Notepad",
+                    Description = "Opens .txt files with classic Notepad instead of the modern Windows 11 Notepad app",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = true,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = false,
+                    RegistrySettings = new[] { new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Classes\Applications\notepad.exe\shell\open\command", ValueName = null, ValueType = RegistryValueKind.None, RecommendedValue = null, DefaultValue = null, EnabledValue = null, DisabledValue = null, IsPrimary = true } },
+                    RegContents = new[] { new RegContentSetting { EnabledContent = "Windows Registry Editor Version 5.00\r\n\r\n[HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Applications\\notepad.exe]\r\n\r\n[HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Applications\\notepad.exe\\shell]\r\n\r\n[HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Applications\\notepad.exe\\shell\\open]\r\n\r\n[HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Applications\\notepad.exe\\shell\\open\\command]\r\n@=\"\\\"C:\\\\Windows\\\\System32\\\\notepad.exe\\\" \\\"%1\\\"\"\r\n\r\n[HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\notepad.exe]\r\n\"useFilter\"=dword:00000001\r\n", DisabledContent = "Windows Registry Editor Version 5.00\r\n\r\n[-HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Applications\\notepad.exe\\shell\\open\\command]\r\n\r\n[-HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Applications\\notepad.exe\\shell\\open]\r\n\r\n[-HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Applications\\notepad.exe\\shell]\r\n\r\n[-HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Applications\\notepad.exe]\r\n\r\n[-HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\notepad.exe]\r\n" } },
+                },
+            },
+        },
+    ];
 
     private static IReadOnlyList<SettingGroup> BuildSidebar() =>
     [
@@ -1198,12 +1250,45 @@ public static class ExplorerOptimizations
                 ThisPcFolder("customize-explorer-this-pc-pictures",  "Show Pictures in This PC",  "Shows the Pictures folder under This PC",  "{24AD3AD4-A569-4530-98E1-AB02F9417AA8}"),
                 ThisPcFolder("customize-explorer-this-pc-videos",    "Show Videos in This PC",    "Shows the Videos folder under This PC",    "{F86FA3AB-70D2-4FC7-9C99-FCBF05467F3A}"),
 
-                // [DEFERRED: customize-explorer-show-3d-objects — HKLM MyComputer\NameSpace
-                //  subkey create (enable) / delete-tree (disable), no value write]
+                new SettingDefinition
+                {
+                    Id = "customize-explorer-3d-objects",
+                    Name = "3D Objects Folder in This PC",
+                    Description = "Shows the 3D Objects folder under This PC in File Explorer",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = true,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[] { new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{0DB7E03F-FC29-4DC6-9020-FF41B59E513A}", ValueName = null, ValueType = RegistryValueKind.None, RecommendedValue = null, DefaultValue = null, EnabledValue = null, DisabledValue = null, IsPrimary = true } },
+                    RegContents = new[]
+                    {
+                        new RegContentSetting
+                        {
+                            EnabledContent = "Windows Registry Editor Version 5.00\r\n\r\n[HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MyComputer\\NameSpace\\{0DB7E03F-FC29-4DC6-9020-FF41B59E513A}]\r\n",
+                            DisabledContent = "Windows Registry Editor Version 5.00\r\n\r\n[-HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MyComputer\\NameSpace\\{0DB7E03F-FC29-4DC6-9020-FF41B59E513A}]\r\n",
+                        }
+                    },
+                },
 
-                // [DEFERRED: customize-explorer-hide-duplicate-removable-drives — HKLM
-                //  DelegateFolders subkey delete-tree (enable) / create (disable), not a
-                //  value write]
+                new SettingDefinition
+                {
+                    Id = "customize-explorer-duplicate-removable-drives",
+                    Name = "Duplicate Removable Drives in Navigation Pane",
+                    Description = "Shows removable drives in both This PC and the navigation pane sidebar",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = true,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[] { new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace\DelegateFolders\{F5FB2C77-0E2F-4A16-A381-3E560C68BC83}", ValueName = null, ValueType = RegistryValueKind.None, RecommendedValue = null, DefaultValue = null, EnabledValue = null, DisabledValue = null, IsPrimary = true } },
+                    RegContents = new[]
+                    {
+                        new RegContentSetting
+                        {
+                            EnabledContent = "Windows Registry Editor Version 5.00\r\n\r\n[HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Desktop\\NameSpace\\DelegateFolders\\{F5FB2C77-0E2F-4A16-A381-3E560C68BC83}]\r\n@=\"Removable Drives\"\r\n",
+                            DisabledContent = "Windows Registry Editor Version 5.00\r\n\r\n[-HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Desktop\\NameSpace\\DelegateFolders\\{F5FB2C77-0E2F-4A16-A381-3E560C68BC83}]\r\n",
+                        }
+                    },
+                },
             },
         },
     ];
