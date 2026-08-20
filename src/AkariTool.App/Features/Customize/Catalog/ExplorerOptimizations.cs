@@ -498,8 +498,30 @@ public static class ExplorerOptimizations
                         },
                     },
                 },
-                // [DEFERRED: customize-explorer-click-items — ShellState REG_BINARY bitmask
-                //  not expressible in current model]
+                // customize-explorer-click-items — SingleClick: on=1 / off=0 (or absent)
+                new SettingDefinition
+                {
+                    Id = "customize-explorer-click-items",
+                    Name = "Single-Click to Open Items",
+                    Description = "Opens files and folders with a single click instead of a double-click",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = true,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = false,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced",
+                            ValueName = "SingleClick",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 1 },
+                            DisabledValue = new object?[] { 0, null },
+                        }
+                    },
+                },
 
                 // ── ExplorerViewFolderOptions (CustomizeTweaks.Explorer.View.FolderOptions.cs) ──
 
