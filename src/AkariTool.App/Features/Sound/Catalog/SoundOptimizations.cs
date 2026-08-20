@@ -7,7 +7,7 @@ namespace AkariTool.Tabs.Sound;
 
 /// <summary>
 /// Declarative Sound catalog — the SettingDefinition replacement for the old
-/// delegate-based SoundTweaks.SystemSounds(). One group ("System Sounds"), five settings,
+/// delegate-based SoundTweaks.SystemSounds(). One group ("System Sounds"), seven settings,
 /// IDs preserved byte-for-byte for backup compatibility.
 /// </summary>
 public static class SoundOptimizations
@@ -131,12 +131,12 @@ public static class SoundOptimizations
                     },
                 },
 
-                // 4 ── Voice activation for apps (writes two values under one key)
+                // 4 ── Voice activation for apps
                 new SettingDefinition
                 {
                     Id = "sound-voice-activation",
                     Name = "Voice Activation for Apps",
-                    Description = "Allows apps to activate using voice commands even when the device is locked or the app is in the background.",
+                    Description = "Allow apps to listen and respond to voice commands like \"Hey Cortana\"",
                     InputType = InputType.Toggle,
                     RecommendedToggleState = false,
                     DefaultToggleState = true,
@@ -144,34 +144,49 @@ public static class SoundOptimizations
                     {
                         new RegistrySetting
                         {
-                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech_OneCore\Settings\VoiceActivation\UserPreferenceForAllApps",
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\SpeechOneCore\Settings",
                             ValueName = "AgentActivationEnabled",
                             ValueType = RegistryValueKind.DWord,
                             RecommendedValue = null,
                             DefaultValue = 1,
-                            EnabledValue = new object?[] { 1 },
+                            EnabledValue = new object?[] { 1, null },
                             DisabledValue = new object?[] { 0 },
                             IsPrimary = true,
-                        },
-                        new RegistrySetting
-                        {
-                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech_OneCore\Settings\VoiceActivation\UserPreferenceForAllApps",
-                            ValueName = "AgentActivationLastUsed",
-                            ValueType = RegistryValueKind.DWord,
-                            RecommendedValue = null,
-                            DefaultValue = 1,
-                            EnabledValue = new object?[] { 1 },
-                            DisabledValue = new object?[] { 0 },
                         },
                     },
                 },
 
-                // 5 ── Accessibility activation & warning sounds (writes two values under one key)
+                // 5 ── Last used voice activation setting
                 new SettingDefinition
                 {
-                    Id = "sound-accessibility",
-                    Name = "Accessibility Activation & Warning Sounds",
-                    Description = "Plays sounds for accessibility events such as sticky keys and other accessibility feature activations.",
+                    Id = "sound-voice-activation-last-used",
+                    Name = "Last Used Voice Activation Setting",
+                    Description = "Remember and apply the most recently used voice activation configuration",
+                    InputType = InputType.Toggle,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\SpeechOneCore\Settings",
+                            ValueName = "AgentActivationLastUsed",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = 1,
+                            EnabledValue = new object?[] { 1, null },
+                            DisabledValue = new object?[] { 0 },
+                            IsPrimary = true,
+                        },
+                    },
+                },
+
+                // 6 ── Accessibility activation sounds
+                new SettingDefinition
+                {
+                    Id = "sound-accessibility-activation",
+                    Name = "Accessibility Activation Sounds",
+                    Description = "Play sounds when accessibility features like StickyKeys or FilterKeys are activated",
                     InputType = InputType.Toggle,
                     IsSubjectivePreference = true,
                     RecommendedToggleState = false,
@@ -185,10 +200,25 @@ public static class SoundOptimizations
                             ValueType = RegistryValueKind.DWord,
                             RecommendedValue = null,
                             DefaultValue = 1,
-                            EnabledValue = new object?[] { 1 },
+                            EnabledValue = new object?[] { 1, null },
                             DisabledValue = new object?[] { 0 },
                             IsPrimary = true,
                         },
+                    },
+                },
+
+                // 7 ── Accessibility warning sounds
+                new SettingDefinition
+                {
+                    Id = "sound-accessibility-warnings",
+                    Name = "Accessibility Warning Sounds",
+                    Description = "Play warning sounds when attempting to activate accessibility features or when accessibility-related events occur",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = true,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
+                    RegistrySettings = new[]
+                    {
                         new RegistrySetting
                         {
                             KeyPath = @"HKEY_CURRENT_USER\Control Panel\Accessibility",
@@ -196,8 +226,9 @@ public static class SoundOptimizations
                             ValueType = RegistryValueKind.DWord,
                             RecommendedValue = null,
                             DefaultValue = 1,
-                            EnabledValue = new object?[] { 1 },
+                            EnabledValue = new object?[] { 1, null },
                             DisabledValue = new object?[] { 0 },
+                            IsPrimary = true,
                         },
                     },
                 },
