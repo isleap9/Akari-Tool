@@ -74,7 +74,7 @@ public static class PrivacyOptimizations
                             },
                             new ComboBoxOption
                             {
-                                DisplayName = "Notify when apps make changes (Default)",
+                                DisplayName = "Notify when apps make changes",
                                 IsDefault = true,
                                 ValueMappings = new Dictionary<string, object?> { ["ConsentPromptBehaviorAdmin"] = 5, ["PromptOnSecureDesktop"] = 1 },
                             },

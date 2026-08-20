@@ -70,11 +70,22 @@ public static class UpdateOptimizations
                 {
                     Id = "updates-delivery-optimization",
                     Name = "Delivery Optimization",
-                    Description = "Controls how Windows Update downloads updates — locally only, or also from other PCs on your network or the internet.",
+                    Description = "Share downloaded updates with other PCs on your network or the internet to reduce bandwidth usage",
                     InputType = InputType.Selection,
                     IsSubjectivePreference = true,
                     RegistrySettings = new[]
                     {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\SOFTWARE\Policies\Microsoft\Windows\DeliveryOptimization",
+                            ValueName = "DODownloadMode",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = null,
+                            DisabledValue = null,
+                            IsPrimary = true,
+                        },
                         new RegistrySetting
                         {
                             KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\DeliveryOptimization",
@@ -92,23 +103,23 @@ public static class UpdateOptimizations
                         {
                             new ComboBoxOption
                             {
-                                DisplayName = "Local only",
+                                DisplayName = "Windows Default",
+                                IsDefault = true,
                                 ValueMappings = new Dictionary<string, object?> { ["DODownloadMode"] = null },
                             },
                             new ComboBoxOption
                             {
-                                DisplayName = "Local network",
+                                DisplayName = "Devices on LAN Only",
                                 ValueMappings = new Dictionary<string, object?> { ["DODownloadMode"] = 1 },
                             },
                             new ComboBoxOption
                             {
-                                DisplayName = "Local network + Internet",
-                                IsDefault = true,
+                                DisplayName = "Devices on LAN and Internet",
                                 ValueMappings = new Dictionary<string, object?> { ["DODownloadMode"] = 3 },
                             },
                             new ComboBoxOption
                             {
-                                DisplayName = "Internet (Microsoft)",
+                                DisplayName = "Disabled",
                                 IsRecommended = true,
                                 ValueMappings = new Dictionary<string, object?> { ["DODownloadMode"] = 99 },
                             },
