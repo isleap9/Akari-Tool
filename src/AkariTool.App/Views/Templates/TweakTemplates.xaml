@@ -344,11 +344,325 @@
         </Border>
     </DataTemplate>
 
+    <!-- Single NumericRange spinner (non-Separate PowerCfg). -->
+    <DataTemplate x:Key="TweakNumericRowTemplate">
+        <Border
+            BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+            BorderThickness="0,1,0,0"
+            Visibility="{Binding IsVisible, Converter={StaticResource BoolToVis}}">
+            <Grid Margin="0,13,0,13">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                    <TextBlock
+                        Text="{Binding Name}"
+                        FontSize="13.5"
+                        FontWeight="SemiBold"
+                        Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                        TextWrapping="Wrap" />
+                    <TextBlock
+                        Text="{Binding Description}"
+                        FontSize="12"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Margin="0,2,0,0"
+                        TextWrapping="Wrap" />
+                    <ItemsControl
+                        ItemsSource="{Binding Badges}"
+                        ItemsPanel="{StaticResource HorizontalItemsPanel}"
+                        ItemTemplateSelector="{StaticResource BadgeSelector}"
+                        Margin="0,5,0,0"
+                        Visibility="{Binding HasBadges, Converter={StaticResource BoolToVis}}" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button
+                        Style="{StaticResource AkariChromelessButtonStyle}"
+                        Width="28" Height="28"
+                        Command="{Binding ApplyRecommendedCommand}"
+                        ToolTipService.ToolTip="{Binding RecommendedTooltip}"
+                        AutomationProperties.Name="{Binding RecommendedTooltip}"
+                        Visibility="{Binding HasRecommendedQuickSet, Converter={StaticResource BoolToVis}}">
+                        <FontIcon
+                            FontFamily="Segoe Fluent Icons"
+                            Glyph="&#xE735;"
+                            FontSize="15"
+                            Foreground="{ThemeResource SystemFillColorCautionBrush}" />
+                    </Button>
+                    <Button
+                        Style="{StaticResource AkariChromelessButtonStyle}"
+                        Width="28" Height="28"
+                        Command="{Binding ApplyDefaultCommand}"
+                        ToolTipService.ToolTip="{Binding DefaultTooltip}"
+                        AutomationProperties.Name="{Binding DefaultTooltip}"
+                        Visibility="{Binding HasDefaultQuickSet, Converter={StaticResource BoolToVis}}">
+                        <Grid Width="13" Height="13">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="6" />
+                                <ColumnDefinition Width="1" />
+                                <ColumnDefinition Width="6" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="6" />
+                                <RowDefinition Height="1" />
+                                <RowDefinition Height="6" />
+                            </Grid.RowDefinitions>
+                            <Rectangle Grid.Row="0" Grid.Column="0" Fill="{StaticResource AkariWindowsLogoBrush}" />
+                            <Rectangle Grid.Row="0" Grid.Column="2" Fill="{StaticResource AkariWindowsLogoBrush}" />
+                            <Rectangle Grid.Row="2" Grid.Column="0" Fill="{StaticResource AkariWindowsLogoBrush}" />
+                            <Rectangle Grid.Row="2" Grid.Column="2" Fill="{StaticResource AkariWindowsLogoBrush}" />
+                        </Grid>
+                    </Button>
+
+                    <NumberBox
+                        Value="{Binding NumericValue, Mode=TwoWay}"
+                        Minimum="{Binding MinValue}"
+                        Maximum="{Binding MaxValue}"
+                        SpinButtonPlacementMode="Inline"
+                        SmallChange="1"
+                        LargeChange="10"
+                        MinWidth="120"
+                        Margin="12,0,0,0"
+                        VerticalAlignment="Center"
+                        AutomationProperties.Name="{Binding Name}" />
+                </StackPanel>
+            </Grid>
+        </Border>
+    </DataTemplate>
+
+    <!-- Single AC NumericRange spinner (Separate PowerCfg, desktop without battery). -->
+    <DataTemplate x:Key="TweakSingleACNumericRowTemplate">
+        <Border
+            BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+            BorderThickness="0,1,0,0"
+            Visibility="{Binding IsVisible, Converter={StaticResource BoolToVis}}">
+            <Grid Margin="0,13,0,13">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                    <TextBlock
+                        Text="{Binding Name}"
+                        FontSize="13.5"
+                        FontWeight="SemiBold"
+                        Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                        TextWrapping="Wrap" />
+                    <TextBlock
+                        Text="{Binding Description}"
+                        FontSize="12"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Margin="0,2,0,0"
+                        TextWrapping="Wrap" />
+                    <ItemsControl
+                        ItemsSource="{Binding Badges}"
+                        ItemsPanel="{StaticResource HorizontalItemsPanel}"
+                        ItemTemplateSelector="{StaticResource BadgeSelector}"
+                        Margin="0,5,0,0"
+                        Visibility="{Binding HasBadges, Converter={StaticResource BoolToVis}}" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button
+                        Style="{StaticResource AkariChromelessButtonStyle}"
+                        Width="28" Height="28"
+                        Command="{Binding ApplyAcRecommendedCommand}"
+                        ToolTipService.ToolTip="{Binding RecommendedAcTooltip}"
+                        AutomationProperties.Name="{Binding RecommendedAcTooltip}"
+                        Visibility="{Binding HasAcRecommendedQuickSet, Converter={StaticResource BoolToVis}}">
+                        <FontIcon
+                            FontFamily="Segoe Fluent Icons"
+                            Glyph="&#xE735;"
+                            FontSize="15"
+                            Foreground="{ThemeResource SystemFillColorCautionBrush}" />
+                    </Button>
+                    <Button
+                        Style="{StaticResource AkariChromelessButtonStyle}"
+                        Width="28" Height="28"
+                        Command="{Binding ApplyAcDefaultCommand}"
+                        ToolTipService.ToolTip="{Binding DefaultAcTooltip}"
+                        AutomationProperties.Name="{Binding DefaultAcTooltip}"
+                        Visibility="{Binding HasAcDefaultQuickSet, Converter={StaticResource BoolToVis}}">
+                        <Grid Width="13" Height="13">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="6" />
+                                <ColumnDefinition Width="1" />
+                                <ColumnDefinition Width="6" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="6" />
+                                <RowDefinition Height="1" />
+                                <RowDefinition Height="6" />
+                            </Grid.RowDefinitions>
+                            <Rectangle Grid.Row="0" Grid.Column="0" Fill="{StaticResource AkariWindowsLogoBrush}" />
+                            <Rectangle Grid.Row="0" Grid.Column="2" Fill="{StaticResource AkariWindowsLogoBrush}" />
+                            <Rectangle Grid.Row="2" Grid.Column="0" Fill="{StaticResource AkariWindowsLogoBrush}" />
+                            <Rectangle Grid.Row="2" Grid.Column="2" Fill="{StaticResource AkariWindowsLogoBrush}" />
+                        </Grid>
+                    </Button>
+
+                    <NumberBox
+                        Value="{Binding AcNumericValue, Mode=TwoWay}"
+                        Minimum="{Binding MinValue}"
+                        Maximum="{Binding MaxValue}"
+                        SpinButtonPlacementMode="Inline"
+                        SmallChange="1"
+                        LargeChange="10"
+                        MinWidth="120"
+                        Margin="12,0,0,0"
+                        VerticalAlignment="Center"
+                        AutomationProperties.Name="{Binding Name}" />
+                </StackPanel>
+            </Grid>
+        </Border>
+    </DataTemplate>
+
+    <!-- Dual AC/DC NumericRange spinners (Separate PowerCfg, laptop with battery). -->
+    <DataTemplate x:Key="TweakDualNumericRowTemplate">
+        <Border
+            BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+            BorderThickness="0,1,0,0"
+            Visibility="{Binding IsVisible, Converter={StaticResource BoolToVis}}">
+            <Grid Margin="0,13,0,13">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                    <TextBlock
+                        Text="{Binding Name}"
+                        FontSize="13.5"
+                        FontWeight="SemiBold"
+                        Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                        TextWrapping="Wrap" />
+                    <TextBlock
+                        Text="{Binding Description}"
+                        FontSize="12"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Margin="0,2,0,0"
+                        TextWrapping="Wrap" />
+                    <ItemsControl
+                        ItemsSource="{Binding Badges}"
+                        ItemsPanel="{StaticResource HorizontalItemsPanel}"
+                        ItemTemplateSelector="{StaticResource BadgeSelector}"
+                        Margin="0,5,0,0"
+                        Visibility="{Binding HasBadges, Converter={StaticResource BoolToVis}}" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Plugged In" FontSize="12" Opacity="0.8" HorizontalAlignment="Center" />
+                        <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                            <Button
+                                Style="{StaticResource AkariChromelessButtonStyle}"
+                                Width="28" Height="28"
+                                Command="{Binding ApplyAcRecommendedCommand}"
+                                ToolTipService.ToolTip="{Binding RecommendedAcTooltip}"
+                                AutomationProperties.Name="{Binding RecommendedAcTooltip}"
+                                Visibility="{Binding HasAcRecommendedQuickSet, Converter={StaticResource BoolToVis}}">
+                                <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE735;" FontSize="15"
+                                          Foreground="{ThemeResource SystemFillColorCautionBrush}" />
+                            </Button>
+                            <Button
+                                Style="{StaticResource AkariChromelessButtonStyle}"
+                                Width="28" Height="28"
+                                Command="{Binding ApplyAcDefaultCommand}"
+                                ToolTipService.ToolTip="{Binding DefaultAcTooltip}"
+                                AutomationProperties.Name="{Binding DefaultAcTooltip}"
+                                Visibility="{Binding HasAcDefaultQuickSet, Converter={StaticResource BoolToVis}}">
+                                <Grid Width="13" Height="13">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="6" />
+                                        <ColumnDefinition Width="1" />
+                                        <ColumnDefinition Width="6" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="6" />
+                                        <RowDefinition Height="1" />
+                                        <RowDefinition Height="6" />
+                                    </Grid.RowDefinitions>
+                                    <Rectangle Grid.Row="0" Grid.Column="0" Fill="{StaticResource AkariWindowsLogoBrush}" />
+                                    <Rectangle Grid.Row="0" Grid.Column="2" Fill="{StaticResource AkariWindowsLogoBrush}" />
+                                    <Rectangle Grid.Row="2" Grid.Column="0" Fill="{StaticResource AkariWindowsLogoBrush}" />
+                                    <Rectangle Grid.Row="2" Grid.Column="2" Fill="{StaticResource AkariWindowsLogoBrush}" />
+                                </Grid>
+                            </Button>
+                            <NumberBox
+                                Value="{Binding AcNumericValue, Mode=TwoWay}"
+                                Minimum="{Binding MinValue}"
+                                Maximum="{Binding MaxValue}"
+                                SpinButtonPlacementMode="Inline"
+                                SmallChange="1"
+                                LargeChange="10"
+                                MinWidth="120"
+                                AutomationProperties.Name="{Binding Name}" />
+                        </StackPanel>
+                    </StackPanel>
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="On Battery" FontSize="12" Opacity="0.8" HorizontalAlignment="Center" />
+                        <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                            <Button
+                                Style="{StaticResource AkariChromelessButtonStyle}"
+                                Width="28" Height="28"
+                                Command="{Binding ApplyDcRecommendedCommand}"
+                                ToolTipService.ToolTip="{Binding RecommendedDcTooltip}"
+                                AutomationProperties.Name="{Binding RecommendedDcTooltip}"
+                                Visibility="{Binding HasDcRecommendedQuickSet, Converter={StaticResource BoolToVis}}">
+                                <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE735;" FontSize="15"
+                                          Foreground="{ThemeResource SystemFillColorCautionBrush}" />
+                            </Button>
+                            <Button
+                                Style="{StaticResource AkariChromelessButtonStyle}"
+                                Width="28" Height="28"
+                                Command="{Binding ApplyDcDefaultCommand}"
+                                ToolTipService.ToolTip="{Binding DefaultDcTooltip}"
+                                AutomationProperties.Name="{Binding DefaultDcTooltip}"
+                                Visibility="{Binding HasDcDefaultQuickSet, Converter={StaticResource BoolToVis}}">
+                                <Grid Width="13" Height="13">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="6" />
+                                        <ColumnDefinition Width="1" />
+                                        <ColumnDefinition Width="6" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="6" />
+                                        <RowDefinition Height="1" />
+                                        <RowDefinition Height="6" />
+                                    </Grid.RowDefinitions>
+                                    <Rectangle Grid.Row="0" Grid.Column="0" Fill="{StaticResource AkariWindowsLogoBrush}" />
+                                    <Rectangle Grid.Row="0" Grid.Column="2" Fill="{StaticResource AkariWindowsLogoBrush}" />
+                                    <Rectangle Grid.Row="2" Grid.Column="0" Fill="{StaticResource AkariWindowsLogoBrush}" />
+                                    <Rectangle Grid.Row="2" Grid.Column="2" Fill="{StaticResource AkariWindowsLogoBrush}" />
+                                </Grid>
+                            </Button>
+                            <NumberBox
+                                Value="{Binding DcNumericValue, Mode=TwoWay}"
+                                Minimum="{Binding MinValue}"
+                                Maximum="{Binding MaxValue}"
+                                SpinButtonPlacementMode="Inline"
+                                SmallChange="1"
+                                LargeChange="10"
+                                MinWidth="120"
+                                AutomationProperties.Name="{Binding Name}" />
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </DataTemplate>
+
     <selectors:TweakRowTemplateSelector
         x:Key="TweakRowSelector"
         ToggleTemplate="{StaticResource TweakToggleRowTemplate}"
         DropdownTemplate="{StaticResource TweakDropdownRowTemplate}"
-        PlanTemplate="{StaticResource TweakPowerPlanRowTemplate}" />
+        PlanTemplate="{StaticResource TweakPowerPlanRowTemplate}"
+        NumericTemplate="{StaticResource TweakNumericRowTemplate}"
+        SingleACNumericTemplate="{StaticResource TweakSingleACNumericRowTemplate}"
+        DualNumericTemplate="{StaticResource TweakDualNumericRowTemplate}" />
 
     <!-- ══════════════════════════════════════════════════════════════════════
          SECTION CARD  (header + bulk bar + rows)

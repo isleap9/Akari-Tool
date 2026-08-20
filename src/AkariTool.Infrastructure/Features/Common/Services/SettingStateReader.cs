@@ -147,6 +147,25 @@ public sealed class SettingStateReader(
         }
     }
 
+    public (int? acValue, int? dcValue) ReadNumericValue(SettingDefinition setting)
+    {
+        try
+        {
+            if (setting.PowerCfgSettings is not { Count: > 0 })
+                return (null, null);
+
+            var (acSystem, dcSystem) = ReadPowerCfgValues(setting.PowerCfgSettings[0]);
+            string? displayUnits = setting.NumericRange?.Units ?? setting.PowerCfgSettings[0].Units;
+            return (
+                acSystem.HasValue ? NumericConversionHelper.ConvertFromSystemUnits(acSystem.Value, displayUnits) : null,
+                dcSystem.HasValue ? NumericConversionHelper.ConvertFromSystemUnits(dcSystem.Value, displayUnits) : null);
+        }
+        catch
+        {
+            return (null, null);
+        }
+    }
+
     /// <summary>
     /// Resolves a PowerCfg-only Selection setting's live index from the active
     /// scheme's AC value, matching each option's "PowerCfgValue" mapping.

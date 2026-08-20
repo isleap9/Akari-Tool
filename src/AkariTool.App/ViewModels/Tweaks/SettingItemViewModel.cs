@@ -38,6 +38,7 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
         ISettingStateReader stateReader,
         ISettingOperationExecutor executor,
         TweakDialogs dialogs,
+        bool hasBattery = false,
         IPowerPlanComboBoxService? powerPlanComboBoxService = null,
         IPowerService? powerService = null,
         IReadOnlyList<SettingDefinition>? powerCatalog = null)
@@ -49,6 +50,7 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
         _powerPlanComboBoxService = powerPlanComboBoxService;
         _powerService = powerService;
         _powerCatalog = powerCatalog;
+        HasBattery = hasBattery;
 
         Options = Definition.ComboBox?.Options?.Select(o => o.DisplayName).ToArray()
                   ?? Array.Empty<string>();
@@ -104,10 +106,38 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
     public partial int SelectedIndex { get; set; } = -1;
 
     [ObservableProperty]
+    public partial int NumericValue { get; set; }
+
+    [ObservableProperty]
+    public partial int AcNumericValue { get; set; }
+
+    [ObservableProperty]
+    public partial int DcNumericValue { get; set; }
+
+    [ObservableProperty]
+    public partial bool HasBattery { get; set; }
+
+    [ObservableProperty]
     public partial bool IsVisible { get; set; } = true;
 
     public ObservableCollection<BadgePillState> Badges { get; } = new();
     public bool HasBadges => Badges.Count > 0;
+
+    /// <summary>NumericRange row: min/max/units from the catalog metadata.</summary>
+    public int MinValue => Definition.NumericRange?.MinValue ?? 0;
+    public int MaxValue => Definition.NumericRange?.MaxValue ?? 100;
+    public string Units => Definition.NumericRange?.Units ?? Definition.PowerCfgSettings?.FirstOrDefault()?.Units ?? string.Empty;
+    public bool HasUnits => !string.IsNullOrEmpty(Units);
+
+    /// <summary>
+    /// True when the setting is a PowerCfg numeric/selection with Separate AC/DC
+    /// support (renders the Dual/SingleAC numeric templates instead of the single
+    /// spinner). Ported 1:1 from Winhance's SupportsSeparateACDC.
+    /// </summary>
+    public bool SupportsSeparateACDC =>
+        Definition.PowerCfgSettings?.Any(p => p.PowerModeSupport == PowerModeSupport.Separate) == true;
+
+    public bool IsNumericType => InputType == InputType.NumericRange;
 
     public bool MatchesSearch(string query) =>
         Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
@@ -126,6 +156,24 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
         _ = OnUserSelectedAsync(value);
     }
 
+    partial void OnNumericValueChanged(int value)
+    {
+        if (_suppress) return;
+        _ = OnUserNumericChangedAsync(value);
+    }
+
+    partial void OnAcNumericValueChanged(int value)
+    {
+        if (_suppress) return;
+        _ = OnUserACDCNumericChangedAsync();
+    }
+
+    partial void OnDcNumericValueChanged(int value)
+    {
+        if (_suppress) return;
+        _ = OnUserACDCNumericChangedAsync();
+    }
+
     private void SetIsOnSilently(bool v)
     {
         _suppress = true;
@@ -137,6 +185,27 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
     {
         _suppress = true;
         SelectedIndex = v;
+        _suppress = false;
+    }
+
+    private void SetNumericValueSilently(int v)
+    {
+        _suppress = true;
+        NumericValue = v;
+        _suppress = false;
+    }
+
+    private void SetAcNumericValueSilently(int v)
+    {
+        _suppress = true;
+        AcNumericValue = v;
+        _suppress = false;
+    }
+
+    private void SetDcNumericValueSilently(int v)
+    {
+        _suppress = true;
+        DcNumericValue = v;
         _suppress = false;
     }
 
@@ -170,6 +239,35 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
 
         _lastIndex = newIndex;
         await _executor.ApplySettingOperationsAsync(Definition, true, newIndex);
+        RefreshBadges();
+    }
+
+    // ── Numeric rows (single spinner + Dual AC/DC spinners) ──────────────────
+
+    /// <summary>
+    /// Single NumericRange spinner changed: apply the display-unit int directly.
+    /// PowerCfgApplier converts display → system units on the write path.
+    /// </summary>
+    private async Task OnUserNumericChangedAsync(int newValue)
+    {
+        await _executor.ApplySettingOperationsAsync(Definition, true, newValue);
+        RefreshBadges();
+    }
+
+    /// <summary>
+    /// AC/DC NumericRange spinner changed: apply both display-unit values as the
+    /// {"ACValue","DCValue"} dictionary the PowerCfgApplier Separate branch expects.
+    /// On battery-less systems the DC spinner is hidden, so DcNumericValue is
+    /// whatever the AC value resolved to — the applier skips the DC write anyway.
+    /// </summary>
+    private async Task OnUserACDCNumericChangedAsync()
+    {
+        var dict = new Dictionary<string, object?>
+        {
+            ["ACValue"] = AcNumericValue,
+            ["DCValue"] = DcNumericValue,
+        };
+        await _executor.ApplySettingOperationsAsync(Definition, true, dict);
         RefreshBadges();
     }
 
@@ -316,6 +414,19 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
             SetSelectedIndexSilently(idx);
             _lastIndex = idx;
         }
+        else if (InputType == InputType.NumericRange)
+        {
+            var (acValue, dcValue) = _stateReader.ReadNumericValue(Definition);
+            if (SupportsSeparateACDC)
+            {
+                if (acValue.HasValue) SetAcNumericValueSilently(acValue.Value);
+                if (dcValue.HasValue) SetDcNumericValueSilently(dcValue.Value);
+            }
+            else if (acValue.HasValue)
+            {
+                SetNumericValueSilently(acValue.Value);
+            }
+        }
 
         RefreshBadges();
     }
@@ -327,6 +438,8 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
             SettingDefinitionToggleState.GetRecommendedToggleState(Definition).HasValue,
         InputType.Selection =>
             Definition.ComboBox?.Options?.Any(o => o.IsRecommended) == true,
+        InputType.NumericRange =>
+            NumericRecommendedValue.HasValue || AcRecommendedValue.HasValue,
         _ => false,
     };
 
@@ -336,8 +449,79 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
             SettingDefinitionToggleState.GetDefaultToggleState(Definition).HasValue,
         InputType.Selection =>
             Definition.ComboBox?.Options?.Any(o => o.IsDefault) == true,
+        InputType.NumericRange =>
+            NumericDefaultValue.HasValue || AcDefaultValue.HasValue,
         _ => false,
     };
+
+    // ── Numeric quick-set targets (display units via ConvertFromSystemUnits) ──
+
+    /// <summary>Single spinner recommended value (display units) or null.</summary>
+    public int? NumericRecommendedValue
+    {
+        get
+        {
+            var pcfg = Definition.PowerCfgSettings?
+                .FirstOrDefault(p => p.PowerModeSupport != PowerModeSupport.Separate);
+            if (pcfg?.RecommendedValueAC is int rac) return ConvertFromSystemUnits(rac);
+            return null;
+        }
+    }
+
+    /// <summary>Single spinner default value (display units) or null.</summary>
+    public int? NumericDefaultValue
+    {
+        get
+        {
+            var pcfg = Definition.PowerCfgSettings?
+                .FirstOrDefault(p => p.PowerModeSupport != PowerModeSupport.Separate);
+            if (pcfg?.DefaultValueAC is int dac) return ConvertFromSystemUnits(dac);
+            return null;
+        }
+    }
+
+    public int? AcRecommendedValue =>
+        Definition.PowerCfgSettings?.FirstOrDefault()?.RecommendedValueAC is int rac
+            ? ConvertFromSystemUnits(rac) : null;
+
+    public int? AcDefaultValue =>
+        Definition.PowerCfgSettings?.FirstOrDefault()?.DefaultValueAC is int dac
+            ? ConvertFromSystemUnits(dac) : null;
+
+    public int? DcRecommendedValue =>
+        Definition.PowerCfgSettings?.FirstOrDefault()?.RecommendedValueDC is int rdc
+            ? ConvertFromSystemUnits(rdc) : null;
+
+    public int? DcDefaultValue =>
+        Definition.PowerCfgSettings?.FirstOrDefault()?.DefaultValueDC is int ddc
+            ? ConvertFromSystemUnits(ddc) : null;
+
+    /// <summary>Converts a system-unit PowerCfg value to the row's display units.</summary>
+    private int ConvertFromSystemUnits(int systemValue) =>
+        AkariTool.Infrastructure.Features.Common.Utilities.NumericConversionHelper
+            .ConvertFromSystemUnits(systemValue, Definition.NumericRange?.Units);
+
+    // Quick-set tooltips ("Set to Recommended (20)") for the button tooltips.
+    public string RecommendedTooltip =>
+        (SupportsSeparateACDC ? AcRecommendedValue : NumericRecommendedValue) is int rec
+            ? $"Set to Recommended ({rec})" : string.Empty;
+    public string DefaultTooltip =>
+        (SupportsSeparateACDC ? AcDefaultValue : NumericDefaultValue) is int def
+            ? $"Set to Default ({def})" : string.Empty;
+    public string RecommendedAcTooltip => AcRecommendedValue is int rec
+        ? $"Set to Recommended ({rec})" : string.Empty;
+    public string DefaultAcTooltip => AcDefaultValue is int def
+        ? $"Set to Default ({def})" : string.Empty;
+    public string RecommendedDcTooltip => DcRecommendedValue is int rec
+        ? $"Set to Recommended ({rec})" : string.Empty;
+    public string DefaultDcTooltip => DcDefaultValue is int def
+        ? $"Set to Default ({def})" : string.Empty;
+
+    /// <summary>AC spinner quick-set visibility: needs data (and a battery for DC).</summary>
+    public bool HasAcRecommendedQuickSet => AcRecommendedValue.HasValue;
+    public bool HasAcDefaultQuickSet => AcDefaultValue.HasValue;
+    public bool HasDcRecommendedQuickSet => HasBattery && DcRecommendedValue.HasValue;
+    public bool HasDcDefaultQuickSet => HasBattery && DcDefaultValue.HasValue;
 
     [RelayCommand]
     private async Task ApplyRecommendedAsync()
@@ -358,6 +542,19 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
             SetSelectedIndexSilently(idx);
             _lastIndex = idx;
             RefreshBadges();
+        }
+        else if (InputType == InputType.NumericRange)
+        {
+            if (SupportsSeparateACDC)
+            {
+                await ApplyAcNumericAsync(AcRecommendedValue, DcRecommendedValue);
+            }
+            else if (NumericRecommendedValue is int v)
+            {
+                await _executor.ApplySettingOperationsAsync(Definition, true, v);
+                SetNumericValueSilently(v);
+                RefreshBadges();
+            }
         }
     }
 
@@ -381,6 +578,55 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
             _lastIndex = idx;
             RefreshBadges();
         }
+        else if (InputType == InputType.NumericRange)
+        {
+            if (SupportsSeparateACDC)
+            {
+                await ApplyAcNumericAsync(AcDefaultValue, DcDefaultValue);
+            }
+            else if (NumericDefaultValue is int v)
+            {
+                await _executor.ApplySettingOperationsAsync(Definition, true, v);
+                SetNumericValueSilently(v);
+                RefreshBadges();
+            }
+        }
+    }
+
+    // ── Per-mode numeric quick-set commands (Dual/SingleAC templates) ────────
+
+    [RelayCommand]
+    private async Task ApplyAcRecommendedAsync() =>
+        await ApplyAcNumericAsync(AcRecommendedValue, null);
+
+    [RelayCommand]
+    private async Task ApplyAcDefaultAsync() =>
+        await ApplyAcNumericAsync(AcDefaultValue, null);
+
+    [RelayCommand]
+    private async Task ApplyDcRecommendedAsync() =>
+        await ApplyAcNumericAsync(null, DcRecommendedValue);
+
+    [RelayCommand]
+    private async Task ApplyDcDefaultAsync() =>
+        await ApplyAcNumericAsync(null, DcDefaultValue);
+
+    /// <summary>
+    /// Applies the given AC/DC display-unit targets (null = keep current) as the
+    /// Separate {"ACValue","DCValue"} dictionary, then refreshes badges.
+    /// </summary>
+    private async Task ApplyAcNumericAsync(int? acTarget, int? dcTarget)
+    {
+        if (acTarget.HasValue) SetAcNumericValueSilently(acTarget.Value);
+        if (dcTarget.HasValue) SetDcNumericValueSilently(dcTarget.Value);
+
+        var dict = new Dictionary<string, object?>
+        {
+            ["ACValue"] = AcNumericValue,
+            ["DCValue"] = DcNumericValue,
+        };
+        await _executor.ApplySettingOperationsAsync(Definition, true, dict);
+        RefreshBadges();
     }
 
     private int FindOptionIndex(Func<ComboBoxOption, bool> predicate)
@@ -412,7 +658,10 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
         bool hasBadgeData =
             Definition.RegistrySettings.Count > 0
             || Definition.ScheduledTaskSettings.Count > 0
-            || Definition.ComboBox?.Options?.Any(o => o.IsRecommended || o.IsDefault) == true;
+            || Definition.ComboBox?.Options?.Any(o => o.IsRecommended || o.IsDefault) == true
+            || (Definition.PowerCfgSettings?.Any(p =>
+                p.RecommendedValueAC.HasValue || p.RecommendedValueDC.HasValue
+                || p.DefaultValueAC.HasValue || p.DefaultValueDC.HasValue) == true);
         if (!hasBadgeData)
             return result;
 
@@ -473,8 +722,108 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
                     result.Add(new BadgePillState(SettingBadgeKind.Custom, true, "Custom", "Custom value"));
             }
         }
+        else if (InputType == InputType.NumericRange)
+        {
+            var pcfg = Definition.PowerCfgSettings?.FirstOrDefault();
+            if (pcfg == null) return result;
+
+            // Separate AC/DC with a battery present: per-mode pills so the user can see
+            // which mode matches recommended/default and which is custom. On battery-less
+            // systems DC is hidden and not writable — keep single-pill behaviour (1:1
+            // with Winhance).
+            bool perModeBadges = SupportsSeparateACDC
+                && HasBattery
+                && pcfg.PowerModeSupport == PowerModeSupport.Separate;
+
+            if (perModeBadges)
+            {
+                AddAcDcRecommendedPills(result, pcfg);
+                AddAcDcDefaultPills(result, pcfg);
+                AddAcDcCustomPills(result, pcfg);
+            }
+            else
+            {
+                // Compare display units; pcfg values are in system units.
+                bool considerDc = HasBattery;
+                bool matchesRec = true;
+                bool matchesDef = true;
+
+                if (SupportsSeparateACDC)
+                {
+                    if (pcfg.RecommendedValueAC.HasValue && AcNumericValue != ConvertFromSystemUnits(pcfg.RecommendedValueAC.Value))
+                        matchesRec = false;
+                    if (considerDc && pcfg.RecommendedValueDC.HasValue && DcNumericValue != ConvertFromSystemUnits(pcfg.RecommendedValueDC.Value))
+                        matchesRec = false;
+                    if (pcfg.DefaultValueAC.HasValue && AcNumericValue != ConvertFromSystemUnits(pcfg.DefaultValueAC.Value))
+                        matchesDef = false;
+                    if (considerDc && pcfg.DefaultValueDC.HasValue && DcNumericValue != ConvertFromSystemUnits(pcfg.DefaultValueDC.Value))
+                        matchesDef = false;
+                }
+                else
+                {
+                    if (pcfg.RecommendedValueAC.HasValue && NumericValue != ConvertFromSystemUnits(pcfg.RecommendedValueAC.Value))
+                        matchesRec = false;
+                    if (pcfg.DefaultValueAC.HasValue && NumericValue != ConvertFromSystemUnits(pcfg.DefaultValueAC.Value))
+                        matchesDef = false;
+                }
+
+                bool hasRecData = pcfg.RecommendedValueAC.HasValue || (considerDc && pcfg.RecommendedValueDC.HasValue);
+                bool hasDefData = pcfg.DefaultValueAC.HasValue || (considerDc && pcfg.DefaultValueDC.HasValue);
+
+                if (hasRecData)
+                    result.Add(new BadgePillState(SettingBadgeKind.Recommended, matchesRec, "Recommended", "Akari's recommended value"));
+                if (hasDefData)
+                    result.Add(new BadgePillState(SettingBadgeKind.Default, matchesDef, "Windows Default", "Windows default value"));
+                if (hasRecData || hasDefData)
+                    result.Add(new BadgePillState(SettingBadgeKind.Custom, !matchesRec && !matchesDef, "Custom", "Custom value"));
+            }
+        }
 
         return result;
+    }
+
+    private void AddAcDcRecommendedPills(List<BadgePillState> row, PowerCfgSetting pcfg)
+    {
+        if (pcfg.RecommendedValueAC.HasValue)
+        {
+            bool match = AcNumericValue == ConvertFromSystemUnits(pcfg.RecommendedValueAC.Value);
+            row.Add(new BadgePillState(SettingBadgeKind.Recommended, match, "Recommended", "Akari's recommended value (plugged in)", SettingBadgeMode.AC));
+        }
+        if (pcfg.RecommendedValueDC.HasValue)
+        {
+            bool match = DcNumericValue == ConvertFromSystemUnits(pcfg.RecommendedValueDC.Value);
+            row.Add(new BadgePillState(SettingBadgeKind.Recommended, match, "Recommended", "Akari's recommended value (on battery)", SettingBadgeMode.DC));
+        }
+    }
+
+    private void AddAcDcDefaultPills(List<BadgePillState> row, PowerCfgSetting pcfg)
+    {
+        if (pcfg.DefaultValueAC.HasValue)
+        {
+            bool match = AcNumericValue == ConvertFromSystemUnits(pcfg.DefaultValueAC.Value);
+            row.Add(new BadgePillState(SettingBadgeKind.Default, match, "Windows Default", "Windows default value (plugged in)", SettingBadgeMode.AC));
+        }
+        if (pcfg.DefaultValueDC.HasValue)
+        {
+            bool match = DcNumericValue == ConvertFromSystemUnits(pcfg.DefaultValueDC.Value);
+            row.Add(new BadgePillState(SettingBadgeKind.Default, match, "Windows Default", "Windows default value (on battery)", SettingBadgeMode.DC));
+        }
+    }
+
+    private void AddAcDcCustomPills(List<BadgePillState> row, PowerCfgSetting pcfg)
+    {
+        if (pcfg.RecommendedValueAC.HasValue || pcfg.DefaultValueAC.HasValue)
+        {
+            bool acRec = pcfg.RecommendedValueAC.HasValue && AcNumericValue == ConvertFromSystemUnits(pcfg.RecommendedValueAC.Value);
+            bool acDef = pcfg.DefaultValueAC.HasValue && AcNumericValue == ConvertFromSystemUnits(pcfg.DefaultValueAC.Value);
+            row.Add(new BadgePillState(SettingBadgeKind.Custom, !acRec && !acDef, "Custom", "Custom value (plugged in)", SettingBadgeMode.AC));
+        }
+        if (pcfg.RecommendedValueDC.HasValue || pcfg.DefaultValueDC.HasValue)
+        {
+            bool dcRec = pcfg.RecommendedValueDC.HasValue && DcNumericValue == ConvertFromSystemUnits(pcfg.RecommendedValueDC.Value);
+            bool dcDef = pcfg.DefaultValueDC.HasValue && DcNumericValue == ConvertFromSystemUnits(pcfg.DefaultValueDC.Value);
+            row.Add(new BadgePillState(SettingBadgeKind.Custom, !dcRec && !dcDef, "Custom", "Custom value (on battery)", SettingBadgeMode.DC));
+        }
     }
 
     private (bool matchesRec, bool matchesDef) EvaluateRegistrySetting(RegistrySetting reg)

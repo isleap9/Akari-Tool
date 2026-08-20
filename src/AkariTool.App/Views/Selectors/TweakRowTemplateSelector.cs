@@ -19,13 +19,20 @@ public sealed partial class TweakRowTemplateSelector : DataTemplateSelector
     public DataTemplate? ToggleTemplate { get; set; }
     public DataTemplate? DropdownTemplate { get; set; }
     public DataTemplate? PlanTemplate { get; set; }
+    public DataTemplate? NumericTemplate { get; set; }
+    public DataTemplate? SingleACNumericTemplate { get; set; }
+    public DataTemplate? DualNumericTemplate { get; set; }
 
     protected override DataTemplate? SelectTemplateCore(object item) => item switch
     {
         DropdownTweakViewModel => DropdownTemplate,
         ToggleTweakViewModel => ToggleTemplate,
         SettingItemViewModel s when s.IsPowerPlanSetting => PlanTemplate,
-        SettingItemViewModel s => s.InputType == InputType.Selection ? DropdownTemplate : ToggleTemplate,
+        SettingItemViewModel s when s.InputType == InputType.Selection => DropdownTemplate,
+        SettingItemViewModel s when s.InputType == InputType.NumericRange => s.SupportsSeparateACDC
+            ? (s.HasBattery ? DualNumericTemplate : SingleACNumericTemplate)
+            : NumericTemplate,
+        SettingItemViewModel s => ToggleTemplate,
         _ => ToggleTemplate,
     };
 

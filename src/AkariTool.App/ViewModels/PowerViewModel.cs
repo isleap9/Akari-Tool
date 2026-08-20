@@ -35,6 +35,7 @@ public sealed partial class PowerViewModel : SettingPageViewModel
     private readonly IPowerPlanComboBoxService _planComboBoxService;
     private readonly IPowerService _powerService;
     private readonly IReadOnlyList<SettingDefinition> _powerCatalog;
+    private bool _hasBattery;
 
     public PowerViewModel(
         ISettingStateReader stateReader,
@@ -67,8 +68,10 @@ public sealed partial class PowerViewModel : SettingPageViewModel
         if (s.Recommendation?.LoadDynamicOptions == true)
             return new SettingItemViewModel(
                 s, _stateReader, _executor, _dialogs,
-                _planComboBoxService, _powerService, _powerCatalog);
-        return base.CreateItem(s);
+                _hasBattery, _planComboBoxService, _powerService, _powerCatalog);
+        // Numeric/Selection PowerCfg rows need HasBattery for the Dual/SingleAC
+        // template split and per-mode badges.
+        return new SettingItemViewModel(s, _stateReader, _executor, _dialogs, _hasBattery);
     }
 
     /// <summary>
@@ -87,6 +90,7 @@ public sealed partial class PowerViewModel : SettingPageViewModel
         bool lid = _hardware.HasLidAsync().GetAwaiter().GetResult();
         bool brightness = _hardware.SupportsBrightnessControlAsync().GetAwaiter().GetResult();
         bool hybrid = _hardware.SupportsHybridSleepAsync().GetAwaiter().GetResult();
+        _hasBattery = battery;
 
         var valid = _validation.FilterSettingsByExistenceAsync(
                 groups.SelectMany(g => g.Settings)).GetAwaiter().GetResult();
