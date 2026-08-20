@@ -340,7 +340,49 @@ public static class PrivacyOptimizations
                         },
                     },
                 },
-                // security-powershell-execution-policy deferred: HKCU→HKLM fallback read not expressible in single-primary-value model
+                new SettingDefinition
+                {
+                    Id = "security-powershell-execution-policy",
+                    Name = "PowerShell Execution Policy",
+                    Description = "Controls whether PowerShell scripts are allowed to run and under what conditions for both the current user and the local machine",
+                    InputType = InputType.Selection,
+                    IsSubjectivePreference = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\PowerShell\1\ShellIds\Microsoft.PowerShell",
+                            ValueName = "ExecutionPolicy",
+                            ValueType = RegistryValueKind.String,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { "Restricted" },
+                            DisabledValue = new object?[] { "RemoteSigned" },
+                            IsPrimary = true,
+                        },
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\Software\Microsoft\PowerShell\1\ShellIds\Microsoft.PowerShell",
+                            ValueName = "ExecutionPolicy",
+                            ValueType = RegistryValueKind.String,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { "Restricted" },
+                            DisabledValue = new object?[] { "RemoteSigned" },
+                        }
+                    },
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options = new[]
+                        {
+                            new ComboBoxOption { DisplayName = "Restricted", IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["ExecutionPolicy"] = "Restricted" } },
+                            new ComboBoxOption { DisplayName = "AllSigned", ValueMappings = new Dictionary<string, object?> { ["ExecutionPolicy"] = "AllSigned" } },
+                            new ComboBoxOption { DisplayName = "RemoteSigned", IsRecommended = true, ValueMappings = new Dictionary<string, object?> { ["ExecutionPolicy"] = "RemoteSigned" } },
+                            new ComboBoxOption { DisplayName = "Unrestricted", ValueMappings = new Dictionary<string, object?> { ["ExecutionPolicy"] = "Unrestricted" } },
+                            new ComboBoxOption { DisplayName = "Bypass", ValueMappings = new Dictionary<string, object?> { ["ExecutionPolicy"] = "Bypass" } },
+                        }
+                    },
+                },
             },
         },
     ];

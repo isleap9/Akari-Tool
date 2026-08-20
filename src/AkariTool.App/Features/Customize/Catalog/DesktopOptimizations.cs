@@ -73,10 +73,40 @@ public static class DesktopOptimizations
             FeatureId = "customize-desktop-shortcuts",
             Settings = new[]
             {
-                // [DEFERRED: customize-desktop-remove-shortcut-arrow — enable calls EnsureBlankIcon()
-                //  which WRITES a blank.ico file to %WINDIR% and then stores that runtime-computed
-                //  path in Shell Icons\"29"; the enabled value is a dynamic file path plus a file
-                //  side-effect, not a static value write]
+                new SettingDefinition
+                {
+                    Id = "customize-desktop-remove-shortcut-arrow",
+                    Name = "Remove Shortcut Arrow",
+                    Description = "Removes the shortcut arrow overlay icon from desktop and file shortcuts",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = true,
+                    RecommendedToggleState = false,
+                    DefaultToggleState = false,
+                    RestartProcess = "explorer",
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Icons",
+                            ValueName = "29",
+                            ValueType = RegistryValueKind.String,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { @"C:\Windows\blank.ico" },
+                            DisabledValue = new object?[] { null },
+                            IsPrimary = true,
+                        }
+                    },
+                    PowerShellScripts = new[]
+                    {
+                        new PowerShellScriptSetting
+                        {
+                            RunContext = RunContext.User,
+                            EnabledScript = "$icoPath = \"$env:WINDIR\\blank.ico\"\r\n[System.IO.File]::WriteAllBytes($icoPath, [byte[]](0x00,0x00,0x01,0x00,0x01,0x00,0x01,0x01,0x00,0x00,0x01,0x00,0x20,0x00,0x34,0x00,0x00,0x00,0x16,0x00,0x00,0x00,0x28,0x00,0x00,0x00,0x01,0x00,0x00,0x00,0x02,0x00,0x00,0x00,0x01,0x00,0x20,0x00,0x00,0x00,0x00,0x00,0x04,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00))\r\n$regPath = 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Icons'\r\nif (-not (Test-Path $regPath)) { New-Item -Path $regPath -Force | Out-Null }\r\nSet-ItemProperty -Path $regPath -Name '29' -Value $icoPath -Type String",
+                            DisabledScript = "$regPath = 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Icons'\r\nRemove-ItemProperty -Path $regPath -Name '29' -ErrorAction SilentlyContinue\r\n$icoPath = \"$env:WINDIR\\blank.ico\"\r\nif (Test-Path $icoPath) { Remove-Item $icoPath -Force -ErrorAction SilentlyContinue }",
+                        }
+                    },
+                },
 
                 // customize-desktop-remove-shortcut-suffix — Explorer "link" (REG_BINARY),
                 //   full 4-byte value replace: removed (on) = 00 00 00 00 / present (off) = 1E 00 00 00.

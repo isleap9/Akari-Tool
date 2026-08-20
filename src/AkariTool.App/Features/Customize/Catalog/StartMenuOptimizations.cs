@@ -21,10 +21,48 @@ public static class StartMenuOptimizations
             FeatureId = "customize-startmenu-layout",
             Settings = new[]
             {
-                // [DEFERRED: customize-start-clean-pins — enable writes ConfigureStartPins (REG_SZ)
-                //  to HKLM Policies\...\Explorer + PolicyManager\...\Start (value-expressible), but
-                //  ALSO runs a PowerShell cache-flush (delete each profile's start*.bin + Stop-Process
-                //  StartMenuExperienceHost) — non-value-write Apply, not reproducible in the model]
+                new SettingDefinition
+                {
+                    Id = "customize-start-clean-pins",
+                    Name = "Clean Start Menu Pins",
+                    Description = "Removes all pinned apps from the Start Menu, leaving a clean empty layout",
+                    InputType = InputType.Action,
+                    IsSubjectivePreference = true,
+                    IsWindows11Only = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Explorer",
+                            ValueName = "ConfigureStartPins",
+                            ValueType = RegistryValueKind.String,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { "{\"pinnedList\":[]}" },
+                            DisabledValue = new object?[] { null },
+                            IsPrimary = true,
+                        },
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\PolicyManager\current\device\Start",
+                            ValueName = "ConfigureStartPins",
+                            ValueType = RegistryValueKind.String,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { "{\"pinnedList\":[]}" },
+                            DisabledValue = new object?[] { null },
+                        }
+                    },
+                    PowerShellScripts = new[]
+                    {
+                        new PowerShellScriptSetting
+                        {
+                            RunContext = RunContext.System,
+                            EnabledScript = "Stop-Process -Name StartMenuExperienceHost -Force -ErrorAction SilentlyContinue\r\nGet-ChildItem 'C:\\Users' -Directory -ErrorAction SilentlyContinue | ForEach-Object {\r\n    $statePath = Join-Path $_.FullName 'AppData\\Local\\Packages\\Microsoft.Windows.StartMenuExperienceHost_cw5n1h2txyewy\\LocalState'\r\n    if (Test-Path $statePath) {\r\n        Get-ChildItem $statePath -Filter 'start*.bin' -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue\r\n    }\r\n}",
+                            DisabledScript = null,
+                        }
+                    },
+                },
 
                 // customize-start-hide-recommended-policy — HideRecommendedSection written to three
                 //   keys + IsEducationEnvironment to a fourth; enable=1/disable=0. Reader checks
