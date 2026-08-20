@@ -11,13 +11,13 @@
     <!-- NavigationCacheMode="Required": the page view model is a DI SINGLETON
          (rows register once with TweakRegistry and there is no unregister), so the
          Frame must reuse this page instance rather than rebuild it per navigation.
-         Layout is identical to GamingPage â every binding targets TweakPageViewModel
+         Layout is identical to GamingPage ... every binding targets TweakPageViewModel
          base members, so this is a pure copy+retitle. -->
 
     <ScrollViewer>
         <StackPanel Padding="32,24,32,24" MaxWidth="1100" HorizontalAlignment="Center">
 
-            <!-- ââ Page header: title + search + Quick actions ââââââââââââââââ -->
+            <!-- ... Page header: title + search + Quick actions ... -->
             <Grid Margin="0,0,0,20">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -54,7 +54,7 @@
                     <AutoSuggestBox
                         x:Name="SearchBox"
                         Width="240"
-                        PlaceholderText="Find a settingâ¦"
+                        PlaceholderText="Find a setting&#x2026;"
                         QueryIcon="Find"
                         Text="{x:Bind ViewModel.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                         AutomationProperties.Name="Find a setting on this page" />
@@ -192,7 +192,7 @@
                 </StackPanel>
             </Grid>
 
-            <!-- ââ Sections âââââââââââââââââââââââââââââââââââââââââââââââââââ -->
+            <!-- ... Sections ... -->
             <ItemsControl
                 ItemsSource="{x:Bind ViewModel.Sections, Mode=OneWay}"
                 ItemTemplate="{StaticResource TweakSectionTemplate}" />

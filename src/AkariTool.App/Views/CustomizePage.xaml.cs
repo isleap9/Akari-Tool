@@ -7,11 +7,11 @@ namespace AkariTool.Views;
 
 /// <summary>
 /// Customize landing hub. Not a tweak page — owns no ViewModel and registers nothing
-/// with TweakRegistry. The Customize tweaks live on six category pages (TaskbarPage /
-/// ExplorerPage / ContextMenuPage / AppearancePage / StartMenuPage / DesktopPage), each
+/// with TweakRegistry. The Customize tweaks live on five category pages (TaskbarPage /
+/// ExplorerPage / AppearancePage / StartMenuPage / DesktopPage), each
 /// with its own TweakPageViewModel. This page builds a card grid (the same visuals as
 /// HomePage's quick-nav cards); each card navigates the content Frame straight to its
-/// category page. SyncSelectedItem maps all seven pages to the single "Customize" rail
+/// category page. SyncSelectedItem maps all six pages to the single "Customize" rail
 /// item, so the rail highlight never leaves Customize while inside this group.
 /// </summary>
 public sealed partial class CustomizePage : Page
@@ -30,7 +30,6 @@ public sealed partial class CustomizePage : Page
         {
             new CardDef("Taskbar",      G("E7C4"), "Layout, behavior & button grouping",            typeof(TaskbarPage)),
             new CardDef("Explorer",     G("EC50"), "View, behavior, associations & This PC",        typeof(ExplorerPage)),
-            new CardDef("Context Menu", G("E712"), "Right-click menu entries",                       typeof(ContextMenuPage)),
             new CardDef("Appearance",   G("E771"), "Theme, transparency, color & window style",     typeof(AppearancePage)),
             new CardDef("Start Menu",   G("E8FC"), "Start menu layout & behavior",                  typeof(StartMenuPage)),
             new CardDef("Desktop",      G("E7F4"), "Icons, shortcuts, startup, devices & region",   typeof(DesktopPage)),

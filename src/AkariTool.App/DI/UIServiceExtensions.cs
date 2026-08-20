@@ -69,7 +69,6 @@ public static class UIServiceExtensions
         // Desktop) so the flat Backup export stays byte-identical.
         services.AddSingleton<TaskbarViewModel>();
         services.AddSingleton<ExplorerViewModel>();
-        services.AddSingleton<ContextMenuViewModel>();
         services.AddSingleton<AppearanceViewModel>();
         services.AddSingleton<StartMenuViewModel>();
         services.AddSingleton<DesktopViewModel>();
@@ -105,7 +104,6 @@ public static class UIServiceExtensions
         services.AddSingleton<SettingPageViewModel>(sp => sp.GetRequiredService<PrivacyViewModel>());
         services.AddSingleton<SettingPageViewModel>(sp => sp.GetRequiredService<TaskbarViewModel>());
         services.AddSingleton<SettingPageViewModel>(sp => sp.GetRequiredService<ExplorerViewModel>());
-        services.AddSingleton<SettingPageViewModel>(sp => sp.GetRequiredService<ContextMenuViewModel>());
         services.AddSingleton<SettingPageViewModel>(sp => sp.GetRequiredService<AppearanceViewModel>());
         services.AddSingleton<SettingPageViewModel>(sp => sp.GetRequiredService<StartMenuViewModel>());
         services.AddSingleton<SettingPageViewModel>(sp => sp.GetRequiredService<DesktopViewModel>());
