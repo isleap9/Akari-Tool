@@ -94,27 +94,40 @@ public static class TaskbarOptimizations
                         },
                     },
                 },
-                // customize-taskbar-hide-widgets — TaskbarDa: enable=0/disable=1
+                // taskbar-widgets — AllowNewsAndInterests (Dsh group policy, HKCU+HKLM): show=1/hide=0
                 new SettingDefinition
                 {
-                    Id = "customize-taskbar-hide-widgets",
-                    Name = "Hide Widgets Button",
-                    Description = "Removes the Widgets (news/weather) button from the taskbar",
+                    Id = "taskbar-widgets",
+                    Name = "Show Widgets",
+                    Description = "Show the Widgets button that displays personalized news, weather, calendar, and other information",
                     InputType = InputType.Toggle,
-                    IsSubjectivePreference = false,
-                    RecommendedToggleState = true,
-                    DefaultToggleState = false,
+                    IsSubjectivePreference = true,
+                    IsWindows11Only = true,
+                    RestartProcess = "Explorer",
+                    RecommendedToggleState = false,
+                    DefaultToggleState = true,
                     RegistrySettings = new[]
                     {
                         new RegistrySetting
                         {
-                            KeyPath = @"HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced",
-                            ValueName = "TaskbarDa",
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Policies\Microsoft\Dsh",
+                            ValueName = "AllowNewsAndInterests",
                             ValueType = RegistryValueKind.DWord,
-                            RecommendedValue = null,
+                            RecommendedValue = 0,
                             DefaultValue = null,
-                            EnabledValue = new object?[] { 0 },
-                            DisabledValue = new object?[] { 1 },
+                            EnabledValue = new object?[] { 1, null },
+                            DisabledValue = new object?[] { 0 },
+                            IsPrimary = true,
+                        },
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Dsh",
+                            ValueName = "AllowNewsAndInterests",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = 0,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 1, null },
+                            DisabledValue = new object?[] { 0 },
                         },
                     },
                 },
