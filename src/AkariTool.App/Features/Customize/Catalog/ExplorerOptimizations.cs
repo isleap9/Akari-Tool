@@ -460,7 +460,7 @@ public static class ExplorerOptimizations
                     {
                         Options = new[]
                         {
-                            new ComboBoxOption { DisplayName = "Select the typed item in the view", IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["TypeAhead"] = 0 } },
+                            new ComboBoxOption { DisplayName = "Select the typed item in the view", IsDefault = true, IsRecommended = true, ValueMappings = new Dictionary<string, object?> { ["TypeAhead"] = 0 } },
                             new ComboBoxOption { DisplayName = "Automatically type into the Search Box", ValueMappings = new Dictionary<string, object?> { ["TypeAhead"] = 1 } },
                         },
                     },

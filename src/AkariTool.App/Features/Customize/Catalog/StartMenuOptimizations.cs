@@ -249,6 +249,8 @@ public static class StartMenuOptimizations
                     InputType = InputType.Selection,
                     IsSubjectivePreference = true,
                     ResolveUnmatchedToDefault = true,
+                    MinimumBuildNumber = 26100,
+                    MinimumBuildRevision = 7171,
                     RegistrySettings = new[]
                     {
                         new RegistrySetting
@@ -267,9 +269,9 @@ public static class StartMenuOptimizations
                     {
                         Options = new[]
                         {
-                            new ComboBoxOption { DisplayName = "Category", ValueMappings = new Dictionary<string, object?> { ["AllAppsViewMode"] = 0 } },
+                            new ComboBoxOption { DisplayName = "Category", IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["AllAppsViewMode"] = 0 } },
                             new ComboBoxOption { DisplayName = "Grid", ValueMappings = new Dictionary<string, object?> { ["AllAppsViewMode"] = 1 } },
-                            new ComboBoxOption { DisplayName = "List", IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["AllAppsViewMode"] = 2 } },
+                            new ComboBoxOption { DisplayName = "List", IsRecommended = true, ValueMappings = new Dictionary<string, object?> { ["AllAppsViewMode"] = 2 } },
                         },
                     },
                 },

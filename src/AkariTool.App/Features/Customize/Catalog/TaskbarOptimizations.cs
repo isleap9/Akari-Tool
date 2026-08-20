@@ -687,7 +687,7 @@ public static class TaskbarOptimizations
                         Options = new[]
                         {
                             new ComboBoxOption { DisplayName = "Always", ValueMappings = new Dictionary<string, object?> { ["IconSizePreference"] = 0 } },
-                            new ComboBoxOption { DisplayName = "When taskbar is full", IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["IconSizePreference"] = 2 } },
+                            new ComboBoxOption { DisplayName = "When taskbar is full", IsDefault = true, IsRecommended = true, ValueMappings = new Dictionary<string, object?> { ["IconSizePreference"] = 2 } },
                             new ComboBoxOption { DisplayName = "Never", ValueMappings = new Dictionary<string, object?> { ["IconSizePreference"] = 1 } },
                         },
                     },
@@ -764,7 +764,7 @@ public static class TaskbarOptimizations
                     {
                         Options = new[]
                         {
-                            new ComboBoxOption { DisplayName = "Always combine", IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["TaskbarGlomLevel"] = 0 } },
+                            new ComboBoxOption { DisplayName = "Always combine", IsDefault = true, IsRecommended = true, ValueMappings = new Dictionary<string, object?> { ["TaskbarGlomLevel"] = 0 } },
                             new ComboBoxOption { DisplayName = "Combine when taskbar is full", ValueMappings = new Dictionary<string, object?> { ["TaskbarGlomLevel"] = 1 } },
                             new ComboBoxOption { DisplayName = "Never combine", ValueMappings = new Dictionary<string, object?> { ["TaskbarGlomLevel"] = 2 } },
                         },
@@ -797,7 +797,7 @@ public static class TaskbarOptimizations
                     {
                         Options = new[]
                         {
-                            new ComboBoxOption { DisplayName = "All taskbars", IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["MMTaskbarMode"] = 0 } },
+                            new ComboBoxOption { DisplayName = "All taskbars", IsDefault = true, IsRecommended = true, ValueMappings = new Dictionary<string, object?> { ["MMTaskbarMode"] = 0 } },
                             new ComboBoxOption { DisplayName = "Main taskbar and taskbar where window is open", ValueMappings = new Dictionary<string, object?> { ["MMTaskbarMode"] = 1 } },
                             new ComboBoxOption { DisplayName = "Taskbar where window is open", ValueMappings = new Dictionary<string, object?> { ["MMTaskbarMode"] = 2 } },
                         },
@@ -830,7 +830,7 @@ public static class TaskbarOptimizations
                     {
                         Options = new[]
                         {
-                            new ComboBoxOption { DisplayName = "Always combine", IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["MMTaskbarGlomLevel"] = 0 } },
+                            new ComboBoxOption { DisplayName = "Always combine", IsDefault = true, IsRecommended = true, ValueMappings = new Dictionary<string, object?> { ["MMTaskbarGlomLevel"] = 0 } },
                             new ComboBoxOption { DisplayName = "Combine when taskbar is full", ValueMappings = new Dictionary<string, object?> { ["MMTaskbarGlomLevel"] = 1 } },
                             new ComboBoxOption { DisplayName = "Never combine", ValueMappings = new Dictionary<string, object?> { ["MMTaskbarGlomLevel"] = 2 } },
                         },
