@@ -393,6 +393,7 @@ public static class GamingOptimizations
                     Description = "Configure how Windows allocates CPU time between foreground applications and background services",
                     InputType = InputType.Selection,
                     ResolveUnmatchedToDefault = true,
+                    AddedInVersion = "2.0.2",
                     RegistrySettings =
                     [
                         new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\PriorityControl", ValueName = "Win32PrioritySeparation", RecommendedValue = null, DefaultValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },

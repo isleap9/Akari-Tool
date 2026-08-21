@@ -29,6 +29,7 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
     private readonly IPowerPlanComboBoxService? _powerPlanComboBoxService;
     private readonly IPowerService? _powerService;
     private readonly IReadOnlyList<SettingDefinition>? _powerCatalog;
+    private readonly INewBadgeService? _newBadgeService;
 
     private bool _suppress;
     private int _lastIndex = -1;
@@ -41,7 +42,8 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
         bool hasBattery = false,
         IPowerPlanComboBoxService? powerPlanComboBoxService = null,
         IPowerService? powerService = null,
-        IReadOnlyList<SettingDefinition>? powerCatalog = null)
+        IReadOnlyList<SettingDefinition>? powerCatalog = null,
+        INewBadgeService? newBadgeService = null)
     {
         Definition = definition;
         _stateReader = stateReader;
@@ -50,7 +52,13 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
         _powerPlanComboBoxService = powerPlanComboBoxService;
         _powerService = powerService;
         _powerCatalog = powerCatalog;
+        _newBadgeService = newBadgeService;
         HasBattery = hasBattery;
+
+        // Winhance parity: rows tagged AddedInVersion light up as NEW until the
+        // user's baseline version passes. Recomputed after warm-up initializes
+        // the badge service (see SettingPageWarmUp).
+        IsNew = _newBadgeService?.IsSettingNew(Definition.AddedInVersion, Definition.Id) == true;
 
         Options = Definition.ComboBox?.Options?.Select(o => o.DisplayName).ToArray()
                   ?? Array.Empty<string>();
@@ -122,6 +130,37 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
 
     public ObservableCollection<BadgePillState> Badges { get; } = new();
     public bool HasBadges => Badges.Count > 0;
+
+    // ── NEW badge (Winhance port) ──────────────────────────────────────────────
+    private bool _isNew;
+    public bool IsNew
+    {
+        get => _isNew;
+        set
+        {
+            if (_isNew == value) return;
+            _isNew = value;
+            OnPropertyChanged(nameof(IsNew));
+            OnPropertyChanged(nameof(ShowNewBadge));
+        }
+    }
+
+    private bool _isNewBadgeGloballyVisible = true;
+    /// <summary>Global kill switch, mirrored from INewBadgeService.ShowNewBadges by the page layer.</summary>
+    public bool IsNewBadgeGloballyVisible
+    {
+        get => _isNewBadgeGloballyVisible;
+        set
+        {
+            if (_isNewBadgeGloballyVisible == value) return;
+            _isNewBadgeGloballyVisible = value;
+            OnPropertyChanged(nameof(IsNewBadgeGloballyVisible));
+            OnPropertyChanged(nameof(ShowNewBadge));
+        }
+    }
+
+    public bool ShowNewBadge => IsNew && IsNewBadgeGloballyVisible;
+    public string NewBadgeText => "NEW";
 
     /// <summary>NumericRange row: min/max/units from the catalog metadata.</summary>
     public int MinValue => Definition.NumericRange?.MinValue ?? 0;

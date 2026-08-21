@@ -22,17 +22,20 @@ public abstract partial class SettingPageViewModel : ViewModelBase
     protected readonly ISettingStateReader _stateReader;
     protected readonly ISettingOperationExecutor _executor;
     protected readonly TweakDialogs _dialogs;
+    protected readonly INewBadgeService? _newBadgeService;
 
     private volatile bool _built;
 
     protected SettingPageViewModel(
         ISettingStateReader stateReader,
         ISettingOperationExecutor executor,
-        TweakDialogs dialogs)
+        TweakDialogs dialogs,
+        INewBadgeService? newBadgeService = null)
     {
         _stateReader = stateReader;
         _executor = executor;
         _dialogs = dialogs;
+        _newBadgeService = newBadgeService;
     }
 
     public abstract string NavTag { get; }
@@ -45,7 +48,7 @@ public abstract partial class SettingPageViewModel : ViewModelBase
     /// LoadDynamicOptions row without touching the shared Build path.
     /// </summary>
     protected virtual SettingItemViewModel CreateItem(SettingDefinition s)
-        => new(s, _stateReader, _executor, _dialogs);
+        => new(s, _stateReader, _executor, _dialogs, newBadgeService: _newBadgeService);
 
     /// <summary>
     /// A Power Plan row landed a plan change: re-read every sibling PowerCfg row

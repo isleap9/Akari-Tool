@@ -26,6 +26,20 @@
          it is NOT the Akari accent, so it must NOT follow the crimson accent tokens. -->
     <SolidColorBrush x:Key="AkariWindowsLogoBrush" Color="#FF0078D4" />
 
+    <!-- Winhance-style NEW pill (red fill, white text) for freshly added settings.
+         Rows opt in via AddedInVersion in the catalog; visibility is ShowNewBadge. -->
+    <Style x:Key="NewBadgeBorderStyle" TargetType="Border">
+        <Setter Property="Background" Value="#E81123" />
+        <Setter Property="CornerRadius" Value="3" />
+        <Setter Property="Padding" Value="5,1" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style x:Key="NewBadgeTextStyle" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="FontSize" Value="10" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+
     <!-- Chromeless host for quick-set / bulk / header buttons: the content (glyph
          or pill) is the only visible chrome. Hover keeps the native WinUI subtle
          fill rather than net8's fully-nulled hover — a deliberate native-first
@@ -145,12 +159,21 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0" Margin="0,0,12,0">
-                    <TextBlock
-                        Text="{Binding Name}"
-                        FontSize="13.5"
-                        FontWeight="SemiBold"
-                        Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                        TextWrapping="Wrap" />
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock
+                            Text="{Binding Name}"
+                            FontSize="13.5"
+                            FontWeight="SemiBold"
+                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                            TextWrapping="Wrap" />
+                        <Border
+                            Style="{StaticResource NewBadgeBorderStyle}"
+                            Visibility="{Binding ShowNewBadge, Converter={StaticResource BoolToVis}}">
+                            <TextBlock
+                                Style="{StaticResource NewBadgeTextStyle}"
+                                Text="{Binding NewBadgeText}" />
+                        </Border>
+                    </StackPanel>
                     <TextBlock
                         Text="{Binding Description}"
                         FontSize="12"
@@ -231,12 +254,21 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0" Margin="0,0,12,0">
-                    <TextBlock
-                        Text="{Binding Name}"
-                        FontSize="13.5"
-                        FontWeight="SemiBold"
-                        Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                        TextWrapping="Wrap" />
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock
+                            Text="{Binding Name}"
+                            FontSize="13.5"
+                            FontWeight="SemiBold"
+                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                            TextWrapping="Wrap" />
+                        <Border
+                            Style="{StaticResource NewBadgeBorderStyle}"
+                            Visibility="{Binding ShowNewBadge, Converter={StaticResource BoolToVis}}">
+                            <TextBlock
+                                Style="{StaticResource NewBadgeTextStyle}"
+                                Text="{Binding NewBadgeText}" />
+                        </Border>
+                    </StackPanel>
                     <TextBlock
                         Text="{Binding Description}"
                         FontSize="12"
@@ -316,12 +348,21 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0" Margin="0,0,12,0">
-                    <TextBlock
-                        Text="{Binding Name}"
-                        FontSize="13.5"
-                        FontWeight="SemiBold"
-                        Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                        TextWrapping="Wrap" />
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock
+                            Text="{Binding Name}"
+                            FontSize="13.5"
+                            FontWeight="SemiBold"
+                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                            TextWrapping="Wrap" />
+                        <Border
+                            Style="{StaticResource NewBadgeBorderStyle}"
+                            Visibility="{Binding ShowNewBadge, Converter={StaticResource BoolToVis}}">
+                            <TextBlock
+                                Style="{StaticResource NewBadgeTextStyle}"
+                                Text="{Binding NewBadgeText}" />
+                        </Border>
+                    </StackPanel>
                     <TextBlock
                         Text="{Binding Description}"
                         FontSize="12"
@@ -357,12 +398,21 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0" Margin="0,0,12,0">
-                    <TextBlock
-                        Text="{Binding Name}"
-                        FontSize="13.5"
-                        FontWeight="SemiBold"
-                        Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                        TextWrapping="Wrap" />
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock
+                            Text="{Binding Name}"
+                            FontSize="13.5"
+                            FontWeight="SemiBold"
+                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                            TextWrapping="Wrap" />
+                        <Border
+                            Style="{StaticResource NewBadgeBorderStyle}"
+                            Visibility="{Binding ShowNewBadge, Converter={StaticResource BoolToVis}}">
+                            <TextBlock
+                                Style="{StaticResource NewBadgeTextStyle}"
+                                Text="{Binding NewBadgeText}" />
+                        </Border>
+                    </StackPanel>
                     <TextBlock
                         Text="{Binding Description}"
                         FontSize="12"
@@ -445,12 +495,21 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0" Margin="0,0,12,0">
-                    <TextBlock
-                        Text="{Binding Name}"
-                        FontSize="13.5"
-                        FontWeight="SemiBold"
-                        Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                        TextWrapping="Wrap" />
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock
+                            Text="{Binding Name}"
+                            FontSize="13.5"
+                            FontWeight="SemiBold"
+                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                            TextWrapping="Wrap" />
+                        <Border
+                            Style="{StaticResource NewBadgeBorderStyle}"
+                            Visibility="{Binding ShowNewBadge, Converter={StaticResource BoolToVis}}">
+                            <TextBlock
+                                Style="{StaticResource NewBadgeTextStyle}"
+                                Text="{Binding NewBadgeText}" />
+                        </Border>
+                    </StackPanel>
                     <TextBlock
                         Text="{Binding Description}"
                         FontSize="12"
@@ -533,12 +592,21 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0" Margin="0,0,12,0">
-                    <TextBlock
-                        Text="{Binding Name}"
-                        FontSize="13.5"
-                        FontWeight="SemiBold"
-                        Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                        TextWrapping="Wrap" />
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock
+                            Text="{Binding Name}"
+                            FontSize="13.5"
+                            FontWeight="SemiBold"
+                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                            TextWrapping="Wrap" />
+                        <Border
+                            Style="{StaticResource NewBadgeBorderStyle}"
+                            Visibility="{Binding ShowNewBadge, Converter={StaticResource BoolToVis}}">
+                            <TextBlock
+                                Style="{StaticResource NewBadgeTextStyle}"
+                                Text="{Binding NewBadgeText}" />
+                        </Border>
+                    </StackPanel>
                     <TextBlock
                         Text="{Binding Description}"
                         FontSize="12"

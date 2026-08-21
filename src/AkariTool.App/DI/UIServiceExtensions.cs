@@ -6,6 +6,7 @@ using AkariTool.ViewModels.Tweaks;
 using WinUI.Framework.Services;
 using AkariTool.Core.Tweaks;
 using AkariTool.Core.Interfaces;
+using AkariTool.Core.Features.Common.Interfaces;
 using AkariTool.Infrastructure.Features.Common.Services;
 using AkariTool.Infrastructure.Features.Common.Interfaces;
 
@@ -46,6 +47,10 @@ public static class UIServiceExtensions
         // Dialog helper for tweak confirmations (serializes ContentDialogs).
         services.AddSingleton<TweakDialogs>();
         services.AddSingleton<SettingBackupService>();
+
+        // NEW-badge baseline tracking (Winhance port). Impl lives App-side because
+        // it needs the vendored ISettingsService; interface is Core.
+        services.AddSingleton<INewBadgeService, NewBadgeService>();
 
         services.AddSingleton<MainWindow>();
         services.AddTransient<HomeViewModel>();
