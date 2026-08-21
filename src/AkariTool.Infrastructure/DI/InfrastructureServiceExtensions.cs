@@ -12,7 +12,6 @@ namespace AkariTool.Infrastructure.DI;
 /// <summary>
 /// DI registrations for the Infrastructure layer: interface wrappers over the
 /// static OS services (Update / ToolFetch / SystemInfo / ShaderCache).
-///
 /// NOTE: ToolService and TweakDialogs — although "infrastructure-ish" — live in
 /// the main app project (ToolService is in the AkariTool.Services namespace and
 /// TweakDialogs depends on WinUI/WinUI.Framework), which this project does not
@@ -67,6 +66,9 @@ public static class InfrastructureServiceExtensions
         // Priority 4d: Technical Details / Tooltip infrastructure
         services.AddSingleton<IRegeditLauncher, RegeditLauncher>();
         services.AddSingleton<ITooltipDataService, TooltipDataService>();
+
+        // Winhance 1:1 port for TechnicalDetailsManager dependencies
+        services.AddSingleton<IDispatcherService, DispatcherService>();
 
         return services;
     }

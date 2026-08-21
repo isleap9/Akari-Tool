@@ -52,7 +52,15 @@ public static class UIServiceExtensions
         // it needs the vendored ISettingsService; interface is Core.
         services.AddSingleton<INewBadgeService, NewBadgeService>();
 
-        services.AddSingleton<MainWindow>();
+                // Winhance 1:1 port for TechnicalDetailsManager dependencies
+                services.AddSingleton<ILocalizationService, WinUI.Framework.Services.LocalizationService>();
+                services.AddSingleton<IDispatcherService, AkariTool.App.Features.Common.Services.DispatcherService>();
+                services.AddSingleton<IEventBus, AkariTool.Infrastructure.Features.Common.Events.EventBus>();
+                services.AddSingleton<ILogService, WinUI.Framework.Services.LogService>();
+                services.AddSingleton<SettingStatusBannerManager>();
+                services.AddSingleton<TechnicalDetailsManager>();
+
+                services.AddSingleton<MainWindow>();
         services.AddTransient<HomeViewModel>();
         services.AddTransient<PlaceholderViewModel>();
         services.AddTransient<SettingsViewModel>();

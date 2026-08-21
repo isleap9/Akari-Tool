@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AkariTool.Core.Features.Common.Enums;
+using AkariTool.Core.Features.Common.Interfaces;
 using AkariTool.Core.Features.Common.Models;
 using AkariTool.Core.Features.Common.Native;
 using AkariTool.Infrastructure.Features.Common.Interfaces;

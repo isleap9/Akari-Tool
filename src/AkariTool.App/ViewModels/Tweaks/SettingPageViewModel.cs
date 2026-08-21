@@ -11,6 +11,7 @@ using AkariTool.Core.Features.Common.Interfaces;
 using AkariTool.Infrastructure.Features.Common.Interfaces;
 using AkariTool.Services;
 using AkariTool.Core.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace AkariTool.ViewModels.Tweaks;
 
@@ -61,16 +62,17 @@ public abstract partial class SettingPageViewModel : ViewModelBase
     protected abstract IReadOnlyList<SettingGroup> BuildSettingGroups();
 
     /// <summary>
-        /// Row factory. Virtual so a page (Power) can hand plan-special services to its
-        /// LoadDynamicOptions row without touching the shared Build path.
-        /// </summary>
-        protected virtual SettingItemViewModel CreateItem(SettingDefinition s)
-            => new(s, _stateReader, _executor, _dialogs, newBadgeService: _newBadgeService,
-                   dependencyResolver: _dependencyResolver,
-                   localizationService: _localizationService,
-                   dispatcherService: _dispatcherService,
-                   regeditLauncher: _regeditLauncher,
-                   eventBus: _eventBus);
+            /// Row factory. Virtual so a page (Power) can hand plan-special services to its
+            /// LoadDynamicOptions row without touching the shared Build path.
+            /// </summary>
+            protected virtual SettingItemViewModel CreateItem(SettingDefinition s)
+                => new(s, _stateReader, _executor, _dialogs, newBadgeService: _newBadgeService,
+                       dependencyResolver: _dependencyResolver,
+                       localizationService: _localizationService,
+                       dispatcherService: _dispatcherService,
+                       regeditLauncher: _regeditLauncher,
+                       eventBus: _eventBus,
+                       logService: sp => sp.GetRequiredService<ILogService>());
 
     /// <summary>
     /// Extra catalogs the dependency resolver may need beyond this page's own rows

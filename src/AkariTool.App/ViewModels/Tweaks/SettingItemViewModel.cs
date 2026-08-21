@@ -14,6 +14,7 @@ using AkariTool.Core.Features.Common.Native;
 using AkariTool.Infrastructure.Features.Common.Interfaces;
 using AkariTool.Services;
 using AkariTool.Core.Features.Common.Events;
+using AkariTool.Core.Interfaces;
 
 namespace AkariTool.ViewModels.Tweaks;
 
@@ -46,33 +47,34 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
         private int _lastIndex = -1;
 
     public SettingItemViewModel(
-            SettingDefinition definition,
-            ISettingStateReader stateReader,
-            ISettingOperationExecutor executor,
-            TweakDialogs dialogs,
-            bool hasBattery = false,
-            IPowerPlanComboBoxService? powerPlanComboBoxService = null,
-            IPowerService? powerService = null,
-            IReadOnlyList<SettingDefinition>? powerCatalog = null,
-            INewBadgeService? newBadgeService = null,
-            ISettingsService? settingsService = null,
-            ISettingDependencyResolver? dependencyResolver = null,
-            ILocalizationService? localizationService = null,
-            IEventBus? eventBus = null,
-            IRegeditLauncher? regeditLauncher = null,
-            IDispatcherService? dispatcherService = null)
-        {
-            Definition = definition;
-            _stateReader = stateReader;
-            _executor = executor;
-            _dialogs = dialogs;
-            _powerPlanComboBoxService = powerPlanComboBoxService;
-            _powerService = powerService;
-            _powerCatalog = powerCatalog;
-            _newBadgeService = newBadgeService;
-            _settingsService = settingsService;
-            _dependencyResolver = dependencyResolver;
-            HasBattery = hasBattery;
+                SettingDefinition definition,
+                ISettingStateReader stateReader,
+                ISettingOperationExecutor executor,
+                TweakDialogs dialogs,
+                bool hasBattery = false,
+                IPowerPlanComboBoxService? powerPlanComboBoxService = null,
+                IPowerService? powerService = null,
+                IReadOnlyList<SettingDefinition>? powerCatalog = null,
+                INewBadgeService? newBadgeService = null,
+                ISettingsService? settingsService = null,
+                ISettingDependencyResolver? dependencyResolver = null,
+                ILocalizationService? localizationService = null,
+                IEventBus? eventBus = null,
+                IRegeditLauncher? regeditLauncher = null,
+                IDispatcherService? dispatcherService = null,
+                ILogService? logService = null)
+            {
+                Definition = definition;
+                _stateReader = stateReader;
+                _executor = executor;
+                _dialogs = dialogs;
+                _powerPlanComboBoxService = powerPlanComboBoxService;
+                _powerService = powerService;
+                _powerCatalog = powerCatalog;
+                _newBadgeService = newBadgeService;
+                _settingsService = settingsService;
+                _dependencyResolver = dependencyResolver;
+                HasBattery = hasBattery;
 
             // Winhance parity: rows tagged AddedInVersion light up as NEW until the
             // user's baseline version passes. Recomputed after warm-up initializes
@@ -93,20 +95,20 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
             _statusBannerManager = new SettingStatusBannerManager(localizationService);
 
             // ─── Technical Details Manager (Winhance 1:1 port) ──────────────────────────
-            _technicalDetailsManager = new TechnicalDetailsManager(
-                () => Definition.Id,
-                newSections =>
-                {
-                    TechnicalDetailSections = newSections;
-                    OnPropertyChanged(nameof(HasTechnicalDetails));
-                    OnPropertyChanged(nameof(ShowTechnicalDetailsBar));
-                },
-                _dialogs, // Using TweakDialogs as ILogService
-                dispatcherService,
-                regeditLauncher,
-                eventBus,
-                localizationService,
-                new TechnicalDetailLabels
+                        _technicalDetailsManager = new TechnicalDetailsManager(
+                            () => Definition.Id,
+                            newSections =>
+                            {
+                                TechnicalDetailSections = newSections;
+                                OnPropertyChanged(nameof(HasTechnicalDetails));
+                                OnPropertyChanged(nameof(ShowTechnicalDetailsBar));
+                            },
+                            logService,
+                            dispatcherService,
+                            regeditLauncher,
+                            eventBus,
+                            localizationService,
+                            new TechnicalDetailLabels
                 {
                     Path = localizationService?.GetString("TechnicalDetails_Path") ?? "Path",
                     Value = localizationService?.GetString("TechnicalDetails_Value") ?? "Value",
