@@ -70,9 +70,42 @@ public sealed partial class MainWindow : Window
     private readonly ToolService _tool;
     private readonly IFileService _files;
     private readonly SettingBackupService _backup;
+    private readonly INavBadgeService _navBadges;
+    private readonly IDispatcherService _dispatcher;
+    private IDisposable? _navBadgeSubscription;
 
     // Named (not a lambda) so OnClosed can unsubscribe the exact same delegate instance.
     private readonly EventHandler<AppTheme> _themeChangedHandler;
+
+    private void ApplyNavBadges(IEnumerable<NavBadgeUpdate> updates)
+    {
+        foreach (var u in updates)
+        {
+            if (FindNavItem(u.Tag) is not { } item) continue;
+            item.InfoBadge = u.Count > 0 ? new InfoBadge { Value = u.Count } : null;
+        }
+    }
+
+    private NavigationViewItem? FindNavItem(object tag)
+    {
+        foreach (var mi in Nav.MenuItems)
+            if (TryFindNavItem(mi, tag, out var hit)) return hit;
+        foreach (var mi in Nav.FooterMenuItems)
+            if (TryFindNavItem(mi, tag, out var hit)) return hit;
+        return null;
+    }
+
+    private static bool TryFindNavItem(object container, object tag, out NavigationViewItem? found)
+    {
+        if (container is NavigationViewItem nvi)
+        {
+            if (Equals(nvi.Tag, tag)) { found = nvi; return true; }
+            foreach (var child in nvi.MenuItems)
+                if (TryFindNavItem(child, tag, out found)) return true;
+        }
+        found = null;
+        return false;
+    }
 
     public MainWindow(
         INavigationService navigation,
@@ -84,7 +117,8 @@ public sealed partial class MainWindow : Window
         ToolService tool,
         IFileService files,
         SettingBackupService backup,
-        IDispatcherService dispatcherService)
+        IDispatcherService dispatcherService,
+        INavBadgeService navBadges)
     {
         _navigation = navigation;
         _dialogs = dialogs;
@@ -95,14 +129,27 @@ public sealed partial class MainWindow : Window
         _tool = tool;
         _files = files;
         _backup = backup;
+        _navBadges = navBadges;
 
         // Late-initialized service (see DispatcherService remarks): the DI container
         // builds before any Window exists, so the UI DispatcherQueue can only be
         // captured here, on the UI thread, after InitializeComponent.
         dispatcherService.Initialize(DispatcherQueue);
+        _dispatcher = dispatcherService;
         _themeChangedHandler = (_, _) => UpdateThemeVisuals();
 
         InitializeComponent();
+
+        // Sidebar badges (4e): first pass + subscription deferred to Loaded so the
+        // service's IEnumerable<SettingPageViewModel> resolves AFTER construction —
+        // eager resolution here would force all 11 page Builds onto the UI thread
+        // during DI, stealing warm-up ownership.
+        Nav.Loaded += (_, _) =>
+        {
+            ApplyNavBadges(_navBadges.ComputeNavBadges());
+            _navBadgeSubscription = _navBadges.Subscribe((tag, count) =>
+                _dispatcher.RunOnUIThread(() => ApplyNavBadges([new NavBadgeUpdate(tag, count)])));
+        };
 
         // Custom title bar + icon.
         ExtendsContentIntoTitleBar = true;

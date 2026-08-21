@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -487,4 +487,36 @@ public sealed class SettingDependencyResolver(
 
         return null;
     }
+        public async Task ApplyParentPresetsAsync(SettingDefinition setting, object? value, IReadOnlyList<SettingDefinition> allSettings)
+        {
+            if (setting.SettingPresets == null || setting.InputType != InputType.Selection || value is not int selectedIndex)
+                return;
+            if (!setting.SettingPresets.TryGetValue(selectedIndex, out var preset))
+                return;
+
+            logService.Log(LogLevel.Info, $"[SettingDependencyResolver] Applying preset for '{setting.Id}' at index {selectedIndex} ({preset.Count} children)");
+
+            using (processRestartManager.SuppressRestarts())
+            {
+                foreach (var (childId, childValue) in preset)
+                {
+                    var child = FindSetting(childId, allSettings);
+                    if (child == null)
+                    {
+                        logService.Log(LogLevel.Debug, $"[SettingDependencyResolver] Skipping preset child '{childId}' - not in resolution universe");
+                        continue;
+                    }
+
+                    try
+                    {
+                        await ApplyAsync(child, childValue, null).ConfigureAwait(false);
+                        SettingApplied?.Invoke(childId);
+                    }
+                    catch (Exception ex)
+                    {
+                        logService.Log(LogLevel.Warning, $"[SettingDependencyResolver] Preset child '{childId}' failed: {ex.Message}");
+                    }
+                }
+            }
+        }
 }

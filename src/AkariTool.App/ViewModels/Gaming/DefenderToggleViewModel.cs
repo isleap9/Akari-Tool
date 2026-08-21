@@ -26,7 +26,7 @@ public sealed partial class DefenderToggleViewModel : ObservableObject, ISetting
     private bool _suppress;
 
     /// <summary>NEW-badge tag (Winhance AddedInVersion parity for bespoke rows).</summary>
-    public string? AddedInVersion => "2.0.2";
+    public string? AddedInVersion => "2.0.3";
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Description))]

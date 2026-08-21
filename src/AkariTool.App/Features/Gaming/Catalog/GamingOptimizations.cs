@@ -1,4 +1,4 @@
-using AkariTool.Core.Features.Common.Models;
+﻿using AkariTool.Core.Features.Common.Models;
 using AkariTool.Core.Features.Common.Enums;
 using Microsoft.Win32;
 using System.Collections.Generic;
@@ -1144,12 +1144,134 @@ public static class GamingOptimizations
                         },
                     ],
                 },
-                // [DEFERRED: gaming-nagle-algorithm — per-network-interface iteration over
-                //  SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces subkeys,
-                //  writing/deleting TcpAckFrequency + TCPNoDelay per adapter]
-                // [DEFERRED: gaming-dns-server — netsh dns encryption table + PowerShell
-                //  Set-DnsClientServerAddress per adapter with DoH templates; not a plain
-                //  registry value write]
+                // Winhance gaming-nagle-algorithm 1:1 — per-network-interface iteration over
+                // SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces subkeys
+                // (WindowsRegistryService.ApplyPerNetworkInterface expands per adapter).
+                new SettingDefinition
+                {
+                    Id = "gaming-nagle-algorithm",
+                    IsSubjectivePreference = true,
+                    RecommendedToggleState = true,
+                    Name = "Nagle's Algorithm",
+                    Description = "Buffers small network packets before sending to reduce overhead. Turn off to lower latency in online games, or keep on for general-purpose network efficiency",
+                    InputType = InputType.Toggle,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces",
+                            ValueName = "TcpAckFrequency",
+                            RecommendedValue = null,
+                            EnabledValue = new object?[] { null },
+                            DisabledValue = new object?[] { 1 },
+                            DefaultValue = null,
+                            ValueType = RegistryValueKind.DWord,
+                            ApplyPerNetworkInterface = true,
+                        },
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces",
+                            ValueName = "TCPNoDelay",
+                            RecommendedValue = null,
+                            EnabledValue = new object?[] { null },
+                            DisabledValue = new object?[] { 1 },
+                            DefaultValue = null,
+                            ValueType = RegistryValueKind.DWord,
+                            ApplyPerNetworkInterface = true,
+                        },
+                    },
+                },
+                // Winhance gaming-dns-server 1:1 — PowerShell Set-DnsClientServerAddress per
+                // adapter + netsh DoH encryption-table sweep, driven by per-option ScriptVariables.
+                // "Automatic" passes empty placeholders so the enabled script resets to ISP DNS.
+                new SettingDefinition
+                {
+                    Id = "gaming-dns-server",
+                    IsSubjectivePreference = true,
+                    Name = "DNS Server",
+                    Description = "Select a DNS server for all network adapters. Changes apply to every adapter on your system (Wi-Fi and Ethernet). Use Automatic to restore your default ISP/router DNS",
+                    InputType = InputType.Selection,
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options = new[]
+                        {
+                            new ComboBoxOption
+                            {
+                                DisplayName = "Automatic (ISP default)",
+                                Script = ScriptOption.Disabled,
+                                IsRecommended = true,
+                                IsDefault = true,
+                                ScriptVariables = new Dictionary<string, string> { ["primary"] = "", ["secondary"] = "", ["dohtemplate"] = "" },
+                            },
+                            new ComboBoxOption
+                            {
+                                DisplayName = "Cloudflare (1.1.1.1)",
+                                ScriptVariables = new Dictionary<string, string> { ["primary"] = "1.1.1.1", ["secondary"] = "1.0.0.1" },
+                            },
+                            new ComboBoxOption
+                            {
+                                DisplayName = "Cloudflare Malware Blocking (1.1.1.2)",
+                                ScriptVariables = new Dictionary<string, string> { ["primary"] = "1.1.1.2", ["secondary"] = "1.0.0.2" },
+                            },
+                            new ComboBoxOption
+                            {
+                                DisplayName = "Cloudflare Family Safe (1.1.1.3)",
+                                ScriptVariables = new Dictionary<string, string> { ["primary"] = "1.1.1.3", ["secondary"] = "1.0.0.3" },
+                            },
+                            new ComboBoxOption
+                            {
+                                DisplayName = "Google (8.8.8.8)",
+                                ScriptVariables = new Dictionary<string, string> { ["primary"] = "8.8.8.8", ["secondary"] = "8.8.4.4" },
+                            },
+                            new ComboBoxOption
+                            {
+                                DisplayName = "Quad9 (9.9.9.9)",
+                                ScriptVariables = new Dictionary<string, string> { ["primary"] = "9.9.9.9", ["secondary"] = "149.112.112.112" },
+                            },
+                            new ComboBoxOption
+                            {
+                                DisplayName = "OpenDNS (208.67.222.222)",
+                                ScriptVariables = new Dictionary<string, string> { ["primary"] = "208.67.222.222", ["secondary"] = "208.67.220.220" },
+                            },
+                            new ComboBoxOption
+                            {
+                                DisplayName = "Cloudflare DoH (1.1.1.1)",
+                                ScriptVariables = new Dictionary<string, string> { ["primary"] = "1.1.1.1", ["secondary"] = "1.0.0.1", ["dohtemplate"] = "https://cloudflare-dns.com/dns-query" },
+                            },
+                            new ComboBoxOption
+                            {
+                                DisplayName = "Google DoH (8.8.8.8)",
+                                ScriptVariables = new Dictionary<string, string> { ["primary"] = "8.8.8.8", ["secondary"] = "8.8.4.4", ["dohtemplate"] = "https://dns.google/dns-query" },
+                            },
+                            new ComboBoxOption
+                            {
+                                DisplayName = "Quad9 DoH (9.9.9.9)",
+                                ScriptVariables = new Dictionary<string, string> { ["primary"] = "9.9.9.9", ["secondary"] = "149.112.112.112", ["dohtemplate"] = "https://dns.quad9.net/dns-query" },
+                            },
+                        },
+                    },
+                    PowerShellScripts = new[]
+                    {
+                        new PowerShellScriptSetting
+                        {
+                            EnabledScript = @"Get-NetAdapter | ForEach-Object { $p = '{{primary}}'; if ([string]::IsNullOrWhiteSpace($p)) { Set-DnsClientServerAddress -InterfaceIndex $_.InterfaceIndex -ResetServerAddresses } else { Set-DnsClientServerAddress -InterfaceIndex $_.InterfaceIndex -ServerAddresses @('{{primary}}','{{secondary}}') } }",
+                            DisabledScript = @"Get-NetAdapter | ForEach-Object { Set-DnsClientServerAddress -InterfaceIndex $_.InterfaceIndex -ResetServerAddresses }",
+                            RequiresElevation = true,
+                            RunContext = RunContext.User,
+                        },
+                        new PowerShellScriptSetting
+                        {
+                            // Always sweep the netsh encryption table for any DoH-capable server we
+                            // might have previously registered, then add entries for the currently
+                            // selected option (if it is a DoH option). Keeps the table clean across
+                            // option switches and when switching DoH off entirely.
+                            EnabledScript = @"$known = @('1.1.1.1','1.0.0.1','8.8.8.8','8.8.4.4','9.9.9.9','149.112.112.112'); foreach ($s in $known) { netsh dns delete encryption server=$s 2>$null | Out-Null }; $t = '{{dohtemplate}}'; if ($t -and $t -notmatch '^\{\{') { netsh dns add encryption server={{primary}} dohtemplate=$t autoupgrade=yes udpfallback=no | Out-Null; netsh dns add encryption server={{secondary}} dohtemplate=$t autoupgrade=yes udpfallback=no | Out-Null }",
+                            DisabledScript = @"$known = @('1.1.1.1','1.0.0.1','8.8.8.8','8.8.4.4','9.9.9.9','149.112.112.112'); foreach ($s in $known) { netsh dns delete encryption server=$s 2>$null | Out-Null }",
+                            RequiresElevation = true,
+                            RunContext = RunContext.User,
+                        },
+                    },
+                },
             ],
         },
     ];
@@ -2722,6 +2844,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "font-smoothing",
+                    RequiresRestart = true,
                     Name = "Smooth edges of screen fonts (ClearType)",
                     Description = "Apply ClearType anti-aliasing to make text appear smoother on screen",
                     IsSubjectivePreference = true,
@@ -2733,11 +2856,11 @@ public static class GamingOptimizations
                         {
                             KeyPath = @"HKEY_CURRENT_USER\Control Panel\Desktop",
                             ValueName = "FontSmoothing",
-                            RecommendedValue = 2,
-                            DefaultValue = 2,
-                            EnabledValue = new object?[] { 2, null },
-                            DisabledValue = new object?[] { 0 },
-                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = "2",
+                            DefaultValue = "0",
+                            EnabledValue = new object?[] { "2" },
+                            DisabledValue = new object?[] { "0" },
+                            ValueType = RegistryValueKind.String,
                             IsPrimary = true,
                         },
                     ],

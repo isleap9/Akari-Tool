@@ -52,6 +52,7 @@ public static class UIServiceExtensions
         // NEW-badge baseline tracking (Winhance port). Impl lives App-side because
         // it needs the vendored ISettingsService; interface is Core.
         services.AddSingleton<INewBadgeService, NewBadgeService>();
+        services.AddSingleton<INavBadgeService, NavBadgeService>();
 
                 // Winhance 1:1 port for TechnicalDetailsManager dependencies
                 services.AddSingleton<ILocalizationService, WinUI.Framework.Services.LocalizationService>();

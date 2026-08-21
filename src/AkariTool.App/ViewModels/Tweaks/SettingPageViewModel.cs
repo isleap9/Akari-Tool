@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -208,6 +208,11 @@ public abstract partial class SettingPageViewModel : ViewModelBase
         foreach (var section in Sections)
             foreach (var item in section.Items.OfType<SettingItemViewModel>())
             {
+                // Subjective-preference rows carry no recommendation to apply — they render a
+                // Preference pill only and must never inflate quick-action counts.
+                if (item.Definition.IsSubjectivePreference)
+                    continue;
+
                 if (item.HasRecommendedQuickSet
                     && !item.Badges.Any(b => b.Kind == AkariTool.Core.Features.Common.Enums.SettingBadgeKind.Recommended && b.IsHighlighted))
                     rec++;
@@ -242,7 +247,12 @@ public abstract partial class SettingPageViewModel : ViewModelBase
     [RelayCommand]
     public async Task CreateRestorePointAsync()
     {
-        // Stub — restore-point wiring lands in a later phase.
-        await Task.CompletedTask;
+        // Winhance parity: quick-action restore point (Winhance SystemRestoreService shape).
+        var ok = await Task.Run(() =>
+            AkariTool.Tabs.RestorePointHelper.EnsureRestorePointAsync(
+                ToolService.Current!, "Akari Tool - Quick Action Restore Point")).ConfigureAwait(false);
+        if (!ok)
+            await _dialogs.InfoAsync("Create Restore Point",
+                "Could not create a restore point. System Restore may be disabled — enable it in Windows Settings and try again.");
     }
 }

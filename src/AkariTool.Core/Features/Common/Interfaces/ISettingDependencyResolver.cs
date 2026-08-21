@@ -42,4 +42,10 @@ public interface ISettingDependencyResolver
     /// SyncParentToMatchingPresetAsync).
     /// </summary>
     Task SyncParentToMatchingPresetAsync(SettingDefinition setting, string settingId, IReadOnlyList<SettingDefinition> allSettings);
+
+/// <summary>
+/// Parent Selection -> children preset application (Winhance SettingApplicationService parity).
+/// After the parent's own value lands, applies every child listed in SettingPresets[selectedIndex].
+/// </summary>
+Task ApplyParentPresetsAsync(SettingDefinition setting, object? value, IReadOnlyList<SettingDefinition> allSettings);
 }

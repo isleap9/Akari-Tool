@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -390,6 +390,8 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
             await _dependencyResolver.HandleValuePrerequisitesAsync(Definition, Definition.Id, _dependencyContext);
             await _dependencyResolver.HandleDependenciesAsync(Definition.Id, _dependencyContext, enable, value);
             await apply();
+            if (Definition.InputType == InputType.Selection)
+                await _dependencyResolver.ApplyParentPresetsAsync(Definition, value, _dependencyContext);
             await _dependencyResolver.SyncParentToMatchingPresetAsync(Definition, Definition.Id, _dependencyContext);
             await RefreshPostApplyState();
         }
@@ -847,7 +849,7 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
                 var state = SettingDefinitionToggleState.GetRecommendedToggleState(Definition);
                 if (state is not bool value) return;
                 await _executor.ApplySettingOperationsAsync(Definition, value, null);
-                SetIsOnSilently(value);
+                RefreshFromSystem();
                 RefreshBadges();
                 await ApplyBannerAsync(true, isRecommended: true);
                 await UpdateTechnicalDetailsAsync();
@@ -857,8 +859,8 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
                 int idx = FindOptionIndex(o => o.IsRecommended);
                 if (idx < 0) return;
                 await _executor.ApplySettingOperationsAsync(Definition, true, idx);
-                SetSelectedIndexSilently(idx);
-                _lastIndex = idx;
+                RefreshFromSystem();
+                _lastIndex = SelectedIndex;
                 RefreshBadges();
                 await ApplyBannerAsync(true, isRecommended: true);
                 await UpdateTechnicalDetailsAsync();
@@ -888,7 +890,7 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
                 var state = SettingDefinitionToggleState.GetDefaultToggleState(Definition);
                 if (state is not bool value) return;
                 await _executor.ApplySettingOperationsAsync(Definition, value, null);
-                SetIsOnSilently(value);
+                RefreshFromSystem();
                 RefreshBadges();
                 await ApplyBannerAsync(true, isDefault: true);
                 await UpdateTechnicalDetailsAsync();
@@ -898,8 +900,8 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
                 int idx = FindOptionIndex(o => o.IsDefault);
                 if (idx < 0) return;
                 await _executor.ApplySettingOperationsAsync(Definition, true, idx);
-                SetSelectedIndexSilently(idx);
-                _lastIndex = idx;
+                RefreshFromSystem();
+                _lastIndex = SelectedIndex;
                 RefreshBadges();
                 await ApplyBannerAsync(true, isDefault: true);
                 await UpdateTechnicalDetailsAsync();
@@ -1219,15 +1221,18 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
             }
 
             var currentValue = subkey.GetValue(reg.ValueName);
-            if (currentValue == null)
-            {
-                matchesRec = reg.RecommendedValue == null ? ValuesEqual(null, reg.EnabledValue?[0]) : false;
-                matchesDef = reg.DefaultValue == null;
-                return (matchesRec, matchesDef);
-            }
+            bool on = currentValue == null
+                ? (reg.EnabledValue?.Contains(null) == true)
+                : (reg.EnabledValue is { Length: > 0 } ev && ev[0] != null && ValuesEqual(currentValue, ev[0]));
+            bool off = currentValue == null
+                ? true
+                : (reg.DisabledValue is { Length: > 0 } dv && dv.Any(v => v == null || ValuesEqual(currentValue, v)));
 
-            matchesRec = reg.RecommendedValue != null && ValuesEqual(currentValue, reg.RecommendedValue);
-            matchesDef = reg.DefaultValue != null && ValuesEqual(currentValue, reg.DefaultValue);
+            // Recommendation/default live at the toggle level (recState/defState) when set;
+            // registry-driven rows match when the current state satisfies the enabled or
+            // disabled shape respectively (sentinel-aware, mirrors the state reader).
+            matchesRec = reg.RecommendedValue != null ? ValuesEqual(currentValue, reg.RecommendedValue) : on;
+            matchesDef = reg.DefaultValue != null ? ValuesEqual(currentValue, reg.DefaultValue) : off;
             return (matchesRec, matchesDef);
         }
     }
