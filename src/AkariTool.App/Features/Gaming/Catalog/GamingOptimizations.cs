@@ -303,6 +303,7 @@ public static class GamingOptimizations
                     Description = "Control whether apps can run in the background. Force Deny blocks all background apps — avoid if you use Teams, Zoom, or WhatsApp",
                     InputType = InputType.Selection,
                     IsSubjectivePreference = true,
+                    AddedInVersion = "2.0.2",
                     RegistrySettings =
                     [
                         new RegistrySetting

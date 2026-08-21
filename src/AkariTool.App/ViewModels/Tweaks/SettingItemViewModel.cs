@@ -190,14 +190,50 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
 
         public bool ShowStatusBanner => !string.IsNullOrEmpty(StatusBannerMessage);
 
+        partial void OnStatusBannerMessageChanged(string value)
+            => OnPropertyChanged(nameof(ShowStatusBanner));
+
         // ─── Technical Details properties (Winhance 1:1 port) ────────────────────────
         [ObservableProperty]
         public partial bool IsTechnicalDetailsExpanded { get; set; }
 
+        partial void OnIsTechnicalDetailsExpandedChanged(bool value)
+            => OnPropertyChanged(nameof(TechnicalDetailsToggleCornerRadius));
+
+        /// <summary>
+        /// Bottom corners rounded only while the expandable content is collapsed;
+        /// once expanded, the content panel below carries the rounded corners.
+        /// </summary>
+        public Microsoft.UI.Xaml.CornerRadius TechnicalDetailsToggleCornerRadius =>
+            IsTechnicalDetailsExpanded
+                ? new Microsoft.UI.Xaml.CornerRadius(0)
+                : new Microsoft.UI.Xaml.CornerRadius(0, 0, 4, 4);
+
+        [RelayCommand]
+        private async Task ToggleTechnicalDetails()
+        {
+            IsTechnicalDetailsExpanded = !IsTechnicalDetailsExpanded;
+            if (IsTechnicalDetailsExpanded)
+            {
+                try { await UpdateTechnicalDetailsAsync(); }
+                catch { /* diagnostics must never block the UI */ }
+            }
+        }
+
         [ObservableProperty]
         public partial IReadOnlyList<TechnicalDetailSection> TechnicalDetailSections { get; set; } = new List<TechnicalDetailSection>();
 
-        public bool HasTechnicalDetails => TechnicalDetailSections.Count > 0;
+        /// <summary>
+        /// Definition-shape driven (Winhance parity): the details bar shows as soon as
+        /// the setting carries any inspectable state, before anything is expanded.
+        /// </summary>
+        public bool HasTechnicalDetails =>
+            (Definition.RegistrySettings?.Count > 0)
+            || (Definition.ScheduledTaskSettings?.Count > 0)
+            || (Definition.PowerCfgSettings?.Count > 0)
+            || (Definition.PowerShellScripts?.Count > 0)
+            || (Definition.RegContents?.Count > 0)
+            || (Definition.Dependencies?.Count > 0);
 
         public bool ShowTechnicalDetailsBar => HasTechnicalDetails;
 
@@ -342,19 +378,35 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
     public void SetDependencyContext(IReadOnlyList<SettingDefinition> allSettings)
         => _dependencyContext = allSettings;
 
-    private async Task ApplyWithDependencyPipelineAsync(bool enable, object? value, Func<Task> apply)
-    {
-        if (_dependencyResolver == null || _dependencyContext == null)
+        private async Task ApplyWithDependencyPipelineAsync(bool enable, object? value, Func<Task> apply)
         {
+            if (_dependencyResolver == null || _dependencyContext == null)
+            {
+                await apply();
+                await RefreshPostApplyState();
+                return;
+            }
+
+            await _dependencyResolver.HandleValuePrerequisitesAsync(Definition, Definition.Id, _dependencyContext);
+            await _dependencyResolver.HandleDependenciesAsync(Definition.Id, _dependencyContext, enable, value);
             await apply();
-            return;
+            await _dependencyResolver.SyncParentToMatchingPresetAsync(Definition, Definition.Id, _dependencyContext);
+            await RefreshPostApplyState();
         }
 
-        await _dependencyResolver.HandleValuePrerequisitesAsync(Definition, Definition.Id, _dependencyContext);
-        await _dependencyResolver.HandleDependenciesAsync(Definition.Id, _dependencyContext, enable, value);
-        await apply();
-        await _dependencyResolver.SyncParentToMatchingPresetAsync(Definition, Definition.Id, _dependencyContext);
-    }
+        /// <summary>
+        /// Winhance post-apply hook: refresh the status banner + technical details
+        /// after every user-driven apply. Failures here must never break the apply.
+        /// </summary>
+        private async Task RefreshPostApplyState()
+        {
+            try
+            {
+                await ApplyBannerAsync(true);
+                await UpdateTechnicalDetailsAsync();
+            }
+            catch { /* diagnostics are best-effort */ }
+        }
 
     partial void OnIsOnChanged(bool value)
     {

@@ -17,10 +17,13 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:converters="using:WinUI.Framework.Converters"
+    xmlns:techconv="using:AkariTool.Views.Converters"
     xmlns:selectors="using:AkariTool.Views.Selectors"
     xmlns:controls="using:AkariTool.Views.Controls">
 
     <converters:BooleanToVisibilityConverter x:Key="BoolToVis" />
+    <converters:NullToVisibilityConverter x:Key="NullToVis" />
+    <techconv:InverseBoolToVisibilityConverter x:Key="InvBoolToVis" />
 
     <!-- The ⊞ "Windows default" mark keeps the Windows-brand blue in BOTH themes —
          it is NOT the Akari accent, so it must NOT follow the crimson accent tokens. -->
@@ -28,6 +31,221 @@
 
     <!-- Winhance's orange padlock (PrivacyIconPath) for the advanced-unlock overlay. -->
     <x:String x:Key="PrivacyIconPath">M12,17A2,2 0 0,0 14,15C14,13.89 13.1,13 12,13A2,2 0 0,0 10,15A2,2 0 0,0 12,17M18,8A2,2 0 0,1 20,10V20A2,2 0 0,1 18,22H6A2,2 0 0,1 4,20V10C4,8.89 4.9,8 6,8H7V6A5,5 0 0,1 12,1A5,5 0 0,1 17,6V8H18M12,3A3,3 0 0,0 9,6V8H15V6A3,3 0 0,0 12,3Z</x:String>
+
+    <!-- ═══════════════ Technical details footer (Winhance SettingTemplates 1:1) ═══════════════
+         Shared by every row template: toggle bar → expandable sections → status InfoBar.
+         DataContext = the row VM (SettingItemViewModel-derived). -->
+    <DataTemplate x:Key="TechnicalDetailsFooterTemplate">
+        <StackPanel>
+            <!-- Technical Details toggle bar (seamlessly attached below the row card) -->
+            <Border Visibility="{Binding ShowTechnicalDetailsBar, Converter={StaticResource BoolToVis}}"
+                    Background="{ThemeResource InfoBarInformationalSeverityBackgroundBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1,0,1,1"
+                    CornerRadius="{Binding TechnicalDetailsToggleCornerRadius}"
+                    Margin="0,-1,0,0">
+                <Button Command="{Binding ToggleTechnicalDetailsCommand}"
+                        AutomationProperties.Name="{Binding TechnicalDetailsLabel}"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Stretch"
+                        Padding="10,4"
+                        Background="Transparent"
+                        BorderThickness="0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <FontIcon Grid.Column="0" Glyph="&#xE946;" FontSize="12" Margin="0,0,6,0"
+                                  Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding TechnicalDetailsLabel}" FontSize="11"
+                                   VerticalAlignment="Center"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                        <FontIcon Grid.Column="2" Glyph="&#xE70D;" FontSize="9"
+                                  Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                  Visibility="{Binding IsTechnicalDetailsExpanded, Converter={StaticResource InvBoolToVis}}"/>
+                        <FontIcon Grid.Column="2" Glyph="&#xE70E;" FontSize="9"
+                                  Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                  Visibility="{Binding IsTechnicalDetailsExpanded, Converter={StaticResource BoolToVis}}"/>
+                    </Grid>
+                </Button>
+            </Border>
+
+            <!-- Expandable technical details content -->
+            <Border Visibility="{Binding IsTechnicalDetailsExpanded, Converter={StaticResource BoolToVis}}"
+                    Background="{ThemeResource InfoBarInformationalSeverityBackgroundBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1,0,1,1"
+                    CornerRadius="0,0,4,4"
+                    Padding="12,6">
+                <ItemsControl ItemsSource="{Binding TechnicalDetailSections}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Margin="0,4,0,0">
+                                <Button Style="{StaticResource TechDetail.SectionHeader}"
+                                        IsHitTestVisible="False" IsTabStop="False"
+                                        AutomationProperties.Name="{Binding Label}">
+                                    <TextBlock Text="{Binding Label}" FontWeight="SemiBold" FontSize="12"/>
+                                </Button>
+                                <ItemsControl ItemsSource="{Binding Rows}" Margin="12,4,0,8">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <ContentControl IsTabStop="True"
+                                                            AutomationProperties.Name="{Binding AccessibleSummary}"
+                                                            HorizontalContentAlignment="Stretch">
+                                                <Grid>
+                                                    <!-- Registry row -->
+                                                    <Grid Visibility="{Binding IsRegistry}" Padding="4,4">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <Button Grid.Column="0"
+                                                                Command="{Binding OpenRegeditCommand}"
+                                                                CommandParameter="{Binding RegistryPath}"
+                                                                IsEnabled="{Binding CanOpenRegedit}"
+                                                                ToolTipService.ToolTip="Open in Registry Editor"
+                                                                AutomationProperties.Name="{Binding RegistryPath}"
+                                                                Padding="4" Margin="0,0,8,0"
+                                                                Background="Transparent" BorderThickness="0"
+                                                                VerticalAlignment="Center">
+                                                            <Grid Width="16" Height="16">
+                                                                <FontIcon Glyph="&#xE8A7;" FontSize="14"
+                                                                          Visibility="{Binding RegeditIconSource, Converter={StaticResource NullToVis}, ConverterParameter=invert}"/>
+                                                                <Image Source="{Binding RegeditIconSource}" Width="16" Height="16"
+                                                                       Visibility="{Binding RegeditIconSource, Converter={StaticResource NullToVis}}"/>
+                                                            </Grid>
+                                                        </Button>
+                                                        <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                                                            <TextBlock FontFamily="Consolas" FontSize="11" IsTextSelectionEnabled="True" TextWrapping="Wrap">
+                                                                <Run FontWeight="SemiBold" Text="{Binding PathLabel}"/><Run FontWeight="SemiBold" Text=": "/><Run Text="{Binding RegistryPath}"/>
+                                                            </TextBlock>
+                                                            <TextBlock FontFamily="Consolas" FontSize="11" IsTextSelectionEnabled="True">
+                                                                <Run FontWeight="SemiBold" Text="{Binding ValueLabel}"/><Run FontWeight="SemiBold" Text=": "/><Run Text="{Binding ValueName}"/><Run Text=" ("/><Run Text="{Binding ValueType}"/><Run Text=")"/>
+                                                            </TextBlock>
+                                                        </StackPanel>
+                                                        <StackPanel Grid.Column="2" Spacing="2" VerticalAlignment="Center"
+                                                                    HorizontalAlignment="Right" Margin="12,0,0,0" MinWidth="175">
+                                                            <TextBlock FontFamily="Consolas" FontSize="11" IsTextSelectionEnabled="True" MaxWidth="340" TextTrimming="CharacterEllipsis">
+                                                                <Run FontWeight="SemiBold" Text="{Binding CurrentLabel}"/><Run FontWeight="SemiBold" Text=": "/><Run Text="{Binding CurrentValue}"/>
+                                                            </TextBlock>
+                                                            <TextBlock FontFamily="Consolas" FontSize="11" IsTextSelectionEnabled="True" MaxWidth="340" TextTrimming="CharacterEllipsis"
+                                                                       Visibility="{Binding IsActionRow, Converter={StaticResource InvBoolToVis}}">
+                                                                <Run FontWeight="SemiBold" Text="{Binding RecommendedLabel}"/><Run FontWeight="SemiBold" Text=": "/><Run Text="{Binding RecommendedValue}"/>
+                                                            </TextBlock>
+                                                            <TextBlock FontFamily="Consolas" FontSize="11" IsTextSelectionEnabled="True" MaxWidth="340" TextTrimming="CharacterEllipsis"
+                                                                       Visibility="{Binding IsActionRow, Converter={StaticResource InvBoolToVis}}">
+                                                                <Run FontWeight="SemiBold" Text="{Binding DefaultLabel}"/><Run FontWeight="SemiBold" Text=": "/><Run Text="{Binding DefaultValue}"/>
+                                                            </TextBlock>
+                                                            <TextBlock FontFamily="Consolas" FontSize="11" IsTextSelectionEnabled="True" MaxWidth="340" TextTrimming="CharacterEllipsis"
+                                                                       Visibility="{Binding IsActionRow, Converter={StaticResource BoolToVis}}">
+                                                                <Run FontWeight="SemiBold" Text="{Binding OnApplyLabel}"/><Run FontWeight="SemiBold" Text=": "/><Run Text="{Binding OnApplyValue}"/>
+                                                            </TextBlock>
+                                                        </StackPanel>
+                                                    </Grid>
+
+                                                    <!-- Scheduled task row -->
+                                                    <Grid Visibility="{Binding IsScheduledTask}" Padding="4,4">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                                                            <TextBlock FontFamily="Consolas" FontSize="11" IsTextSelectionEnabled="True" TextWrapping="Wrap">
+                                                                <Run FontWeight="SemiBold" Text="{Binding PathLabel}"/><Run FontWeight="SemiBold" Text=": "/><Run Text="{Binding TaskPath}"/>
+                                                            </TextBlock>
+                                                        </StackPanel>
+                                                        <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center"
+                                                                    HorizontalAlignment="Right" Margin="12,0,0,0" MinWidth="175">
+                                                            <TextBlock FontFamily="Consolas" FontSize="11" IsTextSelectionEnabled="True">
+                                                                <Run FontWeight="SemiBold" Text="{Binding CurrentLabel}"/><Run FontWeight="SemiBold" Text=": "/><Run Text="{Binding CurrentState}"/>
+                                                            </TextBlock>
+                                                            <TextBlock FontFamily="Consolas" FontSize="11" IsTextSelectionEnabled="True">
+                                                                <Run FontWeight="SemiBold" Text="{Binding RecommendedLabel}"/><Run FontWeight="SemiBold" Text=": "/><Run Text="{Binding RecommendedState}"/>
+                                                            </TextBlock>
+                                                            <TextBlock FontFamily="Consolas" FontSize="11" IsTextSelectionEnabled="True">
+                                                                <Run FontWeight="SemiBold" Text="{Binding DefaultLabel}"/><Run FontWeight="SemiBold" Text=": "/><Run Text="{Binding DefaultState}"/>
+                                                            </TextBlock>
+                                                        </StackPanel>
+                                                    </Grid>
+
+                                                    <!-- PowerConfig row -->
+                                                    <Grid Visibility="{Binding IsPowerConfig}" Padding="4,4">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                                                            <TextBlock FontFamily="Consolas" FontSize="11" IsTextSelectionEnabled="True" TextWrapping="Wrap">
+                                                                <Run FontWeight="SemiBold" Text="{Binding SubgroupLabel}"/><Run FontWeight="SemiBold" Text=": "/><Run Text="{Binding SubgroupAlias}"/><Run Text=" ("/><Run Text="{Binding SubgroupGuid}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/><Run Text=")"/>
+                                                            </TextBlock>
+                                                            <TextBlock FontFamily="Consolas" FontSize="11" IsTextSelectionEnabled="True" TextWrapping="Wrap">
+                                                                <Run FontWeight="SemiBold" Text="{Binding SettingLabel}"/><Run FontWeight="SemiBold" Text=": "/><Run Text="{Binding SettingAlias}"/><Run Text=" ("/><Run Text="{Binding SettingGuid}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/><Run Text=")"/>
+                                                            </TextBlock>
+                                                        </StackPanel>
+                                                        <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center"
+                                                                    HorizontalAlignment="Right" Margin="12,0,0,0" MinWidth="175">
+                                                            <TextBlock FontFamily="Consolas" FontSize="11" IsTextSelectionEnabled="True">
+                                                                <Run FontWeight="SemiBold" Text="{Binding CurrentLabel}"/><Run FontWeight="SemiBold" Text=": "/><Run Text="AC:"/><Run Text="{Binding CurrentAC}"/><Run Text=" DC:"/><Run Text="{Binding CurrentDC}"/>
+                                                            </TextBlock>
+                                                            <TextBlock FontFamily="Consolas" FontSize="11" IsTextSelectionEnabled="True">
+                                                                <Run FontWeight="SemiBold" Text="{Binding RecommendedLabel}"/><Run FontWeight="SemiBold" Text=": "/><Run Text="AC:"/><Run Text="{Binding RecommendedAC}"/><Run Text=" DC:"/><Run Text="{Binding RecommendedDC}"/>
+                                                            </TextBlock>
+                                                            <TextBlock FontFamily="Consolas" FontSize="11" IsTextSelectionEnabled="True">
+                                                                <Run FontWeight="SemiBold" Text="{Binding DefaultLabel}"/><Run FontWeight="SemiBold" Text=": "/><Run Text="AC:"/><Run Text="{Binding DefaultAC}"/><Run Text=" DC:"/><Run Text="{Binding DefaultDC}"/>
+                                                            </TextBlock>
+                                                        </StackPanel>
+                                                    </Grid>
+
+                                                    <!-- PowerShell script row -->
+                                                    <StackPanel Visibility="{Binding IsPowerShellScript}" Spacing="4" Margin="0,4">
+                                                        <TextBlock Text="{Binding ScriptLabel}" FontWeight="SemiBold" Opacity="0.8"/>
+                                                        <Border Style="{StaticResource TechDetail.CodeBlock.PowerShell}">
+                                                            <ScrollViewer MaxHeight="240" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                                                                <TextBlock Text="{Binding ScriptBody}" Style="{StaticResource TechDetail.CodeText}" Padding="0,0,0,16"/>
+                                                            </ScrollViewer>
+                                                        </Border>
+                                                    </StackPanel>
+
+                                                    <!-- RegContent row -->
+                                                    <StackPanel Visibility="{Binding IsRegContent}" Spacing="4" Margin="0,4">
+                                                        <TextBlock Text="{Binding ContentLabel}" FontWeight="SemiBold" Opacity="0.8"/>
+                                                        <Border Style="{StaticResource TechDetail.CodeBlock.RegContent}">
+                                                            <ScrollViewer MaxHeight="240" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                                                                <TextBlock Text="{Binding ContentBody}" Style="{StaticResource TechDetail.CodeText}" Padding="0,0,0,16"/>
+                                                            </ScrollViewer>
+                                                        </Border>
+                                                    </StackPanel>
+
+                                                    <!-- Dependency chip row -->
+                                                    <Border Visibility="{Binding IsDependency}" Style="{StaticResource TechDetail.DependencyChip}" HorizontalAlignment="Left">
+                                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                                            <TextBlock Text="{Binding DependencyLabel}" FontWeight="SemiBold"/>
+                                                            <TextBlock Text="{Binding DependencyRelation}" Opacity="0.7"/>
+                                                        </StackPanel>
+                                                    </Border>
+                                                </Grid>
+                                            </ContentControl>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Border>
+
+            <!-- Status banner below the row card -->
+            <InfoBar IsOpen="{Binding ShowStatusBanner, Mode=OneWay}"
+                     Severity="{Binding StatusBannerSeverity, Mode=OneWay}"
+                     Message="{Binding StatusBannerMessage, Mode=OneWay}"
+                     IsClosable="False"
+                     Margin="0,-1,0,8"
+                     CornerRadius="0,0,4,4"/>
+        </StackPanel>
+    </DataTemplate>
 
     <!-- Winhance-style NEW pill (red fill, white text) for freshly added settings.
          Rows opt in via AddedInVersion in the catalog; visibility is ShowNewBadge. -->
@@ -151,6 +369,7 @@
          ══════════════════════════════════════════════════════════════════════ -->
 
     <DataTemplate x:Key="TweakToggleRowTemplate">
+                <StackPanel>
         <Border
             BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
             BorderThickness="0,1,0,0"
@@ -264,9 +483,13 @@
                 </Grid>
             </Grid>
         </Border>
-    </DataTemplate>
+            <ContentControl ContentTemplate="{StaticResource TechnicalDetailsFooterTemplate}" HorizontalAlignment="Stretch"/>
+    
+                </StackPanel>
+            </DataTemplate>
 
     <DataTemplate x:Key="TweakDropdownRowTemplate">
+                <StackPanel>
         <Border
             BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
             BorderThickness="0,1,0,0"
@@ -379,9 +602,13 @@
                 </Grid>
             </Grid>
         </Border>
-    </DataTemplate>
+            <ContentControl ContentTemplate="{StaticResource TechnicalDetailsFooterTemplate}" HorizontalAlignment="Stretch"/>
+    
+                </StackPanel>
+            </DataTemplate>
 
     <DataTemplate x:Key="TweakPowerPlanRowTemplate">
+                <StackPanel>
         <Border
             BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
             BorderThickness="0,1,0,0"
@@ -449,10 +676,14 @@
                 </Grid>
             </Grid>
         </Border>
-    </DataTemplate>
+            <ContentControl ContentTemplate="{StaticResource TechnicalDetailsFooterTemplate}" HorizontalAlignment="Stretch"/>
+    
+                </StackPanel>
+            </DataTemplate>
 
     <!-- Single NumericRange spinner (non-Separate PowerCfg). -->
     <DataTemplate x:Key="TweakNumericRowTemplate">
+                <StackPanel>
         <Border
             BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
             BorderThickness="0,1,0,0"
@@ -567,10 +798,14 @@
                 </Grid>
             </Grid>
         </Border>
-    </DataTemplate>
+            <ContentControl ContentTemplate="{StaticResource TechnicalDetailsFooterTemplate}" HorizontalAlignment="Stretch"/>
+    
+                </StackPanel>
+            </DataTemplate>
 
     <!-- Single AC NumericRange spinner (Separate PowerCfg, desktop without battery). -->
     <DataTemplate x:Key="TweakSingleACNumericRowTemplate">
+                <StackPanel>
         <Border
             BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
             BorderThickness="0,1,0,0"
@@ -685,10 +920,14 @@
                 </Grid>
             </Grid>
         </Border>
-    </DataTemplate>
+            <ContentControl ContentTemplate="{StaticResource TechnicalDetailsFooterTemplate}" HorizontalAlignment="Stretch"/>
+    
+                </StackPanel>
+            </DataTemplate>
 
     <!-- Dual AC/DC NumericRange spinners (Separate PowerCfg, laptop with battery). -->
     <DataTemplate x:Key="TweakDualNumericRowTemplate">
+                <StackPanel>
         <Border
             BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
             BorderThickness="0,1,0,0"
@@ -850,7 +1089,10 @@
                 </Grid>
             </Grid>
         </Border>
-    </DataTemplate>
+            <ContentControl ContentTemplate="{StaticResource TechnicalDetailsFooterTemplate}" HorizontalAlignment="Stretch"/>
+    
+                </StackPanel>
+            </DataTemplate>
 
     <selectors:TweakRowTemplateSelector
         x:Key="TweakRowSelector"

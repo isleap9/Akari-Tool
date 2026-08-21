@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Windows.Graphics;
 using AkariTool.Services;
 using AkariTool.Tabs;
+using AkariTool.Core.Features.Common.Interfaces;
 using AkariTool.ViewModels.AdvancedTools;
 using AkariTool.ViewModels.Software;
 using AkariTool.ViewModels.Tweaks;
@@ -82,7 +83,8 @@ public sealed partial class MainWindow : Window
         ISettingsService settings,
         ToolService tool,
         IFileService files,
-        SettingBackupService backup)
+        SettingBackupService backup,
+        IDispatcherService dispatcherService)
     {
         _navigation = navigation;
         _dialogs = dialogs;
@@ -93,6 +95,11 @@ public sealed partial class MainWindow : Window
         _tool = tool;
         _files = files;
         _backup = backup;
+
+        // Late-initialized service (see DispatcherService remarks): the DI container
+        // builds before any Window exists, so the UI DispatcherQueue can only be
+        // captured here, on the UI thread, after InitializeComponent.
+        dispatcherService.Initialize(DispatcherQueue);
         _themeChangedHandler = (_, _) => UpdateThemeVisuals();
 
         InitializeComponent();

@@ -100,6 +100,7 @@
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
                 <!-- The tweak-rendering layer: section card, row templates, badge
                      pills and their selectors. Shared by every tweak tab. -->
+                <ResourceDictionary Source="ms-appx:///Views/Templates/TechnicalDetailsStyles.xaml" />
                 <ResourceDictionary Source="ms-appx:///Views/Templates/TweakTemplates.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
