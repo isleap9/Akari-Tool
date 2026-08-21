@@ -227,21 +227,45 @@ public abstract partial class SettingPageViewModel : ViewModelBase
     [RelayCommand]
     public async Task ApplyAllRecommendedAsync()
     {
+        var progress = WinUI.Framework.IoC.ServiceLocator.GetService<ITaskProgressService>();
+        var cts = progress.StartTask("Applying recommended settings…");
+        try
+        {
         foreach (var section in Sections)
             foreach (var item in section.Items.OfType<SettingItemViewModel>())
+            {
+                if (cts.IsCancellationRequested) break;
                 if (item.HasRecommendedQuickSet)
                     await item.ApplyRecommendedCommand.ExecuteAsync(null);
+            }
         RefreshQuickActionCounts();
+        }
+        finally
+        {
+            progress.CompleteTask();
+        }
     }
 
     [RelayCommand]
     public async Task RestoreDefaultsAsync()
     {
+        var progress = WinUI.Framework.IoC.ServiceLocator.GetService<ITaskProgressService>();
+        var cts = progress.StartTask("Restoring default settings…");
+        try
+        {
         foreach (var section in Sections)
             foreach (var item in section.Items.OfType<SettingItemViewModel>())
+            {
+                if (cts.IsCancellationRequested) break;
                 if (item.HasDefaultQuickSet)
                     await item.ApplyDefaultCommand.ExecuteAsync(null);
+            }
         RefreshQuickActionCounts();
+        }
+        finally
+        {
+            progress.CompleteTask();
+        }
     }
 
     [RelayCommand]

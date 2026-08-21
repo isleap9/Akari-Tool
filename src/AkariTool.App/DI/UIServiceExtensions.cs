@@ -53,6 +53,7 @@ public static class UIServiceExtensions
         // it needs the vendored ISettingsService; interface is Core.
         services.AddSingleton<INewBadgeService, NewBadgeService>();
         services.AddSingleton<INavBadgeService, NavBadgeService>();
+        services.AddSingleton<ITaskProgressService, TaskProgressService>();
 
                 // Winhance 1:1 port for TechnicalDetailsManager dependencies
                 services.AddSingleton<ILocalizationService, WinUI.Framework.Services.LocalizationService>();
