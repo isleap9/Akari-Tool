@@ -382,34 +382,27 @@ public static class GamingOptimizations
             FeatureId = "gaming-processor",
             Settings =
             [
+                // gaming-win32-priority — bitfield: fresh-install default is 2, while the Windows
+                // GUI's "Programs" radio writes 38 (0x26); both encode "Programs". Only
+                // "Background Services" (24) is a single exact value, so unrecognised values
+                // resolve to the "Programs" default.
                 new SettingDefinition
                 {
                     Id = "gaming-win32-priority",
-                    Name = "Win32 Priority Separation",
-                    Description = "Controls how much CPU time is given to foreground vs background processes",
+                    Name = "Adjust processor for best performance of",
+                    Description = "Configure how Windows allocates CPU time between foreground applications and background services",
                     InputType = InputType.Selection,
-                    IsSubjectivePreference = true,
+                    ResolveUnmatchedToDefault = true,
                     RegistrySettings =
                     [
-                        new RegistrySetting
-                        {
-                            KeyPath = @"HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\PriorityControl",
-                            ValueName = "Win32PrioritySeparation",
-                            RecommendedValue = 42,
-                            DefaultValue = 22,
-                            ValueType = RegistryValueKind.DWord,
-                            IsPrimary = true,
-                        },
+                        new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\PriorityControl", ValueName = "Win32PrioritySeparation", RecommendedValue = null, DefaultValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
                     ],
                     ComboBox = new ComboBoxMetadata
                     {
                         Options =
                         [
-                            new ComboBoxOption { DisplayName = "2A (hex) — recommended", IsRecommended = true, ValueMappings = new Dictionary<string, object?> { ["Win32PrioritySeparation"] = 42 } },
-                            new ComboBoxOption { DisplayName = "26 (hex)", ValueMappings = new Dictionary<string, object?> { ["Win32PrioritySeparation"] = 38 } },
-                            new ComboBoxOption { DisplayName = "28 (hex)", ValueMappings = new Dictionary<string, object?> { ["Win32PrioritySeparation"] = 40 } },
-                            new ComboBoxOption { DisplayName = "16 (hex)", IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Win32PrioritySeparation"] = 22 } },
-                            new ComboBoxOption { DisplayName = "06 (hex)", ValueMappings = new Dictionary<string, object?> { ["Win32PrioritySeparation"] = 6 } },
+                            new ComboBoxOption { DisplayName = "Programs", IsRecommended = true, IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Win32PrioritySeparation"] = 38 } },
+                            new ComboBoxOption { DisplayName = "Background Services", ValueMappings = new Dictionary<string, object?> { ["Win32PrioritySeparation"] = 24 } },
                         ],
                     },
                 },

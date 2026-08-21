@@ -347,7 +347,7 @@ public sealed class WindowsRegistryService : IWindowsRegistryService
 
     // ── Composite string helpers ──────────────────────────────────────────
 
-    private static Dictionary<string, string> ParseCompositeString(string value)
+    internal static Dictionary<string, string> ParseCompositeString(string value)
     {
         var pairs = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         if (string.IsNullOrEmpty(value)) return pairs;

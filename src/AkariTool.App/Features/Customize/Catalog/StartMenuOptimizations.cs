@@ -128,6 +128,7 @@ public static class StartMenuOptimizations
                     Description = "Sets Start Menu layout to show more pinned apps and fewer recommendations",
                     InputType = InputType.Toggle,
                     IsSubjectivePreference = false,
+                    RecommendedToggleState = true,
                     DefaultToggleState = false,
                     RegistrySettings = new[]
                     {

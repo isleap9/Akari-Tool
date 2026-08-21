@@ -30,7 +30,7 @@ public static class TaskbarOptimizations
                     Description = "Moves taskbar icons to the left — restores Windows 10 layout",
                     InputType = InputType.Toggle,
                     IsSubjectivePreference = false,
-                    RecommendedToggleState = false,
+                    RecommendedToggleState = true,
                     DefaultToggleState = false,
                     RegistrySettings = new[]
                     {
@@ -270,6 +270,7 @@ public static class TaskbarOptimizations
                     Description = "Automatically hides the taskbar when not in use, revealing it when you move the cursor to the bottom of the screen.",
                     InputType = InputType.Toggle,
                     IsSubjectivePreference = true,
+                    RecommendedToggleState = false,
                     DefaultToggleState = false,
                     RestartProcess = "explorer",
                     RegistrySettings = new[]
@@ -719,7 +720,7 @@ public static class TaskbarOptimizations
                     {
                         Options = new[]
                         {
-                            new ComboBoxOption { DisplayName = "Windows default", IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["TaskbarAcrylicOpacity"] = null } },
+                            new ComboBoxOption { DisplayName = "Windows default", IsDefault = true, IsRecommended = true, ValueMappings = new Dictionary<string, object?> { ["TaskbarAcrylicOpacity"] = null } },
                             new ComboBoxOption { DisplayName = "Transparent", ValueMappings = new Dictionary<string, object?> { ["TaskbarAcrylicOpacity"] = 0 } },
                             new ComboBoxOption { DisplayName = "Opaque", ValueMappings = new Dictionary<string, object?> { ["TaskbarAcrylicOpacity"] = 255 } },
                         },

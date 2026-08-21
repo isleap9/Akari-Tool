@@ -873,7 +873,7 @@ public static class ExplorerOptimizations
             {
                 // customize-explorer-disable-folder-auto-discovery — writes two values:
                 //   enable = FolderContentsInfoTip 0 + ClassicViewState 1; disable = both absent.
-                //   No Recommended; both-absent out of the box → DefaultState off.
+                //   Recommended off (Winhance parity: folder tips shown); stock = both absent → Default off.
                 new SettingDefinition
                 {
                     Id = "customize-explorer-disable-folder-auto-discovery",
@@ -881,6 +881,7 @@ public static class ExplorerOptimizations
                     Description = "Stops Explorer from auto-changing folder view templates based on content",
                     InputType = InputType.Toggle,
                     IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
                     DefaultToggleState = false,
                     RegistrySettings = new[]
                     {
@@ -1007,6 +1008,7 @@ public static class ExplorerOptimizations
                     Description = "Stops the AutoPlay dialog when inserting USB drives, DVDs, or SD cards, and blocks autorun on all drive types. Off restores the Windows default",
                     InputType = InputType.Toggle,
                     IsSubjectivePreference = false,
+                    RecommendedToggleState = false,
                     DefaultToggleState = false,
                     RegistrySettings = new[]
                     {

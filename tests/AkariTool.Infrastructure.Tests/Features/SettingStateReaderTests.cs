@@ -4,6 +4,7 @@ using AkariTool.Core.Features.Common.Interfaces;
 using AkariTool.Core.Features.Common.Models;
 using AkariTool.Infrastructure.Features.Common.Services;
 using FluentAssertions;
+using Microsoft.Win32;
 using NSubstitute;
 using Xunit;
 
@@ -210,5 +211,68 @@ public class SettingStateReaderTests
 
         ac.Should().Be(1000);
         dc.Should().Be(1000);
+    }
+
+    // ── Composite REG_SZ toggle state (Winhance IsRegistryValueInEnabledState parity) ──
+
+    private const string DirectXComposite = "SwapEffectUpgradeEnable=1;VRROptimizeEnable=0;AutoHDREnable=0;";
+
+    private static RegistrySetting MakeDirectXSetting(string compositeKey, string defaultValue) => new()
+    {
+        KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\DirectX\UserGpuPreferences",
+        ValueName = "DirectXUserGlobalSettings",
+        RecommendedValue = "1",
+        DefaultValue = defaultValue,
+        EnabledValue = new object?[] { "1", null },
+        DisabledValue = new object?[] { "0" },
+        ValueType = RegistryValueKind.String,
+        CompositeStringKey = compositeKey,
+        IsPrimary = true,
+    };
+
+    [Theory]
+    [InlineData("SwapEffectUpgradeEnable=1;VRROptimizeEnable=0;", true)]   // applied recommended
+    [InlineData("SwapEffectUpgradeEnable=0;VRROptimizeEnable=0;", false)]  // applied disabled
+    [InlineData("VRROptimizeEnable=0;AutoHDREnable=1;", true)]             // flip-model default-on implied
+    public void ResolveCompositeState_FlipModel_MatchesWinhanceSemantics(string raw, bool expected)
+    {
+        // DefaultToggleState = true → DefaultValue "1"; absent sub-key implies enabled.
+        var setting = MakeDirectXSetting("SwapEffectUpgradeEnable", "1");
+
+        SettingStateReader.ResolveCompositeState(setting, raw).Should().Be(expected);
+    }
+
+    [Fact]
+    public void ResolveCompositeState_SubKeyAbsent_DefaultOff_ImpliesDisabled()
+    {
+        // Auto HDR: DefaultValue "0" vs Enabled "1" → absent sub-key reads disabled.
+        var setting = MakeDirectXSetting("AutoHDREnable", "0");
+
+        SettingStateReader.ResolveCompositeState(setting, DirectXComposite).Should().BeFalse();
+    }
+
+    [Fact]
+    public void ResolveCompositeState_ValueAbsent_ResolvesViaDefaultValue()
+    {
+        var setting = MakeDirectXSetting("SwapEffectUpgradeEnable", "1");
+
+        SettingStateReader.ResolveCompositeState(setting, null).Should().BeTrue();
+        SettingStateReader.ResolveCompositeState(setting, "").Should().BeTrue();
+    }
+
+    [Fact]
+    public void ResolveCompositeState_ValueAbsent_DefaultDiffersFromEnabled_IsDisabled()
+    {
+        var setting = MakeDirectXSetting("AutoHDREnable", "0");
+
+        SettingStateReader.ResolveCompositeState(setting, null).Should().BeFalse();
+    }
+
+    [Fact]
+    public void ResolveCompositeState_KeyMatchIsCaseInsensitive()
+    {
+        var setting = MakeDirectXSetting("SwapEffectUpgradeEnable", "1");
+
+        SettingStateReader.ResolveCompositeState(setting, "swapeffectupgradeenable=1;").Should().BeTrue();
     }
 }

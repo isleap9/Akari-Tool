@@ -40,6 +40,13 @@ public sealed class SettingStateReader(
             {
                 bool isKeyExistence = SettingDefinitionToggleState.IsKeyExistenceToggle(registrySetting);
 
+                // Composite REG_SZ (e.g. DirectXUserGlobalSettings): extract the owned sub-key
+                // before comparing. Runs before the key/value-absent checks because a missing
+                // sub-key resolves its implied state via DefaultValue (Winhance
+                // IsRegistryValueInEnabledState parity).
+                if (!isKeyExistence && registrySetting.CompositeStringKey != null)
+                    return ResolveCompositeState(registrySetting, subkey?.GetValue(registrySetting.ValueName));
+
                 if (subkey == null)
                 {
                     // Key absent = disabled (whether or not this is a key-existence toggle).
@@ -251,6 +258,23 @@ public sealed class SettingStateReader(
         {
             return (null, null);
         }
+    }
+
+    /// <summary>
+    /// Resolves a composite REG_SZ toggle state from its raw string value.
+    /// Winhance IsRegistryValueInEnabledState parity: the owned sub-key is extracted
+    /// and compared against EnabledValue; when absent, the implied state comes from
+    /// DefaultValue. Internal + pure so it can be tested without a real registry.
+    /// </summary>
+    internal static bool ResolveCompositeState(RegistrySetting setting, object? rawValue)
+    {
+        var pairs = WindowsRegistryService.ParseCompositeString(rawValue?.ToString() ?? "");
+        var enabledStr = setting.EnabledValue?.FirstOrDefault(v => v != null)?.ToString();
+        if (pairs.TryGetValue(setting.CompositeStringKey!, out var subValue))
+            return string.Equals(subValue, enabledStr, StringComparison.OrdinalIgnoreCase);
+
+        return string.Equals(setting.DefaultValue?.ToString(), enabledStr,
+            StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
