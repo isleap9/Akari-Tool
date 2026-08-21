@@ -2771,6 +2771,74 @@ public static class GamingOptimizations
                             new ComboBoxOption { DisplayName = "Custom", ValueMappings = new Dictionary<string, object?> { ["VisualFXSetting"] = 3 } },
                         ],
                     },
+                    // Winhance 1:1: selecting a mode applies the preset to every child toggle.
+                    // [0] applies a "Balanced" preset because Windows' own "let Windows decide"
+                    // does not materialize a concrete configuration on its own.
+                    SettingPresets = new Dictionary<int, Dictionary<string, bool>>
+                    {
+                        [0] = new Dictionary<string, bool>
+                        {
+                            ["ui-effects"] = false,
+                            ["window-animation"] = false,
+                            ["taskbar-animations"] = false,
+                            ["enable-peek"] = true,
+                            ["menu-animation"] = false,
+                            ["fade-tooltip"] = false,
+                            ["fade-menu-items"] = false,
+                            ["taskbar-thumbnails"] = true,
+                            ["mouse-shadow"] = false,
+                            ["window-shadows"] = false,
+                            ["show-thumbnails"] = true,
+                            ["translucent-selection"] = true,
+                            ["drag-full-windows"] = true,
+                            ["combo-box-animation"] = false,
+                            ["font-smoothing"] = true,
+                            ["smooth-scroll-listboxes"] = true,
+                            ["drop-shadows"] = false,
+                        },
+                        [1] = new Dictionary<string, bool>
+                        {
+                            ["ui-effects"] = true,
+                            ["window-animation"] = true,
+                            ["taskbar-animations"] = true,
+                            ["enable-peek"] = true,
+                            ["menu-animation"] = true,
+                            ["fade-tooltip"] = true,
+                            ["fade-menu-items"] = true,
+                            ["taskbar-thumbnails"] = true,
+                            ["mouse-shadow"] = true,
+                            ["window-shadows"] = true,
+                            ["show-thumbnails"] = true,
+                            ["translucent-selection"] = true,
+                            ["drag-full-windows"] = true,
+                            ["combo-box-animation"] = true,
+                            ["font-smoothing"] = true,
+                            ["smooth-scroll-listboxes"] = true,
+                            ["drop-shadows"] = true,
+                        },
+                        // [2] Best Performance — everything off (1:1 Winhance).
+                        [2] = new Dictionary<string, bool>
+                        {
+                            ["ui-effects"] = false,
+                            ["window-animation"] = false,
+                            ["taskbar-animations"] = false,
+                            ["enable-peek"] = false,
+                            ["menu-animation"] = false,
+                            ["fade-tooltip"] = false,
+                            ["fade-menu-items"] = false,
+                            ["taskbar-thumbnails"] = false,
+                            ["mouse-shadow"] = false,
+                            ["window-shadows"] = false,
+                            ["show-thumbnails"] = false,
+                            ["translucent-selection"] = false,
+                            ["drag-full-windows"] = false,
+                            ["combo-box-animation"] = false,
+                            ["font-smoothing"] = false,
+                            ["smooth-scroll-listboxes"] = false,
+                            ["drop-shadows"] = false,
+                        },
+                        // No [3]: Custom applies no preset (children stay as-is).
+                    },
                 },
                 new SettingDefinition
                 {
