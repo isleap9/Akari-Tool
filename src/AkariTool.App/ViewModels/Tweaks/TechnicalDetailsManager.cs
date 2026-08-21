@@ -1,18 +1,19 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Dispatching;
-using AkariTool.Core.Features.Common.Enums;
+using WinUI.Framework.Services;
 using AkariTool.Core.Features.Common.Events;
 using AkariTool.Core.Features.Common.Events.UI;
 using AkariTool.Core.Features.Common.Interfaces;
 using AkariTool.Core.Features.Common.Models;
-using AkariTool.App.Features.Common.Interfaces;
-using AkariTool.App.Features.Common.Models;
-using AkariTool.App.Features.Common.Utilities;
+using AkariTool.Core.Features.Common.Enums;
+using AkariTool.Features.Common.Models;
+using AkariTool.Features.Common.Utilities;
+using LogLevel = WinUI.Framework.Services.LogLevel;
 
-namespace AkariTool.App.ViewModels.Tweaks;
+namespace AkariTool.ViewModels.Tweaks;
 
 /// <summary>
 /// Manages the technical details panel: tooltip event subscription,
@@ -60,6 +61,59 @@ internal sealed class TechnicalDetailsManager : IDisposable
         if (evt.SettingId != _getSettingId()) return;
         _dispatcherService.RunOnUIThread(DispatcherQueuePriority.Low,
             () => UpdateTechnicalDetails(evt.TooltipData));
+    }
+
+    /// <summary>
+    /// Direct-refresh path (Winhance ISettingApplicationService parity): reads the
+    /// definition's current system state and runs the same section pipeline as the
+    /// event-driven path. Called by SettingItemViewModel after every user-driven or
+    /// quick-set apply.
+    /// </summary>
+    public async Task UpdateTechnicalDetailsAsync(
+        SettingItemViewModel item,
+        SettingDefinition definition,
+        ISettingStateReader stateReader,
+        ISettingOperationExecutor executor)
+    {
+        var data = await Task.Run(() => BuildTooltipData(definition, stateReader)).ConfigureAwait(false);
+        _dispatcherService.RunOnUIThread(DispatcherQueuePriority.Low,
+            () => UpdateTechnicalDetails(data));
+    }
+
+    private static SettingTooltipData BuildTooltipData(SettingDefinition definition, ISettingStateReader stateReader)
+    {
+        // Raw per-RegistrySetting current values (null = value/key absent). Resolved via the
+        // ServiceLocator because the reader interface only exposes typed helpers.
+        var registry = WinUI.Framework.IoC.ServiceLocator.GetService<AkariTool.Infrastructure.Features.Common.Interfaces.IWindowsRegistryService>();
+        var regValues = new Dictionary<RegistrySetting, string?>();
+        foreach (var r in definition.RegistrySettings ?? [])
+            regValues[r] = registry.GetValue(r.KeyPath, r.ValueName ?? "")?.ToString();
+
+        var powerValues = new Dictionary<PowerCfgSetting, (int? AC, int? DC)>();
+        // Live per-setting powercfg probes are not exposed on ISettingStateReader yet —
+        // Current columns stay blank until a query seam lands (follow-up).
+
+        bool? currentState = definition.InputType switch
+        {
+            InputType.Toggle or InputType.CheckBox => stateReader.ReadToggleState(definition),
+            _ => null
+        };
+
+        return new SettingTooltipData
+        {
+            SettingId = definition.Id,
+            Description = definition.Description,
+            DisplayValue = string.Empty,
+            IndividualRegistryValues = regValues,
+            ScheduledTaskSettings = definition.ScheduledTaskSettings ?? [],
+            PowerCfgSettings = definition.PowerCfgSettings ?? [],
+            PowerShellScripts = definition.PowerShellScripts ?? [],
+            RegContents = definition.RegContents ?? [],
+            Dependencies = definition.Dependencies ?? [],
+            CurrentPowerValues = powerValues,
+            CurrentSettingState = currentState,
+            SettingDefinition = definition,
+        };
     }
 
     private void UpdateTechnicalDetails(SettingTooltipData tooltipData)

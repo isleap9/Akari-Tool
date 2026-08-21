@@ -1,7 +1,7 @@
-using System.Collections.Generic;
-using AkariTool.App.Features.Common.Models;
+﻿using System.Collections.Generic;
+using AkariTool.Features.Common.Models;
 
-namespace AkariTool.App.Features.Common.Models;
+namespace AkariTool.Features.Common.Models;
 
 /// <summary>
 /// A section in the Technical Details panel, grouping rows of the same type.

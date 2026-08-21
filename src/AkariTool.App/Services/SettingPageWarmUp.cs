@@ -1,7 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using AkariTool.Core.Features.Common.Interfaces;
 using AkariTool.ViewModels.Tweaks;
-using WinUI.Framework.Services;
 
 namespace AkariTool.Services;
 
@@ -15,7 +14,7 @@ namespace AkariTool.Services;
 /// </summary>
 public static class SettingPageWarmUp
 {
-    public static void Run(IServiceProvider services, ILogService log)
+    public static void Run(IServiceProvider services, WinUI.Framework.Services.ILogService log)
     {
         try
         {

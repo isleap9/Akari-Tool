@@ -5,9 +5,10 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using WinUI.Framework.Mvvm;
-using WinUI.Framework.Services;
 using AkariTool.Core.Features.Common.Models;
 using AkariTool.Core.Features.Common.Interfaces;
+using WinUI.Framework.Services;
+using AkariTool.Core.Features.Common.Events;
 using AkariTool.Infrastructure.Features.Common.Interfaces;
 using AkariTool.Services;
 using AkariTool.Core.Interfaces;
@@ -72,7 +73,7 @@ public abstract partial class SettingPageViewModel : ViewModelBase
                        dispatcherService: _dispatcherService,
                        regeditLauncher: _regeditLauncher,
                        eventBus: _eventBus,
-                       logService: sp => sp.GetRequiredService<ILogService>());
+                       logService: WinUI.Framework.IoC.ServiceLocator.GetService<ILogService>());
 
     /// <summary>
     /// Extra catalogs the dependency resolver may need beyond this page's own rows

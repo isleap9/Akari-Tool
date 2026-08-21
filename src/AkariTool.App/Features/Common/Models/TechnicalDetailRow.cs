@@ -1,7 +1,7 @@
-using CommunityToolkit.Mvvm.Input;
+﻿using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Xaml.Media.Imaging;
 
-namespace AkariTool.App.Features.Common.Models;
+namespace AkariTool.Features.Common.Models;
 
 public enum DetailRowType
 {

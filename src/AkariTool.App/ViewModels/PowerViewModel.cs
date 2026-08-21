@@ -1,13 +1,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using AkariTool.Core.Features.Common.Interfaces;
+using WinUI.Framework.Services;
+using AkariTool.Core.Features.Common.Events;
 using AkariTool.Core.Features.Common.Models;
 using AkariTool.Core.Interfaces;
 using AkariTool.Services;
 using AkariTool.Tabs.Power;
 using AkariTool.Tabs.Privacy;
 using AkariTool.ViewModels.Tweaks;
-using WinUI.Framework.Services;
 
 namespace AkariTool.ViewModels;
 
@@ -36,7 +37,7 @@ public sealed partial class PowerViewModel : SettingPageViewModel
     private readonly IPowerSettingsValidationService _validation;
     private readonly IPowerPlanComboBoxService _planComboBoxService;
     private readonly IPowerService _powerService;
-    private readonly ISettingsService _settings;
+    private readonly WinUI.Framework.Services.ISettingsService _settings;
     private readonly IReadOnlyList<SettingDefinition> _powerCatalog;
     private bool _hasBattery;
 
@@ -48,7 +49,7 @@ public sealed partial class PowerViewModel : SettingPageViewModel
             IPowerSettingsValidationService validation,
             IPowerPlanComboBoxService planComboBoxService,
             IPowerService powerService,
-            ISettingsService settings,
+            WinUI.Framework.Services.ISettingsService settings,
             ISettingDependencyResolver? dependencyResolver = null,
             ILocalizationService? localizationService = null,
             IDispatcherService? dispatcherService = null,

@@ -15,6 +15,7 @@ using AkariTool.Infrastructure.Features.Common.Interfaces;
 using AkariTool.Services;
 using AkariTool.Core.Features.Common.Events;
 using AkariTool.Core.Interfaces;
+using AkariTool.Features.Common.Models;
 
 namespace AkariTool.ViewModels.Tweaks;
 
@@ -33,7 +34,7 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
     private readonly IPowerService? _powerService;
     private readonly IReadOnlyList<SettingDefinition>? _powerCatalog;
     private readonly INewBadgeService? _newBadgeService;
-    private readonly ISettingsService? _settingsService;
+    private readonly WinUI.Framework.Services.ISettingsService? _settingsService;
     private readonly ISettingDependencyResolver? _dependencyResolver;
         private IReadOnlyList<SettingDefinition>? _dependencyContext;
 
@@ -56,7 +57,7 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
                 IPowerService? powerService = null,
                 IReadOnlyList<SettingDefinition>? powerCatalog = null,
                 INewBadgeService? newBadgeService = null,
-                ISettingsService? settingsService = null,
+                WinUI.Framework.Services.ISettingsService? settingsService = null,
                 ISettingDependencyResolver? dependencyResolver = null,
                 ILocalizationService? localizationService = null,
                 IEventBus? eventBus = null,
@@ -204,7 +205,7 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
 
         public string OpenRegeditTooltip => "Open in Registry Editor";
 
-        public IAsyncRelayCommand OpenRegeditCommand { get; private set; }
+        public IRelayCommand<string>? OpenRegeditCommand { get; private set; }
 
         // ─── Advanced unlock (Winhance port) ────────────────────────────────────────
 

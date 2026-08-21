@@ -2,12 +2,13 @@ using System.Collections.Generic;
 using System.Linq;
 using AkariTool.Core.Features.Common.Models;
 using AkariTool.Core.Features.Common.Interfaces;
+using WinUI.Framework.Services;
+using AkariTool.Core.Features.Common.Events;
 using AkariTool.Core.Interfaces;
 using AkariTool.Infrastructure.Features.Common.Interfaces;
 using AkariTool.Services;
 using AkariTool.Tabs.Privacy;
 using AkariTool.ViewModels.Tweaks;
-using WinUI.Framework.Services;
 
 namespace AkariTool.ViewModels;
 

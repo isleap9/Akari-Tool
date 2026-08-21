@@ -1,11 +1,11 @@
-using System;
+﻿using System;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Windows.Graphics.Imaging;
 
-namespace AkariTool.App.Features.Common.Utilities;
+namespace AkariTool.Features.Common.Utilities;
 
 /// <summary>
 /// Extracts the regedit.exe icon using P/Invoke and caches it as a WinUI3-compatible SoftwareBitmapSource.

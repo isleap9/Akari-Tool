@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using AkariTool.Core.Features.Common.Enums;
 using AkariTool.Core.Features.Common.Events;
+using AkariTool.Core.Features.Common.Interfaces;
 using AkariTool.Infrastructure.Features.Common.Interfaces;
 
 namespace AkariTool.Infrastructure.Features.Common.Events;
@@ -34,13 +35,11 @@ public class EventBus : IEventBus
             throw new ArgumentNullException(nameof(domainEvent));
 
         var eventType = typeof(TEvent);
-
         List<Subscription>? subscriptions;
         lock (_lock)
         {
             if (!_subscriptions.TryGetValue(eventType, out subscriptions))
                 return; // No subscribers
-
             // Create a copy to avoid modification during enumeration
             subscriptions = subscriptions.ToList();
         }
@@ -103,7 +102,6 @@ public class EventBus : IEventBus
             if (_subscriptions.TryGetValue(token.EventType, out var subscriptions))
             {
                 subscriptions.RemoveAll(s => s.Id == token.SubscriptionId);
-
                 // Remove the event type if there are no more subscriptions
                 if (subscriptions.Count == 0)
                     _subscriptions.Remove(token.EventType);
@@ -114,7 +112,6 @@ public class EventBus : IEventBus
     private ISubscriptionToken AddSubscription(Type eventType, Delegate handler, bool isAsync)
     {
         var subscription = new Subscription(eventType, handler, isAsync);
-
         lock (_lock)
         {
             if (!_subscriptions.TryGetValue(eventType, out var subscriptions))
@@ -122,7 +119,6 @@ public class EventBus : IEventBus
                 subscriptions = new List<Subscription>();
                 _subscriptions[eventType] = subscriptions;
             }
-
             subscriptions.Add(subscription);
         }
 
@@ -138,7 +134,6 @@ public class EventBus : IEventBus
         public Type EventType { get; }
         public Delegate Handler { get; }
         public bool IsAsync { get; }
-
         public Subscription(Type eventType, Delegate handler, bool isAsync)
         {
             Id = Guid.NewGuid();

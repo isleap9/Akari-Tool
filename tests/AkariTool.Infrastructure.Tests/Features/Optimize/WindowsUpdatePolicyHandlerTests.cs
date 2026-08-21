@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using AkariTool.Core.Features.Common.Models;
+using AkariTool.Core.Features.Common.Interfaces;
 using AkariTool.Infrastructure.Features.Common.Interfaces;
 using AkariTool.Infrastructure.Features.Optimize.Services;
 using FluentAssertions;

@@ -1,8 +1,8 @@
-using System.Threading;
+﻿using System.Threading;
 using Microsoft.UI.Dispatching;
-using AkariTool.App.ViewModels.Common.Interfaces;
+using AkariTool.Core.Features.Common.Interfaces;
 
-namespace AkariTool.App.Features.Common.Services;
+namespace AkariTool.Features.Common.Services;
 
 /// <summary>
 /// Implementation of IDispatcherService for WinUI 3.

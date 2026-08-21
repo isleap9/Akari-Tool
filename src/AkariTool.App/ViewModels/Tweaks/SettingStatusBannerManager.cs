@@ -3,8 +3,11 @@ using System.Collections.Generic;
 using Microsoft.UI.Xaml.Controls;
 using AkariTool.Core.Features.Common.Models;
 using AkariTool.Core.Features.Common.Interfaces;
+using AkariTool.Core.Features.Common.Constants;
+using AkariTool.Core.Features.Common.Enums;
+using WinUI.Framework.Services;
 
-namespace AkariTool.App.ViewModels.Tweaks;
+namespace AkariTool.ViewModels.Tweaks;
 
 /// <summary>
 /// Computes status banner messages for setting items (compatibility warnings,
@@ -88,6 +91,51 @@ internal sealed class SettingStatusBannerManager
         return new BannerState(
             _localizationService.GetString("Common_RestartRequired"),
             InfoBarSeverity.Warning);
+    }
+
+    /// <summary>
+    /// Post-apply banner orchestration (Winhance SettingItemViewModel parity):
+    /// failure → Error; Selection value change → option warning / cross-group /
+    /// compatibility banner; "keep existing" (null) leaves the current banner;
+    /// otherwise a restart-required notice overrides a clear state.
+    /// </summary>
+    public Task ApplyBannerAsync(
+        SettingItemViewModel item,
+        SettingDefinition? definition,
+        bool isSuccess,
+        string? customMessage,
+        bool isRecommended,
+        bool isDefault,
+        ISettingStateReader stateReader)
+    {
+        if (!isSuccess)
+        {
+            Apply(item, new BannerState(
+                customMessage ?? "The setting could not be applied.",
+                InfoBarSeverity.Error));
+            return Task.CompletedTask;
+        }
+
+        int? value = definition?.InputType == InputType.Selection ? item.SelectedIndex : null;
+        var computed = ComputeBannerForValue(definition, value, null);
+        if (computed == null)
+            return Task.CompletedTask; // keep existing banner
+
+        var next = computed.Value;
+        if (next.Message is null)
+        {
+            var restart = GetRestartBanner(definition, hasChangedThisSession: true);
+            if (restart != null) next = restart.Value;
+        }
+
+        Apply(item, next);
+        return Task.CompletedTask;
+    }
+
+    private static void Apply(SettingItemViewModel item, BannerState state)
+    {
+        item.StatusBannerMessage = state.Message ?? string.Empty;
+        item.StatusBannerSeverity = state.Severity;
     }
 
     private BannerState ComputeCrossGroupBanner(

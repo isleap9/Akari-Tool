@@ -1,4 +1,4 @@
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using AkariTool.Services;
 using AkariTool.ViewModels;
 using AkariTool.ViewModels.Software;
@@ -7,6 +7,7 @@ using WinUI.Framework.Services;
 using AkariTool.Core.Tweaks;
 using AkariTool.Core.Interfaces;
 using AkariTool.Core.Features.Common.Interfaces;
+using AkariTool.Core.Features.Common.Events;
 using AkariTool.Infrastructure.Features.Common.Services;
 using AkariTool.Infrastructure.Features.Common.Interfaces;
 
@@ -54,9 +55,8 @@ public static class UIServiceExtensions
 
                 // Winhance 1:1 port for TechnicalDetailsManager dependencies
                 services.AddSingleton<ILocalizationService, WinUI.Framework.Services.LocalizationService>();
-                services.AddSingleton<IDispatcherService, AkariTool.App.Features.Common.Services.DispatcherService>();
+                services.AddSingleton<IDispatcherService, AkariTool.Features.Common.Services.DispatcherService>();
                 services.AddSingleton<IEventBus, AkariTool.Infrastructure.Features.Common.Events.EventBus>();
-                services.AddSingleton<ILogService, WinUI.Framework.Services.LogService>();
                 services.AddSingleton<SettingStatusBannerManager>();
                 services.AddSingleton<TechnicalDetailsManager>();
 
