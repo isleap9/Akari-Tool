@@ -23,8 +23,9 @@ public sealed partial class NotificationsViewModel : SettingPageViewModel
     public NotificationsViewModel(
         ISettingStateReader stateReader,
         ISettingOperationExecutor executor,
-        TweakDialogs dialogs)
-        : base(stateReader, executor, dialogs)
+        TweakDialogs dialogs,
+        ISettingDependencyResolver? dependencyResolver = null)
+        : base(stateReader, executor, dialogs, dependencyResolver: dependencyResolver)
     {
         Title = "Notifications";
         Subtitle = "Notification behavior and system alerts";

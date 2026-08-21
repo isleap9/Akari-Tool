@@ -18,8 +18,9 @@ public sealed partial class SoundViewModel : SettingPageViewModel
     public SoundViewModel(
         ISettingStateReader stateReader,
         ISettingOperationExecutor executor,
-        TweakDialogs dialogs)
-        : base(stateReader, executor, dialogs)
+        TweakDialogs dialogs,
+        ISettingDependencyResolver? dependencyResolver = null)
+        : base(stateReader, executor, dialogs, dependencyResolver: dependencyResolver)
     {
         Title = "Sound";
         Subtitle = "Audio behavior and accessibility sound settings";

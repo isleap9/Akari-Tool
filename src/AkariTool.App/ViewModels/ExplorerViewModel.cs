@@ -24,8 +24,9 @@ public sealed partial class ExplorerViewModel : SettingPageViewModel
     public ExplorerViewModel(
         ISettingStateReader stateReader,
         ISettingOperationExecutor executor,
-        TweakDialogs dialogs)
-        : base(stateReader, executor, dialogs)
+        TweakDialogs dialogs,
+        ISettingDependencyResolver? dependencyResolver = null)
+        : base(stateReader, executor, dialogs, dependencyResolver: dependencyResolver)
     {
         Title = "Explorer";
         Subtitle = "File Explorer view, behavior, associations, and This PC folders.";

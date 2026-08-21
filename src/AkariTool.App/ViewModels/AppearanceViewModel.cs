@@ -20,8 +20,9 @@ public sealed partial class AppearanceViewModel : SettingPageViewModel
     public AppearanceViewModel(
         ISettingStateReader stateReader,
         ISettingOperationExecutor executor,
-        TweakDialogs dialogs)
-        : base(stateReader, executor, dialogs)
+        TweakDialogs dialogs,
+        ISettingDependencyResolver? dependencyResolver = null)
+        : base(stateReader, executor, dialogs, dependencyResolver: dependencyResolver)
     {
         Title = "Appearance";
         Subtitle = "Theme, transparency, color, and window style.";

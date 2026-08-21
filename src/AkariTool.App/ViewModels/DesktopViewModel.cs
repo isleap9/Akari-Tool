@@ -20,8 +20,9 @@ public sealed partial class DesktopViewModel : SettingPageViewModel
     public DesktopViewModel(
         ISettingStateReader stateReader,
         ISettingOperationExecutor executor,
-        TweakDialogs dialogs)
-        : base(stateReader, executor, dialogs)
+        TweakDialogs dialogs,
+        ISettingDependencyResolver? dependencyResolver = null)
+        : base(stateReader, executor, dialogs, dependencyResolver: dependencyResolver)
     {
         Title = "Desktop";
         Subtitle = "Desktop icons, shortcuts, startup, devices, lock screen, and regional settings.";

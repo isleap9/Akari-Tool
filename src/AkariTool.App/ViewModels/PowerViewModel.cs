@@ -47,8 +47,9 @@ public sealed partial class PowerViewModel : SettingPageViewModel
         IPowerSettingsValidationService validation,
         IPowerPlanComboBoxService planComboBoxService,
         IPowerService powerService,
-        ISettingsService settings)
-        : base(stateReader, executor, dialogs)
+        ISettingsService settings,
+        ISettingDependencyResolver? dependencyResolver = null)
+        : base(stateReader, executor, dialogs, dependencyResolver: dependencyResolver)
     {
         _hardware = hardware;
         _validation = validation;
@@ -81,12 +82,14 @@ public sealed partial class PowerViewModel : SettingPageViewModel
             return new SettingItemViewModel(
                 s, _stateReader, _executor, _dialogs,
                 _hasBattery, _planComboBoxService, _powerService, _powerCatalog,
-                newBadgeService: _newBadgeService, settingsService: _settings);
+                newBadgeService: _newBadgeService, settingsService: _settings,
+                dependencyResolver: _dependencyResolver);
         // Numeric/Selection PowerCfg rows need HasBattery for the Dual/SingleAC
         // template split and per-mode badges.
         return new SettingItemViewModel(
             s, _stateReader, _executor, _dialogs, _hasBattery,
-            newBadgeService: _newBadgeService, settingsService: _settings);
+            newBadgeService: _newBadgeService, settingsService: _settings,
+            dependencyResolver: _dependencyResolver);
     }
 
     /// <summary>

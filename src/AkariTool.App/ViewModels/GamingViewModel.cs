@@ -32,8 +32,9 @@ public sealed partial class GamingViewModel : SettingPageViewModel
         ISettingOperationExecutor executor,
         TweakDialogs dialogs,
         ToolService tool,
-        INewBadgeService? newBadgeService = null)
-        : base(stateReader, executor, dialogs, newBadgeService)
+        INewBadgeService? newBadgeService = null,
+        ISettingDependencyResolver? dependencyResolver = null)
+        : base(stateReader, executor, dialogs, newBadgeService, dependencyResolver)
     {
         _tool = tool;
         Title = "Gaming & Performance";

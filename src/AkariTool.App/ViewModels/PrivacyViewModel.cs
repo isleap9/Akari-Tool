@@ -25,8 +25,9 @@ public sealed partial class PrivacyViewModel : SettingPageViewModel
     public PrivacyViewModel(
         ISettingStateReader stateReader,
         ISettingOperationExecutor executor,
-        TweakDialogs dialogs)
-        : base(stateReader, executor, dialogs)
+        TweakDialogs dialogs,
+        ISettingDependencyResolver? dependencyResolver = null)
+        : base(stateReader, executor, dialogs, dependencyResolver: dependencyResolver)
     {
         Title = "Privacy & Security";
         Subtitle = "Telemetry, data collection, app permissions, and AI opt-outs.";

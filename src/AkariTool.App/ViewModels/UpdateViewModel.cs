@@ -23,8 +23,9 @@ public sealed partial class UpdateViewModel : SettingPageViewModel
     public UpdateViewModel(
         ISettingStateReader stateReader,
         ISettingOperationExecutor executor,
-        TweakDialogs dialogs)
-        : base(stateReader, executor, dialogs)
+        TweakDialogs dialogs,
+        ISettingDependencyResolver? dependencyResolver = null)
+        : base(stateReader, executor, dialogs, dependencyResolver: dependencyResolver)
     {
         Title = "Windows Updates";
         Subtitle = "Update policy, delivery optimisation, and update behaviour controls.";

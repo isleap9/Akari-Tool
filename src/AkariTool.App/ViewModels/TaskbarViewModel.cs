@@ -25,8 +25,9 @@ public sealed partial class TaskbarViewModel : SettingPageViewModel
     public TaskbarViewModel(
         ISettingStateReader stateReader,
         ISettingOperationExecutor executor,
-        TweakDialogs dialogs)
-        : base(stateReader, executor, dialogs)
+        TweakDialogs dialogs,
+        ISettingDependencyResolver? dependencyResolver = null)
+        : base(stateReader, executor, dialogs, dependencyResolver: dependencyResolver)
     {
         Title = "Taskbar";
         Subtitle = "Layout, behavior, and button grouping.";

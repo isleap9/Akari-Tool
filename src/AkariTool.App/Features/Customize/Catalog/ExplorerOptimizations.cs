@@ -522,8 +522,8 @@ public static class ExplorerOptimizations
                         }
                     },
                 },
-                // customize-explorer-classic-context-menu — Win11 classic right-click menu via
-                //   CLSID InprocServer32 shim (enable = empty default value / disable = delete CLSID tree)
+                // customize-explorer-classic-context-menu — Winhance explorer-customization-context-menu 1:1:
+                //   CLSID InprocServer32 empty-default-value shim (enable = write @="" / disable = delete @)
                 new SettingDefinition
                 {
                     Id = "customize-explorer-classic-context-menu",
@@ -540,20 +540,12 @@ public static class ExplorerOptimizations
                         new RegistrySetting
                         {
                             KeyPath = @"HKEY_CURRENT_USER\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32",
-                            ValueName = null,
-                            ValueType = RegistryValueKind.None,
-                            EnabledValue = null,
-                            DisabledValue = null,
-                            RecommendedValue = null,
+                            ValueName = "",
+                            ValueType = RegistryValueKind.String,
+                            RecommendedValue = "",
+                            EnabledValue = new object?[] { "" },
+                            DisabledValue = new object?[] { null },
                             DefaultValue = null,
-                        }
-                    },
-                    RegContents = new[]
-                    {
-                        new RegContentSetting
-                        {
-                            EnabledContent = "Windows Registry Editor Version 5.00\r\n\r\n[HKEY_CURRENT_USER\\Software\\Classes\\CLSID\\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\\InprocServer32]\r\n@=\"\"\r\n",
-                            DisabledContent = "Windows Registry Editor Version 5.00\r\n\r\n[-HKEY_CURRENT_USER\\Software\\Classes\\CLSID\\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}]\r\n",
                         }
                     },
                 },

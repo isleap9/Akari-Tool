@@ -20,8 +20,9 @@ public sealed partial class StartMenuViewModel : SettingPageViewModel
     public StartMenuViewModel(
         ISettingStateReader stateReader,
         ISettingOperationExecutor executor,
-        TweakDialogs dialogs)
-        : base(stateReader, executor, dialogs)
+        TweakDialogs dialogs,
+        ISettingDependencyResolver? dependencyResolver = null)
+        : base(stateReader, executor, dialogs, dependencyResolver: dependencyResolver)
     {
         Title = "Start Menu";
         Subtitle = "Start menu layout and behavior.";
