@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using AkariTool.Core.Features.Common.Interfaces;
 using AkariTool.Core.Features.Common.Models;
+using AkariTool.Core.Interfaces;
 using AkariTool.Services;
 using AkariTool.Tabs.Power;
 using AkariTool.Tabs.Privacy;
@@ -40,17 +41,27 @@ public sealed partial class PowerViewModel : SettingPageViewModel
     private bool _hasBattery;
 
     public PowerViewModel(
-        ISettingStateReader stateReader,
-        ISettingOperationExecutor executor,
-        TweakDialogs dialogs,
-        IHardwareDetectionService hardware,
-        IPowerSettingsValidationService validation,
-        IPowerPlanComboBoxService planComboBoxService,
-        IPowerService powerService,
-        ISettingsService settings,
-        ISettingDependencyResolver? dependencyResolver = null)
-        : base(stateReader, executor, dialogs, dependencyResolver: dependencyResolver)
-    {
+            ISettingStateReader stateReader,
+            ISettingOperationExecutor executor,
+            TweakDialogs dialogs,
+            IHardwareDetectionService hardware,
+            IPowerSettingsValidationService validation,
+            IPowerPlanComboBoxService planComboBoxService,
+            IPowerService powerService,
+            ISettingsService settings,
+            ISettingDependencyResolver? dependencyResolver = null,
+            ILocalizationService? localizationService = null,
+            IDispatcherService? dispatcherService = null,
+            IRegeditLauncher? regeditLauncher = null,
+            IEventBus? eventBus = null)
+            : base(stateReader, executor, dialogs,
+                 newBadgeService: null,
+                 dependencyResolver: dependencyResolver,
+                 localizationService: localizationService,
+                 dispatcherService: dispatcherService,
+                 regeditLauncher: regeditLauncher,
+                 eventBus: eventBus)
+        {
         _hardware = hardware;
         _validation = validation;
         _planComboBoxService = planComboBoxService;
@@ -77,20 +88,28 @@ public sealed partial class PowerViewModel : SettingPageViewModel
     protected override IReadOnlyList<SettingGroup> BuildSettingGroups() => Gate(PowerOptimizations.Build());
 
     protected override SettingItemViewModel CreateItem(SettingDefinition s)
-    {
-        if (s.Recommendation?.LoadDynamicOptions == true)
+        {
+            if (s.Recommendation?.LoadDynamicOptions == true)
+                return new SettingItemViewModel(
+                    s, _stateReader, _executor, _dialogs,
+                    _hasBattery, _planComboBoxService, _powerService, _powerCatalog,
+                    newBadgeService: _newBadgeService, settingsService: _settings,
+                    dependencyResolver: _dependencyResolver,
+                    localizationService: _localizationService,
+                    dispatcherService: _dispatcherService,
+                    regeditLauncher: _regeditLauncher,
+                    eventBus: _eventBus);
+            // Numeric/Selection PowerCfg rows need HasBattery for the Dual/SingleAC
+            // template split and per-mode badges.
             return new SettingItemViewModel(
-                s, _stateReader, _executor, _dialogs,
-                _hasBattery, _planComboBoxService, _powerService, _powerCatalog,
+                s, _stateReader, _executor, _dialogs, _hasBattery,
                 newBadgeService: _newBadgeService, settingsService: _settings,
-                dependencyResolver: _dependencyResolver);
-        // Numeric/Selection PowerCfg rows need HasBattery for the Dual/SingleAC
-        // template split and per-mode badges.
-        return new SettingItemViewModel(
-            s, _stateReader, _executor, _dialogs, _hasBattery,
-            newBadgeService: _newBadgeService, settingsService: _settings,
-            dependencyResolver: _dependencyResolver);
-    }
+                dependencyResolver: _dependencyResolver,
+                localizationService: _localizationService,
+                dispatcherService: _dispatcherService,
+                regeditLauncher: _regeditLauncher,
+                eventBus: _eventBus);
+        }
 
     /// <summary>
     /// Applies the hardware + existence gate. Hardware flags (RequiresBattery,

@@ -13,6 +13,7 @@ using AkariTool.Core.Features.Common.Interfaces;
 using AkariTool.Core.Features.Common.Native;
 using AkariTool.Infrastructure.Features.Common.Interfaces;
 using AkariTool.Services;
+using AkariTool.Core.Features.Common.Events;
 
 namespace AkariTool.ViewModels.Tweaks;
 
@@ -33,61 +34,117 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
     private readonly INewBadgeService? _newBadgeService;
     private readonly ISettingsService? _settingsService;
     private readonly ISettingDependencyResolver? _dependencyResolver;
-    private IReadOnlyList<SettingDefinition>? _dependencyContext;
+        private IReadOnlyList<SettingDefinition>? _dependencyContext;
 
-    private bool _suppress;
-    private int _lastIndex = -1;
+        // ─── Status Banner (Winhance 1:1 port) ──────────────────────────────────────
+        private readonly SettingStatusBannerManager _statusBannerManager;
+
+        // ─── Technical Details (Winhance 1:1 port) ──────────────────────────────────
+        private readonly TechnicalDetailsManager _technicalDetailsManager;
+
+        private bool _suppress;
+        private int _lastIndex = -1;
 
     public SettingItemViewModel(
-        SettingDefinition definition,
-        ISettingStateReader stateReader,
-        ISettingOperationExecutor executor,
-        TweakDialogs dialogs,
-        bool hasBattery = false,
-        IPowerPlanComboBoxService? powerPlanComboBoxService = null,
-        IPowerService? powerService = null,
-        IReadOnlyList<SettingDefinition>? powerCatalog = null,
-        INewBadgeService? newBadgeService = null,
-        ISettingsService? settingsService = null,
-        ISettingDependencyResolver? dependencyResolver = null)
-    {
-        Definition = definition;
-        _stateReader = stateReader;
-        _executor = executor;
-        _dialogs = dialogs;
-        _powerPlanComboBoxService = powerPlanComboBoxService;
-        _powerService = powerService;
-        _powerCatalog = powerCatalog;
-        _newBadgeService = newBadgeService;
-        _settingsService = settingsService;
-        _dependencyResolver = dependencyResolver;
-        HasBattery = hasBattery;
-
-        // Winhance parity: rows tagged AddedInVersion light up as NEW until the
-        // user's baseline version passes. Recomputed after warm-up initializes
-        // the badge service (see SettingPageWarmUp).
-        IsNew = _newBadgeService?.IsSettingNew(Definition.AddedInVersion, Definition.Id) == true;
-
-        // Winhance parity: RequiresAdvancedUnlock rows start locked until the
-        // one-time warning dialog is accepted (persisted via the prefs store).
-        if (Definition.RequiresAdvancedUnlock && _settingsService != null)
-            IsLocked = !_settingsService.Get(AdvancedPowerSettingsUnlocked, false);
-
-        UnlockCommand = new AsyncRelayCommand(HandleUnlockAsync);
-
-        Options = Definition.ComboBox?.Options?.Select(o => o.DisplayName).ToArray()
-                  ?? Array.Empty<string>();
-
-        if (IsPowerPlanSetting)
+            SettingDefinition definition,
+            ISettingStateReader stateReader,
+            ISettingOperationExecutor executor,
+            TweakDialogs dialogs,
+            bool hasBattery = false,
+            IPowerPlanComboBoxService? powerPlanComboBoxService = null,
+            IPowerService? powerService = null,
+            IReadOnlyList<SettingDefinition>? powerCatalog = null,
+            INewBadgeService? newBadgeService = null,
+            ISettingsService? settingsService = null,
+            ISettingDependencyResolver? dependencyResolver = null,
+            ILocalizationService? localizationService = null,
+            IEventBus? eventBus = null,
+            IRegeditLauncher? regeditLauncher = null,
+            IDispatcherService? dispatcherService = null)
         {
-            DeletePlanCommand = new AsyncRelayCommand<PowerPlanComboBoxOption>(DeletePlanAsync);
-            RefreshPlanOptions();
+            Definition = definition;
+            _stateReader = stateReader;
+            _executor = executor;
+            _dialogs = dialogs;
+            _powerPlanComboBoxService = powerPlanComboBoxService;
+            _powerService = powerService;
+            _powerCatalog = powerCatalog;
+            _newBadgeService = newBadgeService;
+            _settingsService = settingsService;
+            _dependencyResolver = dependencyResolver;
+            HasBattery = hasBattery;
+
+            // Winhance parity: rows tagged AddedInVersion light up as NEW until the
+            // user's baseline version passes. Recomputed after warm-up initializes
+            // the badge service (see SettingPageWarmUp).
+            IsNew = _newBadgeService?.IsSettingNew(Definition.AddedInVersion, Definition.Id) == true;
+
+            // Winhance parity: RequiresAdvancedUnlock rows start locked until the
+            // one-time warning dialog is accepted (persisted via the prefs store).
+            if (Definition.RequiresAdvancedUnlock && _settingsService != null)
+                IsLocked = !_settingsService.Get(AdvancedPowerSettingsUnlocked, false);
+
+            UnlockCommand = new AsyncRelayCommand(HandleUnlockAsync);
+
+            Options = Definition.ComboBox?.Options?.Select(o => o.DisplayName).ToArray()
+                      ?? Array.Empty<string>();
+
+            // ─── Status Banner Manager (Winhance 1:1 port) ──────────────────────────────
+            _statusBannerManager = new SettingStatusBannerManager(localizationService);
+
+            // ─── Technical Details Manager (Winhance 1:1 port) ──────────────────────────
+            _technicalDetailsManager = new TechnicalDetailsManager(
+                () => Definition.Id,
+                newSections =>
+                {
+                    TechnicalDetailSections = newSections;
+                    OnPropertyChanged(nameof(HasTechnicalDetails));
+                    OnPropertyChanged(nameof(ShowTechnicalDetailsBar));
+                },
+                _dialogs, // Using TweakDialogs as ILogService
+                dispatcherService,
+                regeditLauncher,
+                eventBus,
+                localizationService,
+                new TechnicalDetailLabels
+                {
+                    Path = localizationService?.GetString("TechnicalDetails_Path") ?? "Path",
+                    Value = localizationService?.GetString("TechnicalDetails_Value") ?? "Value",
+                    Current = localizationService?.GetString("TechnicalDetails_Current") ?? "Current",
+                    Recommended = localizationService?.GetString("TechnicalDetails_Recommended") ?? "Recommended",
+                    Default = localizationService?.GetString("TechnicalDetails_DefaultValue") ?? "Default",
+                    ValueNotExist = localizationService?.GetString("TechnicalDetails_ValueNotExist") ?? "doesn't exist",
+                    On = localizationService?.GetString("Common_On") ?? "On",
+                    Off = localizationService?.GetString("Common_Off") ?? "Off",
+                    SectionRegistry = localizationService?.GetString("TechnicalDetails_Section_Registry") ?? "Registry Changes",
+                    SectionScheduledTasks = localizationService?.GetString("TechnicalDetails_Section_ScheduledTasks") ?? "Scheduled Tasks",
+                    SectionPowerSettings = localizationService?.GetString("TechnicalDetails_Section_PowerSettings") ?? "Power Settings",
+                    SectionScripts = localizationService?.GetString("TechnicalDetails_Section_Scripts") ?? "PowerShell Scripts",
+                    SectionRegContent = localizationService?.GetString("TechnicalDetails_Section_RegContent") ?? "Registry Content",
+                    SectionDependencies = localizationService?.GetString("TechnicalDetails_Section_Dependencies") ?? "Depends On",
+                    ScriptOnEnable = localizationService?.GetString("TechnicalDetails_Script_OnEnable") ?? "On Enable",
+                    ScriptOnDisable = localizationService?.GetString("TechnicalDetails_Script_OnDisable") ?? "On Disable",
+                    ScriptOnApply = localizationService?.GetString("TechnicalDetails_Script_OnApply") ?? "On Apply",
+                    RegContentOnEnable = localizationService?.GetString("TechnicalDetails_RegContent_OnEnable") ?? "On Enable",
+                    RegContentOnDisable = localizationService?.GetString("TechnicalDetails_RegContent_OnDisable") ?? "On Disable",
+                    DependencyEquals = localizationService?.GetString("TechnicalDetails_Dependency_Equals") ?? "=",
+                    DependencyNotEquals = localizationService?.GetString("TechnicalDetails_Dependency_NotEquals") ?? "≠",
+                    PowerCfgSubgroup = localizationService?.GetString("TechnicalDetails_PowerCfg_Subgroup") ?? "Subgroup",
+                    PowerCfgSetting = localizationService?.GetString("TechnicalDetails_PowerCfg_Setting") ?? "Setting"
+                });
+
+            OpenRegeditCommand = _technicalDetailsManager.OpenRegeditCommand;
+
+            if (IsPowerPlanSetting)
+            {
+                DeletePlanCommand = new AsyncRelayCommand<PowerPlanComboBoxOption>(DeletePlanAsync);
+                RefreshPlanOptions();
+            }
+            else
+            {
+                RefreshFromSystem();
+            }
         }
-        else
-        {
-            RefreshFromSystem();
-        }
-    }
 
     // ── Static surface ─────────────────────────────────────────────────────────
     public SettingDefinition Definition { get; }
@@ -107,21 +164,47 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
         InputType == InputType.Selection && Definition.Recommendation?.LoadDynamicOptions == true;
 
     /// <summary>Dynamic Power Plan options backing the bespoke combo row.</summary>
-    public ObservableCollection<PowerPlanComboBoxOption> PlanOptions { get; } = new();
+        public ObservableCollection<PowerPlanComboBoxOption> PlanOptions { get; } = new();
 
-    /// <summary>
-    /// Delete command for a non-active, installed plan in the Power Plan dropdown.
-    /// Null on every other row.
-    /// </summary>
-    public IAsyncRelayCommand<PowerPlanComboBoxOption>? DeletePlanCommand { get; }
+        /// <summary>
+        /// Delete command for a non-active, installed plan in the Power Plan dropdown.
+        /// Null on every other row.
+        /// </summary>
+        public IAsyncRelayCommand<PowerPlanComboBoxOption>? DeletePlanCommand { get; }
 
-    /// <summary>
-    /// Raised after a plan activation / import / delete lands, so the page can
-    /// re-read sibling PowerCfg rows (values differ per active plan).
-    /// </summary>
-    public event Action? PowerPlanChanged;
+        /// <summary>
+        /// Raised after a plan activation / import / delete lands, so the page can
+        /// re-read sibling PowerCfg rows (values differ per active plan).
+        /// </summary>
+        public event Action? PowerPlanChanged;
 
-    // ── Advanced unlock (Winhance port) ────────────────────────────────────────
+        // ─── Status Banner properties (Winhance 1:1 port) ───────────────────────────────
+        [ObservableProperty]
+        public partial string StatusBannerMessage { get; set; } = string.Empty;
+
+        [ObservableProperty]
+        public partial Microsoft.UI.Xaml.Controls.InfoBarSeverity StatusBannerSeverity { get; set; } = Microsoft.UI.Xaml.Controls.InfoBarSeverity.Informational;
+
+        public bool ShowStatusBanner => !string.IsNullOrEmpty(StatusBannerMessage);
+
+        // ─── Technical Details properties (Winhance 1:1 port) ────────────────────────
+        [ObservableProperty]
+        public partial bool IsTechnicalDetailsExpanded { get; set; }
+
+        [ObservableProperty]
+        public partial IReadOnlyList<TechnicalDetailSection> TechnicalDetailSections { get; set; } = new List<TechnicalDetailSection>();
+
+        public bool HasTechnicalDetails => TechnicalDetailSections.Count > 0;
+
+        public bool ShowTechnicalDetailsBar => HasTechnicalDetails;
+
+        public string TechnicalDetailsLabel => "Technical Details";
+
+        public string OpenRegeditTooltip => "Open in Registry Editor";
+
+        public IAsyncRelayCommand OpenRegeditCommand { get; private set; }
+
+        // ─── Advanced unlock (Winhance port) ────────────────────────────────────────
 
     private const string AdvancedPowerSettingsUnlocked = "AdvancedPowerSettingsUnlocked";
 
@@ -336,78 +419,86 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
     }
 
     private async Task OnUserToggledAsync(bool newState)
-    {
-        if (!await _dialogs.ConfirmWarningAsync(Name, GetToggleWarning(newState)))
         {
-            SetIsOnSilently(!newState);
-            return;
-        }
+            if (!await _dialogs.ConfirmWarningAsync(Name, GetToggleWarning(newState)))
+            {
+                SetIsOnSilently(!newState);
+                return;
+            }
 
-        await ApplyWithDependencyPipelineAsync(newState, null, async () =>
-        {
-            await _executor.ApplySettingOperationsAsync(Definition, newState, null);
-            RefreshBadges();
-        });
-    }
+            await ApplyWithDependencyPipelineAsync(newState, null, async () =>
+            {
+                await _executor.ApplySettingOperationsAsync(Definition, newState, null);
+                RefreshBadges();
+                await ApplyBannerAsync(true, isRecommended: newState == SettingDefinitionToggleState.GetRecommendedToggleState(Definition), isDefault: newState == SettingDefinitionToggleState.GetDefaultToggleState(Definition));
+                await UpdateTechnicalDetailsAsync();
+            });
+        }
 
     private async Task OnUserSelectedAsync(int newIndex)
-    {
-        if (newIndex < 0) return;
-
-        if (IsPowerPlanSetting)
         {
-            await ApplyPowerPlanAsync(newIndex);
-            return;
+            if (newIndex < 0) return;
+
+            if (IsPowerPlanSetting)
+            {
+                await ApplyPowerPlanAsync(newIndex);
+                return;
+            }
+
+            if (!await _dialogs.ConfirmWarningAsync(Name, null))
+            {
+                SetSelectedIndexSilently(_lastIndex);
+                return;
+            }
+
+            _lastIndex = newIndex;
+            await ApplyWithDependencyPipelineAsync(true, newIndex, async () =>
+            {
+                await _executor.ApplySettingOperationsAsync(Definition, true, newIndex);
+                RefreshBadges();
+                await ApplyBannerAsync(true);
+                await UpdateTechnicalDetailsAsync();
+            });
         }
-
-        if (!await _dialogs.ConfirmWarningAsync(Name, null))
-        {
-            SetSelectedIndexSilently(_lastIndex);
-            return;
-        }
-
-        _lastIndex = newIndex;
-        await ApplyWithDependencyPipelineAsync(true, newIndex, async () =>
-        {
-            await _executor.ApplySettingOperationsAsync(Definition, true, newIndex);
-            RefreshBadges();
-        });
-    }
 
     // ── Numeric rows (single spinner + Dual AC/DC spinners) ──────────────────
 
-    /// <summary>
-    /// Single NumericRange spinner changed: apply the display-unit int directly.
-    /// PowerCfgApplier converts display → system units on the write path.
-    /// </summary>
-    private Task OnUserNumericChangedAsync(int newValue)
-    {
-        return ApplyWithDependencyPipelineAsync(true, newValue, async () =>
+        /// <summary>
+        /// Single NumericRange spinner changed: apply the display-unit int directly.
+        /// PowerCfgApplier converts display → system units on the write path.
+        /// </summary>
+        private Task OnUserNumericChangedAsync(int newValue)
         {
-            await _executor.ApplySettingOperationsAsync(Definition, true, newValue);
-            RefreshBadges();
-        });
-    }
+            return ApplyWithDependencyPipelineAsync(true, newValue, async () =>
+            {
+                await _executor.ApplySettingOperationsAsync(Definition, true, newValue);
+                RefreshBadges();
+                await ApplyBannerAsync(true);
+                await UpdateTechnicalDetailsAsync();
+            });
+        }
 
-    /// <summary>
-    /// AC/DC NumericRange spinner changed: apply both display-unit values as the
-    /// {"ACValue","DCValue"} dictionary the PowerCfgApplier Separate branch expects.
-    /// On battery-less systems the DC spinner is hidden, so DcNumericValue is
-    /// whatever the AC value resolved to — the applier skips the DC write anyway.
-    /// </summary>
-    private Task OnUserACDCNumericChangedAsync()
-    {
-        var dict = new Dictionary<string, object?>
+        /// <summary>
+        /// AC/DC NumericRange spinner changed: apply both display-unit values as the
+        /// {"ACValue","DCValue"} dictionary the PowerCfgApplier Separate branch expects.
+        /// On battery-less systems the DC spinner is hidden, so DcNumericValue is
+        /// whatever the AC value resolved to — the applier skips the DC write anyway.
+        /// </summary>
+        private Task OnUserACDCNumericChangedAsync()
         {
-            ["ACValue"] = AcNumericValue,
-            ["DCValue"] = DcNumericValue,
-        };
-        return ApplyWithDependencyPipelineAsync(true, dict, async () =>
-        {
-            await _executor.ApplySettingOperationsAsync(Definition, true, dict);
-            RefreshBadges();
-        });
-    }
+            var dict = new Dictionary<string, object?>
+            {
+                ["ACValue"] = AcNumericValue,
+                ["DCValue"] = DcNumericValue,
+            };
+            return ApplyWithDependencyPipelineAsync(true, dict, async () =>
+            {
+                await _executor.ApplySettingOperationsAsync(Definition, true, dict);
+                RefreshBadges();
+                await ApplyBannerAsync(true);
+                await UpdateTechnicalDetailsAsync();
+            });
+        }
 
     // ── Power Plan row (dynamic options) ─────────────────────────────────────
 
@@ -694,112 +785,171 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
     public bool HasDcDefaultQuickSet => HasBattery && DcDefaultValue.HasValue;
 
     [RelayCommand]
-    private async Task ApplyRecommendedAsync()
-    {
-        if (InputType == InputType.Toggle || InputType == InputType.CheckBox)
+        private async Task ApplyRecommendedAsync()
         {
-            var state = SettingDefinitionToggleState.GetRecommendedToggleState(Definition);
-            if (state is not bool value) return;
-            await _executor.ApplySettingOperationsAsync(Definition, value, null);
-            SetIsOnSilently(value);
-            RefreshBadges();
-        }
-        else if (InputType == InputType.Selection)
-        {
-            int idx = FindOptionIndex(o => o.IsRecommended);
-            if (idx < 0) return;
-            await _executor.ApplySettingOperationsAsync(Definition, true, idx);
-            SetSelectedIndexSilently(idx);
-            _lastIndex = idx;
-            RefreshBadges();
-        }
-        else if (InputType == InputType.NumericRange)
-        {
-            if (SupportsSeparateACDC)
+            if (InputType == InputType.Toggle || InputType == InputType.CheckBox)
             {
-                await ApplyAcNumericAsync(AcRecommendedValue, DcRecommendedValue);
-            }
-            else if (NumericRecommendedValue is int v)
-            {
-                await _executor.ApplySettingOperationsAsync(Definition, true, v);
-                SetNumericValueSilently(v);
+                var state = SettingDefinitionToggleState.GetRecommendedToggleState(Definition);
+                if (state is not bool value) return;
+                await _executor.ApplySettingOperationsAsync(Definition, value, null);
+                SetIsOnSilently(value);
                 RefreshBadges();
+                await ApplyBannerAsync(true, isRecommended: true);
+                await UpdateTechnicalDetailsAsync();
+            }
+            else if (InputType == InputType.Selection)
+            {
+                int idx = FindOptionIndex(o => o.IsRecommended);
+                if (idx < 0) return;
+                await _executor.ApplySettingOperationsAsync(Definition, true, idx);
+                SetSelectedIndexSilently(idx);
+                _lastIndex = idx;
+                RefreshBadges();
+                await ApplyBannerAsync(true, isRecommended: true);
+                await UpdateTechnicalDetailsAsync();
+            }
+            else if (InputType == InputType.NumericRange)
+            {
+                if (SupportsSeparateACDC)
+                {
+                    await ApplyAcNumericAsync(AcRecommendedValue, DcRecommendedValue);
+                }
+                else if (NumericRecommendedValue is int v)
+                {
+                    await _executor.ApplySettingOperationsAsync(Definition, true, v);
+                    SetNumericValueSilently(v);
+                    RefreshBadges();
+                    await ApplyBannerAsync(true, isRecommended: true);
+                    await UpdateTechnicalDetailsAsync();
+                }
             }
         }
-    }
 
-    [RelayCommand]
-    private async Task ApplyDefaultAsync()
-    {
-        if (InputType == InputType.Toggle || InputType == InputType.CheckBox)
+        [RelayCommand]
+        private async Task ApplyDefaultAsync()
         {
-            var state = SettingDefinitionToggleState.GetDefaultToggleState(Definition);
-            if (state is not bool value) return;
-            await _executor.ApplySettingOperationsAsync(Definition, value, null);
-            SetIsOnSilently(value);
-            RefreshBadges();
-        }
-        else if (InputType == InputType.Selection)
-        {
-            int idx = FindOptionIndex(o => o.IsDefault);
-            if (idx < 0) return;
-            await _executor.ApplySettingOperationsAsync(Definition, true, idx);
-            SetSelectedIndexSilently(idx);
-            _lastIndex = idx;
-            RefreshBadges();
-        }
-        else if (InputType == InputType.NumericRange)
-        {
-            if (SupportsSeparateACDC)
+            if (InputType == InputType.Toggle || InputType == InputType.CheckBox)
             {
-                await ApplyAcNumericAsync(AcDefaultValue, DcDefaultValue);
-            }
-            else if (NumericDefaultValue is int v)
-            {
-                await _executor.ApplySettingOperationsAsync(Definition, true, v);
-                SetNumericValueSilently(v);
+                var state = SettingDefinitionToggleState.GetDefaultToggleState(Definition);
+                if (state is not bool value) return;
+                await _executor.ApplySettingOperationsAsync(Definition, value, null);
+                SetIsOnSilently(value);
                 RefreshBadges();
+                await ApplyBannerAsync(true, isDefault: true);
+                await UpdateTechnicalDetailsAsync();
+            }
+            else if (InputType == InputType.Selection)
+            {
+                int idx = FindOptionIndex(o => o.IsDefault);
+                if (idx < 0) return;
+                await _executor.ApplySettingOperationsAsync(Definition, true, idx);
+                SetSelectedIndexSilently(idx);
+                _lastIndex = idx;
+                RefreshBadges();
+                await ApplyBannerAsync(true, isDefault: true);
+                await UpdateTechnicalDetailsAsync();
+            }
+            else if (InputType == InputType.NumericRange)
+            {
+                if (SupportsSeparateACDC)
+                {
+                    await ApplyAcNumericAsync(AcDefaultValue, DcDefaultValue);
+                }
+                else if (NumericDefaultValue is int v)
+                {
+                    await _executor.ApplySettingOperationsAsync(Definition, true, v);
+                    SetNumericValueSilently(v);
+                    RefreshBadges();
+                    await ApplyBannerAsync(true, isDefault: true);
+                    await UpdateTechnicalDetailsAsync();
+                }
             }
         }
-    }
 
     // ── Per-mode numeric quick-set commands (Dual/SingleAC templates) ────────
 
-    [RelayCommand]
-    private async Task ApplyAcRecommendedAsync() =>
-        await ApplyAcNumericAsync(AcRecommendedValue, null);
-
-    [RelayCommand]
-    private async Task ApplyAcDefaultAsync() =>
-        await ApplyAcNumericAsync(AcDefaultValue, null);
-
-    [RelayCommand]
-    private async Task ApplyDcRecommendedAsync() =>
-        await ApplyAcNumericAsync(null, DcRecommendedValue);
-
-    [RelayCommand]
-    private async Task ApplyDcDefaultAsync() =>
-        await ApplyAcNumericAsync(null, DcDefaultValue);
-
-    /// <summary>
-    /// Applies the given AC/DC display-unit targets (null = keep current) as the
-    /// Separate {"ACValue","DCValue"} dictionary, then refreshes badges.
-    /// </summary>
-    private async Task ApplyAcNumericAsync(int? acTarget, int? dcTarget)
-    {
-        if (acTarget.HasValue) SetAcNumericValueSilently(acTarget.Value);
-        if (dcTarget.HasValue) SetDcNumericValueSilently(dcTarget.Value);
-
-        var dict = new Dictionary<string, object?>
+        [RelayCommand]
+        private async Task ApplyAcRecommendedAsync()
         {
-            ["ACValue"] = AcNumericValue,
-            ["DCValue"] = DcNumericValue,
-        };
-        await _executor.ApplySettingOperationsAsync(Definition, true, dict);
-        RefreshBadges();
-    }
+            await ApplyAcNumericAsync(AcRecommendedValue, null);
+            await ApplyBannerAsync(true, isRecommended: true);
+            await UpdateTechnicalDetailsAsync();
+        }
 
-    private int FindOptionIndex(Func<ComboBoxOption, bool> predicate)
+        [RelayCommand]
+        private async Task ApplyAcDefaultAsync()
+        {
+            await ApplyAcNumericAsync(AcDefaultValue, null);
+            await ApplyBannerAsync(true, isDefault: true);
+            await UpdateTechnicalDetailsAsync();
+        }
+
+        [RelayCommand]
+        private async Task ApplyDcRecommendedAsync()
+        {
+            await ApplyAcNumericAsync(null, DcRecommendedValue);
+            await ApplyBannerAsync(true, isRecommended: true);
+            await UpdateTechnicalDetailsAsync();
+        }
+
+        [RelayCommand]
+        private async Task ApplyDcDefaultAsync()
+        {
+            await ApplyAcNumericAsync(null, DcDefaultValue);
+            await ApplyBannerAsync(true, isDefault: true);
+            await UpdateTechnicalDetailsAsync();
+        }
+
+        /// <summary>
+        /// Applies the given AC/DC display-unit targets (null = keep current) as the
+        /// Separate {"ACValue","DCValue"} dictionary, then refreshes badges.
+        /// </summary>
+        private async Task ApplyAcNumericAsync(int? acTarget, int? dcTarget)
+        {
+            if (acTarget.HasValue) SetAcNumericValueSilently(acTarget.Value);
+            if (dcTarget.HasValue) SetDcNumericValueSilently(dcTarget.Value);
+
+            var dict = new Dictionary<string, object?>
+            {
+                ["ACValue"] = AcNumericValue,
+                ["DCValue"] = DcNumericValue,
+            };
+            await _executor.ApplySettingOperationsAsync(Definition, true, dict);
+            RefreshBadges();
+        }
+
+        // ─── Status Banner & Technical Details (Winhance 1:1 port) ────────────────────
+
+        /// <summary>
+        /// Updates the status banner based on current setting state.
+        /// Called after any user-driven or quick-set apply.
+        /// </summary>
+        public async Task ApplyBannerAsync(bool isSuccess, string? customMessage = null, bool isRecommended = false, bool isDefault = false)
+        {
+            await _statusBannerManager.ApplyBannerAsync(
+                this,
+                Definition,
+                isSuccess,
+                customMessage,
+                isRecommended,
+                isDefault,
+                _stateReader);
+        }
+
+        /// <summary>
+        /// Updates the technical details panel by reading current system state.
+        /// Called after any user-driven or quick-set apply.
+        /// </summary>
+        public async Task UpdateTechnicalDetailsAsync()
+        {
+            await _technicalDetailsManager.UpdateTechnicalDetailsAsync(
+                this,
+                Definition,
+                _stateReader,
+                _executor);
+        }
+
+        private int FindOptionIndex(Func<ComboBoxOption, bool> predicate)
     {
         var opts = Definition.ComboBox?.Options;
         if (opts == null) return -1;

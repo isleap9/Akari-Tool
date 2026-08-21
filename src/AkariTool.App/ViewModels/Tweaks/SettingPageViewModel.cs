@@ -5,10 +5,12 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using WinUI.Framework.Mvvm;
+using WinUI.Framework.Services;
 using AkariTool.Core.Features.Common.Models;
 using AkariTool.Core.Features.Common.Interfaces;
 using AkariTool.Infrastructure.Features.Common.Interfaces;
 using AkariTool.Services;
+using AkariTool.Core.Interfaces;
 
 namespace AkariTool.ViewModels.Tweaks;
 
@@ -20,26 +22,38 @@ namespace AkariTool.ViewModels.Tweaks;
 public abstract partial class SettingPageViewModel : ViewModelBase
 {
     protected readonly ISettingStateReader _stateReader;
-    protected readonly ISettingOperationExecutor _executor;
-    protected readonly TweakDialogs _dialogs;
-    protected readonly INewBadgeService? _newBadgeService;
-    protected readonly ISettingDependencyResolver? _dependencyResolver;
+        protected readonly ISettingOperationExecutor _executor;
+        protected readonly TweakDialogs _dialogs;
+        protected readonly INewBadgeService? _newBadgeService;
+        protected readonly ISettingDependencyResolver? _dependencyResolver;
+        protected readonly ILocalizationService? _localizationService;
+        protected readonly IDispatcherService? _dispatcherService;
+        protected readonly IRegeditLauncher? _regeditLauncher;
+        protected readonly IEventBus? _eventBus;
 
-    private volatile bool _built;
+        private volatile bool _built;
 
-    protected SettingPageViewModel(
-        ISettingStateReader stateReader,
-        ISettingOperationExecutor executor,
-        TweakDialogs dialogs,
-        INewBadgeService? newBadgeService = null,
-        ISettingDependencyResolver? dependencyResolver = null)
-    {
-        _stateReader = stateReader;
-        _executor = executor;
-        _dialogs = dialogs;
-        _newBadgeService = newBadgeService;
-        _dependencyResolver = dependencyResolver;
-    }
+        protected SettingPageViewModel(
+            ISettingStateReader stateReader,
+            ISettingOperationExecutor executor,
+            TweakDialogs dialogs,
+            INewBadgeService? newBadgeService = null,
+            ISettingDependencyResolver? dependencyResolver = null,
+            ILocalizationService? localizationService = null,
+            IDispatcherService? dispatcherService = null,
+            IRegeditLauncher? regeditLauncher = null,
+            IEventBus? eventBus = null)
+        {
+            _stateReader = stateReader;
+            _executor = executor;
+            _dialogs = dialogs;
+            _newBadgeService = newBadgeService;
+            _dependencyResolver = dependencyResolver;
+            _localizationService = localizationService;
+            _dispatcherService = dispatcherService;
+            _regeditLauncher = regeditLauncher;
+            _eventBus = eventBus;
+        }
 
     public abstract string NavTag { get; }
     public abstract string NavLabel { get; }
@@ -47,12 +61,16 @@ public abstract partial class SettingPageViewModel : ViewModelBase
     protected abstract IReadOnlyList<SettingGroup> BuildSettingGroups();
 
     /// <summary>
-    /// Row factory. Virtual so a page (Power) can hand plan-special services to its
-    /// LoadDynamicOptions row without touching the shared Build path.
-    /// </summary>
-    protected virtual SettingItemViewModel CreateItem(SettingDefinition s)
-        => new(s, _stateReader, _executor, _dialogs, newBadgeService: _newBadgeService,
-               dependencyResolver: _dependencyResolver);
+        /// Row factory. Virtual so a page (Power) can hand plan-special services to its
+        /// LoadDynamicOptions row without touching the shared Build path.
+        /// </summary>
+        protected virtual SettingItemViewModel CreateItem(SettingDefinition s)
+            => new(s, _stateReader, _executor, _dialogs, newBadgeService: _newBadgeService,
+                   dependencyResolver: _dependencyResolver,
+                   localizationService: _localizationService,
+                   dispatcherService: _dispatcherService,
+                   regeditLauncher: _regeditLauncher,
+                   eventBus: _eventBus);
 
     /// <summary>
     /// Extra catalogs the dependency resolver may need beyond this page's own rows

@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Win32;
 using AkariTool.Core.Features.Common.Enums;
-using AkariTool.Core.Features.Common.Interfaces;
 using AkariTool.Core.Features.Common.Models;
 using AkariTool.Infrastructure.Features.Common.Interfaces;
 

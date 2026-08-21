@@ -1,11 +1,12 @@
 using System.Collections.Generic;
-using WinUI.Framework.Mvvm;
 using AkariTool.Core.Features.Common.Models;
 using AkariTool.Core.Features.Common.Interfaces;
+using AkariTool.Core.Interfaces;
 using AkariTool.Infrastructure.Features.Common.Interfaces;
 using AkariTool.Services;
 using AkariTool.Tabs.Customize;
 using AkariTool.ViewModels.Tweaks;
+using WinUI.Framework.Services;
 
 namespace AkariTool.ViewModels;
 
@@ -23,12 +24,22 @@ namespace AkariTool.ViewModels;
 public sealed partial class TaskbarViewModel : SettingPageViewModel
 {
     public TaskbarViewModel(
-        ISettingStateReader stateReader,
-        ISettingOperationExecutor executor,
-        TweakDialogs dialogs,
-        ISettingDependencyResolver? dependencyResolver = null)
-        : base(stateReader, executor, dialogs, dependencyResolver: dependencyResolver)
-    {
+            ISettingStateReader stateReader,
+            ISettingOperationExecutor executor,
+            TweakDialogs dialogs,
+            ISettingDependencyResolver? dependencyResolver = null,
+            ILocalizationService? localizationService = null,
+            IDispatcherService? dispatcherService = null,
+            IRegeditLauncher? regeditLauncher = null,
+            IEventBus? eventBus = null)
+            : base(stateReader, executor, dialogs,
+                 newBadgeService: null,
+                 dependencyResolver: dependencyResolver,
+                 localizationService: localizationService,
+                 dispatcherService: dispatcherService,
+                 regeditLauncher: regeditLauncher,
+                 eventBus: eventBus)
+        {
         Title = "Taskbar";
         Subtitle = "Layout, behavior, and button grouping.";
     }

@@ -1,14 +1,14 @@
 using System.Collections.Generic;
 using System.Linq;
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
 using AkariTool.Core.Features.Common.Models;
 using AkariTool.Core.Features.Common.Interfaces;
+using AkariTool.Core.Interfaces;
 using AkariTool.Infrastructure.Features.Common.Interfaces;
 using AkariTool.Services;
 using AkariTool.Tabs;
 using AkariTool.Tabs.Gaming;
 using AkariTool.ViewModels.Tweaks;
+using WinUI.Framework.Services;
 
 namespace AkariTool.ViewModels;
 
@@ -28,14 +28,19 @@ public sealed partial class GamingViewModel : SettingPageViewModel
     private DefenderToggleViewModel? _defenderRow;
 
     public GamingViewModel(
-        ISettingStateReader stateReader,
-        ISettingOperationExecutor executor,
-        TweakDialogs dialogs,
-        ToolService tool,
-        INewBadgeService? newBadgeService = null,
-        ISettingDependencyResolver? dependencyResolver = null)
-        : base(stateReader, executor, dialogs, newBadgeService, dependencyResolver)
-    {
+            ISettingStateReader stateReader,
+            ISettingOperationExecutor executor,
+            TweakDialogs dialogs,
+            ToolService tool,
+            INewBadgeService? newBadgeService = null,
+            ISettingDependencyResolver? dependencyResolver = null,
+            ILocalizationService? localizationService = null,
+            IDispatcherService? dispatcherService = null,
+            IRegeditLauncher? regeditLauncher = null,
+            IEventBus? eventBus = null)
+            : base(stateReader, executor, dialogs, newBadgeService, dependencyResolver,
+                 localizationService, dispatcherService, regeditLauncher, eventBus)
+        {
         _tool = tool;
         Title = "Gaming & Performance";
         Subtitle = "Game Mode, GPU, CPU, and network tweaks for maximum frame rates.";

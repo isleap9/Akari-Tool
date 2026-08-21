@@ -64,6 +64,10 @@ public static class InfrastructureServiceExtensions
         services.AddSingleton<IPowerSettingsValidationService, PowerSettingsValidationService>();
         services.AddSingleton<IPowerService, PowerService>();
 
+        // Priority 4d: Technical Details / Tooltip infrastructure
+        services.AddSingleton<IRegeditLauncher, RegeditLauncher>();
+        services.AddSingleton<ITooltipDataService, TooltipDataService>();
+
         return services;
     }
 }
