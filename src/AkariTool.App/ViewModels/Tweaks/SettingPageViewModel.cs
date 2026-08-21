@@ -23,6 +23,7 @@ public abstract partial class SettingPageViewModel : ViewModelBase
     protected readonly ISettingOperationExecutor _executor;
     protected readonly TweakDialogs _dialogs;
     protected readonly INewBadgeService? _newBadgeService;
+    protected readonly ISettingDependencyResolver? _dependencyResolver;
 
     private volatile bool _built;
 
@@ -30,12 +31,14 @@ public abstract partial class SettingPageViewModel : ViewModelBase
         ISettingStateReader stateReader,
         ISettingOperationExecutor executor,
         TweakDialogs dialogs,
-        INewBadgeService? newBadgeService = null)
+        INewBadgeService? newBadgeService = null,
+        ISettingDependencyResolver? dependencyResolver = null)
     {
         _stateReader = stateReader;
         _executor = executor;
         _dialogs = dialogs;
         _newBadgeService = newBadgeService;
+        _dependencyResolver = dependencyResolver;
     }
 
     public abstract string NavTag { get; }
@@ -48,7 +51,30 @@ public abstract partial class SettingPageViewModel : ViewModelBase
     /// LoadDynamicOptions row without touching the shared Build path.
     /// </summary>
     protected virtual SettingItemViewModel CreateItem(SettingDefinition s)
-        => new(s, _stateReader, _executor, _dialogs, newBadgeService: _newBadgeService);
+        => new(s, _stateReader, _executor, _dialogs, newBadgeService: _newBadgeService,
+               dependencyResolver: _dependencyResolver);
+
+    /// <summary>
+    /// Extra catalogs the dependency resolver may need beyond this page's own rows
+    /// (Winhance resolves cross-feature dependencies via its global settings
+    /// registry; Akari pages declare their cross-catalog universe here instead —
+    /// e.g. Power's start-power-lock-option requires Privacy's privacy-lock-screen).
+    /// </summary>
+    protected virtual IReadOnlyList<SettingDefinition> AdditionalResolutionCatalogs() => [];
+
+    /// <summary>
+    /// The resolver applied a setting as a side effect of another row (auto-enable,
+    /// cascade reset, dependency fix, preset sync): re-read that row from the system
+    /// so its toggle/dropdown reflects reality (Winhance SettingAppliedEvent parity).
+    /// </summary>
+    private void OnResolverSettingApplied(string settingId)
+    {
+        foreach (var section in Sections)
+            foreach (var item in section.Items.OfType<SettingItemViewModel>())
+                if (item.Id == settingId)
+                    item.RefreshFromSystem();
+        RefreshQuickActionCounts();
+    }
 
     /// <summary>
     /// A Power Plan row landed a plan change: re-read every sibling PowerCfg row
@@ -115,6 +141,21 @@ public abstract partial class SettingPageViewModel : ViewModelBase
                     if (item.RequiresAdvancedUnlock)
                         item.AdvancedUnlockPersisted += OnAdvancedUnlockPersisted;
                 }
+            }
+
+            // Dependency resolution universe: this page's rows plus any cross-catalog
+            // overrides. Rows get it after all sections exist so the list is complete.
+            if (_dependencyResolver != null)
+            {
+                _dependencyResolver.SettingApplied -= OnResolverSettingApplied;
+                _dependencyResolver.SettingApplied += OnResolverSettingApplied;
+
+                var allSettings = Sections.SelectMany(s => s.Items.OfType<SettingItemViewModel>())
+                    .Select(i => i.Definition)
+                    .Concat(AdditionalResolutionCatalogs())
+                    .ToList();
+                foreach (var item in Sections.SelectMany(s => s.Items.OfType<SettingItemViewModel>()))
+                    item.SetDependencyContext(allSettings);
             }
 
             _built = true;

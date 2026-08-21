@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using AkariTool.Core.Features.Common.Models;
 using AkariTool.Core.Features.Common.Enums;
+using AkariTool.Core.Features.Common.Interfaces;
 using AkariTool.Services;
 using AkariTool.Tabs;
 using AkariTool.ViewModels.Tweaks;
@@ -21,7 +22,11 @@ namespace AkariTool.ViewModels;
 public sealed partial class DefenderToggleViewModel : ObservableObject, ISettingRowViewModel
 {
     private readonly ToolService _tool;
+    private readonly INewBadgeService? _newBadgeService;
     private bool _suppress;
+
+    /// <summary>NEW-badge tag (Winhance AddedInVersion parity for bespoke rows).</summary>
+    public string? AddedInVersion => "2.0.2";
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Description))]
@@ -63,9 +68,48 @@ public sealed partial class DefenderToggleViewModel : ObservableObject, ISetting
     public IRelayCommand ApplyRecommendedCommand { get; } = new RelayCommand(() => { });
     public IRelayCommand ApplyDefaultCommand { get; } = new RelayCommand(() => { });
 
-    public DefenderToggleViewModel(ToolService tool)
+    // ── NEW badge (Winhance port) ──────────────────────────────────────────────
+    private bool _isNew;
+    public bool IsNew
+    {
+        get => _isNew;
+        set
+        {
+            if (_isNew == value) return;
+            _isNew = value;
+            OnPropertyChanged(nameof(IsNew));
+            OnPropertyChanged(nameof(ShowNewBadge));
+        }
+    }
+
+    private bool _isNewBadgeGloballyVisible = true;
+    /// <summary>Global kill switch, mirrored from INewBadgeService.ShowNewBadges by the page layer.</summary>
+    public bool IsNewBadgeGloballyVisible
+    {
+        get => _isNewBadgeGloballyVisible;
+        set
+        {
+            if (_isNewBadgeGloballyVisible == value) return;
+            _isNewBadgeGloballyVisible = value;
+            OnPropertyChanged(nameof(IsNewBadgeGloballyVisible));
+            OnPropertyChanged(nameof(ShowNewBadge));
+        }
+    }
+
+    public bool ShowNewBadge => IsNew && IsNewBadgeGloballyVisible;
+
+    public string NewBadgeText => "NEW";
+
+    public DefenderToggleViewModel(ToolService tool, INewBadgeService? newBadgeService = null)
     {
         _tool = tool;
+        _newBadgeService = newBadgeService;
+
+        // Winhance parity: rows tagged AddedInVersion light up as NEW until the
+        // user's baseline version passes. The row is constructed at Gaming-page
+        // navigation, after SettingPageWarmUp has initialized the badge service.
+        IsNew = _newBadgeService?.IsSettingNew(AddedInVersion, "windows-defender") == true;
+
         RefreshDefenderState();
     }
 

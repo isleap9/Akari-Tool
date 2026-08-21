@@ -41,6 +41,7 @@ public static class InfrastructureServiceExtensions
         // Declarative SettingDefinition stack (Track A).
         services.AddSingleton<ISettingStateReader, SettingStateReader>();
         services.AddSingleton<ISettingOperationExecutor, SettingOperationExecutor>();
+        services.AddSingleton<ISettingDependencyResolver, SettingDependencyResolver>();
 
         // SettingOperationExecutor's nine dependencies. These are STUB implementations
         // (every method throws NotImplementedException) — they satisfy DI resolution so

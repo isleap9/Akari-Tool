@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using WinUI.Framework.Mvvm;
 using AkariTool.Core.Features.Common.Models;
 using AkariTool.Core.Features.Common.Interfaces;
@@ -35,4 +36,12 @@ public sealed partial class PrivacyViewModel : SettingPageViewModel
     public override string NavLabel => "Privacy & Security";
 
     protected override IReadOnlyList<SettingGroup> BuildSettingGroups() => PrivacyOptimizations.Build();
+
+    /// <summary>
+    /// Power's start-power-lock-option requires privacy-lock-screen: the resolver
+    /// must see the Power catalog so disabling the lock screen cascades that row
+    /// back to default cross-page (Winhance global-registry parity).
+    /// </summary>
+    protected override IReadOnlyList<SettingDefinition> AdditionalResolutionCatalogs()
+        => AkariTool.Tabs.Power.PowerOptimizations.Build().SelectMany(g => g.Settings).ToList();
 }

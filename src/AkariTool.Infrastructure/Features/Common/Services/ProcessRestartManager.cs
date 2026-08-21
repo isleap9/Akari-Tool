@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.ServiceProcess;
+using System.Threading;
 using System.Threading.Tasks;
 using AkariTool.Core.Features.Common.Enums;
 using AkariTool.Core.Features.Common.Models;
@@ -11,14 +12,44 @@ namespace AkariTool.Infrastructure.Features.Common.Services;
 public sealed class ProcessRestartManager : IProcessRestartManager
 {
     private readonly IAkariLogService _log;
+    private int _suppressCount;
 
     public ProcessRestartManager(IAkariLogService log)
     {
         _log = log ?? throw new ArgumentNullException(nameof(log));
     }
 
+    public IDisposable SuppressRestarts()
+    {
+        Interlocked.Increment(ref _suppressCount);
+        return new SuppressScope(this);
+    }
+
+    private sealed class SuppressScope(ProcessRestartManager owner) : IDisposable
+    {
+        private bool _disposed;
+
+        public void Dispose()
+        {
+            if (!_disposed)
+            {
+                _disposed = true;
+                Interlocked.Decrement(ref owner._suppressCount);
+            }
+        }
+    }
+
     public async Task HandleProcessAndServiceRestartsAsync(SettingDefinition setting)
     {
+        if (_suppressCount > 0)
+        {
+            if (!string.IsNullOrWhiteSpace(setting.RestartProcess))
+                _log.Log(LogLevel.Debug, $"[ProcessRestart] Skipping process restart for '{setting.RestartProcess}' (restarts suppressed - parent will restart)");
+            if (!string.IsNullOrWhiteSpace(setting.RestartService))
+                _log.Log(LogLevel.Debug, $"[ProcessRestart] Skipping service restart for '{setting.RestartService}' (restarts suppressed - parent will restart)");
+            return;
+        }
+
         if (!string.IsNullOrWhiteSpace(setting.RestartProcess))
             await RestartProcessAsync(setting.RestartProcess).ConfigureAwait(false);
 

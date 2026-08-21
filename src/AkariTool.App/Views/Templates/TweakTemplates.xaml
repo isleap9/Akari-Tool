@@ -246,7 +246,7 @@
                      until the one-time warning dialog is accepted. -->
                 <Grid
                     Grid.ColumnSpan="2"
-                    Visibility="{Binding IsLocked, Converter={StaticResource BoolToVis}}">
+                    Visibility="{Binding IsLocked, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
                     <Border Background="{ThemeResource SmokeFillColorDefaultBrush}" CornerRadius="4" />
                     <Button
                         Command="{Binding UnlockCommand}"
@@ -361,7 +361,7 @@
                      until the one-time warning dialog is accepted. -->
                 <Grid
                     Grid.ColumnSpan="2"
-                    Visibility="{Binding IsLocked, Converter={StaticResource BoolToVis}}">
+                    Visibility="{Binding IsLocked, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
                     <Border Background="{ThemeResource SmokeFillColorDefaultBrush}" CornerRadius="4" />
                     <Button
                         Command="{Binding UnlockCommand}"
@@ -431,7 +431,7 @@
                      until the one-time warning dialog is accepted. -->
                 <Grid
                     Grid.ColumnSpan="2"
-                    Visibility="{Binding IsLocked, Converter={StaticResource BoolToVis}}">
+                    Visibility="{Binding IsLocked, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
                     <Border Background="{ThemeResource SmokeFillColorDefaultBrush}" CornerRadius="4" />
                     <Button
                         Command="{Binding UnlockCommand}"
@@ -549,7 +549,7 @@
                      until the one-time warning dialog is accepted. -->
                 <Grid
                     Grid.ColumnSpan="2"
-                    Visibility="{Binding IsLocked, Converter={StaticResource BoolToVis}}">
+                    Visibility="{Binding IsLocked, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
                     <Border Background="{ThemeResource SmokeFillColorDefaultBrush}" CornerRadius="4" />
                     <Button
                         Command="{Binding UnlockCommand}"
@@ -667,7 +667,7 @@
                      until the one-time warning dialog is accepted. -->
                 <Grid
                     Grid.ColumnSpan="2"
-                    Visibility="{Binding IsLocked, Converter={StaticResource BoolToVis}}">
+                    Visibility="{Binding IsLocked, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
                     <Border Background="{ThemeResource SmokeFillColorDefaultBrush}" CornerRadius="4" />
                     <Button
                         Command="{Binding UnlockCommand}"
@@ -832,7 +832,7 @@
                      until the one-time warning dialog is accepted. -->
                 <Grid
                     Grid.ColumnSpan="2"
-                    Visibility="{Binding IsLocked, Converter={StaticResource BoolToVis}}">
+                    Visibility="{Binding IsLocked, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
                     <Border Background="{ThemeResource SmokeFillColorDefaultBrush}" CornerRadius="4" />
                     <Button
                         Command="{Binding UnlockCommand}"

@@ -31,8 +31,9 @@ public sealed partial class GamingViewModel : SettingPageViewModel
         ISettingStateReader stateReader,
         ISettingOperationExecutor executor,
         TweakDialogs dialogs,
-        ToolService tool)
-        : base(stateReader, executor, dialogs)
+        ToolService tool,
+        INewBadgeService? newBadgeService = null)
+        : base(stateReader, executor, dialogs, newBadgeService)
     {
         _tool = tool;
         Title = "Gaming & Performance";
@@ -53,7 +54,7 @@ public sealed partial class GamingViewModel : SettingPageViewModel
         var security = Sections.OfType<SettingSectionViewModel>().FirstOrDefault(s => s.Title == "Security");
         if (security == null) return;
 
-        _defenderRow ??= new DefenderToggleViewModel(_tool);
+        _defenderRow ??= new DefenderToggleViewModel(_tool, _newBadgeService);
         if (!security.Items.Contains(_defenderRow))
             security.Items.Add(_defenderRow);
     }

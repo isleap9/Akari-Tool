@@ -32,6 +32,8 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
     private readonly IReadOnlyList<SettingDefinition>? _powerCatalog;
     private readonly INewBadgeService? _newBadgeService;
     private readonly ISettingsService? _settingsService;
+    private readonly ISettingDependencyResolver? _dependencyResolver;
+    private IReadOnlyList<SettingDefinition>? _dependencyContext;
 
     private bool _suppress;
     private int _lastIndex = -1;
@@ -46,7 +48,8 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
         IPowerService? powerService = null,
         IReadOnlyList<SettingDefinition>? powerCatalog = null,
         INewBadgeService? newBadgeService = null,
-        ISettingsService? settingsService = null)
+        ISettingsService? settingsService = null,
+        ISettingDependencyResolver? dependencyResolver = null)
     {
         Definition = definition;
         _stateReader = stateReader;
@@ -57,6 +60,7 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
         _powerCatalog = powerCatalog;
         _newBadgeService = newBadgeService;
         _settingsService = settingsService;
+        _dependencyResolver = dependencyResolver;
         HasBattery = hasBattery;
 
         // Winhance parity: rows tagged AddedInVersion light up as NEW until the
@@ -241,6 +245,31 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
         Description.Contains(query, StringComparison.OrdinalIgnoreCase);
 
     // ── User-driven change plumbing (suppressible) ─────────────────────────────
+
+    /// <summary>
+    /// Winhance SettingApplicationService apply order (:107-111 / :124 / :205):
+    /// value prerequisites, then dependencies, then the apply itself, then preset
+    /// re-sync. The page assigns the resolution universe after Build via
+    /// <see cref="SetDependencyContext"/>; without a resolver/context the row
+    /// applies directly (pre-4c behavior).
+    /// </summary>
+    public void SetDependencyContext(IReadOnlyList<SettingDefinition> allSettings)
+        => _dependencyContext = allSettings;
+
+    private async Task ApplyWithDependencyPipelineAsync(bool enable, object? value, Func<Task> apply)
+    {
+        if (_dependencyResolver == null || _dependencyContext == null)
+        {
+            await apply();
+            return;
+        }
+
+        await _dependencyResolver.HandleValuePrerequisitesAsync(Definition, Definition.Id, _dependencyContext);
+        await _dependencyResolver.HandleDependenciesAsync(Definition.Id, _dependencyContext, enable, value);
+        await apply();
+        await _dependencyResolver.SyncParentToMatchingPresetAsync(Definition, Definition.Id, _dependencyContext);
+    }
+
     partial void OnIsOnChanged(bool value)
     {
         if (_suppress) return;
@@ -314,8 +343,11 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
             return;
         }
 
-        await _executor.ApplySettingOperationsAsync(Definition, newState, null);
-        RefreshBadges();
+        await ApplyWithDependencyPipelineAsync(newState, null, async () =>
+        {
+            await _executor.ApplySettingOperationsAsync(Definition, newState, null);
+            RefreshBadges();
+        });
     }
 
     private async Task OnUserSelectedAsync(int newIndex)
@@ -335,8 +367,11 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
         }
 
         _lastIndex = newIndex;
-        await _executor.ApplySettingOperationsAsync(Definition, true, newIndex);
-        RefreshBadges();
+        await ApplyWithDependencyPipelineAsync(true, newIndex, async () =>
+        {
+            await _executor.ApplySettingOperationsAsync(Definition, true, newIndex);
+            RefreshBadges();
+        });
     }
 
     // ── Numeric rows (single spinner + Dual AC/DC spinners) ──────────────────
@@ -345,10 +380,13 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
     /// Single NumericRange spinner changed: apply the display-unit int directly.
     /// PowerCfgApplier converts display → system units on the write path.
     /// </summary>
-    private async Task OnUserNumericChangedAsync(int newValue)
+    private Task OnUserNumericChangedAsync(int newValue)
     {
-        await _executor.ApplySettingOperationsAsync(Definition, true, newValue);
-        RefreshBadges();
+        return ApplyWithDependencyPipelineAsync(true, newValue, async () =>
+        {
+            await _executor.ApplySettingOperationsAsync(Definition, true, newValue);
+            RefreshBadges();
+        });
     }
 
     /// <summary>
@@ -357,15 +395,18 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
     /// On battery-less systems the DC spinner is hidden, so DcNumericValue is
     /// whatever the AC value resolved to — the applier skips the DC write anyway.
     /// </summary>
-    private async Task OnUserACDCNumericChangedAsync()
+    private Task OnUserACDCNumericChangedAsync()
     {
         var dict = new Dictionary<string, object?>
         {
             ["ACValue"] = AcNumericValue,
             ["DCValue"] = DcNumericValue,
         };
-        await _executor.ApplySettingOperationsAsync(Definition, true, dict);
-        RefreshBadges();
+        return ApplyWithDependencyPipelineAsync(true, dict, async () =>
+        {
+            await _executor.ApplySettingOperationsAsync(Definition, true, dict);
+            RefreshBadges();
+        });
     }
 
     // ── Power Plan row (dynamic options) ─────────────────────────────────────
