@@ -26,6 +26,9 @@
          it is NOT the Akari accent, so it must NOT follow the crimson accent tokens. -->
     <SolidColorBrush x:Key="AkariWindowsLogoBrush" Color="#FF0078D4" />
 
+    <!-- Winhance's orange padlock (PrivacyIconPath) for the advanced-unlock overlay. -->
+    <x:String x:Key="PrivacyIconPath">M12,17A2,2 0 0,0 14,15C14,13.89 13.1,13 12,13A2,2 0 0,0 10,15A2,2 0 0,0 12,17M18,8A2,2 0 0,1 20,10V20A2,2 0 0,1 18,22H6A2,2 0 0,1 4,20V10C4,8.89 4.9,8 6,8H7V6A5,5 0 0,1 12,1A5,5 0 0,1 17,6V8H18M12,3A3,3 0 0,0 9,6V8H15V6A3,3 0 0,0 12,3Z</x:String>
+
     <!-- Winhance-style NEW pill (red fill, white text) for freshly added settings.
          Rows opt in via AddedInVersion in the catalog; visibility is ShowNewBadge. -->
     <Style x:Key="NewBadgeBorderStyle" TargetType="Border">
@@ -238,6 +241,27 @@
                         VerticalAlignment="Center"
                         AutomationProperties.Name="{Binding Name}" />
                 </StackPanel>
+
+                <!-- Advanced-unlock lock overlay (Winhance port): dims the whole row
+                     until the one-time warning dialog is accepted. -->
+                <Grid
+                    Grid.ColumnSpan="2"
+                    Visibility="{Binding IsLocked, Converter={StaticResource BoolToVis}}">
+                    <Border Background="{ThemeResource SmokeFillColorDefaultBrush}" CornerRadius="4" />
+                    <Button
+                        Command="{Binding UnlockCommand}"
+                        AutomationProperties.Name="{Binding ClickToUnlockText}"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Padding="12,8">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Viewbox Width="16" Height="16">
+                                <Path Data="{StaticResource PrivacyIconPath}" Fill="#FFA500" Stretch="Uniform" />
+                            </Viewbox>
+                            <TextBlock Text="{Binding ClickToUnlockText}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
             </Grid>
         </Border>
     </DataTemplate>
@@ -332,6 +356,27 @@
                         VerticalAlignment="Center"
                         AutomationProperties.Name="{Binding Name}" />
                 </StackPanel>
+
+                <!-- Advanced-unlock lock overlay (Winhance port): dims the whole row
+                     until the one-time warning dialog is accepted. -->
+                <Grid
+                    Grid.ColumnSpan="2"
+                    Visibility="{Binding IsLocked, Converter={StaticResource BoolToVis}}">
+                    <Border Background="{ThemeResource SmokeFillColorDefaultBrush}" CornerRadius="4" />
+                    <Button
+                        Command="{Binding UnlockCommand}"
+                        AutomationProperties.Name="{Binding ClickToUnlockText}"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Padding="12,8">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Viewbox Width="16" Height="16">
+                                <Path Data="{StaticResource PrivacyIconPath}" Fill="#FFA500" Stretch="Uniform" />
+                            </Viewbox>
+                            <TextBlock Text="{Binding ClickToUnlockText}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
             </Grid>
         </Border>
     </DataTemplate>
@@ -381,6 +426,27 @@
                     Margin="12,0,0,0"
                     VerticalAlignment="Center"
                     AutomationProperties.Name="{Binding Name}" />
+
+                <!-- Advanced-unlock lock overlay (Winhance port): dims the whole row
+                     until the one-time warning dialog is accepted. -->
+                <Grid
+                    Grid.ColumnSpan="2"
+                    Visibility="{Binding IsLocked, Converter={StaticResource BoolToVis}}">
+                    <Border Background="{ThemeResource SmokeFillColorDefaultBrush}" CornerRadius="4" />
+                    <Button
+                        Command="{Binding UnlockCommand}"
+                        AutomationProperties.Name="{Binding ClickToUnlockText}"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Padding="12,8">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Viewbox Width="16" Height="16">
+                                <Path Data="{StaticResource PrivacyIconPath}" Fill="#FFA500" Stretch="Uniform" />
+                            </Viewbox>
+                            <TextBlock Text="{Binding ClickToUnlockText}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
             </Grid>
         </Border>
     </DataTemplate>
@@ -478,6 +544,27 @@
                         VerticalAlignment="Center"
                         AutomationProperties.Name="{Binding Name}" />
                 </StackPanel>
+
+                <!-- Advanced-unlock lock overlay (Winhance port): dims the whole row
+                     until the one-time warning dialog is accepted. -->
+                <Grid
+                    Grid.ColumnSpan="2"
+                    Visibility="{Binding IsLocked, Converter={StaticResource BoolToVis}}">
+                    <Border Background="{ThemeResource SmokeFillColorDefaultBrush}" CornerRadius="4" />
+                    <Button
+                        Command="{Binding UnlockCommand}"
+                        AutomationProperties.Name="{Binding ClickToUnlockText}"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Padding="12,8">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Viewbox Width="16" Height="16">
+                                <Path Data="{StaticResource PrivacyIconPath}" Fill="#FFA500" Stretch="Uniform" />
+                            </Viewbox>
+                            <TextBlock Text="{Binding ClickToUnlockText}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
             </Grid>
         </Border>
     </DataTemplate>
@@ -575,6 +662,27 @@
                         VerticalAlignment="Center"
                         AutomationProperties.Name="{Binding Name}" />
                 </StackPanel>
+
+                <!-- Advanced-unlock lock overlay (Winhance port): dims the whole row
+                     until the one-time warning dialog is accepted. -->
+                <Grid
+                    Grid.ColumnSpan="2"
+                    Visibility="{Binding IsLocked, Converter={StaticResource BoolToVis}}">
+                    <Border Background="{ThemeResource SmokeFillColorDefaultBrush}" CornerRadius="4" />
+                    <Button
+                        Command="{Binding UnlockCommand}"
+                        AutomationProperties.Name="{Binding ClickToUnlockText}"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Padding="12,8">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Viewbox Width="16" Height="16">
+                                <Path Data="{StaticResource PrivacyIconPath}" Fill="#FFA500" Stretch="Uniform" />
+                            </Viewbox>
+                            <TextBlock Text="{Binding ClickToUnlockText}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
             </Grid>
         </Border>
     </DataTemplate>
@@ -719,6 +827,27 @@
                         </StackPanel>
                     </StackPanel>
                 </StackPanel>
+
+                <!-- Advanced-unlock lock overlay (Winhance port): dims the whole row
+                     until the one-time warning dialog is accepted. -->
+                <Grid
+                    Grid.ColumnSpan="2"
+                    Visibility="{Binding IsLocked, Converter={StaticResource BoolToVis}}">
+                    <Border Background="{ThemeResource SmokeFillColorDefaultBrush}" CornerRadius="4" />
+                    <Button
+                        Command="{Binding UnlockCommand}"
+                        AutomationProperties.Name="{Binding ClickToUnlockText}"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Padding="12,8">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Viewbox Width="16" Height="16">
+                                <Path Data="{StaticResource PrivacyIconPath}" Fill="#FFA500" Stretch="Uniform" />
+                            </Viewbox>
+                            <TextBlock Text="{Binding ClickToUnlockText}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
             </Grid>
         </Border>
     </DataTemplate>

@@ -64,6 +64,19 @@ public abstract partial class SettingPageViewModel : ViewModelBase
         RefreshQuickActionCounts();
     }
 
+    /// <summary>
+    /// A gated row was permanently unlocked ("don't show again" checked): unlock
+    /// every other RequiresAdvancedUnlock row on this page (Winhance's
+    /// ParentFeatureViewModel sibling loop).
+    /// </summary>
+    private void OnAdvancedUnlockPersisted()
+    {
+        foreach (var section in Sections)
+            foreach (var item in section.Items.OfType<SettingItemViewModel>())
+                if (item.RequiresAdvancedUnlock)
+                    item.IsLocked = false;
+    }
+
     public ObservableCollection<SettingSectionViewModel> Sections { get; } = new();
 
     [ObservableProperty]
@@ -93,9 +106,15 @@ public abstract partial class SettingPageViewModel : ViewModelBase
 
                 // Power Plan rows repopulate their own dropdown; the rest of the
                 // page must re-read after the active plan changes.
+                // RequiresAdvancedUnlock rows unlock their siblings when the user
+                // checks "don't show again" in the warning dialog (Winhance parity).
                 foreach (var item in items)
+                {
                     if (item.IsPowerPlanSetting)
                         item.PowerPlanChanged += OnPowerPlanChanged;
+                    if (item.RequiresAdvancedUnlock)
+                        item.AdvancedUnlockPersisted += OnAdvancedUnlockPersisted;
+                }
             }
 
             _built = true;

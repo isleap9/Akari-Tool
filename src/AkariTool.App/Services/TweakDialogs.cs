@@ -1,3 +1,4 @@
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using WinUI.Framework.Services;
 
@@ -82,5 +83,31 @@ namespace AkariTool.Services
         /// </summary>
         public Task<bool> ConfirmWarningAsync(string tweakName, string? warning)
             => string.IsNullOrEmpty(warning) ? Task.FromResult(true) : ConfirmAsync(tweakName, warning);
+
+        /// <summary>
+        /// Confirmation with a checkbox below the content (Winhance's
+        /// ShowConfirmationAsync shape: message + "don't show again" + custom
+        /// primary button). Returns the button result and the checkbox state —
+        /// the CheckBox stays referenced after dismissal, so its IsChecked is
+        /// readable once the dialog closes.
+        /// </summary>
+        public async Task<(bool Confirmed, bool CheckboxChecked)> ConfirmWithCheckboxAsync(
+            string title, UIElement content, string checkboxText, string primaryText)
+        {
+            if (_dialogs.XamlRoot is null) return (false, false);   // fail safe: treat as declined
+            await _gate.WaitAsync();
+            try
+            {
+                var panel = new StackPanel { Spacing = 12 };
+                panel.Children.Add(content);
+                var checkbox = new CheckBox { Content = checkboxText };
+                panel.Children.Add(checkbox);
+
+                var result = await _dialogs.ShowAsync(title, panel, primaryText, "Cancel");
+                return (result == ContentDialogResult.Primary, checkbox.IsChecked == true);
+            }
+            catch { return (false, false); }
+            finally { _gate.Release(); }
+        }
     }
 }

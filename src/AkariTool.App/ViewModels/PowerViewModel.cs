@@ -5,6 +5,7 @@ using AkariTool.Core.Features.Common.Models;
 using AkariTool.Services;
 using AkariTool.Tabs.Power;
 using AkariTool.ViewModels.Tweaks;
+using WinUI.Framework.Services;
 
 namespace AkariTool.ViewModels;
 
@@ -24,9 +25,8 @@ namespace AkariTool.ViewModels;
 /// Gating happens here (in BuildSettingGroups, blocking on the async probe
 /// services — SettingPageViewModel.Build is synchronous) instead of the legacy
 /// "return empty catalog on a battery-less machine" pattern: the catalog is kept
-/// whole and rows are filtered. RequiresAdvancedUnlock rows stay visible without
-/// a lock UI (Akari deviation — Winhance gates them behind a one-time unlock
-/// dialog; the flag is preserved on the catalog for a later session).
+/// whole and rows are filtered. RequiresAdvancedUnlock rows render locked behind
+/// Winhance's one-time warning dialog (persisted via ISettingsService).
 /// </summary>
 public sealed partial class PowerViewModel : SettingPageViewModel
 {
@@ -34,6 +34,7 @@ public sealed partial class PowerViewModel : SettingPageViewModel
     private readonly IPowerSettingsValidationService _validation;
     private readonly IPowerPlanComboBoxService _planComboBoxService;
     private readonly IPowerService _powerService;
+    private readonly ISettingsService _settings;
     private readonly IReadOnlyList<SettingDefinition> _powerCatalog;
     private bool _hasBattery;
 
@@ -44,13 +45,15 @@ public sealed partial class PowerViewModel : SettingPageViewModel
         IHardwareDetectionService hardware,
         IPowerSettingsValidationService validation,
         IPowerPlanComboBoxService planComboBoxService,
-        IPowerService powerService)
+        IPowerService powerService,
+        ISettingsService settings)
         : base(stateReader, executor, dialogs)
     {
         _hardware = hardware;
         _validation = validation;
         _planComboBoxService = planComboBoxService;
         _powerService = powerService;
+        _settings = settings;
 
         _powerCatalog = PowerOptimizations.Build().SelectMany(g => g.Settings).ToList();
 
@@ -68,10 +71,13 @@ public sealed partial class PowerViewModel : SettingPageViewModel
         if (s.Recommendation?.LoadDynamicOptions == true)
             return new SettingItemViewModel(
                 s, _stateReader, _executor, _dialogs,
-                _hasBattery, _planComboBoxService, _powerService, _powerCatalog);
+                _hasBattery, _planComboBoxService, _powerService, _powerCatalog,
+                newBadgeService: _newBadgeService, settingsService: _settings);
         // Numeric/Selection PowerCfg rows need HasBattery for the Dual/SingleAC
         // template split and per-mode badges.
-        return new SettingItemViewModel(s, _stateReader, _executor, _dialogs, _hasBattery);
+        return new SettingItemViewModel(
+            s, _stateReader, _executor, _dialogs, _hasBattery,
+            newBadgeService: _newBadgeService, settingsService: _settings);
     }
 
     /// <summary>

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
+using WinUI.Framework.Services;
 using AkariTool.Core.Features.Common.Models;
 using AkariTool.Core.Features.Common.Enums;
 using AkariTool.Core.Features.Common.Interfaces;
@@ -30,6 +31,7 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
     private readonly IPowerService? _powerService;
     private readonly IReadOnlyList<SettingDefinition>? _powerCatalog;
     private readonly INewBadgeService? _newBadgeService;
+    private readonly ISettingsService? _settingsService;
 
     private bool _suppress;
     private int _lastIndex = -1;
@@ -43,7 +45,8 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
         IPowerPlanComboBoxService? powerPlanComboBoxService = null,
         IPowerService? powerService = null,
         IReadOnlyList<SettingDefinition>? powerCatalog = null,
-        INewBadgeService? newBadgeService = null)
+        INewBadgeService? newBadgeService = null,
+        ISettingsService? settingsService = null)
     {
         Definition = definition;
         _stateReader = stateReader;
@@ -53,12 +56,20 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
         _powerService = powerService;
         _powerCatalog = powerCatalog;
         _newBadgeService = newBadgeService;
+        _settingsService = settingsService;
         HasBattery = hasBattery;
 
         // Winhance parity: rows tagged AddedInVersion light up as NEW until the
         // user's baseline version passes. Recomputed after warm-up initializes
         // the badge service (see SettingPageWarmUp).
         IsNew = _newBadgeService?.IsSettingNew(Definition.AddedInVersion, Definition.Id) == true;
+
+        // Winhance parity: RequiresAdvancedUnlock rows start locked until the
+        // one-time warning dialog is accepted (persisted via the prefs store).
+        if (Definition.RequiresAdvancedUnlock && _settingsService != null)
+            IsLocked = !_settingsService.Get(AdvancedPowerSettingsUnlocked, false);
+
+        UnlockCommand = new AsyncRelayCommand(HandleUnlockAsync);
 
         Options = Definition.ComboBox?.Options?.Select(o => o.DisplayName).ToArray()
                   ?? Array.Empty<string>();
@@ -105,6 +116,53 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
     /// re-read sibling PowerCfg rows (values differ per active plan).
     /// </summary>
     public event Action? PowerPlanChanged;
+
+    // ── Advanced unlock (Winhance port) ────────────────────────────────────────
+
+    private const string AdvancedPowerSettingsUnlocked = "AdvancedPowerSettingsUnlocked";
+
+    // Verbatim Winhance copy (en.json Dialog_AdvancedPowerWarning_Message).
+    private const string AdvancedPowerWarningText =
+        "This setting is not normally exposed in Windows Power Options and requires registry modifications to access.\n\n" +
+        "Modifying it incorrectly may cause:\n" +
+        " System instability or unexpected behavior\n" +
+        " Performance degradation\n" +
+        " Thermal management problems\n" +
+        " Settings may not work on all CPU types (modern HWP vs legacy)\n\n" +
+        "Only change this if you understand processor power management.\n\n" +
+        "Are you sure you want to modify this setting?";
+
+    /// <summary>Raised when the user permanently unlocks advanced power settings,
+    /// so the page can unlock every sibling gated row immediately.</summary>
+    public event Action? AdvancedUnlockPersisted;
+
+    [ObservableProperty]
+    public partial bool IsLocked { get; set; }
+
+    public bool RequiresAdvancedUnlock => Definition.RequiresAdvancedUnlock;
+    public string ClickToUnlockText => "Click to unlock";
+    public IAsyncRelayCommand UnlockCommand { get; }
+
+    private async Task HandleUnlockAsync()
+    {
+        if (!IsLocked) return;
+
+        var (confirmed, dontShowAgain) = await _dialogs.ConfirmWithCheckboxAsync(
+            "Advanced Setting Warning",
+            new Microsoft.UI.Xaml.Controls.TextBlock
+                { Text = AdvancedPowerWarningText, TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap },
+            "Don't show this warning again for advanced power settings",
+            "Unlock");
+        if (!confirmed) return;
+
+        IsLocked = false;
+
+        if (dontShowAgain && _settingsService != null)
+        {
+            _settingsService.Set(AdvancedPowerSettingsUnlocked, true);
+            AdvancedUnlockPersisted?.Invoke();
+        }
+    }
 
     // ── Observable state ───────────────────────────────────────────────────────
     [ObservableProperty]
