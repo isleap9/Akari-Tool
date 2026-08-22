@@ -9,7 +9,7 @@
 [![Website](https://img.shields.io/badge/website-akari--tool-f5c2e7?style=flat-square&logo=githubpages)](https://isleap9.github.io/Akari-Tool/)
 [![Build](https://img.shields.io/badge/build-passing-a6e3a1?style=flat-square&logo=dotnet)](https://github.com/isleap9/Akari-Tool)
 [![Platform](https://img.shields.io/badge/platform-Windows%2011-89b4fa?style=flat-square&logo=windows)](https://github.com/isleap9/Akari-Tool)
-[![Framework](https://img.shields.io/badge/.NET-8.0-cba6f7?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
+[![Framework](https://img.shields.io/badge/.NET_10_·_WinUI_3-cba6f7?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
 [![License](https://img.shields.io/badge/license-MIT-f38ba8?style=flat-square)](LICENSE)
 
 **[Website](https://isleap9.github.io/Akari-Tool/)** · **[Download](https://github.com/isleap9/Akari-Tool/releases/latest)** · **[Docs](https://isleap9.github.io/Akari-Tool/docs.html)** · **[Discord](https://discord.gg/UjjmYM6ytj)**
@@ -24,7 +24,7 @@
 
 ## What is Akari Tool?
 
-Akari Tool is a WPF-based Windows optimization and customization utility built around one problem: **the hours between a fresh Windows install and a machine that's actually ready to game**. Debloat, services, latency tweaks, privacy, app installs, and visual setup — in one pass, from one window.
+Akari Tool is a native WinUI 3 (MVVM, .NET 10) Windows optimization and customization utility built around one problem: **the hours between a fresh Windows install and a machine that's actually ready to game**. Debloat, services, latency tweaks, privacy, app installs, and visual setup — in one pass, from one window.
 
 Built for Windows 11, stock or otherwise — no custom image required.
 
@@ -147,8 +147,9 @@ Light and dark themes tuned to native Windows 11 surface values — matching gre
 ## Requirements
 
 - Windows 11 (some tweaks are Windows 11-specific)
-- [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) (x64)
 - Administrator privileges (required for registry and driver-level tweaks)
+
+> **No runtime prerequisites.** Release builds are fully self-contained: the .NET 10 runtime *and* the Windows App SDK runtime ship inside the install folder — nothing to install first.
 
 > **Note:** the installer is currently unsigned, so SmartScreen may warn on first run — click *More info → Run anyway*. Code signing is on the roadmap.
 
@@ -164,21 +165,23 @@ Full install walkthrough and troubleshooting: **[isleap9.github.io/Akari-Tool/do
 
 ## Building from Source
 
-```bash
+Requires **Visual Studio 2022 or newer** with the *.NET desktop development* + *Windows App SDK* workloads — unpackaged WinUI 3 needs the MSBuild that ships with Visual Studio for the PRI/resource targets; the standalone .NET SDK alone can't build it.
+
+```powershell
 git clone https://github.com/isleap9/Akari-Tool.git
 cd Akari-Tool
-dotnet build AkariTool.csproj
+msbuild AkariTool.sln /t:Build /p:Configuration=Debug /p:Platform=x64
 ```
 
-To build a release binary:
+Debug output lands in `src\AkariTool.App\bin\x64\Debug\net10.0-windows10.0.26100.0\win-x64\`.
 
-```bash
-dotnet publish AkariTool.csproj -c Release
+To build a fully self-contained release binary and installer in one step:
+
+```powershell
+.\build-installer.ps1
 ```
 
-Output: `bin\Release\net8.0-windows\win-x64\publish\`
-
-To build the installer, run `build-installer.ps1` (requires [Inno Setup](https://jrsoftware.org/isinfo.php)).
+The script reads the version from `AkariTool.App.csproj`, publishes a self-contained win-x64 build (both runtimes bundled), and compiles the Inno Setup installer to `installer-output\AkariTool-Setup-vX.Y.Z.exe` — that file is the GitHub release asset. Requires [Inno Setup](https://jrsoftware.org/isinfo.php) (`winget install JRSoftware.InnoSetup`).
 
 ---
 
