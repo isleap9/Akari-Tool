@@ -47,6 +47,7 @@ public class UpdateServiceTests
     [InlineData("v2.0", "v2.0.0")]      // normalization: 2.0 == 2.0.0
     [InlineData("2", "v2.0.0")]         // "2" → "2.0" → "2.0.0"
     [InlineData("v2.1.0-beta", "v2.1.0")] // pre-release suffix stripped
+    [InlineData("V2.0.3", "v2.0.3")]    // capital-V tag == same version (v2.0.3 release regression)
     public void ParseTag_SameEffectiveVersion_ComparesEqual(string remote, string current)
     {
         var latest = UpdateService.ParseTag(remote);

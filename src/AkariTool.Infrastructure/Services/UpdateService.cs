@@ -34,9 +34,15 @@ namespace AkariTool.Services
             return c;
         }
 
-        /// <summary>App version from the assembly — set &lt;Version&gt; in the .csproj.</summary>
+        /// <summary>
+        /// App version from the ENTRY assembly — &lt;Version&gt; in AkariTool.App.csproj.
+        /// Must NOT be GetExecutingAssembly(): this class lives in AkariTool.Infrastructure,
+        /// which declares no Version and would report 1.0.0 forever, making every update
+        /// check claim an update is available. Same trap as ToolService.AppAssembly.
+        /// </summary>
         public static Version CurrentVersion =>
-            Assembly.GetExecutingAssembly().GetName().Version ?? new Version(0, 0, 0);
+            (Assembly.GetEntryAssembly() ?? typeof(UpdateService).Assembly)
+                .GetName().Version ?? new Version(0, 0, 0);
 
         /// <summary>"v2.0" / "v2.0.1" style display string.</summary>
         public static string CurrentVersionDisplay
