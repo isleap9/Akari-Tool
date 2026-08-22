@@ -89,9 +89,28 @@ internal sealed class TechnicalDetailsManager : IDisposable
         foreach (var r in definition.RegistrySettings ?? [])
             regValues[r] = registry.GetValue(r.KeyPath, r.ValueName ?? "")?.ToString();
 
+        var powerQuery = WinUI.Framework.IoC.ServiceLocator.GetService<AkariTool.Core.Features.Common.Interfaces.IPowerSettingsQueryService>();
         var powerValues = new Dictionary<PowerCfgSetting, (int? AC, int? DC)>();
-        // Live per-setting powercfg probes are not exposed on ISettingStateReader yet —
-        // Current columns stay blank until a query seam lands (follow-up).
+        if (definition.PowerCfgSettings is { Count: > 0 } && powerQuery is not null)
+        {
+            // Same shape as TooltipDataService.BuildCurrentPowerValuesAsync: sequential,
+            // not Task.WhenAll — GetPowerSettingACDCValuesAsync wraps synchronous PInvoke
+            // (PowerReadACValueIndex/PowerReadDCValueIndex), so there is no parallelism
+            // gain and PowerCfgSettings is typically 0-2 entries per setting. Blocking on
+            // the returned task is safe here: this runs inside Task.Run (no sync context).
+            foreach (var pcs in definition.PowerCfgSettings)
+            {
+                try
+                {
+                    var values = powerQuery.GetPowerSettingACDCValuesAsync(pcs).GetAwaiter().GetResult();
+                    powerValues[pcs] = (values.acValue, values.dcValue);
+                }
+                catch
+                {
+                    powerValues[pcs] = (null, null);
+                }
+            }
+        }
 
         bool? currentState = definition.InputType switch
         {
