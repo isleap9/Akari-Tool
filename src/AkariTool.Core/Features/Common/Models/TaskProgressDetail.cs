@@ -13,6 +13,9 @@ public class TaskProgressDetail
     /// <summary>Status text describing the current operation.</summary>
     public string? StatusText { get; set; }
 
+    /// <summary>Whether the bar should render indeterminate for this report (Winhance parity).</summary>
+    public bool IsIndeterminate { get; set; }
+
     /// <summary>Name of the item currently being processed (queue "next" display).</summary>
     public string? QueueCurrentItemName { get; set; }
 

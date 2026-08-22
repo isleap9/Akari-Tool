@@ -271,12 +271,41 @@ public abstract partial class SettingPageViewModel : ViewModelBase
     [RelayCommand]
     public async Task CreateRestorePointAsync()
     {
-        // Winhance parity: quick-action restore point (Winhance SystemRestoreService shape).
-        var ok = await Task.Run(() =>
-            AkariTool.Tabs.RestorePointHelper.EnsureRestorePointAsync(
-                ToolService.Current!, "Akari Tool - Quick Action Restore Point")).ConfigureAwait(false);
-        if (!ok)
-            await _dialogs.InfoAsync("Create Restore Point",
-                "Could not create a restore point. System Restore may be disabled — enable it in Windows Settings and try again.");
+        // 4g — Winhance SettingsViewModel.CreateRestorePointAsync shape: the quick
+        // action runs through the TaskProgressService card (indeterminate + Cancel)
+        // and reports success/failure from BackupResult.
+        var progressService = WinUI.Framework.IoC.ServiceLocator.GetService<ITaskProgressService>();
+        var backup = WinUI.Framework.IoC.ServiceLocator.GetService<ISystemBackupService>();
+        if (progressService is null || backup is null) return;
+
+        var cts = progressService.StartTask("Creating system restore point...", isIndeterminate: true);
+        var progress = progressService.CreateDetailedProgress();
+        try
+        {
+            var result = await backup.CreateRestorePointAsync(
+                progress: progress, cancellationToken: cts.Token).ConfigureAwait(true);
+
+            if (result.Success && result.RestorePointCreated)
+            {
+                await _dialogs.InfoAsync("Create Restore Point",
+                    "System Restore point created successfully.");
+            }
+            else
+            {
+                var failMsg = "Failed to create System Restore point.";
+                if (!string.IsNullOrEmpty(result.ErrorMessage))
+                    failMsg += $"\n\n{result.ErrorMessage}";
+                await _dialogs.InfoAsync("Create Restore Point", failMsg);
+            }
+        }
+        catch (Exception ex)
+        {
+            ToolService.Current?.Log($"[RESTORE] Quick action restore point failed: {ex.Message}");
+            await _dialogs.InfoAsync("Create Restore Point", "Failed to create System Restore point.");
+        }
+        finally
+        {
+            progressService.CompleteTask();
+        }
     }
 }

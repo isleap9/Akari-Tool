@@ -600,18 +600,23 @@ public sealed partial class AkariOSPage : Page
         Grid.SetColumn(btns, 1);
 
         var applyBtn = new Button { Content = "Apply All", Style = (Style)Application.Current.Resources["AccentButtonStyle"], Margin = new Thickness(0, 0, 6, 0) };
-        applyBtn.Click += async (_, _) =>
-        {
-            applyBtn.IsEnabled = false;
-            try
+            applyBtn.Click += async (_, _) =>
             {
-                Service!.Log("[RESTORE] Creating system restore point...");
-                bool rpOk = await RestorePointHelper.EnsureRestorePointAsync(Service!);
-                Service!.Log(rpOk ? "[RESTORE] ✓ Restore point ready." : "[RESTORE] ⚠ Could not create restore point — proceeding anyway.");
-                await PlaybookTweaks.ApplyAllAsync(Service!);
-            }
-            finally { applyBtn.IsEnabled = true; }
-        };
+                applyBtn.IsEnabled = false;
+                try
+                {
+                    Service!.Log("[RESTORE] Creating system restore point...");
+                    var backup = ServiceLocator.GetService<AkariTool.Core.Features.Common.Interfaces.ISystemBackupService>();
+                    var rpResult = backup is null
+                        ? AkariTool.Core.Features.Common.Models.BackupResult.CreateFailure("backup service unavailable")
+                        : await backup.CreateRestorePointAsync("AkariOS Playbook Pre-Tweak Backup");
+                    Service!.Log(rpResult.Success
+                        ? "[RESTORE] ✓ Restore point ready."
+                        : "[RESTORE] ⚠ Could not create restore point — proceeding anyway.");
+                    await PlaybookTweaks.ApplyAllAsync(Service!);
+                }
+                finally { applyBtn.IsEnabled = true; }
+            };
 
         var undoBtn = new Button { Content = "Undo All" };
         undoBtn.Click += async (_, _) => { undoBtn.IsEnabled = false; try { await PlaybookTweaks.UndoAllAsync(Service!); } finally { undoBtn.IsEnabled = true; } };

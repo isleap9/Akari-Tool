@@ -49,6 +49,10 @@ public static class UIServiceExtensions
         services.AddSingleton<TweakDialogs>();
         services.AddSingleton<SettingBackupService>();
 
+        // First-launch restore point offer (4g — Winhance StartupNotificationService
+        // port). Impl lives App-side: TweakDialogs + vendored ISettingsService deps.
+        services.AddSingleton<IStartupNotificationService, StartupNotificationService>();
+
         // NEW-badge baseline tracking (Winhance port). Impl lives App-side because
         // it needs the vendored ISettingsService; interface is Core.
         services.AddSingleton<INewBadgeService, NewBadgeService>();

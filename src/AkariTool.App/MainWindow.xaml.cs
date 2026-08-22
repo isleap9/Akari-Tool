@@ -174,7 +174,18 @@ public sealed partial class MainWindow : Window
         // XamlRoot is null until the window shows; resolve it on the first layout.
         if (Content is FrameworkElement rootElement)
         {
-            rootElement.Loaded += (_, _) => _dialogs.XamlRoot = rootElement.XamlRoot;
+            rootElement.Loaded += (_, _) =>
+            {
+                _dialogs.XamlRoot = rootElement.XamlRoot;
+
+                // First-launch restore-point offer (4g — Winhance StartupUiCoordinator
+                // parity: fires once startup has rendered). Hooked HERE, not Nav.Loaded,
+                // because Loaded fires child-first — Nav.Loaded runs before this handler,
+                // and TweakDialogs fail-safes to DECLINED on a null XamlRoot, which would
+                // silently consume the one-shot offer (the pref is set before the dialog).
+                _ = WinUI.Framework.IoC.ServiceLocator.GetService<IStartupNotificationService>()
+                    .ShowFirstLaunchRestoreOfferAsync();
+            };
         }
 
         // Theme BEFORE content paints. The framework theme service persists the

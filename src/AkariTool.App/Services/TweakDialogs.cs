@@ -36,19 +36,34 @@ namespace AkariTool.Services
             finally { _gate.Release(); }
         }
 
-        /// <summary>
-        /// Yes/No confirmation. True = proceed. Exists because the Software tab's
-        /// destructive prompts are Yes/No in net8 (AkariDialogs.ConfirmYesNoAsync), not
-        /// OK/Cancel — the button pair is part of the copy being ported verbatim.
-        /// </summary>
-        public async Task<bool> ConfirmYesNoAsync(string title, object content)
-        {
-            if (_dialogs.XamlRoot is null) return false;   // fail safe: treat as declined
-            await _gate.WaitAsync();
-            try { return await _dialogs.ConfirmAsync(title, content, "Yes", "No"); }
-            catch { return false; }
-            finally { _gate.Release(); }
-        }
+    /// <summary>
+    /// Yes/No confirmation. True = proceed. Exists because the Software tab's
+    /// destructive prompts are Yes/No in net8 (AkariDialogs.ConfirmYesNoAsync), not
+    /// OK/Cancel — the button pair is part of the copy being ported verbatim.
+    /// </summary>
+    public async Task<bool> ConfirmYesNoAsync(string title, object content)
+    {
+        if (_dialogs.XamlRoot is null) return false;   // fail safe: treat as declined
+        await _gate.WaitAsync();
+        try { return await _dialogs.ConfirmAsync(title, content, "Yes", "No"); }
+        catch { return false; }
+        finally { _gate.Release(); }
+    }
+
+    /// <summary>
+    /// Confirmation with explicit primary AND secondary button text (the first-launch
+    /// restore offer's "Create Restore Point" / "Skip" pair — the secondary button is
+    /// not Cancel). True = primary pressed.
+    /// </summary>
+    public async Task<bool> ConfirmWithButtonsAsync(
+        string title, object content, string primaryText, string secondaryText)
+    {
+        if (_dialogs.XamlRoot is null) return false;   // fail safe: treat as declined
+        await _gate.WaitAsync();
+        try { return await _dialogs.ConfirmAsync(title, content, primaryText, secondaryText); }
+        catch { return false; }
+        finally { _gate.Release(); }
+    }
 
         /// <summary>Single-button informational dialog.</summary>
         public async Task InfoAsync(string title, object content)

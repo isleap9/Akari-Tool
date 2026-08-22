@@ -63,6 +63,11 @@ public static class InfrastructureServiceExtensions
         services.AddSingleton<IPowerSettingsValidationService, PowerSettingsValidationService>();
         services.AddSingleton<IPowerService, PowerService>();
 
+        // System backup (4g — Winhance SystemBackupService 1:1 port): restore point
+        // creation with native SrClient API, verification retries, shadow-storage checks.
+        services.AddSingleton<ISystemRestoreService, SystemRestoreService>();
+        services.AddSingleton<ISystemBackupService, SystemBackupService>();
+
         // Priority 4d: Technical Details / Tooltip infrastructure
         services.AddSingleton<IRegeditLauncher, RegeditLauncher>();
         services.AddSingleton<ITooltipDataService, TooltipDataService>();
