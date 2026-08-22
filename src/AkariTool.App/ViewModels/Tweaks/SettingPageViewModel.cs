@@ -112,13 +112,44 @@ public abstract partial class SettingPageViewModel : ViewModelBase
     }
 
     /// <summary>
+    /// 4h shared compatibility pipeline (Winhance CompatibleSettingsRegistry parity,
+    /// filtered mode): every page's catalog passes the Windows-version filter first,
+    /// then the hardware filter, before rows are materialized. Power additionally
+    /// existence-validates inside its BuildSettingGroups override (Winhance gates
+    /// existence Power-only too). Filters resolve via ServiceLocator so the base VM
+    /// carries no extra ctor parameters; when unregistered the gate is a no-op.
+    /// Blocking GetAwaiter matches Power's pre-existing pattern — Build() is
+    /// synchronous and warm-up runs on a background thread.
+    /// </summary>
+    private IReadOnlyList<SettingGroup> ApplyCompatibilityGates(IReadOnlyList<SettingGroup> groups)
+    {
+        var windowsFilter = WinUI.Framework.IoC.ServiceLocator.GetService<IWindowsCompatibilityFilter>();
+        var hardwareFilter = WinUI.Framework.IoC.ServiceLocator.GetService<IHardwareCompatibilityFilter>();
+        if (windowsFilter is null && hardwareFilter is null) return groups;
+
+        var result = new List<SettingGroup>(groups.Count);
+        foreach (var group in groups)
+        {
+            IEnumerable<SettingDefinition> settings = group.Settings;
+            if (windowsFilter is not null)
+                settings = windowsFilter.FilterSettingsByWindowsVersion(settings);
+            if (hardwareFilter is not null)
+                settings = hardwareFilter.FilterSettingsByHardwareAsync(settings).GetAwaiter().GetResult();
+
+            var kept = settings.ToList();
+            if (kept.Count == 0) continue;   // empty group drops out (section template renders nothing for it)
+            result.Add(group with { Settings = kept });
+        }
+        return result;
+    }
+
+    /// <summary>
     /// A gated row was permanently unlocked ("don't show again" checked): unlock
     /// every other RequiresAdvancedUnlock row on this page (Winhance's
     /// ParentFeatureViewModel sibling loop).
     /// </summary>
     private void OnAdvancedUnlockPersisted()
-    {
-        foreach (var section in Sections)
+    {        foreach (var section in Sections)
             foreach (var item in section.Items.OfType<SettingItemViewModel>())
                 if (item.RequiresAdvancedUnlock)
                     item.IsLocked = false;
@@ -145,7 +176,7 @@ public abstract partial class SettingPageViewModel : ViewModelBase
         {
             if (_built) return;
 
-            foreach (var group in BuildSettingGroups())
+            foreach (var group in ApplyCompatibilityGates(BuildSettingGroups()))
             {
                 var items = group.Settings.Select(CreateItem).ToList();
                 var section = new SettingSectionViewModel(group.Name, items);

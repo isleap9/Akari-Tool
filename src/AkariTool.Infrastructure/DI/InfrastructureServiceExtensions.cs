@@ -68,6 +68,13 @@ public static class InfrastructureServiceExtensions
         services.AddSingleton<ISystemRestoreService, SystemRestoreService>();
         services.AddSingleton<ISystemBackupService, SystemBackupService>();
 
+        // Compatibility gating pipeline (4h — Winhance 1:1 port): Windows-version +
+        // hardware filters applied to every declarative page catalog at Build time
+        // (filtered mode — incompatible rows are removed).
+        services.AddSingleton<IWindowsVersionService, WindowsVersionService>();
+        services.AddSingleton<IWindowsCompatibilityFilter, WindowsCompatibilityFilter>();
+        services.AddSingleton<IHardwareCompatibilityFilter, HardwareCompatibilityFilter>();
+
         // Priority 4d: Technical Details / Tooltip infrastructure
         services.AddSingleton<IRegeditLauncher, RegeditLauncher>();
         services.AddSingleton<ITooltipDataService, TooltipDataService>();

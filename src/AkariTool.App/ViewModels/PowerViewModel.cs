@@ -15,8 +15,10 @@ namespace AkariTool.ViewModels;
 /// <summary>
 /// Power page — ported to the declarative SettingDefinition model (Track A
 /// Phase 4 / Session C). Builds its sections from
-/// <see cref="PowerOptimizations.Build"/>, gated by hardware capability and
-/// PowerCfg setting existence, exactly like Winhance's PowerOptimizationsViewModel.
+/// <see cref="PowerOptimizations.Build"/>, gated by the shared Windows-version +
+/// hardware pipeline (SettingPageViewModel, 4h) plus the Power-only PowerCfg
+/// existence gate — matching Winhance's CompatibleSettingsRegistry treatment of
+/// its Power feature.
 ///
 /// The <c>power-plan-selection</c> row is the plan lifecycle row: its options are
 /// loaded dynamically from the system's power plans
@@ -25,11 +27,8 @@ namespace AkariTool.ViewModels;
 /// template (status dot, [Active] badge, per-plan delete) in the shared
 /// TweakTemplates.xaml rendering layer.
 ///
-/// Gating happens here (in BuildSettingGroups, blocking on the async probe
-/// services — SettingPageViewModel.Build is synchronous) instead of the legacy
-/// "return empty catalog on a battery-less machine" pattern: the catalog is kept
-/// whole and rows are filtered. RequiresAdvancedUnlock rows render locked behind
-/// Winhance's one-time warning dialog (persisted via ISettingsService).
+/// RequiresAdvancedUnlock rows render locked behind Winhance's one-time warning
+/// dialog (persisted via ISettingsService).
 /// </summary>
 public sealed partial class PowerViewModel : SettingPageViewModel
 {
@@ -113,22 +112,24 @@ public sealed partial class PowerViewModel : SettingPageViewModel
         }
 
     /// <summary>
-    /// Applies the hardware + existence gate. Hardware flags (RequiresBattery,
-    /// RequiresLid, RequiresBrightnessSupport, RequiresHybridSleepCapable) filter
-    /// whole rows; ValidateExistence keeps only settings whose backing PowerCfg
-    /// subgroup/setting exists on this machine. Empty groups drop out (the shared
-    /// section template hides nothing — the base has no empty-section guard).
+    /// 4h slim-down: hardware Requires* gating moved to the shared pipeline
+    /// (SettingPageViewModel.ApplyCompatibilityGates → HardwareCompatibilityFilter,
+    /// Winhance CompatibleSettingsRegistry order). What remains here is the
+    /// Power-only existence gate (Winhance gates FilterSettingsByExistenceAsync to
+    /// Power too) plus the battery probe that feeds CreateItem's Dual/SingleAC
+    /// template split — a display concern, not gating.
+    ///
+    /// Ordering note: predicates are independent ANDs, so running existence here
+    /// and Windows/hardware afterwards yields the same set as Winhance's
+    /// windows → hardware → existence sequence.
     /// </summary>
     private IReadOnlyList<SettingGroup> Gate(IReadOnlyList<SettingGroup> groups)
     {
-        // Blocking on the async probes is safe: the services ConfigureAwait(false)
+        // Battery state feeds CreateItem's Dual/SingleAC template split (not gating).
+        // Blocking on the async probe is safe: the service ConfigureAwait(false)s
         // internally, and this runs once per Build (warm-up background thread or
         // the page ctor).
-        bool battery = _hardware.HasBatteryAsync().GetAwaiter().GetResult();
-        bool lid = _hardware.HasLidAsync().GetAwaiter().GetResult();
-        bool brightness = _hardware.SupportsBrightnessControlAsync().GetAwaiter().GetResult();
-        bool hybrid = _hardware.SupportsHybridSleepAsync().GetAwaiter().GetResult();
-        _hasBattery = battery;
+        _hasBattery = _hardware.HasBatteryAsync().GetAwaiter().GetResult();
 
         var valid = _validation.FilterSettingsByExistenceAsync(
                 groups.SelectMany(g => g.Settings)).GetAwaiter().GetResult();
@@ -138,27 +139,11 @@ public sealed partial class PowerViewModel : SettingPageViewModel
         foreach (var group in groups)
         {
             var kept = group.Settings
-                .Where(s => PassesGate(s, battery, lid, brightness, hybrid, validIds))
+                .Where(s => !s.ValidateExistence || validIds.Contains(s.Id))
                 .ToList();
             if (kept.Count == 0) continue;
             result.Add(group with { Settings = kept });
         }
         return result;
-    }
-
-    private static bool PassesGate(
-        SettingDefinition s,
-        bool battery,
-        bool lid,
-        bool brightness,
-        bool hybrid,
-        HashSet<string> validIds)
-    {
-        if (s.RequiresBattery && !battery) return false;
-        if (s.RequiresLid && !lid) return false;
-        if (s.RequiresBrightnessSupport && !brightness) return false;
-        if (s.RequiresHybridSleepCapable && !hybrid) return false;
-        if (s.ValidateExistence && !validIds.Contains(s.Id)) return false;
-        return true;
     }
 }
