@@ -1191,6 +1191,10 @@ public static class GamingOptimizations
                     Name = "DNS Server",
                     Description = "Select a DNS server for all network adapters. Changes apply to every adapter on your system (Wi-Fi and Ethernet). Use Automatic to restore your default ISP/router DNS",
                     InputType = InputType.Selection,
+                    // Winhance parity: state detection runs through the live adapter
+                    // (DetectDnsServerIndex), not backing values — without this the
+                    // dropdown renders blank after a restart.
+                    DetectionType = DetectionType.DnsServer,
                     ComboBox = new ComboBoxMetadata
                     {
                         Options = new[]
@@ -2146,17 +2150,23 @@ public static class GamingOptimizations
                     Description = "Manages Windows touch keyboard, pen/stylus, and handwriting panel. Safe to disable on desktop systems without touch input.",
                     InputType = InputType.Selection,
                     IsSubjectivePreference = true,
+                    // Winhance 1:1 data shape (GamingAndPerformanceOptimizations): BOTH
+                    // backing values are declared so detection can read them, and
+                    // Manual/Automatic map preload to 1 (not null). With the second entry
+                    // missing, the Disabled mapping (preload=0) could never match on
+                    // re-read and the dropdown rendered blank after a restart.
                     RegistrySettings =
                     [
                         new RegistrySetting { KeyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\TabletInputService", ValueName = "Start", RecommendedValue = 4, DefaultValue = 3, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord, IsPrimary = true },
+                        new RegistrySetting { KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\input", ValueName = "IsInputAppPreloadEnabled", RecommendedValue = 0, DefaultValue = 1, EnabledValue = null, DisabledValue = null, ValueType = RegistryValueKind.DWord },
                     ],
                     ComboBox = new ComboBoxMetadata
                     {
                         Options =
                         [
                             new ComboBoxOption { DisplayName = "Disabled", IsRecommended = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 4, ["IsInputAppPreloadEnabled"] = (object?)0 } },
-                            new ComboBoxOption { DisplayName = "Manual", IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3, ["IsInputAppPreloadEnabled"] = (object?)null } },
-                            new ComboBoxOption { DisplayName = "Automatic", ValueMappings = new Dictionary<string, object?> { ["Start"] = 2, ["IsInputAppPreloadEnabled"] = (object?)null } },
+                            new ComboBoxOption { DisplayName = "Manual", IsDefault = true, ValueMappings = new Dictionary<string, object?> { ["Start"] = 3, ["IsInputAppPreloadEnabled"] = (object?)1 } },
+                            new ComboBoxOption { DisplayName = "Automatic", ValueMappings = new Dictionary<string, object?> { ["Start"] = 2, ["IsInputAppPreloadEnabled"] = (object?)1 } },
                         ],
                     },
                 },

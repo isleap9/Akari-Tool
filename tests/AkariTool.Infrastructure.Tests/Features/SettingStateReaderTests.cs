@@ -275,4 +275,140 @@ public class SettingStateReaderTests
 
         SettingStateReader.ResolveCompositeState(setting, "swapeffectupgradeenable=1;").Should().BeTrue();
     }
+
+    // ── Selection unmatched fallbacks (Winhance ResolveRawValuesToIndex parity, 4h-era fix) ──
+    //
+    // Registry-path tests point at a syntactically valid but NONEXISTENT key: TryOpenSubkey
+    // parses the hive prefix and returns a null subkey, so no real registry value is read
+    // (repo rule: no real-registry tests). The absent-read path then exercises the
+    // DefaultValue substitution + pristine/ResolveUnmatchedToDefault fallbacks purely.
+
+    private static SettingDefinition MakeRegistrySelection(
+        bool resolveUnmatchedToDefault,
+        bool declareDefaultValue,
+        int? substitutedValue = null)
+    {
+        return new SettingDefinition
+        {
+            Id = "reg-selection",
+            Name = "Test",
+            Description = "Desc",
+            InputType = InputType.Selection,
+            ResolveUnmatchedToDefault = resolveUnmatchedToDefault,
+            RegistrySettings = new[]
+            {
+                new RegistrySetting
+                {
+                    KeyPath = @"HKEY_CURRENT_USER\Software\AkariTool\Tests\Nonexistent_SelectionKey",
+                    ValueName = "TestValue",
+                    RecommendedValue = 2,
+                    DefaultValue = declareDefaultValue ? 1 : substitutedValue,
+                    ValueType = RegistryValueKind.DWord,
+                },
+            },
+            ComboBox = new ComboBoxMetadata
+            {
+                Options = new[]
+                {
+                    new ComboBoxOption { DisplayName = "Default", IsDefault = true,
+                        ValueMappings = new Dictionary<string, object?> { ["TestValue"] = 1 } },
+                    new ComboBoxOption { DisplayName = "Recommended", IsRecommended = true,
+                        ValueMappings = new Dictionary<string, object?> { ["TestValue"] = 2 } },
+                    new ComboBoxOption { DisplayName = "Aggressive",
+                        ValueMappings = new Dictionary<string, object?> { ["TestValue"] = 3 } },
+                },
+            },
+        };
+    }
+
+    [Fact]
+    public void ReadSelectionIndex_AbsentValue_SubstitutesDeclaredDefault_MatchesDefaultOption()
+    {
+        // Value absent but DefaultValue=1 declared: Winhance substitutes it before
+        // matching, so the default option's mapping resolves instead of Custom.
+        var reader = MakeReader(Substitute.For<IPowerSettingsQueryService>());
+
+        reader.ReadSelectionIndex(MakeRegistrySelection(resolveUnmatchedToDefault: false, declareDefaultValue: true))
+            .Should().Be(0);
+    }
+
+    [Fact]
+    public void ReadSelectionIndex_PristineSystem_NoDefaultValue_FallsBackToIsDefault()
+    {
+        // No live value and no declared DefaultValue → pristine → IsDefault option.
+        var reader = MakeReader(Substitute.For<IPowerSettingsQueryService>());
+
+        reader.ReadSelectionIndex(MakeRegistrySelection(resolveUnmatchedToDefault: false, declareDefaultValue: false))
+            .Should().Be(0);
+    }
+
+    [Fact]
+    public void ReadSelectionIndex_ResolveUnmatchedToDefault_UnmatchedResolvesToDefault()
+    {
+        // A substituted-but-unmatched state (DefaultValue=9 maps to no option) with the
+        // opt-in flag set resolves to the IsDefault option instead of Custom.
+        var reader = MakeReader(Substitute.For<IPowerSettingsQueryService>());
+
+        reader.ReadSelectionIndex(MakeRegistrySelection(resolveUnmatchedToDefault: true, declareDefaultValue: false, substitutedValue: 9))
+            .Should().Be(0);
+    }
+
+    [Fact]
+    public void ReadSelectionIndex_NoOptIn_NonPristineUnmatched_StaysCustom()
+    {
+        // Substituted value matches no option and no ResolveUnmatchedToDefault opt-in:
+        // non-pristine unmatched stays Custom (-1) — the badge pipeline's Custom pill case.
+        var reader = MakeReader(Substitute.For<IPowerSettingsQueryService>());
+
+        reader.ReadSelectionIndex(MakeRegistrySelection(resolveUnmatchedToDefault: false, declareDefaultValue: false, substitutedValue: 9))
+            .Should().Be(ComboBoxConstants.CustomStateIndex);
+    }
+
+    [Fact]
+    public void ReadSelectionIndex_PowerCfgOnly_ResolveUnmatchedToDefault_FallsBackToIsDefault()
+    {
+        var queryService = Substitute.For<IPowerSettingsQueryService>();
+        queryService.GetPowerSettingACDCValuesAsync(Arg.Any<PowerCfgSetting>())
+            .Returns(Task.FromResult(((int?)9, (int?)9))); // matches no option
+
+        var reader = MakeReader(queryService);
+
+        var setting = MakePowerSelectionSetting() with { ResolveUnmatchedToDefault = true };
+        reader.ReadSelectionIndex(setting).Should().Be(0);
+    }
+
+    // ── DNS Server detection (Winhance DetectDnsServerIndex parity — pure core) ──
+
+    private static SettingDefinition MakeDnsSetting() => new()
+    {
+        Id = "gaming-dns-server",
+        Name = "DNS Server",
+        Description = "Desc",
+        InputType = InputType.Selection,
+        DetectionType = DetectionType.DnsServer,
+        ComboBox = new ComboBoxMetadata
+        {
+            Options = new[]
+            {
+                new ComboBoxOption { DisplayName = "Automatic", IsDefault = true, IsRecommended = true,
+                    ScriptVariables = new Dictionary<string, string> { ["primary"] = "" } },
+                new ComboBoxOption { DisplayName = "Cloudflare",
+                    ScriptVariables = new Dictionary<string, string> { ["primary"] = "1.1.1.1" } },
+                new ComboBoxOption { DisplayName = "Google",
+                    ScriptVariables = new Dictionary<string, string> { ["primary"] = "8.8.8.8" } },
+            },
+        },
+    };
+
+    [Theory]
+    [InlineData(null, "1.2.3.4", 0)]   // NameServer empty/absent = DHCP → Automatic
+    [InlineData("", "1.2.3.4", 0)]
+    [InlineData("1.1.1.1,8.8.4.4", "1.1.1.1", 1)]  // manual, primary matched via ScriptVariables
+    [InlineData("8.8.8.8,8.8.4.4", "8.8.8.8", 2)]
+    [InlineData("203.0.113.7", "203.0.113.7", -1)] // manual but unknown server → Custom
+    public void ResolveDnsServerIndex_MatchesWinhanceSemantics(string? nameServer, string? primaryDns, int expected)
+    {
+        SettingStateReader.ResolveDnsServerIndex(MakeDnsSetting(), nameServer, primaryDns)
+            .Should().Be(expected);
+    }
 }

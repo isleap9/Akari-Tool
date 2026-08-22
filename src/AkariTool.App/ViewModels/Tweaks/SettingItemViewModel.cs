@@ -1016,6 +1016,16 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
     }
 
     // ── Badge computation ──────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Raised whenever the row's badge state was recomputed after its applied state
+    /// may have changed (user apply, quick-set, system re-read). The owning page
+    /// recomputes RecommendedPendingCount on this signal so the sidebar nav badge
+    /// updates live — previously only bulk loops, resolver side-effects and the
+    /// Quick-Actions flyout refreshed page counts, leaving single-row applies stale.
+    /// </summary>
+    public event Action? AppliedStateChanged;
+
     private void RefreshBadges()
     {
         var computed = ComputeBadgeState();
@@ -1023,6 +1033,7 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
         foreach (var pill in computed)
             Badges.Add(pill);
         OnPropertyChanged(nameof(HasBadges));
+        AppliedStateChanged?.Invoke();
     }
 
     private IReadOnlyList<BadgePillState> ComputeBadgeState()

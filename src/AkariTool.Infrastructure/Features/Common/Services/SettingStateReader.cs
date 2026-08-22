@@ -1,7 +1,10 @@
 using System;
 using System.Linq;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using Microsoft.Win32;
 using AkariTool.Core.Features.Common.Constants;
+using AkariTool.Core.Features.Common.Enums;
 using AkariTool.Core.Features.Common.Interfaces;
 using AkariTool.Core.Features.Common.Models;
 using AkariTool.Infrastructure.Features.Common.Interfaces;
@@ -96,6 +99,16 @@ public sealed class SettingStateReader(
                     return i;
             }
 
+            // Custom-detection rows (Winhance DetectedIndex parity): the DNS Server
+            // dropdown resolves from the live adapter configuration, not from any
+            // backing registry/powercfg value. Without this the reader returns -1
+            // and the ComboBox renders blank on every launch (Winhance
+            // SystemSettingsDiscoveryService.DetectDnsServerIndex 1:1).
+            if (setting.DetectionType == DetectionType.DnsServer)
+            {
+                return DetectDnsServerIndex(setting);
+            }
+
             // PowerCfg-only settings resolve their live index against the active
             // scheme's AC value mapped through each option's "PowerCfgValue".
             if (setting.PowerCfgSettings is { Count: > 0 } &&
@@ -122,7 +135,11 @@ public sealed class SettingStateReader(
                     }
                 }
 
-                currentValues[registrySetting.ValueName ?? "KeyExists"] = readValue;
+                // Winhance ResolveRawValuesToIndex parity: a live-absent value resolves to
+                // the row's declared Windows default before matching; only entries without
+                // a DefaultValue stay null.
+                currentValues[registrySetting.ValueName ?? "KeyExists"] =
+                    readValue ?? registrySetting.DefaultValue;
             }
 
             // Whole-map match: an option wins only when every value it maps
@@ -148,9 +165,14 @@ public sealed class SettingStateReader(
                     return i;
             }
 
-            // No option matched. A pristine system (all backing values absent)
-            // resolves to the IsDefault option; otherwise it is a custom state.
-            if (currentValues.Count > 0 && currentValues.Values.All(v => v is null))
+            // No option matched. Fall back to the IsDefault option when either:
+            //  - every backing registry value is absent (a pristine system is the Windows default), or
+            //  - the setting opts in via ResolveUnmatchedToDefault (its default state isn't a
+            //    single enumerable value, so any unrecognised state is treated as the default).
+            // (Winhance ResolveRawValuesToIndex parity — Akari previously honoured only the
+            // pristine case, leaving ResolveUnmatchedToDefault rows blank/unmatched.)
+            bool allBackingValuesAbsent = currentValues.Count > 0 && currentValues.Values.All(v => v is null);
+            if (allBackingValuesAbsent || setting.ResolveUnmatchedToDefault)
             {
                 for (int i = 0; i < options.Count; i++)
                 {
@@ -227,13 +249,78 @@ public sealed class SettingStateReader(
                 return i;
         }
 
-        // Query failed to produce a value: treat as a pristine/unknown state.
-        if (acValue == null)
+        // Query failed to produce a value, or the setting opts in via
+        // ResolveUnmatchedToDefault (Winhance unified-fallback parity): resolve to
+        // the IsDefault option.
+        if (acValue == null || setting.ResolveUnmatchedToDefault)
         {
             for (int i = 0; i < options.Count; i++)
             {
                 if (options[i].IsDefault)
                     return i;
+            }
+        }
+
+        return ComboBoxConstants.CustomStateIndex;
+    }
+
+    /// <summary>
+    /// Winhance DetectDnsServerIndex 1:1: resolves the DNS dropdown index from the
+    /// live adapter configuration. Reads the active adapter's NameServer registry
+    /// value (empty = DHCP) and its primary IPv4 DNS address, then delegates to
+    /// <see cref="ResolveDnsServerIndex"/>.
+    /// </summary>
+    private int DetectDnsServerIndex(SettingDefinition setting)
+    {
+        var activeAdapter = NetworkInterface.GetAllNetworkInterfaces()
+            .FirstOrDefault(n => n.OperationalStatus == OperationalStatus.Up
+                && n.NetworkInterfaceType != NetworkInterfaceType.Loopback);
+
+        if (activeAdapter == null)
+            return 0;
+
+        // Check if DNS is configured manually by reading the NameServer registry value.
+        // When DNS is obtained via DHCP, NameServer is empty.
+        string? nameServer = null;
+        if (TryOpenSubkey(
+                $@"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces\{activeAdapter.Id}",
+                out var subKey))
+        {
+            using (subKey)
+            {
+                nameServer = subKey?.GetValue("NameServer") as string;
+            }
+        }
+
+        var primaryDns = activeAdapter.GetIPProperties().DnsAddresses
+            .FirstOrDefault(a => a.AddressFamily == AddressFamily.InterNetwork)?
+            .ToString();
+
+        return ResolveDnsServerIndex(setting, nameServer, primaryDns);
+    }
+
+    /// <summary>
+    /// Pure core of <see cref="DetectDnsServerIndex"/> (internal test seam): DHCP/empty
+    /// NameServer → index 0 ("Automatic"); otherwise match the adapter's primary IPv4
+    /// DNS against each option's ScriptVariables["primary"]; unknown manual server →
+    /// Custom.
+    /// </summary>
+    internal static int ResolveDnsServerIndex(SettingDefinition setting, string? nameServer, string? primaryDns)
+    {
+        if (string.IsNullOrEmpty(nameServer))
+            return 0; // DHCP — return "Automatic" index
+
+        var dnsOptions = setting.ComboBox?.Options;
+        if (string.IsNullOrEmpty(primaryDns) || dnsOptions == null)
+            return 0;
+
+        for (int i = 0; i < dnsOptions.Count; i++)
+        {
+            if (dnsOptions[i].ScriptVariables is { } variables
+                && variables.TryGetValue("primary", out var primary)
+                && primary == primaryDns)
+            {
+                return i;
             }
         }
 

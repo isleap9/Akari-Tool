@@ -186,12 +186,15 @@ public abstract partial class SettingPageViewModel : ViewModelBase
                 // page must re-read after the active plan changes.
                 // RequiresAdvancedUnlock rows unlock their siblings when the user
                 // checks "don't show again" in the warning dialog (Winhance parity).
+                // AppliedStateChanged keeps RecommendedPendingCount (→ nav badge)
+                // live across single-row applies and quick-sets.
                 foreach (var item in items)
                 {
                     if (item.IsPowerPlanSetting)
                         item.PowerPlanChanged += OnPowerPlanChanged;
                     if (item.RequiresAdvancedUnlock)
                         item.AdvancedUnlockPersisted += OnAdvancedUnlockPersisted;
+                    item.AppliedStateChanged += RefreshQuickActionCounts;
                 }
             }
 

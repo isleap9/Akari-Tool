@@ -42,10 +42,9 @@ public static class InfrastructureServiceExtensions
         services.AddSingleton<ISettingOperationExecutor, SettingOperationExecutor>();
         services.AddSingleton<ISettingDependencyResolver, SettingDependencyResolver>();
 
-        // SettingOperationExecutor's nine dependencies. These are STUB implementations
-        // (every method throws NotImplementedException) — they satisfy DI resolution so
-        // the declarative pages construct, but the apply path is not live yet (Track A
-        // Phase 2 follow-up). The read/badge path uses SettingStateReader, not these.
+        // SettingOperationExecutor's dependencies — all fully implemented (the write
+        // path has been live since Track A Phase 2; FileSystemService was the last
+        // throwing stub, implemented during the 4h-era ComboBox detection fix).
         services.AddSingleton<IWindowsRegistryService, WindowsRegistryService>();
         services.AddSingleton<IComboBoxResolver, ComboBoxResolver>();
         services.AddSingleton<IProcessRestartManager, ProcessRestartManager>();
