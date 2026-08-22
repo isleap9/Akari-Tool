@@ -18,12 +18,15 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:converters="using:WinUI.Framework.Converters"
     xmlns:techconv="using:AkariTool.Views.Converters"
+    xmlns:featconv="using:AkariTool.Features.Common.Converters"
     xmlns:selectors="using:AkariTool.Views.Selectors"
     xmlns:controls="using:AkariTool.Views.Controls">
 
     <converters:BooleanToVisibilityConverter x:Key="BoolToVis" />
     <converters:NullToVisibilityConverter x:Key="NullToVis" />
     <techconv:InverseBoolToVisibilityConverter x:Key="InvBoolToVis" />
+    <!-- Row header icons (Winhance parity): resolves Icon/IconPack off the row VM. -->
+    <featconv:IconConverter x:Key="IconConverter" />
 
     <!-- The ⊞ "Windows default" mark keeps the Windows-brand blue in BOTH themes —
          it is NOT the Akari accent, so it must NOT follow the crimson accent tokens. -->
@@ -376,11 +379,23 @@
             Visibility="{Binding IsVisible, Converter={StaticResource BoolToVis}}">
             <Grid Margin="0,13,0,13">
                 <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                <!-- Row header icon (Winhance HeaderIcon parity): Material/Fluent
+                     glyph resolved by IconConverter; collapses when unset. -->
+                <ContentControl
+                    Grid.Column="0"
+                    MaxWidth="24" MaxHeight="24"
+                    Margin="0,0,16,0"
+                    VerticalAlignment="Top"
+                    HorizontalAlignment="Left"
+                    IsTabStop="False"
+                    Content="{Binding Converter={StaticResource IconConverter}}"
+                    Visibility="{Binding HasIcon, Converter={StaticResource BoolToVis}}" />
+                <StackPanel Grid.Column="1" Margin="0,0,12,0">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <TextBlock
                             Text="{Binding Name}"
@@ -410,7 +425,7 @@
                         Visibility="{Binding HasBadges, Converter={StaticResource BoolToVis}}" />
                 </StackPanel>
 
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                     <!-- ★ apply recommended -->
                     <Button
                         Style="{StaticResource AkariChromelessButtonStyle}"
@@ -464,7 +479,7 @@
                 <!-- Advanced-unlock lock overlay (Winhance port): dims the whole row
                      until the one-time warning dialog is accepted. -->
                 <Grid
-                    Grid.ColumnSpan="2"
+                    Grid.ColumnSpan="3"
                     Visibility="{Binding IsLocked, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
                     <Border Background="{ThemeResource SmokeFillColorDefaultBrush}" CornerRadius="4" />
                     <Button
@@ -496,11 +511,23 @@
             Visibility="{Binding IsVisible, Converter={StaticResource BoolToVis}}">
             <Grid Margin="0,13,0,13">
                 <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                <!-- Row header icon (Winhance HeaderIcon parity): Material/Fluent
+                     glyph resolved by IconConverter; collapses when unset. -->
+                <ContentControl
+                    Grid.Column="0"
+                    MaxWidth="24" MaxHeight="24"
+                    Margin="0,0,16,0"
+                    VerticalAlignment="Top"
+                    HorizontalAlignment="Left"
+                    IsTabStop="False"
+                    Content="{Binding Converter={StaticResource IconConverter}}"
+                    Visibility="{Binding HasIcon, Converter={StaticResource BoolToVis}}" />
+                <StackPanel Grid.Column="1" Margin="0,0,12,0">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <TextBlock
                             Text="{Binding Name}"
@@ -530,7 +557,7 @@
                         Visibility="{Binding HasBadges, Converter={StaticResource BoolToVis}}" />
                 </StackPanel>
 
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                     <Button
                         Style="{StaticResource AkariChromelessButtonStyle}"
                         Width="28" Height="28"
@@ -583,7 +610,7 @@
                 <!-- Advanced-unlock lock overlay (Winhance port): dims the whole row
                      until the one-time warning dialog is accepted. -->
                 <Grid
-                    Grid.ColumnSpan="2"
+                    Grid.ColumnSpan="3"
                     Visibility="{Binding IsLocked, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
                     <Border Background="{ThemeResource SmokeFillColorDefaultBrush}" CornerRadius="4" />
                     <Button
@@ -615,11 +642,23 @@
             Visibility="{Binding IsVisible, Converter={StaticResource BoolToVis}}">
             <Grid Margin="0,13,0,13">
                 <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                <!-- Row header icon (Winhance HeaderIcon parity): Material/Fluent
+                     glyph resolved by IconConverter; collapses when unset. -->
+                <ContentControl
+                    Grid.Column="0"
+                    MaxWidth="24" MaxHeight="24"
+                    Margin="0,0,16,0"
+                    VerticalAlignment="Top"
+                    HorizontalAlignment="Left"
+                    IsTabStop="False"
+                    Content="{Binding Converter={StaticResource IconConverter}}"
+                    Visibility="{Binding HasIcon, Converter={StaticResource BoolToVis}}" />
+                <StackPanel Grid.Column="1" Margin="0,0,12,0">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <TextBlock
                             Text="{Binding Name}"
@@ -646,7 +685,7 @@
                 <!-- Dynamic Power Plan dropdown: status dot, [Active] badge, per-plan
                      delete. Selection commits on drop-down close (see the control). -->
                 <controls:PowerPlanComboBox
-                    Grid.Column="1"
+                    Grid.Column="2"
                     ItemsSource="{Binding PlanOptions}"
                     SelectedIndex="{Binding SelectedIndex, Mode=TwoWay}"
                     DeleteCommand="{Binding DeletePlanCommand}"
@@ -657,7 +696,7 @@
                 <!-- Advanced-unlock lock overlay (Winhance port): dims the whole row
                      until the one-time warning dialog is accepted. -->
                 <Grid
-                    Grid.ColumnSpan="2"
+                    Grid.ColumnSpan="3"
                     Visibility="{Binding IsLocked, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
                     <Border Background="{ThemeResource SmokeFillColorDefaultBrush}" CornerRadius="4" />
                     <Button
@@ -690,11 +729,23 @@
             Visibility="{Binding IsVisible, Converter={StaticResource BoolToVis}}">
             <Grid Margin="0,13,0,13">
                 <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                <!-- Row header icon (Winhance HeaderIcon parity): Material/Fluent
+                     glyph resolved by IconConverter; collapses when unset. -->
+                <ContentControl
+                    Grid.Column="0"
+                    MaxWidth="24" MaxHeight="24"
+                    Margin="0,0,16,0"
+                    VerticalAlignment="Top"
+                    HorizontalAlignment="Left"
+                    IsTabStop="False"
+                    Content="{Binding Converter={StaticResource IconConverter}}"
+                    Visibility="{Binding HasIcon, Converter={StaticResource BoolToVis}}" />
+                <StackPanel Grid.Column="1" Margin="0,0,12,0">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <TextBlock
                             Text="{Binding Name}"
@@ -724,7 +775,7 @@
                         Visibility="{Binding HasBadges, Converter={StaticResource BoolToVis}}" />
                 </StackPanel>
 
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                     <Button
                         Style="{StaticResource AkariChromelessButtonStyle}"
                         Width="28" Height="28"
@@ -779,7 +830,7 @@
                 <!-- Advanced-unlock lock overlay (Winhance port): dims the whole row
                      until the one-time warning dialog is accepted. -->
                 <Grid
-                    Grid.ColumnSpan="2"
+                    Grid.ColumnSpan="3"
                     Visibility="{Binding IsLocked, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
                     <Border Background="{ThemeResource SmokeFillColorDefaultBrush}" CornerRadius="4" />
                     <Button
@@ -812,11 +863,23 @@
             Visibility="{Binding IsVisible, Converter={StaticResource BoolToVis}}">
             <Grid Margin="0,13,0,13">
                 <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                <!-- Row header icon (Winhance HeaderIcon parity): Material/Fluent
+                     glyph resolved by IconConverter; collapses when unset. -->
+                <ContentControl
+                    Grid.Column="0"
+                    MaxWidth="24" MaxHeight="24"
+                    Margin="0,0,16,0"
+                    VerticalAlignment="Top"
+                    HorizontalAlignment="Left"
+                    IsTabStop="False"
+                    Content="{Binding Converter={StaticResource IconConverter}}"
+                    Visibility="{Binding HasIcon, Converter={StaticResource BoolToVis}}" />
+                <StackPanel Grid.Column="1" Margin="0,0,12,0">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <TextBlock
                             Text="{Binding Name}"
@@ -846,7 +909,7 @@
                         Visibility="{Binding HasBadges, Converter={StaticResource BoolToVis}}" />
                 </StackPanel>
 
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                     <Button
                         Style="{StaticResource AkariChromelessButtonStyle}"
                         Width="28" Height="28"
@@ -901,7 +964,7 @@
                 <!-- Advanced-unlock lock overlay (Winhance port): dims the whole row
                      until the one-time warning dialog is accepted. -->
                 <Grid
-                    Grid.ColumnSpan="2"
+                    Grid.ColumnSpan="3"
                     Visibility="{Binding IsLocked, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
                     <Border Background="{ThemeResource SmokeFillColorDefaultBrush}" CornerRadius="4" />
                     <Button
@@ -934,11 +997,23 @@
             Visibility="{Binding IsVisible, Converter={StaticResource BoolToVis}}">
             <Grid Margin="0,13,0,13">
                 <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                <!-- Row header icon (Winhance HeaderIcon parity): Material/Fluent
+                     glyph resolved by IconConverter; collapses when unset. -->
+                <ContentControl
+                    Grid.Column="0"
+                    MaxWidth="24" MaxHeight="24"
+                    Margin="0,0,16,0"
+                    VerticalAlignment="Top"
+                    HorizontalAlignment="Left"
+                    IsTabStop="False"
+                    Content="{Binding Converter={StaticResource IconConverter}}"
+                    Visibility="{Binding HasIcon, Converter={StaticResource BoolToVis}}" />
+                <StackPanel Grid.Column="1" Margin="0,0,12,0">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <TextBlock
                             Text="{Binding Name}"
@@ -968,7 +1043,7 @@
                         Visibility="{Binding HasBadges, Converter={StaticResource BoolToVis}}" />
                 </StackPanel>
 
-                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
                     <StackPanel Spacing="4">
                         <TextBlock Text="Plugged In" FontSize="12" Opacity="0.8" HorizontalAlignment="Center" />
                         <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
@@ -1070,7 +1145,7 @@
                 <!-- Advanced-unlock lock overlay (Winhance port): dims the whole row
                      until the one-time warning dialog is accepted. -->
                 <Grid
-                    Grid.ColumnSpan="2"
+                    Grid.ColumnSpan="3"
                     Visibility="{Binding IsLocked, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
                     <Border Background="{ThemeResource SmokeFillColorDefaultBrush}" CornerRadius="4" />
                     <Button

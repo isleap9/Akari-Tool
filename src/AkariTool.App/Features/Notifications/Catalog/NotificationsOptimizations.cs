@@ -27,6 +27,7 @@ public static class NotificationsOptimizations
                 new SettingDefinition
                 {
                     Id = "windows-pushnotifications",
+                    Icon = "BellAlert",
                     Name = "Push Notifications",
                     Description = "Allows apps to send push notifications through Windows Push Notification Service.",
                     InputType = InputType.Toggle,
@@ -50,6 +51,7 @@ public static class NotificationsOptimizations
                 new SettingDefinition
                 {
                     Id = "notifications-sound",
+                    Icon = "VolumeHigh",
                     Name = "Notification Sounds",
                     Description = "Plays a sound when notifications arrive.",
                     InputType = InputType.Toggle,
@@ -73,6 +75,7 @@ public static class NotificationsOptimizations
                 new SettingDefinition
                 {
                     Id = "notifications-toast-above-lock",
+                    Icon = "CellphoneLock",
                     Name = "Notifications on Lock Screen",
                     Description = "Shows notification banners on the lock screen.",
                     InputType = InputType.Toggle,
@@ -107,6 +110,7 @@ public static class NotificationsOptimizations
                 new SettingDefinition
                 {
                     Id = "notifications-critical-toast-above-lock",
+                    Icon = "PhoneAlert",
                     Name = "Critical Notifications on Lock Screen",
                     Description = "Shows critical notifications on the lock screen even when Do Not Disturb is on.",
                     InputType = InputType.Toggle,
@@ -130,6 +134,7 @@ public static class NotificationsOptimizations
                 new SettingDefinition
                 {
                     Id = "notifications-show-bell-icon",
+                    Icon = "BellCheck",
                     Name = "Notification Bell Icon",
                     Description = "Shows the notification bell icon in the taskbar.",
                     InputType = InputType.Toggle,
@@ -189,6 +194,7 @@ public static class NotificationsOptimizations
                 new SettingDefinition
                 {
                     Id = "notifications-welcome-experience",
+                    Icon = "HumanGreeting",
                     Name = "Windows Welcome Experience",
                     Description = "Shows the Windows welcome experience after updates and when signing in to highlight new features.",
                     InputType = InputType.Toggle,
@@ -212,6 +218,7 @@ public static class NotificationsOptimizations
                 new SettingDefinition
                 {
                     Id = "notifications-system-setting-engagement",
+                    Icon = "AutoFix",
                     Name = "Suggested Settings Engagement",
                     Description = "Shows suggested settings and engagement prompts in Windows notifications.",
                     InputType = InputType.Toggle,
@@ -235,6 +242,7 @@ public static class NotificationsOptimizations
                 new SettingDefinition
                 {
                     Id = "notifications-tips-suggestions",
+                    Icon = "LightbulbOnOutline",
                     Name = "Tips and Suggestions Notifications",
                     Description = "Shows tips, tricks, and suggestions as you use Windows.",
                     InputType = InputType.Toggle,
@@ -258,6 +266,7 @@ public static class NotificationsOptimizations
                 new SettingDefinition
                 {
                     Id = "notifications-system-pane-suggestions",
+                    Icon = "MessageBadge",
                     Name = "Settings App Suggestions",
                     Description = "Shows suggestions and recommended content in the Windows Settings app.",
                     InputType = InputType.Toggle,
@@ -293,6 +302,7 @@ public static class NotificationsOptimizations
                 new SettingDefinition
                 {
                     Id = "notifications-capability-access",
+                    Icon = "LockOpenAlertOutline",
                     Name = "Capability Access Notifications",
                     Description = "Notifies when apps access sensitive capabilities like camera, microphone, or location.",
                     InputType = InputType.Toggle,
@@ -316,6 +326,7 @@ public static class NotificationsOptimizations
                 new SettingDefinition
                 {
                     Id = "notifications-startup-app",
+                    Icon = "ArchiveAlert",
                     Name = "Startup App Notifications",
                     Description = "Notifies when apps are prevented from running at startup.",
                     InputType = InputType.Toggle,
@@ -339,6 +350,7 @@ public static class NotificationsOptimizations
                 new SettingDefinition
                 {
                     Id = "notifications-clock-change",
+                    Icon = "ClockAlertOutline",
                     Name = "Clock Change Notifications",
                     Description = "Notifies about automatic clock changes for daylight saving time.",
                     InputType = InputType.Toggle,
@@ -374,6 +386,7 @@ public static class NotificationsOptimizations
                 new SettingDefinition
                 {
                     Id = "notifications-app-location-request",
+                    Icon = "MapMarker",
                     Name = "Location Access Notifications",
                     Description = "Notifies when apps request access to your location.",
                     InputType = InputType.Toggle,
@@ -409,6 +422,8 @@ public static class NotificationsOptimizations
                 new SettingDefinition
                 {
                     Id = "notifications-windows-security",
+                    Icon = "ShieldError",
+                    IconPack = "Fluent",
                     Name = "Windows Security Notifications",
                     Description = "Shows notifications from Windows Security about device health and safety.",
                     InputType = InputType.Toggle,
@@ -473,6 +488,7 @@ public static class NotificationsOptimizations
                 new SettingDefinition
                 {
                     Id = "notifications-security-maintenance",
+                    Icon = "ShieldSync",
                     Name = "Security and Maintenance Notifications",
                     Description = "Shows notifications from the Security and Maintenance center about system health.",
                     InputType = InputType.Toggle,

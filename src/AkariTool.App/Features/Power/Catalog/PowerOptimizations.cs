@@ -45,6 +45,8 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "power-plan-selection",
+                    Icon = "NotebookLightning",
+                    IconPack = "Fluent",
                     IsSubjectivePreference = true,
                     Name = "Power Plan",
                     Description = "Select the active power plan for your system",
@@ -66,6 +68,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "power-display-timeout",
+                    Icon = "MonitorOff",
                     IsSubjectivePreference = true,
                     Name = "Turn off the display",
                     Description = "Specifies the period of inactivity before Windows turns off the display",
@@ -103,6 +106,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "power-harddisk-timeout",
+                    Icon = "Harddisk",
                     IsSubjectivePreference = true,
                     Name = "Turn off hard disk after",
                     Description = "Specifies the period of inactivity before Windows turns off the hard disk",
@@ -140,6 +144,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "internet-explorer-javascript-timer",
+                    Icon = "CodeBraces",
                     Name = "JavaScript Timer Frequency",
                     Description = "Specifies the frequency of JavaScript timers",
                     ValidateExistence = true,
@@ -175,6 +180,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "desktop-slideshow",
+                    Icon = "Image",
                     IsSubjectivePreference = true,
                     Name = "Desktop Background Slide Show",
                     Description = "Allow or prevent Windows from rotating through multiple wallpaper images",
@@ -210,6 +216,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "wireless-power-mode",
+                    Icon = "Wifi",
                     IsSubjectivePreference = true,
                     Name = "Power Saving Mode",
                     Description = "Balance wireless network performance with battery life by adjusting adapter power usage",
@@ -245,6 +252,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "power-sleep-timeout",
+                    Icon = "Sleep",
                     IsSubjectivePreference = true,
                     Name = "Put the computer to sleep",
                     Description = "Specifies the period of inactivity before Windows puts the computer to sleep",
@@ -270,6 +278,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "power-wake-timers",
+                    Icon = "Alarm",
                     Name = "Allow wake timers",
                     Description = "Allow scheduled tasks and applications to wake your computer from sleep",
                     InputType = InputType.Selection,
@@ -294,6 +303,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "power-hibernation-enable",
+                    Icon = "PowerSleep",
                     IsSubjectivePreference = true,
                     Name = "Hibernation",
                     Description = "Save your session to disk and power down completely, using no battery while preserving your work",
@@ -325,6 +335,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "power-hibernate-timeout",
+                    Icon = "BedClock",
                     IsSubjectivePreference = true,
                     Name = "Hibernate after",
                     Description = "Specifies the period of inactivity before Windows hibernates the computer",
@@ -350,6 +361,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "power-hybrid-sleep",
+                    Icon = "WeatherNight",
                     IsSubjectivePreference = true,
                     Name = "Allow hybrid sleep",
                     Description = "Combines sleep and hibernate by saving your session to disk while staying in low-power mode for faster wake",
@@ -385,6 +397,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "power-fast-startup",
+                    Icon = "FlashAuto",
                     Name = "Fast Startup",
                     Description = "Hibernate system state during shutdown for faster boot times (does not affect restart)",
                     ParentSettingId = "power-hibernation-enable",
@@ -415,6 +428,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "start-power-hibernate-option",
+                    Icon = "FlashRedEye",
                     IsSubjectivePreference = true,
                     Name = "Show Hibernate Option",
                     Description = "Display the Hibernate option in the Start Menu power button menu",
@@ -458,6 +472,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "usb-hub-selective-suspend-timeout",
+                    Icon = "TimerPause",
                     Name = "USB Hub Selective Suspend Timeout",
                     Description = "Set how long USB hubs wait idle before powering down to save energy",
                     InputType = InputType.NumericRange,
@@ -491,6 +506,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "usb-selective-suspend",
+                    Icon = "Usb",
                     Name = "USB selective suspend setting",
                     Description = "Allow Windows to power down individual USB ports when devices are idle to save energy",
                     InputType = InputType.Selection,
@@ -513,6 +529,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "usb3-link-power-management",
+                    Icon = "UsbPort",
                     Name = "USB 3 Link Power Management",
                     Description = "Control how aggressively USB 3.0 ports enter low-power states when devices are idle",
                     InputType = InputType.Selection,
@@ -558,6 +575,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "intel-graphics-power-plan",
+                    Icon = "ExpansionCard",
                     Name = "Intel(R) Graphics Power Plan",
                     Description = "Balance Intel integrated graphics performance with power consumption and battery life",
                     ValidateExistence = true,
@@ -593,6 +611,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "power-button-action",
+                    Icon = "PowerSettings",
                     IsSubjectivePreference = true,
                     Name = "Power button action",
                     Description = "Choose what happens when you press the physical power button on your computer",
@@ -627,6 +646,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "sleep-button-action",
+                    Icon = "Sleep",
                     IsSubjectivePreference = true,
                     Name = "Sleep button action",
                     Description = "Choose what happens when you press the dedicated sleep button on your keyboard or computer",
@@ -661,6 +681,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "lid-close-action",
+                    Icon = "Laptop",
                     IsSubjectivePreference = true,
                     Name = "Lid close action",
                     Description = "Choose what happens when you close your laptop lid",
@@ -709,6 +730,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "pci-link-state-power-management",
+                    Icon = "Router",
                     Name = "Link State Power Management",
                     Description = "Control power savings for PCIe devices like graphics cards, SSDs, and expansion cards",
                     InputType = InputType.Selection,
@@ -745,6 +767,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "processor-min-state",
+                    Icon = "SpeedometerSlow",
                     Name = "Minimum processor state",
                     Description = "Set the lowest CPU speed allowed as a percentage of maximum frequency",
                     InputType = InputType.NumericRange,
@@ -769,6 +792,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "processor-max-state",
+                    Icon = "Speedometer",
                     Name = "Maximum processor state",
                     Description = "Set the highest CPU speed allowed as a percentage of maximum frequency",
                     InputType = InputType.NumericRange,
@@ -793,6 +817,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "system-cooling-policy",
+                    Icon = "Fan",
                     Name = "System cooling policy",
                     Description = "Choose whether to slow down the processor first (passive) or speed up fans first (active) when hot",
                     InputType = InputType.Selection,
@@ -828,6 +853,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "processor-performance-boost-mode",
+                    Icon = "RocketLaunch",
                     Name = "Processor performance boost mode",
                     Description = "Control how aggressively your CPU boosts above base frequency for demanding tasks",
                     InputType = InputType.Selection,
@@ -864,6 +890,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "processor-performance-increase-policy",
+                    Icon = "TrendingUp",
                     Name = "Processor Performance Increase Policy",
                     Description = "Control how quickly CPU ramps up speed when workload increases (for legacy non-HWP processors)",
                     InputType = InputType.Selection,
@@ -900,6 +927,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "processor-performance-decrease-policy",
+                    Icon = "TrendingDown",
                     Name = "Processor Performance Decrease Policy",
                     Description = "Control how quickly CPU reduces speed when workload decreases (for legacy non-HWP processors)",
                     InputType = InputType.Selection,
@@ -936,6 +964,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "processor-core-parking-min-cores",
+                    Icon = "Cpu64Bit",
                     Name = "CPU Core Parking Minimum Cores",
                     Description = "Set the minimum percentage of CPU cores that must remain active and responsive",
                     InputType = InputType.NumericRange,
@@ -973,6 +1002,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "processor-core-parking-max-cores",
+                    Icon = "Cpu64Bit",
                     Name = "CPU Core Parking Maximum Cores",
                     Description = "Set the maximum percentage of CPU cores allowed to be active (100% for best performance)",
                     InputType = InputType.NumericRange,
@@ -1010,6 +1040,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "processor-energy-performance-preference",
+                    Icon = "Tune",
                     Name = "Processor Energy Performance Preference",
                     Description = "Balance power efficiency and performance for modern CPUs with HWP (0 = max performance, 100 = max efficiency)",
                     InputType = InputType.NumericRange,
@@ -1046,6 +1077,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "processor-performance-increase-threshold",
+                    Icon = "TrendingUp",
                     Name = "Processor Performance Increase Threshold",
                     Description = "Set CPU usage percentage that triggers speed increase (lower = more responsive, for legacy non-HWP CPUs)",
                     InputType = InputType.NumericRange,
@@ -1082,6 +1114,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "processor-performance-decrease-threshold",
+                    Icon = "TrendingDown",
                     Name = "Processor Performance Decrease Threshold",
                     Description = "Set CPU usage percentage that triggers speed reduction (lower = maintains performance longer, for legacy non-HWP CPUs)",
                     InputType = InputType.NumericRange,
@@ -1118,6 +1151,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "power-throttling",
+                    Icon = "SelectOff",
                     Name = "Power Throttling",
                     Description = "Allow Windows to reduce CPU performance for background processes to save power",
                     InputType = InputType.Toggle,
@@ -1150,6 +1184,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "multimedia-when-sharing-media",
+                    Icon = "Share",
                     Name = "When Sharing Media",
                     Description = "Control whether your PC can sleep while streaming media to other devices on your network",
                     InputType = InputType.Selection,
@@ -1172,6 +1207,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "multimedia-video-playback-quality-bias",
+                    Icon = "HighDefinition",
                     Name = "Video Playback Quality Bias",
                     Description = "Prioritize smooth video playback over battery life when watching videos",
                     InputType = InputType.Selection,
@@ -1194,6 +1230,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "multimedia-when-playing-video",
+                    Icon = "Play",
                     Name = "When Playing Video",
                     Description = "Balance video quality and power consumption during video playback",
                     InputType = InputType.Selection,
@@ -1228,6 +1265,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "critical-battery-notification",
+                    Icon = "AlertCircle",
                     Name = "Critical battery notification",
                     Description = "Show notification when battery reaches critically low level",
                     RequiresBattery = true,
@@ -1253,6 +1291,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "critical-battery-action",
+                    Icon = "BatteryAlert",
                     Name = "Critical battery action",
                     Description = "Choose what happens when battery reaches critically low level",
                     RequiresBattery = true,
@@ -1278,6 +1317,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "low-battery-level",
+                    Icon = "Battery20",
                     IsSubjectivePreference = true,
                     Name = "Low battery level",
                     Description = "Set the battery percentage that triggers low battery warnings and actions",
@@ -1304,6 +1344,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "critical-battery-level",
+                    Icon = "BatteryOutline",
                     Name = "Critical battery level",
                     Description = "Set the battery percentage that triggers critical battery warnings and emergency actions",
                     RequiresBattery = true,
@@ -1329,6 +1370,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "low-battery-notification",
+                    Icon = "Bell",
                     Name = "Low battery notification",
                     Description = "Show notification when battery reaches low battery level",
                     RequiresBattery = true,
@@ -1354,6 +1396,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "low-battery-action",
+                    Icon = "Battery20",
                     IsSubjectivePreference = true,
                     Name = "Low battery action",
                     Description = "Choose what happens when battery reaches low battery level",
@@ -1380,6 +1423,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "reserve-battery-level",
+                    Icon = "BatteryCharging",
                     Name = "Reserve battery level",
                     Description = "Set battery percentage reserved to protect battery health and prevent unexpected shutdowns",
                     RequiresBattery = true,
@@ -1416,6 +1460,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "amd-power-slider-overlay",
+                    Icon = "ExpansionCard",
                     Name = "Overlay",
                     Description = "Balance AMD laptop performance and battery life with quick power mode selection",
                     InputType = InputType.Selection,
@@ -1450,6 +1495,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "ati-powerplay-setting",
+                    Icon = "ExpansionCard",
                     Name = "ATI PowerPlay Setting",
                     Description = "Control power management for older AMD Radeon graphics cards",
                     ValidateExistence = true,
@@ -1485,6 +1531,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "switchable-graphics-gpu-preference",
+                    Icon = "SwapHorizontal",
                     Name = "GPU Preference",
                     Description = "Choose between integrated GPU for battery life or dedicated GPU for performance in hybrid graphics laptops",
                     ValidateExistence = true,
@@ -1520,6 +1567,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "start-power-lock-option",
+                    Icon = "EyeLock",
                     IsSubjectivePreference = true,
                     Name = "Show Lock Option",
                     Description = "Display the Lock option in the Start Menu power button menu",
@@ -1551,6 +1599,7 @@ public static class PowerOptimizations
                 new SettingDefinition
                 {
                     Id = "start-power-sleep-option",
+                    Icon = "LightbulbNight",
                     IsSubjectivePreference = true,
                     Name = "Show Sleep Option",
                     Description = "Display the Sleep option in the Start Menu power button menu",

@@ -1,4 +1,4 @@
-﻿using AkariTool.Core.Features.Common.Models;
+using AkariTool.Core.Features.Common.Models;
 using AkariTool.Core.Features.Common.Enums;
 using Microsoft.Win32;
 using System.Collections.Generic;
@@ -34,6 +34,8 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-game-mode",
+                    Icon = "TopSpeed",
+                    IconPack = "Fluent",
                     Name = "Game Mode",
                     Description = "Optimize your PC for play by turning things off in the background",
                     RecommendedToggleState = true,
@@ -56,6 +58,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-performance-autostart-delay",
+                    Icon = "ClockStart",
                     Name = "Startup Delay for Apps",
                     Description = "Delay startup applications by 10 seconds after boot to improve initial system responsiveness. Windows becomes usable faster, but your startup apps take longer to load",
                     IsSubjectivePreference = true,
@@ -79,6 +82,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-storage-sense",
+                    Icon = "Harddisk",
                     Name = "Storage Sense",
                     Description = "Automatically free up disk space by removing temporary files, emptying the recycle bin, and managing downloads",
                     IsSubjectivePreference = true,
@@ -112,6 +116,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-performance-explorer-search",
+                    Icon = "FolderSearch",
                     Name = "Search Entire File System",
                     Description = "Search your entire file system instead of only indexed locations. This provides more complete results but is significantly slower than indexed search and increases disk activity",
                     RecommendedToggleState = false,
@@ -134,6 +139,8 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-performance-search-webview2",
+                    Icon = "GlobeSearch",
+                    IconPack = "Fluent",
                     Name = "WebView2 in Windows Search",
                     Description = "Allow Windows Search to use WebView2 (Edge) for rendering search results. Disabling removes Edge processes spawned by SearchHost.exe",
                     RecommendedToggleState = false,
@@ -197,6 +204,8 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-performance-wallpaper-compression",
+                    Icon = "ResizeImage",
+                    IconPack = "Fluent",
                     Name = "Allow Desktop Wallpaper Compression",
                     Description = "Allow Windows to compress wallpapers to save disk space and improve performance. Only affects images in JPEG format",
                     RecommendedToggleState = false,
@@ -220,6 +229,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-performance-explorer-menu-show-delay",
+                    Icon = "MenuOpen",
                     Name = "Menu Show Delay",
                     Description = "Add a brief delay before displaying menus (400ms = Windows default), or show them instantly (0ms) for faster navigation",
                     IsSubjectivePreference = true,
@@ -243,6 +253,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-explorer-alt-tab-filter",
+                    Icon = "ViewGrid",
                     Name = "Alt+Tab Filter",
                     Description = "Show only traditional open windows in Alt+Tab instead of including Microsoft Edge tabs and other Windows suggestions",
                     IsSubjectivePreference = true,
@@ -266,6 +277,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-performance-mouse-hover-time",
+                    Icon = "Mouse",
                     Name = "Mouse Hover Time",
                     Description = "Controls how long you hover before tooltips and menus appear. Lower = faster response",
                     InputType = InputType.Selection,
@@ -299,6 +311,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-background-apps",
+                    Icon = "Apps",
                     Name = "Background App Permissions",
                     Description = "Control whether apps can run in the background. Force Deny blocks all background apps — avoid if you use Teams, Zoom, or WhatsApp",
                     InputType = InputType.Selection,
@@ -330,6 +343,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-performance-explorer-mouse-precision",
+                    Icon = "Mouse",
                     Name = "Enhance Pointer Precision",
                     Description = "Adjust cursor speed based on movement velocity (mouse acceleration). Most competitive gamers disable this for consistent aiming in FPS games",
                     IsSubjectivePreference = true,
@@ -390,6 +404,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-win32-priority",
+                    Icon = "Application",
                     Name = "Adjust processor for best performance of",
                     Description = "Configure how Windows allocates CPU time between foreground applications and background services",
                     InputType = InputType.Selection,
@@ -411,6 +426,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-system-responsiveness",
+                    Icon = "Speedometer",
                     Name = "System Responsiveness for Games",
                     Description = "Minimize background task interference by allocating more CPU time to your active game or multimedia application",
                     RecommendedToggleState = true,
@@ -433,6 +449,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-cpu-priority",
+                    Icon = "Chip",
                     Name = "CPU Priority for Gaming",
                     Description = "Give games higher CPU scheduling priority to dedicate more processor time to your game",
                     RecommendedToggleState = true,
@@ -455,6 +472,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-gpu-priority",
+                    Icon = "Memory",
                     Name = "GPU Priority for Gaming",
                     Description = "Give games higher GPU scheduling priority to improve graphics performance and frame rates",
                     RecommendedToggleState = true,
@@ -477,6 +495,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-scheduling-category",
+                    Icon = "CalendarClock",
                     Name = "High Scheduling Category for Gaming",
                     Description = "Assign high-priority scheduling category to ensure games receive preferential system resource allocation",
                     RecommendedToggleState = true,
@@ -499,6 +518,8 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-performance-svchost-split-threshold",
+                    Icon = "BranchCompare",
+                    IconPack = "Fluent",
                     Name = "SvcHost Split Threshold",
                     Description = "Set the memory threshold that determines when Windows splits services into separate svchost.exe processes. Select the value matching your system RAM",
                     InputType = InputType.Selection,
@@ -535,6 +556,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-performance-background-services",
+                    Icon = "Cog",
                     Name = "Optimize Background Services",
                     Description = "Reduce the startup timeout for Windows services from 60 to 30 seconds. This can speed up boot time slightly",
                     RecommendedToggleState = true,
@@ -557,6 +579,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-performance-prefetch",
+                    Icon = "Download",
                     Name = "Prefetch Feature",
                     Description = "Preload frequently used applications and boot files into memory to speed up launches. Generally recommended for HDDs not SSDs",
                     IsSubjectivePreference = true,
@@ -781,6 +804,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-gpu-scheduling",
+                    Icon = "ExpansionCard",
                     Name = "Hardware-Accelerated GPU Scheduling (HAGS)",
                     Description = "Let your GPU manage its own memory and scheduling for reduced latency and improved performance",
                     RequiresRestart = true,
@@ -805,6 +829,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-directx-flip-model",
+                    Icon = "ApplicationCog",
                     Name = "Optimizations for Windowed Games",
                     Description = "Reduce latency and use advanced features in compatible games by using DirectX flip presentation model",
                     RecommendedToggleState = true,
@@ -828,6 +853,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-directx-vrr-optimizations",
+                    Icon = "MonitorShimmer",
                     Name = "Variable Refresh Rate (G-Sync/FreeSync)",
                     Description = "Enable VRR optimizations for smoother gameplay. Requires a VRR-compatible monitor; has no effect if your monitor does not support VRR",
                     IsSubjectivePreference = true,
@@ -852,6 +878,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-directx-auto-hdr",
+                    Icon = "Hdr",
                     Name = "Auto HDR",
                     Description = "Automatically convert SDR content to HDR for enhanced colors and brightness. Requires an HDR-capable display with HDR enabled",
                     IsSubjectivePreference = true,
@@ -876,6 +903,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-nvidia-sharpening",
+                    Icon = "ImageFilterHdr",
                     Name = "Legacy NVIDIA Image Sharpening",
                     Description = "Enable legacy NVIDIA image sharpening filter for enhanced visual clarity. Only works on older NVIDIA drivers; newer drivers should use NVIDIA Control Panel sharpening instead",
                     IsSubjectivePreference = true,
@@ -900,6 +928,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-fullscreen-optimizations",
+                    Icon = "MonitorScreenshot",
                     Name = "Fullscreen Optimizations",
                     Description = "Allow Windows to optimize games running in fullscreen mode. Disabling can fix stuttering in some older games",
                     RecommendedToggleState = true,
@@ -922,6 +951,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-performance-desktop-composition",
+                    Icon = "ViewDashboard",
                     Name = "Desktop Composition Effects",
                     Description = "Enable visual effects managed by the Desktop Window Manager. Disabling may provide minor performance gains on older hardware but will break Aero effects",
                     RecommendedToggleState = true,
@@ -945,6 +975,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-auto-color-management",
+                    Icon = "Color",
                     Name = "Auto Color Management",
                     Description = "Allow Windows to automatically manage color profiles for all connected displays that support it",
                     IsSubjectivePreference = true,
@@ -970,6 +1001,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-disable-mpo",
+                    Icon = "MonitorDashboard",
                     Name = "Multi-Plane Overlay (MPO)",
                     Description = "Composite multiple display layers in hardware using the GPU. Disabling can fix screen flickering, black screens, and stuttering on multi-monitor setups",
                     IsSubjectivePreference = true,
@@ -995,6 +1027,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-disable-all-overlays",
+                    Icon = "MonitorDashboard",
                     Name = "Hardware Overlays",
                     Description = "Allow the graphics driver to use hardware overlay surfaces. Disabling forces software composition and is known to break Steam, Discord, and RTSS in-game overlays",
                     IsSubjectivePreference = true,
@@ -1020,6 +1053,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-disable-mpo-min-fps",
+                    Icon = "MonitorDashboard",
                     Name = "MPO Minimum Frame Rate Requirement",
                     Description = "Allow DWM to dynamically switch apps between overlay modes based on frame rate. Disabling can fix stuttering in browsers and Discord without fully disabling MPO",
                     IsSubjectivePreference = true,
@@ -1123,6 +1157,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-network-throttling",
+                    Icon = "NetworkOffOutline",
                     Name = "Network Throttling",
                     Description = "Controls network packet rate limiting for multimedia applications. Keeping throttling enabled (default: 10 packets/ms) provides better DPC latency for gaming",
                     IsSubjectivePreference = true,
@@ -1150,6 +1185,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-nagle-algorithm",
+                    Icon = "Wan",
                     IsSubjectivePreference = true,
                     RecommendedToggleState = true,
                     Name = "Nagle's Algorithm",
@@ -1187,6 +1223,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-dns-server",
+                    Icon = "Dns",
                     IsSubjectivePreference = true,
                     Name = "DNS Server",
                     Description = "Select a DNS server for all network adapters. Changes apply to every adapter on your system (Wi-Fi and Ethernet). Use Automatic to restore your default ISP/router DNS",
@@ -1291,6 +1328,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-xbox-game-dvr",
+                    Icon = "RecordRec",
                     Name = "Xbox Game DVR",
                     Description = "Record gameplay clips and take screenshots using the Xbox Game Bar overlay. Disabling reduces CPU/GPU usage and can improve frame rates",
                     RecommendedToggleState = false,
@@ -1333,6 +1371,8 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-game-bar-controller",
+                    Icon = "XboxControllerError",
+                    IconPack = "Fluent",
                     Name = "Game Bar Controller Access",
                     Description = "Allow your Xbox/compatible controller to open Game Bar by pressing the Xbox button. Disable to prevent accidental Game Bar activation during gaming",
                     RecommendedToggleState = false,
@@ -1356,6 +1396,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-game-bar-tips",
+                    Icon = "LightbulbOff",
                     Name = "Game Bar Tips and Hints",
                     Description = "Show tips and hints about Game Bar features when opening the overlay. Disabling reduces distractions during gameplay",
                     RecommendedToggleState = false,
@@ -1391,6 +1432,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-virtualization-based-security",
+                    Icon = "ShieldLock",
                     Name = "Virtualization Based Security (VBS)",
                     Description = "Isolates parts of memory to protect the system from vulnerabilities. Disabling can improve gaming performance but reduces system security",
                     IsSubjectivePreference = true,
@@ -1425,6 +1467,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-memory-integrity",
+                    Icon = "MemoryArrowDown",
                     Name = "Memory Integrity (HVCI)",
                     Description = "Prevents malicious code from being inserted into high-security processes. Disabling can improve gaming performance but reduces system security",
                     IsSubjectivePreference = true,
@@ -1474,6 +1517,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-sysmain-service",
+                    Icon = "Cached",
                     Name = "SysMain Service (Superfetch)",
                     Description = "Preload frequently used applications into RAM for faster launch times. Automatic is recommended for HDD or mixed-storage systems; Manual or Disabled for SSD-only systems",
                     InputType = InputType.Selection,
@@ -1495,6 +1539,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-windows-search-service",
+                    Icon = "DatabaseSearch",
                     Name = "Windows Search Indexing Service",
                     Description = "Indexes files and folders for faster search results. Disabling reduces background CPU and disk activity but breaks Outlook search and makes Start Menu and File Explorer search slow or unreliable",
                     InputType = InputType.Selection,
@@ -1516,6 +1561,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-print-spooler-service",
+                    Icon = "Printer",
                     Name = "Print Spooler Service",
                     Description = "Manages print jobs sent to printers. If you don't use a printer, set to Manual or Disabled to free up system resources",
                     InputType = InputType.Selection,
@@ -1537,6 +1583,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-telemetry-service",
+                    Icon = "CloudUpload",
                     Name = "Connected User Experiences and Telemetry",
                     Description = "Sends usage data and diagnostics to Microsoft. Setting to Manual or Disabled reduces background network and CPU usage",
                     InputType = InputType.Selection,
@@ -1558,6 +1605,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-error-reporting-service",
+                    Icon = "AlertOctagon",
                     Name = "Windows Error Reporting Service",
                     Description = "Collects and sends crash data to Microsoft. Disabling prevents crash reporting and reduces network traffic",
                     InputType = InputType.Selection,
@@ -1579,6 +1627,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-geolocation-service",
+                    Icon = "MapMarkerOff",
                     Name = "Geolocation Service",
                     Description = "Tracks your physical location for apps and services. Disabling improves privacy and prevents location tracking",
                     InputType = InputType.Selection,
@@ -1600,6 +1649,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-retail-demo-service",
+                    Icon = "StorefrontOutline",
                     Name = "Retail Demo Service",
                     Description = "Controls device activity when in retail demo mode. Safe to disable for personal computers",
                     InputType = InputType.Selection,
@@ -1621,6 +1671,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-insider-service",
+                    Icon = "TestTube",
                     Name = "Windows Insider Service",
                     Description = "Manages Windows Insider Program features and preview builds. Safe to disable if you're not in the Insider Program",
                     InputType = InputType.Selection,
@@ -1642,6 +1693,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-phone-service",
+                    Icon = "Cellphone",
                     Name = "Phone Service",
                     Description = "Manages telephony state on the device. Safe to disable if you don't use phone connectivity features",
                     InputType = InputType.Selection,
@@ -1663,6 +1715,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-wallet-service",
+                    Icon = "Wallet",
                     Name = "Wallet Service",
                     Description = "Provides wallet functionality for payment and NFC scenarios. Safe to disable if you don't use Microsoft Wallet",
                     InputType = InputType.Selection,
@@ -1684,6 +1737,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-maps-broker-service",
+                    Icon = "MapOutline",
                     Name = "Downloaded Maps Manager",
                     Description = "Provides access to downloaded maps for applications. Set to Manual to allow map access when needed",
                     InputType = InputType.Selection,
@@ -1705,6 +1759,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-fax-service",
+                    Icon = "Fax",
                     Name = "Fax Service",
                     Description = "Enables sending and receiving faxes. Safe to disable for most users as fax functionality is rarely used",
                     InputType = InputType.Selection,
@@ -1726,6 +1781,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-wmp-network-service",
+                    Icon = "ShareOff",
                     Name = "Windows Media Player Network Sharing",
                     Description = "Shares Windows Media Player libraries to other networked players and media devices",
                     InputType = InputType.Selection,
@@ -1747,6 +1803,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-mixed-reality-service",
+                    Icon = "VirtualReality",
                     Name = "Windows Mixed Reality OpenXR Service",
                     Description = "Runs OpenXR applications on Windows Mixed Reality devices. Safe to disable if you don't use VR or AR headsets",
                     InputType = InputType.Selection,
@@ -1768,6 +1825,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-mobile-hotspot-service",
+                    Icon = "CellphoneWireless",
                     Name = "Windows Mobile Hotspot Service",
                     Description = "Provides ability to share internet connection with other devices",
                     InputType = InputType.Selection,
@@ -1789,6 +1847,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-sms-router-service",
+                    Icon = "MessageText",
                     Name = "SMS Router Service",
                     Description = "Routes SMS messages according to rules. Safe to disable if you don't use SMS features on your PC",
                     InputType = InputType.Selection,
@@ -1810,6 +1869,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-parental-controls-service",
+                    Icon = "ShieldAccount",
                     Name = "Parental Controls Service",
                     Description = "Enables parental controls and family safety features. Safe to disable if you don't use parental controls",
                     InputType = InputType.Selection,
@@ -1831,6 +1891,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-payments-nfc-service",
+                    Icon = "Nfc",
                     Name = "Payments and NFC/SE Manager",
                     Description = "Manages payments and Near Field Communication secure elements. Safe to disable if you don't use NFC payments",
                     InputType = InputType.Selection,
@@ -1852,6 +1913,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-biometric-service",
+                    Icon = "Fingerprint",
                     Name = "Windows Biometric Service",
                     Description = "Enables fingerprint and facial recognition login via Windows Hello. Safe to disable on desktop systems without biometric hardware",
                     InputType = InputType.Selection,
@@ -1873,6 +1935,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-remote-access-manager",
+                    Icon = "Vpn",
                     Name = "Remote Access Connection Manager",
                     Description = "Manages VPN and dial-up connections. Set to Manual to reduce background activity while keeping VPN available",
                     InputType = InputType.Selection,
@@ -1894,6 +1957,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-remote-access-auto",
+                    Icon = "NetworkOff",
                     Name = "Remote Access Auto Connection Manager",
                     Description = "Automatically connects to remote networks when programs reference remote resources",
                     InputType = InputType.Selection,
@@ -1915,6 +1979,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-remote-desktop-services",
+                    Icon = "RemoteDesktop",
                     Name = "Remote Desktop Services",
                     Description = "Allows users to connect interactively to a remote computer",
                     InputType = InputType.Selection,
@@ -1936,6 +2001,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-remote-desktop-configuration",
+                    Icon = "MonitorShare",
                     Name = "Remote Desktop Configuration",
                     Description = "Manages Remote Desktop Services and Remote Desktop related configurations",
                     InputType = InputType.Selection,
@@ -1957,6 +2023,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-compatibility-assistant-service",
+                    Icon = "ApplicationCog",
                     Name = "Program Compatibility Assistant Service",
                     Description = "Monitors programs for compatibility issues and suggests fixes. Disabling prevents compatibility prompts",
                     InputType = InputType.Selection,
@@ -1978,6 +2045,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-ai-fabric-service",
+                    Icon = "Robot",
                     Name = "Windows AI Fabric Service",
                     Description = "Windows AI Fabric Service (WSAIFabricSvc) manages AI workloads. Disable if you don't use Windows AI features",
                     InputType = InputType.Selection,
@@ -1999,6 +2067,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-sensor-monitoring-service",
+                    Icon = "Radar",
                     Name = "Sensor Monitoring Service",
                     Description = "Monitors various sensors like ambient light and orientation. Safe to disable on desktop systems without sensor hardware",
                     InputType = InputType.Selection,
@@ -2020,6 +2089,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-sensor-data-service",
+                    Icon = "ChartBox",
                     Name = "Sensor Data Service",
                     Description = "Delivers data from a variety of sensors to applications. Safe to disable on desktop systems without sensor hardware",
                     InputType = InputType.Selection,
@@ -2041,6 +2111,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-telephony-service",
+                    Icon = "PhoneClassic",
                     Name = "Telephony Service",
                     Description = "Manages telephony (TAPI) for Phone Link audio relay, modems, fax, and VoIP softphones. Leave at Manual unless you use no telephony software",
                     InputType = InputType.Selection,
@@ -2062,6 +2133,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-connected-devices-platform-service",
+                    Icon = "CellphoneLink",
                     Name = "Connected Devices Platform Service",
                     Description = "Enables cross-device experiences like phone linking and nearby sharing. Note: can break Windows Night Light. Use Automatic if you use Night Light.",
                     InputType = InputType.Selection,
@@ -2083,6 +2155,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-smart-card-services",
+                    Icon = "SmartCard",
                     Name = "Smart Card Services",
                     Description = "Enables smart card reader functionality. Safe to disable if you don't use physical smart cards.",
                     InputType = InputType.Selection,
@@ -2104,6 +2177,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-spot-verifier-service",
+                    Icon = "ShieldCheck",
                     Name = "Spot Verifier Service",
                     Description = "Verifies potential file system corruptions. Set to Manual to allow verification when needed.",
                     InputType = InputType.Selection,
@@ -2125,6 +2199,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-remote-desktop-port-redirector",
+                    Icon = "TransitConnectionVariant",
                     Name = "Remote Desktop Services UserMode Port Redirector",
                     Description = "Allows local device redirection for Remote Desktop connections. Safe to disable if you don't use Remote Desktop.",
                     InputType = InputType.Selection,
@@ -2146,6 +2221,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-touch-keyboard-service",
+                    Icon = "KeyboardOutline",
                     Name = "Touch Keyboard and Handwriting Panel Service",
                     Description = "Manages Windows touch keyboard, pen/stylus, and handwriting panel. Safe to disable on desktop systems without touch input.",
                     InputType = InputType.Selection,
@@ -2197,6 +2273,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-xbox-auth-manager",
+                    Icon = "MicrosoftXbox",
                     Name = "Xbox Live Auth Manager",
                     Description = "Provides authentication for Xbox Live. Safe to disable if you don't use Xbox Game Pass or Microsoft Store games.",
                     InputType = InputType.Selection,
@@ -2218,6 +2295,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-xbox-game-save",
+                    Icon = "CloudUploadOutline",
                     Name = "Xbox Live Game Save",
                     Description = "Syncs game saves to Xbox Live cloud. Only needed for Xbox Game Pass and Microsoft Store games with cloud saves.",
                     InputType = InputType.Selection,
@@ -2239,6 +2317,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-xbox-networking",
+                    Icon = "NetworkOutline",
                     Name = "Xbox Live Networking Service",
                     Description = "Supports Xbox Live multiplayer networking. Not needed for Steam or Epic games.",
                     InputType = InputType.Selection,
@@ -2293,6 +2372,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-task-compatibility-appraiser",
+                    Icon = "FileDocumentCheck",
                     Name = "Microsoft Compatibility Appraiser",
                     Description = "Collects program compatibility telemetry for Windows upgrades. Disable to reduce telemetry",
                     RecommendedToggleState = false,
@@ -2306,6 +2386,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-task-program-data-updater",
+                    Icon = "DatabaseSync",
                     Name = "Program Data Updater",
                     Description = "Updates the program compatibility database with information about installed applications",
                     RecommendedToggleState = false,
@@ -2319,6 +2400,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-task-ceip-consolidator",
+                    Icon = "ChartLine",
                     Name = "CEIP Consolidator",
                     Description = "Consolidates and uploads usage data as part of the Customer Experience Improvement Program",
                     RecommendedToggleState = false,
@@ -2332,6 +2414,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-task-usb-ceip",
+                    Icon = "Usb",
                     Name = "USB CEIP",
                     Description = "Collects USB device-related telemetry for the Customer Experience Improvement Program",
                     RecommendedToggleState = false,
@@ -2345,6 +2428,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-task-disk-diagnostic",
+                    Icon = "Harddisk",
                     Name = "Disk Diagnostic Data Collector",
                     Description = "Collects disk diagnostic information and S.M.A.R.T. data for Microsoft",
                     RecommendedToggleState = false,
@@ -2358,6 +2442,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-task-feedback-dmclient",
+                    Icon = "MessageAlert",
                     Name = "Feedback DmClient",
                     Description = "Collects feedback and diagnostic data for Microsoft",
                     RecommendedToggleState = false,
@@ -2371,6 +2456,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-task-feedback-dmclient-download",
+                    Icon = "Download",
                     Name = "Feedback DmClient Scenario Download",
                     Description = "Downloads feedback scenarios and configuration data from Microsoft",
                     RecommendedToggleState = false,
@@ -2384,6 +2470,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-task-error-reporting-queue",
+                    Icon = "AlertOctagon",
                     Name = "Windows Error Reporting Queue",
                     Description = "Queues crash reports and error data to send to Microsoft",
                     RecommendedToggleState = false,
@@ -2397,6 +2484,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-task-sqm",
+                    Icon = "ChartBar",
                     Name = "Software Quality Metrics",
                     Description = "Collects software quality metrics and reliability data for Microsoft telemetry",
                     RecommendedToggleState = false,
@@ -2410,6 +2498,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-task-mare-backup",
+                    Icon = "BackupRestore",
                     Name = "MAR Backup",
                     Description = "Backs up Microsoft Assisted Recovery data. Disable to reduce background system activity",
                     RecommendedToggleState = false,
@@ -2423,6 +2512,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-task-startup-app",
+                    Icon = "RocketLaunch",
                     Name = "Startup App Task",
                     Description = "Tracks and monitors startup applications for telemetry and diagnostics",
                     RecommendedToggleState = false,
@@ -2436,6 +2526,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-task-maps-update",
+                    Icon = "MapOutline",
                     Name = "Maps Update",
                     Description = "Updates offline maps data for the Windows Maps app. Disable if you don't use the Maps app",
                     RecommendedToggleState = false,
@@ -2449,6 +2540,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-task-autochk-proxy",
+                    Icon = "HarddiskPlus",
                     Name = "AutoChk Proxy",
                     Description = "Performs disk checking operations and collects diagnostic data",
                     RecommendedToggleState = false,
@@ -2462,6 +2554,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-task-power-efficiency",
+                    Icon = "LightningBolt",
                     Name = "Power Efficiency Diagnostics",
                     Description = "Analyzes system power consumption and collects energy efficiency data",
                     RecommendedToggleState = false,
@@ -2501,6 +2594,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-task-office-actions-server",
+                    Icon = "CalendarClock",
                     Name = "Office Actions Server",
                     Description = "Office AI Actions Server scheduled task. Disable to prevent Office AI from running in the background",
                     RecommendedToggleState = false,
@@ -2514,6 +2608,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-task-family-safety",
+                    Icon = "AccountSupervisor",
                     Name = "Family Safety Monitor Task",
                     Description = "Monitors family safety settings and usage. Disable if you don't use family safety features",
                     RecommendedToggleState = false,
@@ -2539,6 +2634,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "system-restore-protection",
+                    Icon = "History",
                     Name = "System Protection (Restore Points)",
                     Description = "Allow Windows to automatically create restore points for the C: drive",
                     IsSubjectivePreference = true,
@@ -2598,6 +2694,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "gaming-narrator-hotkey",
+                    Icon = "AccountVoice",
                     Name = "Narrator Win+Ctrl+Enter Hotkey",
                     Description = "Enable the Win+Ctrl+Enter keyboard shortcut to quickly launch Windows Narrator screen reader",
                     IsSubjectivePreference = true,
@@ -2622,6 +2719,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "accessibility-stickykeys-hotkey",
+                    Icon = "AppleKeyboardShift",
                     Name = "StickyKeys Hotkey (Shift×5)",
                     Description = "Enable the keyboard shortcut to activate StickyKeys by pressing the Shift key five times",
                     IsSubjectivePreference = true,
@@ -2645,6 +2743,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "accessibility-filterkeys-hotkey",
+                    Icon = "KeyboardOutline",
                     Name = "FilterKeys Hotkey (Right Shift 8s)",
                     Description = "Enable the keyboard shortcut to activate FilterKeys by holding the right Shift key for 8 seconds",
                     IsSubjectivePreference = true,
@@ -2668,6 +2767,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "accessibility-togglekeys-hotkey",
+                    Icon = "Numeric",
                     Name = "ToggleKeys Hotkey (Num Lock 5s)",
                     Description = "Enable the keyboard shortcut to activate ToggleKeys by holding Num Lock for 5 seconds",
                     IsSubjectivePreference = true,
@@ -2691,6 +2791,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "accessibility-highcontrast-hotkey",
+                    Icon = "ContrastCircle",
                     Name = "High Contrast Hotkey (Alt+Shift+PrtScn)",
                     Description = "Enable the keyboard shortcut to activate High Contrast mode by pressing Left Alt + Left Shift + Print Screen",
                     IsSubjectivePreference = true,
@@ -2714,6 +2815,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "accessibility-mousekeys-hotkey",
+                    Icon = "MouseVariant",
                     Name = "MouseKeys Hotkey (Alt+Shift+NumLock)",
                     Description = "Enable the keyboard shortcut to activate MouseKeys, which lets the numeric keypad control the mouse pointer",
                     IsSubjectivePreference = true,
@@ -2749,6 +2851,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "visual-effects-mode",
+                    Icon = "MonitorEye",
                     Name = "Visual Effects Mode",
                     Description = "Control the overall level of Windows visual effects — trading appearance for performance",
                     InputType = InputType.Selection,
@@ -2853,6 +2956,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "drag-full-windows",
+                    Icon = "SelectionDrag",
                     Name = "Show window contents while dragging",
                     Description = "Show the full window content while dragging instead of just an outline",
                     IsSubjectivePreference = true,
@@ -2876,6 +2980,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "window-animation",
+                    Icon = "WindowRestore",
                     Name = "Animate windows when minimizing and maximizing",
                     Description = "Show smooth animation when windows are minimized or maximized",
                     IsSubjectivePreference = true,
@@ -2899,6 +3004,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "taskbar-animations",
+                    Icon = "DockBottom",
                     Name = "Taskbar animations",
                     Description = "Show animations in the taskbar when apps open, close, or flash for attention",
                     IsSubjectivePreference = true,
@@ -2922,6 +3028,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "font-smoothing",
+                    Icon = "FormatSize",
                     RequiresRestart = true,
                     Name = "Smooth edges of screen fonts (ClearType)",
                     Description = "Apply ClearType anti-aliasing to make text appear smoother on screen",
@@ -2946,6 +3053,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "drop-shadows",
+                    Icon = "TextShadow",
                     Name = "Drop shadows under mouse pointer",
                     Description = "Show a drop shadow beneath the mouse cursor for better visibility",
                     IsSubjectivePreference = true,
@@ -2969,6 +3077,8 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "show-thumbnails",
+                    Icon = "ImageStack",
+                    IconPack = "Fluent",
                     Name = "Show thumbnails instead of icons",
                     Description = "Display thumbnail previews for image, video, and document files in File Explorer",
                     IsSubjectivePreference = true,
@@ -2993,6 +3103,8 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "taskbar-thumbnails",
+                    Icon = "ImageMultiple",
+                    IconPack = "Fluent",
                     Name = "Save taskbar thumbnail previews",
                     Description = "Cache taskbar thumbnail previews. Disabling saves a small amount of memory",
                     IsSubjectivePreference = true,
@@ -3016,6 +3128,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "enable-peek",
+                    Icon = "MonitorEye",
                     Name = "Enable Peek",
                     Description = "Temporarily preview the desktop or a window when hovering over the Show Desktop button or a taskbar thumbnail",
                     IsSubjectivePreference = true,
@@ -3039,6 +3152,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "ui-effects",
+                    Icon = "Animation",
                     Name = "Animate controls and elements inside windows",
                     Description = "Fade/animate controls and elements inside windows",
                     IsSubjectivePreference = true,
@@ -3066,6 +3180,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "menu-animation",
+                    Icon = "MenuOpen",
                     Name = "Fade or slide menus into view",
                     Description = "Animate menus with a fade or slide when they open",
                     IsSubjectivePreference = true,
@@ -3093,6 +3208,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "combo-box-animation",
+                    Icon = "FormDropdown",
                     Name = "Slide open combo boxes",
                     Description = "Animate combo boxes with a sliding effect when opened",
                     IsSubjectivePreference = true,
@@ -3120,6 +3236,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "smooth-scroll-listboxes",
+                    Icon = "ListBox",
                     Name = "Smooth-scroll list boxes",
                     Description = "Smooth scrolling in list boxes instead of jumping",
                     IsSubjectivePreference = true,
@@ -3147,6 +3264,8 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "fade-menu-items",
+                    Icon = "SlideTextCursor",
+                    IconPack = "Fluent",
                     Name = "Fade out menu items after clicking",
                     Description = "Fade menu items after selection before the menu closes",
                     IsSubjectivePreference = true,
@@ -3174,6 +3293,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "fade-tooltip",
+                    Icon = "TooltipText",
                     Name = "Fade or slide ToolTips into view",
                     Description = "Animate tooltips with a fade or slide when they appear",
                     IsSubjectivePreference = true,
@@ -3201,6 +3321,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "mouse-shadow",
+                    Icon = "CursorDefault",
                     Name = "Show shadows under mouse pointer",
                     Description = "Display a shadow effect underneath the mouse cursor",
                     IsSubjectivePreference = true,
@@ -3228,6 +3349,7 @@ public static class GamingOptimizations
                 new SettingDefinition
                 {
                     Id = "window-shadows",
+                    Icon = "BoxShadow",
                     Name = "Show shadows under windows",
                     Description = "Display shadow effects underneath windows",
                     IsSubjectivePreference = true,

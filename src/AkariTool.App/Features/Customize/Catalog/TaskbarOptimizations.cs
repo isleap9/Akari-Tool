@@ -98,6 +98,7 @@ public static class TaskbarOptimizations
                 new SettingDefinition
                 {
                     Id = "taskbar-widgets",
+                    Icon = "Widgets",
                     Name = "Show Widgets",
                     Description = "Show the Widgets button that displays personalized news, weather, calendar, and other information",
                     InputType = InputType.Toggle,

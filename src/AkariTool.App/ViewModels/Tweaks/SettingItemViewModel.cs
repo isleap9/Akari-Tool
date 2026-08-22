@@ -154,6 +154,14 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
     public string Id => Definition.Id;
     public string Name => Definition.Name;
     public string Description => Definition.Description;
+
+    /// <summary>
+    /// Row header icon (Winhance parity): Material or Fluent glyph resolved by
+    /// IconConverter off these two properties. Null Icon = no icon rendered.
+    /// </summary>
+    public string? Icon => Definition.Icon;
+    public string IconPack => Definition.IconPack ?? "Material";
+    public bool HasIcon => !string.IsNullOrEmpty(Definition.Icon);
     public InputType InputType => Definition.InputType;
     public string[] Options { get; }
 

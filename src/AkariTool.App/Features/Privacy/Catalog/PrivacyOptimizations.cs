@@ -30,6 +30,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "security-uac-level",
+                    Icon = "ShieldAccount",
                     Name = "User Account Control Level",
                     Description = "Controls UAC notification level and secure desktop behavior",
                     InputType = InputType.Selection,
@@ -98,6 +99,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "security-workplace-join-messages",
+                    Icon = "OfficeBuilding",
                     Name = "Workplace Join Message Prompts",
                     Description = "Show 'Allow my organization to manage my device' prompts throughout Windows",
                     InputType = InputType.Toggle,
@@ -133,6 +135,8 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "security-bitlocker-auto-encryption",
+                    Icon = "LockClosedKey",
+                    IconPack = "Fluent",
                     Name = "BitLocker Auto Encryption",
                     Description = "Controls whether Windows can automatically encrypt drives with BitLocker",
                     InputType = InputType.Toggle,
@@ -157,6 +161,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "security-wifi-sense",
+                    Icon = "WifiOff",
                     Name = "WiFi-Sense",
                     Description = "Allow sharing WiFi passwords with contacts and automatically connecting to suggested open hotspots",
                     InputType = InputType.Toggle,
@@ -192,6 +197,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "security-automatic-maintenance",
+                    Icon = "ProgressWrench",
                     Name = "Automatic Maintenance",
                     Description = "Choose if Windows should run automatic system maintenance tasks during idle time",
                     InputType = InputType.Toggle,
@@ -216,6 +222,8 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "security-error-reporting",
+                    Icon = "Bug",
+                    IconPack = "Fluent",
                     Name = "Windows Error Reporting",
                     Description = "Choose if Windows should collect and send crash reports and error information to Microsoft",
                     InputType = InputType.Toggle,
@@ -251,6 +259,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "security-remote-assistance",
+                    Icon = "RemoteDesktop",
                     Name = "Remote Assistance",
                     Description = "Choose if other people can connect to your computer remotely to provide technical support",
                     InputType = InputType.Toggle,
@@ -275,6 +284,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "security-smart-app-control",
+                    Icon = "ShieldCheck",
                     Name = "Smart App Control",
                     Description = "Controls the Smart App Control feature which blocks untrusted and potentially dangerous applications",
                     InputType = InputType.Selection,
@@ -320,6 +330,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "security-developer-mode",
+                    Icon = "CodeBraces",
                     Name = "Developer Mode",
                     Description = "Allows the installation of apps from any source, including loose files",
                     InputType = InputType.Toggle,
@@ -343,6 +354,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "security-powershell-execution-policy",
+                    Icon = "PowerShell",
                     Name = "PowerShell Execution Policy",
                     Description = "Controls whether PowerShell scripts are allowed to run and under what conditions for both the current user and the local machine",
                     InputType = InputType.Selection,
@@ -402,6 +414,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-content-delivery-allowed",
+                    Icon = "PackageVariant",
                     Name = "Content Delivery",
                     Description = "Allows Windows to deliver promotional content and automatically install suggested apps",
                     InputType = InputType.Toggle,
@@ -426,6 +439,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-subscribed-content",
+                    Icon = "BookmarkMultiple",
                     Name = "Subscribed Content",
                     Description = "Enables promotional content subscriptions from Microsoft and partners throughout Windows",
                     InputType = InputType.Toggle,
@@ -450,6 +464,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-feature-management",
+                    Icon = "MonitorArrowDown",
                     Name = "Feature Management",
                     Description = "Enables Windows feature management functionality for promotional features and automatic app installations",
                     InputType = InputType.Toggle,
@@ -474,6 +489,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-soft-landing",
+                    Icon = "LightbulbOn",
                     Name = "Soft Landing Experiences",
                     Description = "Displays tips and notifications about Windows features as you use the operating system",
                     InputType = InputType.Toggle,
@@ -498,6 +514,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-oem-preinstalled-apps",
+                    Icon = "PackageDown",
                     Name = "OEM Pre-installed Apps",
                     Description = "Prevents OEM manufacturers from automatically installing bloatware apps",
                     InputType = InputType.Toggle,
@@ -522,6 +539,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-preinstalled-apps",
+                    Icon = "PackageVariantPlus",
                     Name = "Pre-installed Suggested Apps",
                     Description = "Prevents Microsoft from automatically installing suggested apps",
                     InputType = InputType.Toggle,
@@ -546,6 +564,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-preinstalled-apps-ever",
+                    Icon = "ClipboardTextClockOutline",
                     Name = "Pre-installed Apps History Tracking",
                     Description = "Disables tracking of whether pre-installed apps were ever enabled",
                     InputType = InputType.Toggle,
@@ -570,6 +589,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-silent-installed-apps",
+                    Icon = "CubeOffOutline",
                     Name = "Silent App Installation",
                     Description = "Prevents apps from being silently installed in the background",
                     InputType = InputType.Toggle,
@@ -606,6 +626,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-lock-screen",
+                    Icon = "MonitorLock",
                     Name = "Lock Screen",
                     Description = "Allows users to lock their computer using Windows+L, Start menu, or Ctrl+Alt+Del. Disabling prevents locking the workstation",
                     InputType = InputType.Toggle,
@@ -630,6 +651,8 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-rotating-lock-screen",
+                    Icon = "ImageCircle",
+                    IconPack = "Fluent",
                     Name = "Windows Spotlight on Lock Screen",
                     Description = "Displays rotating Windows Spotlight images on your lock screen instead of a static background",
                     InputType = InputType.Toggle,
@@ -654,6 +677,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-lock-screen-overlay",
+                    Icon = "MonitorShimmer",
                     Name = "Lock Screen Fun Facts and Tips",
                     Description = "Displays fun facts, tips, and tricks as an overlay on your lock screen",
                     InputType = InputType.Toggle,
@@ -701,6 +725,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-advertising-id",
+                    Icon = "Advertisements",
                     Name = "Let apps show personalized ads by using my advertising ID",
                     Description = "Windows generates a unique advertising ID that apps use to track your activity and deliver personalized ads",
                     InputType = InputType.Toggle,
@@ -746,6 +771,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-language-list",
+                    Icon = "Translate",
                     Name = "Let websites show locally relevant content by accessing my language list",
                     Description = "Allows websites to access your language preferences so they can display content in your preferred language",
                     InputType = InputType.Toggle,
@@ -770,6 +796,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-app-launch-tracking",
+                    Icon = "ArchiveSearch",
                     Name = "Let Windows improve Start and search results by tracking app launches",
                     Description = "Windows records which apps you use most frequently to personalize your Start menu and improve search results",
                     InputType = InputType.Toggle,
@@ -794,6 +821,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-settings-content",
+                    Icon = "StarCog",
                     Name = "Show me suggested content in the Settings app",
                     Description = "Displays promotional content, tips, and feature suggestions within the Windows Settings app",
                     InputType = InputType.Toggle,
@@ -839,6 +867,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-settings-notifications",
+                    Icon = "BellCog",
                     Name = "Settings App Notifications",
                     Description = "Shows account notifications in the Settings app, including prompts to reauthenticate and backup your device",
                     InputType = InputType.Toggle,
@@ -878,6 +907,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-speech-recognition",
+                    Icon = "MicrophoneQuestion",
                     Name = "Online Speech Recognition",
                     Description = "Use your voice for apps using Microsoft's online speech recognition technology",
                     InputType = InputType.Toggle,
@@ -923,6 +953,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-narrator-online-services",
+                    Icon = "CloudQuestion",
                     Name = "Narrator Online Services",
                     Description = "Allow Narrator to use Microsoft cloud services for features like intelligent image descriptions",
                     InputType = InputType.Toggle,
@@ -947,6 +978,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-narrator-scripting",
+                    Icon = "ScriptText",
                     Name = "Narrator Scripting Support",
                     Description = "Allow Narrator to execute scripts for automation and custom functionality",
                     InputType = InputType.Toggle,
@@ -983,6 +1015,8 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-inking-typing-dictionary",
+                    Icon = "BookDefault",
+                    IconPack = "Fluent",
                     Name = "Custom Inking and Typing Dictionary",
                     Description = "Uses your typing history and handwriting patterns to create a custom dictionary",
                     InputType = InputType.Toggle,
@@ -1050,6 +1084,8 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-diagnostics",
+                    Icon = "PulseSquare",
+                    IconPack = "Fluent",
                     Name = "Send Diagnostic Data",
                     Description = "Send diagnostic data to Microsoft to help improve Windows and keep it secure",
                     InputType = InputType.Toggle,
@@ -1175,6 +1211,8 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-improve-inking-typing",
+                    Icon = "PenSparkle",
+                    IconPack = "Fluent",
                     Name = "Improve inking and typing",
                     Description = "Send optional inking and typing diagnostic data to Microsoft",
                     InputType = InputType.Toggle,
@@ -1210,6 +1248,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-tailored-experiences",
+                    Icon = "AccountCog",
                     Name = "Tailored Experiences",
                     Description = "Let Microsoft use your diagnostic data to show personalized tips, ads and recommendations",
                     InputType = InputType.Toggle,
@@ -1255,6 +1294,8 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-feedback-frequency",
+                    Icon = "PersonFeedback",
+                    IconPack = "Fluent",
                     Name = "Allow Windows to ask you for feedback",
                     Description = "Let Windows ask you to provide feedback on experiences in Windows",
                     InputType = InputType.Toggle,
@@ -1315,6 +1356,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-search-history",
+                    Icon = "MagnifyScan",
                     Name = "Search history on this device",
                     Description = "Improves search results by allowing Windows Search to store your search history locally",
                     InputType = InputType.Toggle,
@@ -1339,6 +1381,8 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-search-highlights",
+                    Icon = "SearchSparkle",
+                    IconPack = "Fluent",
                     Name = "Show search highlights",
                     Description = "See content suggestions in search",
                     InputType = InputType.Toggle,
@@ -1363,6 +1407,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-search-msa-cloud",
+                    Icon = "CloudSearch",
                     Name = "Cloud Content Search (Microsoft account)",
                     Description = "Allow Windows Search to show results from services signed in with your Microsoft account",
                     InputType = InputType.Toggle,
@@ -1387,6 +1432,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-search-aad-cloud",
+                    Icon = "BriefcaseSearch",
                     Name = "Cloud Content Search (Work or School account)",
                     Description = "Allow Windows Search to show results from services signed in with your work or school account",
                     InputType = InputType.Toggle,
@@ -1411,6 +1457,8 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-allow-cortana",
+                    Icon = "BotSparkle",
+                    IconPack = "Fluent",
                     Name = "Allow Cortana",
                     Description = "Enables Microsoft's Cortana virtual assistant for voice commands and searches",
                     InputType = InputType.Toggle,
@@ -1458,6 +1506,8 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-activity-history",
+                    Icon = "Timeline",
+                    IconPack = "Fluent",
                     Name = "Activity History",
                     Description = "Allows Windows to jump back into what you were doing with apps, docs, or other activities on startup (Windows 10 Timeline feature)",
                     InputType = InputType.Toggle,
@@ -1482,6 +1532,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-timeline-suggestions",
+                    Icon = "TimelineAlert",
                     Name = "Timeline Suggestions",
                     Description = "Shows suggestions in the Windows 10 Timeline feature based on your activity history",
                     InputType = InputType.Toggle,
@@ -1518,6 +1569,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-location-services",
+                    Icon = "MapMarker",
                     Name = "Location Services",
                     Description = "Allows Windows and apps to access your device location for location-based features",
                     InputType = InputType.Toggle,
@@ -1563,6 +1615,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-camera-access",
+                    Icon = "Camera",
                     Name = "Camera Access",
                     Description = "Allow apps to have camera access",
                     InputType = InputType.Toggle,
@@ -1587,6 +1640,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-microphone-access",
+                    Icon = "Microphone",
                     Name = "Microphone Access",
                     Description = "Allow apps to have microphone access",
                     InputType = InputType.Toggle,
@@ -1611,6 +1665,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-account-info-access",
+                    Icon = "AccountLockOpen",
                     Name = "Account Info Access",
                     Description = "Allow apps to have account info access",
                     InputType = InputType.Toggle,
@@ -1635,6 +1690,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-app-diagnostic-access",
+                    Icon = "Stethoscope",
                     Name = "App Diagnostic Access",
                     Description = "Allow apps to have app diagnostic access",
                     InputType = InputType.Toggle,
@@ -1659,6 +1715,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-onedrive-auto-backup",
+                    Icon = "CloudOff",
                     Name = "OneDrive Automatic Backups",
                     Description = "Controls whether OneDrive automatically backs up your Documents, Pictures, and Desktop folders",
                     InputType = InputType.Toggle,
@@ -1709,6 +1766,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-turn-off-copilot",
+                    Icon = "Robot",
                     Name = "Windows Copilot",
                     Description = "Controls whether Windows Copilot is available system-wide",
                     InputType = InputType.Toggle,
@@ -1744,6 +1802,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-disable-ai-data-analysis",
+                    Icon = "DatabaseOff",
                     Name = "AI Data Analysis",
                     Description = "Controls whether Windows AI can analyze user data for personalization and recommendations",
                     InputType = InputType.Toggle,
@@ -1768,6 +1827,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-block-recall-enablement",
+                    Icon = "Cancel",
                     Name = "Recall Enablement",
                     Description = "Controls whether Windows Recall can be enabled via policy",
                     InputType = InputType.Toggle,
@@ -1792,6 +1852,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-disable-recall-snapshots",
+                    Icon = "CameraOff",
                     Name = "Recall Saving Snapshots",
                     Description = "Allows Windows Recall to save screenshots of your activity for later recall",
                     InputType = InputType.Toggle,
@@ -1816,6 +1877,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-disable-click-to-do",
+                    Icon = "CursorDefaultClickOutline",
                     Name = "Click to Do",
                     Description = "Controls whether the Click to Do AI feature is available in Windows",
                     InputType = InputType.Toggle,
@@ -1840,6 +1902,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-disable-settings-agent",
+                    Icon = "CogOff",
                     Name = "AI Settings Agent",
                     Description = "Controls whether the AI-powered Settings Agent is available in Windows",
                     InputType = InputType.Toggle,
@@ -1864,6 +1927,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-disable-agent-connectors",
+                    Icon = "VectorPolylineRemove",
                     Name = "AI Agent Connectors",
                     Description = "Controls whether AI agents can use connectors to access external services",
                     InputType = InputType.Toggle,
@@ -1888,6 +1952,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-disable-agent-workspaces",
+                    Icon = "DesktopClassic",
                     Name = "AI Agent Workspaces",
                     Description = "Controls whether AI Agent Workspaces are available in Windows",
                     InputType = InputType.Toggle,
@@ -1912,6 +1977,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-disable-remote-agent-connectors",
+                    Icon = "LanDisconnect",
                     Name = "Remote AI Agent Connectors",
                     Description = "Controls whether AI agents can use remote connectors to access remote services",
                     InputType = InputType.Toggle,
@@ -1936,6 +2002,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-disable-copilot-hardware-key",
+                    Icon = "KeyboardOutline",
                     Name = "Copilot Hardware Key",
                     Description = "Controls whether the dedicated Copilot key on keyboards opens Copilot",
                     InputType = InputType.Toggle,
@@ -1960,6 +2027,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-disable-copilot-runtime",
+                    Icon = "RobotOff",
                     Name = "Copilot Runtime",
                     Description = "Controls whether the Copilot runtime is allowed to run via policy",
                     InputType = InputType.Toggle,
@@ -1984,6 +2052,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-copilot-unavailable",
+                    Icon = "RobotOff",
                     Name = "Copilot Availability",
                     Description = "Controls whether Copilot is available in the Windows Shell",
                     InputType = InputType.Toggle,
@@ -2008,6 +2077,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-disable-bing-chat",
+                    Icon = "ChatRemove",
                     Name = "Bing Chat Eligibility",
                     Description = "Controls whether the user is eligible for Bing Chat and Copilot in Search",
                     InputType = InputType.Toggle,
@@ -2032,6 +2102,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-deny-generative-ai-access",
+                    Icon = "ShieldLock",
                     Name = "Generative AI Access",
                     Description = "Controls whether apps can access the generative AI capability on your device",
                     InputType = InputType.Toggle,
@@ -2067,6 +2138,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-deny-system-ai-models",
+                    Icon = "ShieldLock",
                     Name = "System AI Models Access",
                     Description = "Controls whether apps can access system AI models on your device",
                     InputType = InputType.Toggle,
@@ -2112,6 +2184,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-deny-copilot-microphone",
+                    Icon = "MicrophoneOff",
                     Name = "Copilot Microphone Access",
                     Description = "Controls whether Copilot and Office Hub apps have microphone permission",
                     InputType = InputType.Toggle,
@@ -2147,6 +2220,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-disable-input-insights",
+                    Icon = "KeyboardOff",
                     Name = "Input Insights",
                     Description = "Controls whether Windows Input Insights can track typing patterns and provide suggestions",
                     InputType = InputType.Toggle,
@@ -2171,6 +2245,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-disable-copilot-nudges",
+                    Icon = "BellOff",
                     Name = "Copilot Nudges",
                     Description = "Controls whether Copilot promotional nudges and background task notifications are shown",
                     InputType = InputType.Toggle,
@@ -2195,6 +2270,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-disable-consumer-ai-content",
+                    Icon = "AccountOff",
                     Name = "AI Consumer Content",
                     Description = "Controls whether AI-driven consumer account content recommendations are shown",
                     InputType = InputType.Toggle,
@@ -2219,6 +2295,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-disable-paint-ai-image-creator",
+                    Icon = "ImageOff",
                     Name = "Paint AI Image Creator",
                     Description = "Controls whether the AI Image Creator feature is available in Microsoft Paint",
                     InputType = InputType.Toggle,
@@ -2243,6 +2320,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-disable-paint-ai-cocreator",
+                    Icon = "PaletteOutline",
                     Name = "Paint AI Cocreator",
                     Description = "Controls whether the AI Cocreator feature is available in Microsoft Paint",
                     InputType = InputType.Toggle,
@@ -2267,6 +2345,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-disable-paint-generative-fill",
+                    Icon = "FormatPaint",
                     Name = "Paint Generative Fill",
                     Description = "Controls whether the AI Generative Fill feature is available in Microsoft Paint",
                     InputType = InputType.Toggle,
@@ -2291,6 +2370,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-disable-paint-generative-erase",
+                    Icon = "EraserVariant",
                     Name = "Paint Generative Erase",
                     Description = "Controls whether the AI Generative Erase feature is available in Microsoft Paint",
                     InputType = InputType.Toggle,
@@ -2315,6 +2395,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-disable-paint-remove-background",
+                    Icon = "ImageRemove",
                     Name = "Paint Remove Background",
                     Description = "Controls whether the AI Remove Background feature is available in Microsoft Paint",
                     InputType = InputType.Toggle,
@@ -2354,6 +2435,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-edge-copilot-cdp-page-context",
+                    Icon = "WebOff",
                     Name = "Edge Copilot CDP Page Context",
                     Description = "Controls whether Copilot can use CDP to access page content in Microsoft Edge",
                     InputType = InputType.Toggle,
@@ -2378,6 +2460,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-edge-copilot-page-context",
+                    Icon = "FileEyeOutline",
                     Name = "Edge Copilot Page Context",
                     Description = "Controls whether Copilot can read page content in Microsoft Edge",
                     InputType = InputType.Toggle,
@@ -2402,6 +2485,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-edge-copilot-sidebar",
+                    Icon = "DockRight",
                     Name = "Edge Copilot Sidebar",
                     Description = "Controls whether the Copilot sidebar is available in Microsoft Edge",
                     InputType = InputType.Toggle,
@@ -2426,6 +2510,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-edge-entra-copilot",
+                    Icon = "ShieldOff",
                     Name = "Edge Entra Copilot Page Context",
                     Description = "Controls whether Entra Copilot can access page context in Microsoft Edge",
                     InputType = InputType.Toggle,
@@ -2450,6 +2535,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-edge-m365-copilot-icon",
+                    Icon = "ChatMinus",
                     Name = "Edge M365 Copilot Chat Icon",
                     Description = "Controls whether the Microsoft 365 Copilot chat icon is shown in Microsoft Edge",
                     InputType = InputType.Toggle,
@@ -2474,6 +2560,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-edge-ai-history-search",
+                    Icon = "History",
                     Name = "Edge AI History Search",
                     Description = "Controls whether AI-powered history search is available in Microsoft Edge",
                     InputType = InputType.Toggle,
@@ -2498,6 +2585,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-edge-inline-compose",
+                    Icon = "PenOff",
                     Name = "Edge Inline AI Compose",
                     Description = "Controls whether AI-powered inline compose suggestions are available in Microsoft Edge",
                     InputType = InputType.Toggle,
@@ -2522,6 +2610,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-edge-local-ai-model",
+                    Icon = "DatabaseOff",
                     Name = "Edge Local AI Model Settings",
                     Description = "Controls whether local AI model settings are available in Microsoft Edge",
                     InputType = InputType.Toggle,
@@ -2546,6 +2635,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-edge-builtin-ai-apis",
+                    Icon = "Api",
                     Name = "Edge Built-in AI APIs",
                     Description = "Controls whether built-in AI APIs are available in Microsoft Edge for websites to use",
                     InputType = InputType.Toggle,
@@ -2570,6 +2660,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-edge-ai-themes",
+                    Icon = "PaletteOutline",
                     Name = "Edge AI Generated Themes",
                     Description = "Controls whether AI-generated themes are available in Microsoft Edge",
                     InputType = InputType.Toggle,
@@ -2594,6 +2685,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-edge-devtools-ai",
+                    Icon = "CodeBracesBox",
                     Name = "Edge DevTools AI",
                     Description = "Controls whether AI features are available in Edge DevTools",
                     InputType = InputType.Toggle,
@@ -2618,6 +2710,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-edge-share-history-copilot",
+                    Icon = "ShareOff",
                     Name = "Edge Share History with Copilot",
                     Description = "Controls whether browsing history is shared with Copilot search in Microsoft Edge",
                     InputType = InputType.Toggle,
@@ -2657,6 +2750,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-office-ai-training",
+                    Icon = "SchoolOutline",
                     Name = "Office AI Training",
                     Description = "Controls whether Office collects AI training data from your usage",
                     InputType = InputType.Toggle,
@@ -2681,6 +2775,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-office-connected-services",
+                    Icon = "CloudOff",
                     Name = "Office Connected Services",
                     Description = "Controls whether Office connected experiences and AI-powered services are available",
                     InputType = InputType.Toggle,
@@ -2716,6 +2811,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-word-copilot",
+                    Icon = "FileWord",
                     Name = "Word Copilot",
                     Description = "Controls whether Copilot AI features are available in Microsoft Word",
                     InputType = InputType.Toggle,
@@ -2740,6 +2836,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-excel-copilot",
+                    Icon = "FileExcel",
                     Name = "Excel Copilot",
                     Description = "Controls whether Copilot AI features are available in Microsoft Excel",
                     InputType = InputType.Toggle,
@@ -2764,6 +2861,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-onenote-copilot",
+                    Icon = "NotebookEdit",
                     Name = "OneNote Copilot",
                     Description = "Controls whether Copilot AI features, Copilot notebooks, and Copilot skittle are available in Microsoft OneNote",
                     InputType = InputType.Toggle,
@@ -2809,6 +2907,7 @@ public static class PrivacyOptimizations
                 new SettingDefinition
                 {
                     Id = "privacy-office-content-safety-ai",
+                    Icon = "TextBoxRemove",
                     Name = "Office AI Content Safety",
                     Description = "Controls whether AI content safety features are available in Office apps",
                     InputType = InputType.Toggle,

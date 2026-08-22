@@ -24,6 +24,7 @@ public static class SoundOptimizations
                 new SettingDefinition
                 {
                     Id = "sound-startup",
+                    Icon = "MonitorSpeaker",
                     Name = "Startup Sound During Boot",
                     Description = "Plays a sound when Windows starts. Disable to silence the boot chime.",
                     InputType = InputType.Toggle,
@@ -135,6 +136,7 @@ public static class SoundOptimizations
                 new SettingDefinition
                 {
                     Id = "sound-voice-activation",
+                    Icon = "AccountTieVoice",
                     Name = "Voice Activation for Apps",
                     Description = "Allow apps to listen and respond to voice commands like \"Hey Cortana\"",
                     InputType = InputType.Toggle,
@@ -160,6 +162,7 @@ public static class SoundOptimizations
                 new SettingDefinition
                 {
                     Id = "sound-voice-activation-last-used",
+                    Icon = "MicrophoneMessage",
                     Name = "Last Used Voice Activation Setting",
                     Description = "Remember and apply the most recently used voice activation configuration",
                     InputType = InputType.Toggle,
@@ -185,6 +188,7 @@ public static class SoundOptimizations
                 new SettingDefinition
                 {
                     Id = "sound-accessibility-activation",
+                    Icon = "Keyboard",
                     Name = "Accessibility Activation Sounds",
                     Description = "Play sounds when accessibility features like StickyKeys or FilterKeys are activated",
                     InputType = InputType.Toggle,
@@ -211,6 +215,8 @@ public static class SoundOptimizations
                 new SettingDefinition
                 {
                     Id = "sound-accessibility-warnings",
+                    Icon = "DesktopSpeaker",
+                    IconPack = "Fluent",
                     Name = "Accessibility Warning Sounds",
                     Description = "Play warning sounds when attempting to activate accessibility features or when accessibility-related events occur",
                     InputType = InputType.Toggle,

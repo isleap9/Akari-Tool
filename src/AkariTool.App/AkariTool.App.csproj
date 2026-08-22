@@ -41,6 +41,10 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.3.1" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <!-- Row header icons (Winhance parity): Material SVG paths + Fluent glyphs,
+         resolved by IconConverter from SettingDefinition.Icon / .IconPack. -->
+    <PackageReference Include="Material.Icons.WinUI3" Version="3.0.2" />
+    <PackageReference Include="FluentIcons.WinUI" Version="2.1.326" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.10" />
     <!-- WMI lookups (GPU list + RAM speed) on the Home system banner. -->
     <PackageReference Include="System.Management" Version="10.0.0" />

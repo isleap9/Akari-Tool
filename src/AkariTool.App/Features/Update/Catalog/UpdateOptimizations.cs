@@ -38,6 +38,7 @@ public static class UpdateOptimizations
                 new SettingDefinition
                 {
                     Id = "updates-policy-mode",
+                    Icon = "BookSync",
                     Name = "Windows Update Policy",
                     Description = "Control how Windows updates are installed on your system",
                     InputType = InputType.Selection,
@@ -69,6 +70,7 @@ public static class UpdateOptimizations
                 new SettingDefinition
                 {
                     Id = "updates-delivery-optimization",
+                    Icon = "ShareVariant",
                     Name = "Delivery Optimization",
                     Description = "Share downloaded updates with other PCs on your network or the internet to reduce bandwidth usage",
                     InputType = InputType.Selection,
@@ -129,6 +131,8 @@ public static class UpdateOptimizations
                 new SettingDefinition
                 {
                     Id = "updates-store-auto-download",
+                    Icon = "StoreMicrosoft",
+                    IconPack = "Fluent",
                     Name = "Microsoft Store Auto-Downloads",
                     Description = "Automatically downloads app updates from the Microsoft Store in the background.",
                     InputType = InputType.Toggle,
@@ -171,6 +175,7 @@ public static class UpdateOptimizations
                 new SettingDefinition
                 {
                     Id = "updates-latest-updates",
+                    Icon = "BullhornVariant",
                     Name = "Get Latest Updates",
                     Description = "Receives the latest updates as soon as they are available, before the standard rollout.",
                     InputType = InputType.Toggle,
@@ -197,6 +202,7 @@ public static class UpdateOptimizations
                 new SettingDefinition
                 {
                     Id = "updates-other-products",
+                    Icon = "ArchiveSync",
                     Name = "Updates for Other Microsoft Products",
                     Description = "Receives updates for other Microsoft products alongside Windows Update.",
                     InputType = InputType.Toggle,
@@ -222,6 +228,7 @@ public static class UpdateOptimizations
                 new SettingDefinition
                 {
                     Id = "updates-restart-asap",
+                    Icon = "Restart",
                     Name = "Restart as Soon as Possible",
                     Description = "Restarts the device as soon as possible to finish installing updates, even during active hours.",
                     InputType = InputType.Toggle,
@@ -247,6 +254,7 @@ public static class UpdateOptimizations
                 new SettingDefinition
                 {
                     Id = "updates-restart-options",
+                    Icon = "RestartOff",
                     Name = "Managed Restart Options",
                     Description = "Allows users to configure restart options for Windows Update.",
                     InputType = InputType.Toggle,
@@ -275,6 +283,7 @@ public static class UpdateOptimizations
                 new SettingDefinition
                 {
                     Id = "updates-notification-level",
+                    Icon = "BellPlus",
                     Name = "Update Notifications",
                     Description = "Shows notifications about Windows Update activity including restart prompts.",
                     InputType = InputType.Toggle,
@@ -300,6 +309,7 @@ public static class UpdateOptimizations
                 new SettingDefinition
                 {
                     Id = "updates-restart-notification",
+                    Icon = "RestartAlert",
                     Name = "Restart Notification",
                     Description = "Shows a notification before restarting to complete update installation.",
                     InputType = InputType.Toggle,
@@ -326,6 +336,7 @@ public static class UpdateOptimizations
                 new SettingDefinition
                 {
                     Id = "updates-metered-connection",
+                    Icon = "Connection",
                     Name = "Updates on Metered Connections",
                     Description = "Allows Windows Update to download updates on metered network connections.",
                     InputType = InputType.Toggle,
@@ -351,6 +362,7 @@ public static class UpdateOptimizations
                 new SettingDefinition
                 {
                     Id = "updates-driver-controls",
+                    Icon = "PackageVariantClosedMinus",
                     Name = "Driver Update Controls",
                     Description = "Allows Windows to automatically download and install driver updates through Windows Update.",
                     InputType = InputType.Toggle,
@@ -376,6 +388,7 @@ public static class UpdateOptimizations
                 new SettingDefinition
                 {
                     Id = "updates-driver-coinstallers",
+                    Icon = "PackageVariantRemove",
                     Name = "Driver Co-installers",
                     Description = "Allows Windows to install driver co-installers and extension INFs from Windows Update.",
                     InputType = InputType.Toggle,
