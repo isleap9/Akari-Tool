@@ -1,3 +1,71 @@
+## v2.0.3
+
+### New
+
+- Akari Tool now offers to create a system restore point the first time you
+  launch it, before any changes are made. Every tweak page also has a
+  Create Restore Point quick action, and restore point creation itself was
+  rebuilt on Windows' native API: it verifies the point actually exists,
+  grows shadow storage automatically when it's nearly full, and no longer
+  leaves your restore-point frequency setting permanently changed.
+- Bulk actions show progress. Apply Recommended and Restore Defaults now run
+  behind a progress card with a Cancel button, instead of silently churning
+  through rows.
+- The sidebar shows pending counts. Each tab carries a badge with how many
+  of its recommended settings aren't applied yet, updating the moment you
+  flip something.
+- Every tweak row on the Gaming, Sound, Notifications, Privacy, Power and
+  Update pages now shows an icon next to its name.
+- Expandable technical details on every tweak row. See exactly what a tweak
+  touches — registry paths and values, scheduled tasks, power settings,
+  scripts — with Current, Recommended and Windows Default values side by
+  side, and a button that opens regedit right at that key. Rows can also
+  raise a status banner explaining what happened on the last apply.
+- Recently added tweaks are flagged with a NEW badge.
+
+### Smarter behavior
+
+- Related tweaks now cascade the way they do in Windows. Disabling
+  hibernation resets fast startup to its default, the Visual Effects mode
+  preset drives its individual effect toggles, and cross-page requirements
+  resolve automatically.
+- Tweaks that don't apply to your machine are hidden instead of shown and
+  broken: Windows 10-only rows disappear on Windows 11, build-bounded rows
+  appear once you're on a new enough update, and Power rows drop out when
+  the hardware doesn't support them.
+- Visual Effects gained a mode dropdown — Let Windows Decide, Best
+  Appearance, Best Performance, Custom — that sets every effect toggle at
+  once.
+- Gaming's Network section returned: Nagle's algorithm tuning per adapter
+  plus the DNS selector with DNS-over-HTTPS (Cloudflare, Google, Quad9,
+  OpenDNS).
+
+### Fixes
+
+- Dropdowns keep their selection across restarts again. The DNS Server,
+  Windows Update Policy and Touch Keyboard Service selectors came back blank
+  after relaunching even though the tweak stayed applied.
+- Backup & Restore exports and imports every tweak again — including numeric
+  values and the active power plan — and global search finds tweaks across
+  all tabs once more. Both had gone quiet during the settings engine rebuild.
+- ClearType font smoothing now actually applies; it was previously written in
+  a form Windows silently ignores.
+- The Power Plan dropdown keeps its selection when its contents refresh.
+- Fixed garbled characters in some Customize page descriptions and search
+  results.
+- Corrected the UAC level labels.
+
+### New tweaks
+
+- Customize ▸ Explorer: remove the 3D Objects folder, hide duplicate
+  removable drives, restore legacy Photo Viewer and Notepad file
+  associations, single-click item opening, hide sync provider notifications.
+- Customize ▸ Desktop: remove the desktop shortcut arrow.
+- Customize ▸ Start Menu: clean all default pins.
+- Gaming ▸ Security: PowerShell execution policy selector.
+- The Context Menu subpage is gone — Classic Right-Click Menu now lives on
+  the Explorer page and switches via the same mechanism Windows itself uses.
+
 ## v2.0.2
 
 ### Verify

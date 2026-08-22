@@ -61,13 +61,17 @@ Write-Host "Using MSBuild: $msbuild" -ForegroundColor DarkGray
 if ($LASTEXITCODE -ne 0) { Write-Error "MSBuild restore failed." }
 
 # --- 3. Publish (VS MSBuild, self-contained .NET + Windows App SDK) ----------
+# NOTE: /p:SelfContained + /p:WindowsAppSDKSelfContained must NOT be passed here.
+# They are GLOBAL properties and would flow into AkariTool.Core/Infrastructure
+# (class libraries), where the Windows App SDK targets hard-error. The App csproj
+# maps the custom /p:AkariPublish flag to both switches instead (project-file
+# properties do NOT flow through ProjectReferences).
 & $msbuild $csproj `
     /t:Publish `
     /p:Configuration=Release `
     /p:Platform=x64 `
     /p:RuntimeIdentifier=win-x64 `
-    /p:SelfContained=true `
-    /p:WindowsAppSDKSelfContained=true `
+    /p:AkariPublish=true `
     /p:PublishReadyToRun=true `
     /p:PublishSingleFile=false `
     /p:AppxPackage=false `

@@ -25,6 +25,19 @@
   </PropertyGroup>
 
   <!--
+    Release publish hook for build-installer.ps1. The script passes /p:AkariPublish=true
+    (a CUSTOM global property) instead of /p:SelfContained + /p:WindowsAppSDKSelfContained:
+    global props flow into every ProjectReference, and the Windows App SDK targets hard-error
+    when WindowsAppSDKSelfContained lands on a class library (AkariTool.Core/Infrastructure).
+    Only this EXE maps the flag to the real publish switches; libraries ignore it.
+    SelfContained stays off in normal dev builds (framework-dependent inner loop).
+  -->
+  <PropertyGroup Condition="'$(AkariPublish)' == 'true'">
+    <SelfContained>true</SelfContained>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+  </PropertyGroup>
+
+  <!--
     De-elevated asInvoker TEST build isolation (MIGRATION_LOG3 "Phase 6").
     build-deelevated.ps1 passes /p:DeElevatedTest=true; that redirects ONLY the leaf
     IntermediateOutputPath to obj\DeElevated\, so the asInvoker Win32-manifest
