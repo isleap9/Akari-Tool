@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git reset *)",
+      "Bash(git check-ignore *)",
+      "Read(//c/Users/isleap/Documents/GitHub/Akari-Tool/%n  %s bytes \\\\\\(%s\\\\ /**)",
+      "Bash(ls \"C:/Users/isleap/Documents/GitHub/Akari-Tool-WPF+UI\" 2>&1 | head -50; echo \"=== search for Verify/Drift ===\"; find \"C:/Users/isleap/Documents/GitHub/Akari-Tool-WPF+UI\" -iname \"*verify*\" -o -iname \"*drift*\" 2>/dev/null | grep -v \"/obj/\\\\|/bin/\" | head -40)",
+      "Bash(grep -vi \"//\")",
+      "PowerShell($msb = \"C:\\\\Program Files\\\\Microsoft Visual Studio\\\\18\\\\Community\\\\MSBuild\\\\Current\\\\Bin\\\\MSBuild.exe\"; & $msb \"C:\\\\Users\\\\isleap\\\\Documents\\\\GitHub\\\\Akari-Tool\\\\AkariTool.csproj\" /t:Rebuild /p:Configuration=Debug /p:Platform=x64 /v:minimal /nologo)",
+      "Bash(dotnet build *)",
+      "Bash(taskkill //IM AkariTool.exe //F)",
+      "Bash(taskkill //PID 11296 //F)",
+      "Bash(powershell.exe -NoProfile -Command \"[guid]::NewGuid\\(\\).ToString\\(\\).ToUpper\\(\\)\")",
+      "PowerShell(& \"C:\\\\Users\\\\isleap\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-isleap-Documents-GitHub-Akari-Tool\\\\71f95dd5-949c-4787-a29c-3b7dfce6e9e7\\\\scratchpad\\\\add-usings.ps1\")"
+    ]
+  }
+}
