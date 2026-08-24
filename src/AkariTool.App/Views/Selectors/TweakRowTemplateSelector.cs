@@ -59,14 +59,7 @@ public sealed partial class TweakBadgeTemplateSelector : DataTemplateSelector
             SettingBadgeKind.Preference => PreferenceTemplate,
             _ => CustomTemplate,
         };
-        if (item is not TweakBadgeViewModel badge) return CustomTemplate;
-        return badge.Kind switch
-        {
-            TweakBadgeKind.Recommended => RecommendedTemplate,
-            TweakBadgeKind.Default => DefaultTemplate,
-            TweakBadgeKind.Preference => PreferenceTemplate,
-            _ => CustomTemplate,
-        };
+        return CustomTemplate;
     }
 
     protected override DataTemplate? SelectTemplateCore(object item, DependencyObject container)

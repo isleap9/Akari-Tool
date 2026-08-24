@@ -62,15 +62,20 @@ public partial class App : Application
             _ = Services.GetRequiredService<AkariOSViewModel>().CheckOrphanedSessionAsync();
         }
 
-        // Warm up the setting pages AFTER the shell is up: build every SettingPageViewModel
-        // once, on a single background thread, so Backup export + global search see every tab
-        // even if the user never navigates to it. Sequential (never parallel) — see
-        // SettingPageWarmUp for the threading rationale. This is also the seam the future
-        // staged-progress splash will hook into.
+        // Startup orchestration AFTER the shell is up (Winhance StartupOrchestrator 1:1):
+        // Phase 1 pre-filters every feature catalog into the CompatibleSettingsRegistry,
+        // Phase 2 registers all bypassed settings into the GlobalSettingsRegistry, and
+        // Phase 3 builds every SettingPageViewModel on a single background thread so
+        // Backup export + global search see every tab even if the user never navigates
+        // to it. Sequential (never parallel) — see SettingPageWarmUp for the threading
+        // rationale. This is also the seam the future staged-progress splash hooks into.
         var shell = MainWindow as MainWindow;
-        _ = Task.Run(() =>
+        _ = Task.Run(async () =>
         {
-            SettingPageWarmUp.Run(Services, log);
+            var orchestrator = new AkariTool.Services.StartupOrchestrator(
+                Services.GetRequiredService<AkariTool.Core.Features.Common.Interfaces.ICompatibleSettingsRegistry>(),
+                Services.GetRequiredService<AkariTool.Core.Features.Common.Interfaces.IGlobalSettingsPreloader>());
+            await orchestrator.RunAsync(Services, log);
 
             // Drift check runs ONLY after warm-up: DriftScanner resolves each baseline
             // entry against TweakRegistry, so scanning before every page's Build() has

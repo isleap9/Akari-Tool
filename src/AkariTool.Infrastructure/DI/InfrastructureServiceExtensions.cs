@@ -36,9 +36,30 @@ public static class InfrastructureServiceExtensions
             {
                 ["updates-policy-mode"] = sp.GetRequiredService<WindowsUpdatePolicyHandler>()
             }));
+        // Discovery-side handler iteration (Winhance ISpecialDiscoveryRegistry parity):
+        // every discovery-capable handler listed once; SystemSettingsDiscoveryService
+        // iterates this to collect special raw values during batched reads.
+        services.AddSingleton<ISpecialDiscoveryRegistry>(sp => new SpecialDiscoveryRegistry(
+            new ISpecialSettingHandler[] { sp.GetRequiredService<WindowsUpdatePolicyHandler>() }));
+
+        // Two-phase state discovery (Winhance SystemSettingsDiscoveryService 1:1):
+        // batched raw reads → interpreted SettingStateResult per setting.
+        services.AddSingleton<ISystemSettingsDiscoveryService, SystemSettingsDiscoveryService>();
+
+        // Global settings pipeline (Winhance 1:1): compatible-catalog registry +
+        // module settings store + startup preloader. Core owns the registry class
+        // (no OS deps); Infrastructure owns the preloader that drives it.
+        services.AddSingleton<ICompatibleSettingsRegistry, CompatibleSettingsRegistry>();
+        services.AddSingleton<AkariTool.Core.Features.Common.Services.GlobalSettingsRegistry>();
+        services.AddSingleton<IGlobalSettingsRegistry>(sp =>
+            sp.GetRequiredService<AkariTool.Core.Features.Common.Services.GlobalSettingsRegistry>());
+        services.AddSingleton<IGlobalSettingsPreloader, GlobalSettingsPreloader>();
 
         // Declarative SettingDefinition stack (Track A).
         services.AddSingleton<ISettingStateReader, SettingStateReader>();
+        services.AddSingleton<ISystemSettingsDiscoveryService, SystemSettingsDiscoveryService>();
+        services.AddSingleton<ISpecialDiscoveryRegistry>(sp => new SpecialDiscoveryRegistry(
+            new ISpecialSettingHandler[] { sp.GetRequiredService<WindowsUpdatePolicyHandler>() }));
         services.AddSingleton<ISettingOperationExecutor, SettingOperationExecutor>();
         services.AddSingleton<ISettingDependencyResolver, SettingDependencyResolver>();
 

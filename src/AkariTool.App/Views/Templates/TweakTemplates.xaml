@@ -25,6 +25,8 @@
     <converters:BooleanToVisibilityConverter x:Key="BoolToVis" />
     <converters:NullToVisibilityConverter x:Key="NullToVis" />
     <techconv:InverseBoolToVisibilityConverter x:Key="InvBoolToVis" />
+    <!-- Badge pill opacity (Winhance parity): highlighted=1.0, dim=0.35, derived from IsHighlighted. -->
+    <featconv:BoolToDimOpacityConverter x:Key="BoolToDimOpacityConverter" />
     <!-- Row header icons (Winhance parity): resolves Icon/IconPack off the row VM. -->
     <featconv:IconConverter x:Key="IconConverter" />
 
@@ -288,7 +290,7 @@
             CornerRadius="8"
             Padding="10,2"
             Margin="0,0,6,0"
-            Opacity="{Binding PillOpacity}"
+            Opacity="{Binding IsHighlighted, Converter={StaticResource BoolToDimOpacityConverter}}"
             ToolTipService.ToolTip="{Binding Tooltip}">
             <TextBlock
                 Text="{Binding Label}"
@@ -307,7 +309,7 @@
             CornerRadius="8"
             Padding="10,2"
             Margin="0,0,6,0"
-            Opacity="{Binding PillOpacity}"
+            Opacity="{Binding IsHighlighted, Converter={StaticResource BoolToDimOpacityConverter}}"
             ToolTipService.ToolTip="{Binding Tooltip}">
             <TextBlock
                 Text="{Binding Label}"
@@ -326,7 +328,7 @@
             CornerRadius="8"
             Padding="10,2"
             Margin="0,0,6,0"
-            Opacity="{Binding PillOpacity}"
+            Opacity="{Binding IsHighlighted, Converter={StaticResource BoolToDimOpacityConverter}}"
             ToolTipService.ToolTip="{Binding Tooltip}">
             <TextBlock
                 Text="{Binding Label}"
@@ -345,7 +347,7 @@
             CornerRadius="8"
             Padding="10,2"
             Margin="0,0,6,0"
-            Opacity="{Binding PillOpacity}"
+            Opacity="{Binding IsHighlighted, Converter={StaticResource BoolToDimOpacityConverter}}"
             ToolTipService.ToolTip="{Binding Tooltip}">
             <TextBlock
                 Text="{Binding Label}"

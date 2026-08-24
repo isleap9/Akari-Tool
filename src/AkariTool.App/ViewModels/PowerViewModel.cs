@@ -98,7 +98,9 @@ public sealed partial class PowerViewModel : SettingPageViewModel
                     localizationService: _localizationService,
                     dispatcherService: _dispatcherService,
                     regeditLauncher: _regeditLauncher,
-                    eventBus: _eventBus);
+                    eventBus: _eventBus,
+                    discoveryService: WinUI.Framework.IoC.ServiceLocator
+                        .GetService<AkariTool.Core.Features.Common.Interfaces.ISystemSettingsDiscoveryService>());
             // Numeric/Selection PowerCfg rows need HasBattery for the Dual/SingleAC
             // template split and per-mode badges.
             return new SettingItemViewModel(
@@ -108,7 +110,9 @@ public sealed partial class PowerViewModel : SettingPageViewModel
                 localizationService: _localizationService,
                 dispatcherService: _dispatcherService,
                 regeditLauncher: _regeditLauncher,
-                eventBus: _eventBus);
+                eventBus: _eventBus,
+                discoveryService: WinUI.Framework.IoC.ServiceLocator
+                    .GetService<AkariTool.Core.Features.Common.Interfaces.ISystemSettingsDiscoveryService>());
         }
 
     /// <summary>

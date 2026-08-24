@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -46,6 +46,7 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
 
         private bool _suppress;
         private int _lastIndex = -1;
+        private readonly ISystemSettingsDiscoveryService? _discoveryService;
 
     public SettingItemViewModel(
                 SettingDefinition definition,
@@ -63,10 +64,12 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
                 IEventBus? eventBus = null,
                 IRegeditLauncher? regeditLauncher = null,
                 IDispatcherService? dispatcherService = null,
-                ILogService? logService = null)
+                ILogService? logService = null,
+                ISystemSettingsDiscoveryService? discoveryService = null)
             {
                 Definition = definition;
                 _stateReader = stateReader;
+                _discoveryService = discoveryService;
                 _executor = executor;
                 _dialogs = dialogs;
                 _powerPlanComboBoxService = powerPlanComboBoxService;
@@ -722,13 +725,27 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
     // Per-state toggle warning copy (Akari extension). ON shows EnableWarning, OFF DisableWarning.
     private string? GetToggleWarning(bool newState) => newState ? Definition.EnableWarning : Definition.DisableWarning;
 
-    // ── System-state read-back ─────────────────────────────────────────────────
+    private static AkariTool.Core.Features.Common.Interfaces.ISystemSettingsDiscoveryService? DiscoveryService
+        => WinUI.Framework.IoC.ServiceLocator.GetService<AkariTool.Core.Features.Common.Interfaces.ISystemSettingsDiscoveryService>();
+
     public void RefreshFromSystem()
     {
         // The Power Plan row's state is managed by its apply path (RefreshPlanOptions
         // repopulates + resolves the active index). _stateReader has no backing for it
         // and would wrongly reset the selection to -1.
         if (IsPowerPlanSetting) return;
+
+        // Winhance parity: all system reads flow through the discovery service
+        // (raw read + interpretation). Fall back to the direct reader when the
+        // discovery service is not registered (unit-test contexts).
+        var discovery = DiscoveryService;
+        if (discovery != null)
+        {
+            var states = discovery.GetSettingStatesAsync(new[] { Definition }).GetAwaiter().GetResult();
+            if (states.TryGetValue(Definition.Id, out var state))
+                ApplyStateResult(state);
+            return;
+        }
 
         if (InputType == InputType.Toggle || InputType == InputType.CheckBox)
         {
@@ -751,6 +768,48 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
             else if (acValue.HasValue)
             {
                 SetNumericValueSilently(acValue.Value);
+            }
+        }
+
+        RefreshBadges();
+    }
+
+    /// <summary>
+    /// Winhance parity: applies an interpreted <see cref="SettingStateResult"/>
+    /// (produced by SystemSettingsDiscoveryService) to this row without firing
+    /// user-path events, then recomputes badges.
+    /// </summary>
+    public void ApplyStateResult(SettingStateResult state)
+    {
+        if (!state.Success) return;
+
+        if (InputType == InputType.Toggle || InputType == InputType.CheckBox)
+        {
+            SetIsOnSilently(state.IsEnabled);
+        }
+        else if (InputType == InputType.Selection)
+        {
+            int idx = state.CurrentValue is int i ? i : -1;
+            SetSelectedIndexSilently(idx);
+            _lastIndex = idx;
+        }
+        else if (InputType == InputType.NumericRange && state.RawValues is { } rawValues)
+        {
+            // Discovery stores SYSTEM-unit PowerCfg values; convert to display units.
+            int? ac = rawValues.TryGetValue("PowerCfgValue", out var a) && a is int ai ? ai : null;
+            int? dc = rawValues.TryGetValue("PowerCfgValueDC", out var d) && d is int di ? di : null;
+            string? displayUnits = Definition.NumericRange?.Units ?? Definition.PowerCfgSettings?[0].Units;
+            ac = ac.HasValue ? AkariTool.Infrastructure.Features.Common.Utilities.NumericConversionHelper.ConvertFromSystemUnits(ac.Value, displayUnits) : null;
+            dc = dc.HasValue ? AkariTool.Infrastructure.Features.Common.Utilities.NumericConversionHelper.ConvertFromSystemUnits(dc.Value, displayUnits) : null;
+
+            if (SupportsSeparateACDC)
+            {
+                if (ac.HasValue) SetAcNumericValueSilently(ac.Value);
+                if (dc.HasValue) SetDcNumericValueSilently(dc.Value);
+            }
+            else if (ac.HasValue)
+            {
+                SetNumericValueSilently(ac.Value);
             }
         }
 

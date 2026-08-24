@@ -73,7 +73,9 @@ public abstract partial class SettingPageViewModel : ViewModelBase
                        dispatcherService: _dispatcherService,
                        regeditLauncher: _regeditLauncher,
                        eventBus: _eventBus,
-                       logService: WinUI.Framework.IoC.ServiceLocator.GetService<ILogService>());
+                       logService: WinUI.Framework.IoC.ServiceLocator.GetService<ILogService>(),
+                       discoveryService: WinUI.Framework.IoC.ServiceLocator
+                           .GetService<AkariTool.Core.Features.Common.Interfaces.ISystemSettingsDiscoveryService>());
 
     /// <summary>
     /// Extra catalogs the dependency resolver may need beyond this page's own rows
@@ -108,6 +110,42 @@ public abstract partial class SettingPageViewModel : ViewModelBase
             foreach (var item in section.Items.OfType<SettingItemViewModel>())
                 if (!item.IsPowerPlanSetting)
                     item.RefreshFromSystem();
+        RefreshQuickActionCounts();
+    }
+
+    /// <summary>
+    /// Winhance parity: batch page refresh through SystemSettingsDiscoveryService —
+    /// ONE discovery pass interprets every row's state, then each row applies its
+    /// result. Falls back to per-row reads when the discovery service is not
+    /// registered (unit-test contexts).
+    /// </summary>
+    public void RefreshAllFromSystem()
+    {
+        var rows = Sections.SelectMany(s => s.Items).OfType<SettingItemViewModel>()
+            .Where(i => !i.IsPowerPlanSetting)
+            .ToList();
+        if (rows.Count == 0)
+        {
+            RefreshQuickActionCounts();
+            return;
+        }
+
+        var discovery = WinUI.Framework.IoC.ServiceLocator
+            .GetService<AkariTool.Core.Features.Common.Interfaces.ISystemSettingsDiscoveryService>();
+        if (discovery != null)
+        {
+            var states = discovery.GetSettingStatesAsync(rows.Select(r => r.Definition))
+                .GetAwaiter().GetResult();
+            foreach (var row in rows)
+                if (states.TryGetValue(row.Id, out var state))
+                    row.ApplyStateResult(state);
+        }
+        else
+        {
+            foreach (var row in rows)
+                row.RefreshFromSystem();
+        }
+
         RefreshQuickActionCounts();
     }
 

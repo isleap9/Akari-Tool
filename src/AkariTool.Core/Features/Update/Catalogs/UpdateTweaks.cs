@@ -1,11 +1,8 @@
 using Microsoft.Win32;
 using AkariTool.Core.Tweaks;
 
-namespace AkariTool.Tabs.Update
-{
-    // Legacy TweakDefinition data for the Update tab. Only the DeliveryAndStore and
-    // UpdateBehavior sections (plus the ReadDword read helper) remain here; the Update
-    // Policy dropdown now lives on the declarative SettingDefinition stack
+namespace AkariTool.Tabs.Update;
+// The Update Policy dropdown now lives on the declarative SettingDefinition stack
     // (UpdateOptimizations catalog + WindowsUpdatePolicyHandler).
     public static partial class UpdateTweaks
     {
@@ -330,4 +327,3 @@ namespace AkariTool.Tabs.Update
             catch { return null; }
         }
     }
-}
