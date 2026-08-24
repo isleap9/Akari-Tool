@@ -26,6 +26,7 @@ public static class TaskbarOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-taskbar-align-left",
+                    Icon = "FileTableBoxOutline",
                     Name = "Align Taskbar Left",
                     Description = "Moves taskbar icons to the left — restores Windows 10 layout",
                     InputType = InputType.Toggle,
@@ -50,6 +51,7 @@ public static class TaskbarOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-taskbar-hide-search",
+                    Icon = "Magnify",
                     Name = "Hide Search Bar",
                     Description = "Removes the search box/icon from the taskbar",
                     InputType = InputType.Toggle,
@@ -74,6 +76,7 @@ public static class TaskbarOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-taskbar-hide-task-view",
+                    Icon = "DockWindow",
                     Name = "Hide Task View Button",
                     Description = "Removes the Task View (virtual desktops) button from the taskbar",
                     InputType = InputType.Toggle,
@@ -136,6 +139,7 @@ public static class TaskbarOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-taskbar-hide-chat",
+                    Icon = "Chat",
                     Name = "Hide Chat / Meet Now",
                     Description = "Removes the Chat (Microsoft Teams) button from the taskbar",
                     InputType = InputType.Toggle,
@@ -160,6 +164,8 @@ public static class TaskbarOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-taskbar-hide-copilot",
+                    Icon = "BrainCircuit",
+                    IconPack = "Fluent",
                     Name = "Hide Copilot Button",
                     Description = "Removes the Copilot AI button from the taskbar",
                     InputType = InputType.Toggle,
@@ -184,6 +190,7 @@ public static class TaskbarOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-taskbar-hide-copilot-companion",
+                    Icon = "Robot",
                     Name = "Hide Copilot Companion Button",
                     Description = "Removes the Copilot Companion button from the taskbar (newer builds)",
                     InputType = InputType.Toggle,
@@ -208,6 +215,7 @@ public static class TaskbarOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-taskbar-hide-copilot-pwa-pin",
+                    Icon = "Pin",
                     Name = "Hide Copilot PWA Pin",
                     Description = "Removes the pinned Copilot web app from the taskbar",
                     InputType = InputType.Toggle,
@@ -232,6 +240,7 @@ public static class TaskbarOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-taskbar-hide-recall-pin",
+                    Icon = "History",
                     Name = "Hide Recall Pin",
                     Description = "Removes the pinned Recall shortcut from the taskbar",
                     InputType = InputType.Toggle,
@@ -267,6 +276,7 @@ public static class TaskbarOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-taskbar-auto-hide",
+                    Icon = "ArrowCollapseDown",
                     Name = "Auto-hide the Taskbar",
                     Description = "Automatically hides the taskbar when not in use, revealing it when you move the cursor to the bottom of the screen.",
                     InputType = InputType.Toggle,
@@ -294,6 +304,7 @@ public static class TaskbarOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-taskbar-end-task",
+                    Icon = "ApplicationCog",
                     Name = "End Task on Taskbar",
                     Description = "Adds 'End Task' to the right-click menu for taskbar app buttons",
                     InputType = InputType.Toggle,
@@ -318,6 +329,7 @@ public static class TaskbarOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-taskbar-clock-seconds",
+                    Icon = "ClockOutline",
                     Name = "Show Seconds in Clock",
                     Description = "Displays seconds in the system tray clock",
                     InputType = InputType.Toggle,
@@ -342,6 +354,7 @@ public static class TaskbarOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-taskbar-hide-badges",
+                    Icon = "Bell",
                     Name = "Hide Taskbar Badges",
                     Description = "Removes notification badge counters from taskbar app icons",
                     InputType = InputType.Toggle,
@@ -366,6 +379,7 @@ public static class TaskbarOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-taskbar-disable-thumbnails",
+                    Icon = "ImageMultiple",
                     Name = "Disable Taskbar Thumbnails",
                     Description = "Stops thumbnail previews appearing when hovering taskbar icons — reduces RAM usage",
                     InputType = InputType.Toggle,
@@ -390,6 +404,7 @@ public static class TaskbarOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-taskbar-disable-aero-peek",
+                    Icon = "EyeOffOutline",
                     Name = "Disable Aero Peek",
                     Description = "Disables the Show Desktop peek when hovering the bottom-right corner",
                     InputType = InputType.Toggle,
@@ -414,6 +429,7 @@ public static class TaskbarOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-taskbar-disable-snap-assist",
+                    Icon = "ViewDashboardOutline",
                     Name = "Disable Snap Assist",
                     Description = "Disables the snap layout overlay that appears when dragging windows",
                     InputType = InputType.Toggle,
@@ -438,6 +454,7 @@ public static class TaskbarOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-taskbar-verbose-status",
+                    Icon = "MessageTextOutline",
                     Name = "Verbose Boot/Shutdown Messages",
                     Description = "Shows detailed status messages during Windows startup and shutdown",
                     InputType = InputType.Toggle,
@@ -462,6 +479,7 @@ public static class TaskbarOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-taskbar-show-all-tray-icons",
+                    Icon = "TrayFull",
                     Name = "Always Show All Tray Icons",
                     Description = "Shows every system tray icon instead of collapsing them into the overflow flyout",
                     InputType = InputType.Toggle,
@@ -486,6 +504,7 @@ public static class TaskbarOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-taskbar-hide-on-other-displays",
+                    Icon = "MonitorMultiple",
                     Name = "Hide Taskbar on Other Displays",
                     Description = "Shows the taskbar only on the main monitor in multi-display setups",
                     InputType = InputType.Toggle,
@@ -510,6 +529,7 @@ public static class TaskbarOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-taskbar-autohide-hover-delay",
+                    Icon = "DockBottom",
                     Name = "Taskbar Auto-Hide Hover Delay",
                     Description = "How long you must hover at the screen edge before the auto-hidden taskbar appears. Lower values reveal the taskbar faster",
                     InputType = InputType.Selection,
@@ -545,6 +565,7 @@ public static class TaskbarOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-taskbar-show-desktop-corner",
+                    Icon = "DesktopClassic",
                     Name = "Show Desktop from Taskbar Corner",
                     Description = "Click the far corner of the taskbar to minimize all windows and show the desktop",
                     InputType = InputType.Toggle,
@@ -569,6 +590,7 @@ public static class TaskbarOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-taskbar-share-any-window",
+                    Icon = "ShareVariant",
                     Name = "Share Any Window from Taskbar",
                     Description = "Lets you share any open window directly from the taskbar during a Teams call",
                     InputType = InputType.Toggle,
@@ -593,6 +615,7 @@ public static class TaskbarOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-taskbar-flashing",
+                    Icon = "FlashAlert",
                     Name = "Show Flashing on Taskbar Apps",
                     Description = "Flash taskbar buttons when an app needs attention",
                     InputType = InputType.Toggle,
@@ -617,6 +640,7 @@ public static class TaskbarOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-taskbar-small-icons",
+                    Icon = "SizeXxs",
                     Name = "Use Small Taskbar Buttons",
                     Description = "Use smaller taskbar buttons (Windows 10 only; ignored on Windows 11)",
                     InputType = InputType.Toggle,
@@ -641,6 +665,8 @@ public static class TaskbarOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-taskbar-meet-now",
+                    Icon = "Video",
+                    IconPack = "Fluent",
                     Name = "Remove Meet Now Button",
                     Description = "Hide the Meet Now button from the system tray",
                     InputType = InputType.Toggle,
@@ -665,6 +691,7 @@ public static class TaskbarOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-taskbar-button-size",
+                    Icon = "Resize",
                     Name = "Combine Taskbar Buttons / Small Buttons",
                     Description = "When to use smaller taskbar buttons",
                     InputType = InputType.Selection,
@@ -698,6 +725,7 @@ public static class TaskbarOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-taskbar-transparency",
+                    Icon = "Opacity",
                     Name = "Taskbar Transparency",
                     Description = "Force the taskbar fully transparent or fully opaque",
                     InputType = InputType.Selection,
@@ -743,6 +771,7 @@ public static class TaskbarOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-taskbar-button-grouping",
+                    Icon = "Tab",
                     Name = "Combine Taskbar Buttons",
                     Description = "Controls whether taskbar buttons for the same app are grouped together",
                     InputType = InputType.Selection,
@@ -776,6 +805,7 @@ public static class TaskbarOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-taskbar-grouping-multimonitor",
+                    Icon = "Monitor",
                     Name = "Show Taskbar Apps On",
                     Description = "Which monitors show open-window buttons when the taskbar spans multiple displays",
                     InputType = InputType.Selection,
@@ -809,6 +839,7 @@ public static class TaskbarOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-taskbar-grouping-other-taskbars",
+                    Icon = "TabUnselected",
                     Name = "Combine Buttons on Other Taskbars",
                     Description = "Button grouping behaviour on secondary-monitor taskbars",
                     InputType = InputType.Selection,
