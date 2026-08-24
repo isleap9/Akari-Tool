@@ -80,6 +80,18 @@
             OpenPaneLength="220"
             SelectionChanged="Nav_SelectionChanged">
 
+            <!-- Flatten the NavigationView's built-in content panel: transparent background,
+                 no border, no rounded corner. Otherwise it draws its own panel behind the
+                 page, and a hub page then stacks a second panel on top ("two backgrounds").
+                 With this, the hub's own content surface is the single deeper panel — the
+                 look the NavSidebar shell (Stage 6) will have natively. -->
+            <muxc:NavigationView.Resources>
+                <SolidColorBrush x:Key="NavigationViewContentBackground" Color="Transparent" />
+                <SolidColorBrush x:Key="NavigationViewContentGridBorderBrush" Color="Transparent" />
+                <Thickness x:Key="NavigationViewContentGridBorderThickness">0</Thickness>
+                <CornerRadius x:Key="NavigationViewContentGridCornerRadius">0</CornerRadius>
+            </muxc:NavigationView.Resources>
+
             <!-- Global search: queries TweakRegistry across all 7 tweak tabs; picking a
                  result navigates to its tab and pre-fills that page's own search box. -->
             <muxc:NavigationView.AutoSuggestBox>

@@ -6,7 +6,9 @@
     xmlns:local="using:AkariTool.Views.Controls"
     xmlns:vm="using:AkariTool.ViewModels.Common">
 
-    <Grid Padding="0,0,12,0">
+    <!-- Uniform left/right inset for the whole hub so header, nav row and content panel
+         share one flush left edge (Winhance layout). -->
+    <Grid Padding="28,0,20,0">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />  <!-- Header -->
             <RowDefinition Height="Auto" />  <!-- Nav row -->
@@ -14,7 +16,7 @@
         </Grid.RowDefinitions>
 
         <!-- Row 0: header (icon + title + description on the left, search on the right). -->
-        <Grid Grid.Row="0" Margin="32,24,0,0">
+        <Grid Grid.Row="0" Margin="0,24,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
@@ -52,7 +54,7 @@
         </Grid>
 
         <!-- Row 1: breadcrumb (left) + Quick Actions + View (right). -->
-        <Grid Grid.Row="1" Margin="32,12,0,16">
+        <Grid Grid.Row="1" Margin="0,12,0,16">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
@@ -184,7 +186,7 @@
         <Border Grid.Row="2"
                 Background="{ThemeResource SystemFillColorNeutralBackgroundBrush}"
                 CornerRadius="8"
-                Margin="32,0,0,12">
+                Margin="0,0,0,12">
             <Grid>
                 <!-- Overview cards. -->
                 <ScrollViewer x:Name="OverviewScroll">
