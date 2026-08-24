@@ -1,14 +1,13 @@
-using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
 using AkariTool.ViewModels;
+using Microsoft.UI.Xaml.Controls;
 using WinUI.Framework.IoC;
 
 namespace AkariTool.Views;
 
 /// <summary>
-/// Customize page. Copy of the wave-1 page — layout and behaviour live in the
-/// shared templates + <see cref="SettingPageViewModel"/>; only the concrete VM type
-/// and the flyout plumbing differ.
+/// Explorer detail page. Hosted inside the Customize hub's inner frame; the hub owns the
+/// header, search, breadcrumb and Quick Actions, so this page renders only its section
+/// rows. DataContext is set to the VM so the hub's Quick Actions can act on it.
 /// </summary>
 public sealed partial class ExplorerPage : Page
 {
@@ -21,18 +20,9 @@ public sealed partial class ExplorerPage : Page
         // SINGLETON: rows register with TweakRegistry on construction and there is
         // no unregister, so the view model must not be rebuilt per navigation.
         ViewModel = ServiceLocator.GetService<ExplorerViewModel>();
+        DataContext = ViewModel;
 
-        // Build once. Idempotent + thread-safe — the startup warm-up may already
-        // have built it before this navigation, in which case this is a no-op.
+        // Build once. Idempotent — the startup warm-up may already have built it.
         ViewModel.Build();
     }
-
-    private void BackToCustomize_Click(object sender, RoutedEventArgs e)
-        => Frame.Navigate(typeof(CustomizePage));
-
-    private void QuickActionsFlyout_Opening(object sender, object e)
-        => ViewModel.RefreshQuickActionCounts();
-
-    private void QuickActionItem_Click(object sender, RoutedEventArgs e)
-        => QuickActionsFlyout.Hide();
 }

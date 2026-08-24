@@ -71,6 +71,10 @@ public sealed partial class MainWindow : Window
     private static readonly HashSet<string> OptimizeDetailTags = new()
     { "Gaming", "Privacy", "Update", "Notifications", "Sound", "Power", "AkariOS" };
 
+    // Customize sections fold into the Customize hub the same way — no rail item each.
+    private static readonly HashSet<string> CustomizeDetailTags = new()
+    { "Taskbar", "Explorer", "Appearance", "StartMenu", "Desktop" };
+
     private readonly INavigationService _navigation;
     private readonly IDialogService _dialogs;
     private readonly IThemeService _themes;
@@ -378,6 +382,18 @@ public sealed partial class MainWindow : Window
         {
             SelectRailTag("Optimize");
             if (ContentFrame.Content is OptimizeHubPage hub
+                && PageMap.TryGetValue(tag, out var detailType))
+            {
+                hub.ShowDetailFor(detailType);
+            }
+            return;
+        }
+
+        // Customize detail sections — same pattern through the Customize hub.
+        if (CustomizeDetailTags.Contains(tag))
+        {
+            SelectRailTag("Customize");
+            if (ContentFrame.Content is CustomizePage hub
                 && PageMap.TryGetValue(tag, out var detailType))
             {
                 hub.ShowDetailFor(detailType);

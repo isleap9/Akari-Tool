@@ -1,42 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Customize (rail tag "Customize") — landing HUB, not a tweak page. Owns no tweaks
-    and registers nothing with TweakRegistry: the actual Customize tweaks live on six
-    category pages (Taskbar / Explorer / Context Menu / Appearance / Start Menu /
-    Desktop), each its own TweakPageViewModel. This page is a card grid (same pattern
-    as HomePage's quick-nav grid); each card navigates the content Frame directly to
-    its category page. There is no Customize sub-nav in the sidebar — this hub is the
-    only category picker (each category page carries a "← Customize" back link).
+    Customize hub (rail tag "Customize"). Hosts the shared HubView chrome and supplies its
+    overview cards. Taskbar / Explorer / Appearance / Start Menu / Desktop drill into their
+    (bare) detail pages inside the HubView inner frame; card pills bind to each page's
+    SettingPageViewModel counts. Replaces the old code-filled card grid.
 -->
 <Page
     x:Class="AkariTool.Views.CustomizePage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d"
+    xmlns:controls="using:AkariTool.Views.Controls"
     NavigationCacheMode="Required">
 
-    <ScrollViewer>
-        <StackPanel Padding="32,24,32,24" MaxWidth="1000" HorizontalAlignment="Center">
-
-            <StackPanel Margin="0,0,0,16">
-                <TextBlock
-                    Text="Customize"
-                    FontSize="26"
-                    FontWeight="SemiBold"
-                    Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
-                <TextBlock
-                    Text="Taskbar, Explorer, context menu, appearance, Start menu, and desktop tweaks."
-                    FontSize="13"
-                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                    Margin="0,4,0,0"
-                    TextWrapping="Wrap" />
-            </StackPanel>
-
-            <!-- Category cards (code-filled) -->
-            <StackPanel x:Name="CardsPanel" />
-
-        </StackPanel>
-    </ScrollViewer>
+    <controls:HubView x:Name="Hub" />
 </Page>
