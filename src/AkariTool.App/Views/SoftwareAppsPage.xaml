@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     Software & Apps (rail tag "SoftwareHub") — Winhance-style single tabbed page. A hub-style
-    header, a two-segment tab header (Windows Apps & Features / External Software), and an inner
-    frame that hosts the existing catalog pages (WindowsAppsPage / ExternalAppsPage). Stage A of
-    the Software parity work: tabbed shell. The shared toolbar (Stage B) and Card/Table/Compact
-    view modes (Stage C) build on this.
+    header with search, a shared toolbar (Install / Uninstall / Refresh + selected count) that
+    drives whichever tab is active, a two-segment tab header (Windows Apps & Features / External
+    Software), and an inner frame hosting the catalog pages. The toolbar + search bind to the
+    active catalog VM via the page DataContext (set on tab switch). Stage B; Card/Table/Compact
+    view modes + Sort are Stage C.
 -->
 <Page
     x:Class="AkariTool.Views.SoftwareAppsPage"
@@ -14,37 +15,91 @@
 
     <Grid Padding="28,0,20,0">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />  <!-- Header -->
+            <RowDefinition Height="Auto" />  <!-- Header + search -->
+            <RowDefinition Height="Auto" />  <!-- Shared toolbar -->
             <RowDefinition Height="Auto" />  <!-- Tabs -->
             <RowDefinition Height="*" />     <!-- Content -->
         </Grid.RowDefinitions>
 
-        <!-- Header -->
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="16" Margin="0,24,0,16">
-            <Viewbox Width="52" Height="52" Stretch="Uniform" VerticalAlignment="Center">
-                <TextBlock
-                    Text="&#xE71D;"
-                    FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
-            </Viewbox>
-            <StackPanel VerticalAlignment="Center">
-                <TextBlock
-                    Text="Software &amp; Apps"
-                    FontSize="30"
-                    FontWeight="Bold"
-                    Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                    AutomationProperties.HeadingLevel="Level1" />
-                <TextBlock
-                    Text="Manage Windows apps and install software."
-                    FontSize="13"
-                    Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                    Margin="0,2,0,0"
-                    TextWrapping="Wrap" />
+        <!-- Header + search -->
+        <Grid Grid.Row="0" Margin="0,24,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Orientation="Horizontal" Spacing="16">
+                <Viewbox Width="52" Height="52" Stretch="Uniform" VerticalAlignment="Center">
+                    <TextBlock
+                        Text="&#xE71D;"
+                        FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                        Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                </Viewbox>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock
+                        Text="Software &amp; Apps"
+                        FontSize="30"
+                        FontWeight="Bold"
+                        Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                        AutomationProperties.HeadingLevel="Level1" />
+                    <TextBlock
+                        Text="Manage Windows apps and install software."
+                        FontSize="13"
+                        Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                        Margin="0,2,0,0"
+                        TextWrapping="Wrap" />
+                </StackPanel>
             </StackPanel>
+            <AutoSuggestBox
+                Grid.Column="1"
+                Width="260"
+                VerticalAlignment="Bottom"
+                QueryIcon="Find"
+                PlaceholderText="Search apps…"
+                Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+        </Grid>
+
+        <!-- Shared toolbar: acts on the active tab's VM (via page DataContext). -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right"
+                    Spacing="8" Margin="0,0,0,12" VerticalAlignment="Center">
+            <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1" CornerRadius="8" Padding="15,5" VerticalAlignment="Center"
+                    Margin="0,0,6,0">
+                <TextBlock Text="{Binding SelectedCountText}" FontSize="12"
+                           Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+            </Border>
+
+            <Button Style="{StaticResource AccentButtonStyle}"
+                    Command="{Binding InstallSelectedCommand}"
+                    IsEnabled="{Binding ButtonsEnabled}"
+                    AutomationProperties.Name="Install Selected">
+                <StackPanel Orientation="Horizontal">
+                    <FontIcon Glyph="&#xE896;" FontFamily="Segoe Fluent Icons" FontSize="13" Margin="0,0,8,0" VerticalAlignment="Center" />
+                    <TextBlock Text="Install Selected" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
+
+            <Button Command="{Binding UninstallCommand}"
+                    IsEnabled="{Binding ButtonsEnabled}"
+                    AutomationProperties.Name="Uninstall Selected">
+                <StackPanel Orientation="Horizontal">
+                    <FontIcon Glyph="&#xE74D;" FontFamily="Segoe Fluent Icons" FontSize="13" Margin="0,0,8,0" VerticalAlignment="Center" />
+                    <TextBlock Text="Uninstall Selected" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
+
+            <Button Command="{Binding RefreshStatusCommand}"
+                    IsEnabled="{Binding ButtonsEnabled}"
+                    AutomationProperties.Name="Refresh">
+                <StackPanel Orientation="Horizontal">
+                    <FontIcon Glyph="&#xE72C;" FontFamily="Segoe Fluent Icons" FontSize="13" Margin="0,0,8,0" VerticalAlignment="Center" />
+                    <TextBlock Text="Refresh" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
         </StackPanel>
 
         <!-- Two-segment tab header -->
-        <Border Grid.Row="1"
+        <Border Grid.Row="2"
                 Margin="0,0,0,12"
                 CornerRadius="8"
                 Background="{ThemeResource SubtleFillColorSecondaryBrush}"
@@ -77,8 +132,8 @@
             </Grid>
         </Border>
 
-        <!-- Content panel: the active catalog page (its own toolbar/grid) inside the inner frame. -->
-        <Border Grid.Row="2"
+        <!-- Content panel: the active catalog page (status + select-all + grid) inside the frame. -->
+        <Border Grid.Row="3"
                 Background="{ThemeResource SystemFillColorNeutralBackgroundBrush}"
                 CornerRadius="8"
                 Margin="0,0,0,12">

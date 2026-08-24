@@ -203,66 +203,8 @@
          rather than rebuild it per navigation. -->
     <ScrollViewer>
         <StackPanel Padding="24,16,24,24" MaxWidth="1100" HorizontalAlignment="Stretch">
-            <!-- Header/breadcrumb are provided by the Software & Apps hub; this page keeps
-                 its own action bar / search / select-all toolbar below. -->
-
-            <!-- ── Action bar + selected count ─────────────────────────────── -->
-            <Grid Margin="0,0,0,14">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-
-                <StackPanel Grid.Column="0" Orientation="Horizontal">
-                    <Button
-                        Style="{StaticResource AccentButtonStyle}"
-                        Margin="0,0,10,0"
-                        Command="{x:Bind ViewModel.InstallSelectedCommand}"
-                        IsEnabled="{x:Bind ViewModel.ButtonsEnabled, Mode=OneWay}"
-                        AutomationProperties.Name="Install Selected">
-                        <StackPanel Orientation="Horizontal">
-                            <FontIcon Glyph="&#xE896;" FontFamily="Segoe Fluent Icons" FontSize="13" Margin="0,0,8,0" VerticalAlignment="Center" />
-                            <TextBlock Text="Install Selected" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
-
-                    <Button
-                        Margin="0,0,10,0"
-                        Command="{x:Bind ViewModel.UninstallSelectedCommand}"
-                        IsEnabled="{x:Bind ViewModel.ButtonsEnabled, Mode=OneWay}"
-                        AutomationProperties.Name="Uninstall Selected">
-                        <StackPanel Orientation="Horizontal">
-                            <FontIcon Glyph="&#xE74D;" FontFamily="Segoe Fluent Icons" FontSize="13" Margin="0,0,8,0" VerticalAlignment="Center" />
-                            <TextBlock Text="Uninstall Selected" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
-
-                    <Button
-                        Margin="0,0,10,0"
-                        Command="{x:Bind ViewModel.RefreshStatusCommand}"
-                        IsEnabled="{x:Bind ViewModel.ButtonsEnabled, Mode=OneWay}"
-                        AutomationProperties.Name="Refresh">
-                        <StackPanel Orientation="Horizontal">
-                            <FontIcon Glyph="&#xE72C;" FontFamily="Segoe Fluent Icons" FontSize="13" Margin="0,0,8,0" VerticalAlignment="Center" />
-                            <TextBlock Text="Refresh" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
-                </StackPanel>
-
-                <Border
-                    Grid.Column="1"
-                    Background="{ThemeResource SubtleFillColorSecondaryBrush}"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1"
-                    CornerRadius="8"
-                    Padding="15,5,15,5"
-                    VerticalAlignment="Center">
-                    <TextBlock
-                        Text="{x:Bind ViewModel.SelectedCountText, Mode=OneWay}"
-                        FontSize="12"
-                        Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
-                </Border>
-            </Grid>
+            <!-- The action bar (Install/Uninstall/Refresh + selected count) and search live in
+                 the shared Software & Apps toolbar; this page keeps status, select-all and grid. -->
 
             <!-- ── Status line (hidden unless working) ─────────────────────── -->
             <TextBlock
@@ -271,18 +213,6 @@
                 FontSize="12"
                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                 Margin="0,0,0,10" />
-
-            <!-- ── Search ──────────────────────────────────────────────────── -->
-            <AutoSuggestBox
-                Width="280"
-                Height="36"
-                FontSize="13"
-                HorizontalAlignment="Left"
-                Margin="0,0,0,4"
-                PlaceholderText="Search external apps…"
-                QueryIcon="Find"
-                Text="{x:Bind ViewModel.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                AutomationProperties.Name="Search external apps" />
 
             <!-- ── Select-all row ──────────────────────────────────────────── -->
             <StackPanel Orientation="Horizontal" Margin="2,10,0,4">

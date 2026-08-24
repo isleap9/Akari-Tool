@@ -23,8 +23,12 @@ namespace AkariTool.ViewModels.Software;
 /// script + registers the SYSTEM ONSTART scheduled task. No removal, categorization or
 /// persistence logic is reimplemented here — this file is UI state and call sites only.
 /// </summary>
-public sealed partial class WindowsAppsViewModel : ObservableObject
+public sealed partial class WindowsAppsViewModel : ObservableObject, ISoftwareCatalogViewModel
 {
+    /// <summary>Unified uninstall entry point for the shared Software toolbar (Windows =
+    /// Remove Selected). See <see cref="ISoftwareCatalogViewModel"/>.</summary>
+    public IAsyncRelayCommand UninstallCommand => RemoveSelectedCommand;
+
     private readonly ToolService _tool;
     private readonly TweakDialogs _dialogs;
 

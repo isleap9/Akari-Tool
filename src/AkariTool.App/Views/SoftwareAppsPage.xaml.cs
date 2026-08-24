@@ -2,20 +2,28 @@ using System;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
+using WinUI.Framework.IoC;
+using AkariTool.ViewModels.Software;
 
 namespace AkariTool.Views;
 
 /// <summary>
-/// Software &amp; Apps page (Winhance-style tabbed layout). A hub-style header + a two-segment
-/// tab header switching an inner frame between the existing catalog pages
-/// (<see cref="WindowsAppsPage"/> / <see cref="ExternalAppsPage"/>). Stage A of the Software
-/// parity work; the shared toolbar and view modes build on this shell.
+/// Software &amp; Apps page (Winhance-style tabbed layout). A hub-style header + search, a shared
+/// toolbar (Install / Uninstall / Refresh + selected count) driving the active tab's VM, a
+/// two-segment tab header, and an inner frame hosting the catalog pages
+/// (<see cref="WindowsAppsPage"/> / <see cref="ExternalAppsPage"/>). The toolbar + search bind
+/// to the active catalog VM through the page DataContext, updated on each tab switch.
 /// </summary>
 public sealed partial class SoftwareAppsPage : Page
 {
+    private readonly ISoftwareCatalogViewModel _windowsVm;
+    private readonly ISoftwareCatalogViewModel _externalVm;
+
     public SoftwareAppsPage()
     {
         InitializeComponent();
+        _windowsVm = ServiceLocator.GetService<WindowsAppsViewModel>();
+        _externalVm = ServiceLocator.GetService<ExternalAppsViewModel>();
         SelectTab(typeof(WindowsAppsPage));   // default tab
     }
 
@@ -31,6 +39,10 @@ public sealed partial class SoftwareAppsPage : Page
         bool windows = pageType == typeof(WindowsAppsPage);
         TabWindows.IsChecked = windows;
         TabExternal.IsChecked = !windows;
+
+        // The shared toolbar + search bind to the active catalog VM.
+        DataContext = windows ? _windowsVm : _externalVm;
+
         if (TabFrame.CurrentSourcePageType != pageType)
             TabFrame.Navigate(pageType);
     }

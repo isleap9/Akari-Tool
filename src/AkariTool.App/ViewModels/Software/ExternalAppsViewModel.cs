@@ -26,8 +26,12 @@ namespace AkariTool.ViewModels.Software;
 /// reimplemented here. The catalog, the ordering, the dialog copy and the busy/enable
 /// semantics are net8's.
 /// </summary>
-public sealed partial class ExternalAppsViewModel : ObservableObject
+public sealed partial class ExternalAppsViewModel : ObservableObject, ISoftwareCatalogViewModel
 {
+    /// <summary>Unified uninstall entry point for the shared Software toolbar (External =
+    /// Uninstall Selected). See <see cref="ISoftwareCatalogViewModel"/>.</summary>
+    public IAsyncRelayCommand UninstallCommand => UninstallSelectedCommand;
+
     private readonly ToolService _tool;
     private readonly TweakDialogs _dialogs;
 
