@@ -22,6 +22,73 @@ public static class TaskbarOptimizations
             FeatureId = "customize-taskbar-layout",
             Settings = new[]
             {
+                // customize-taskbar-clean — Winhance "Clean Taskbar" 1:1: Action that clears the
+                //   pinned-items list (Taskband\Favorites = empty REG_BINARY) and restarts Explorer.
+                new SettingDefinition
+                {
+                    Id = "customize-taskbar-clean",
+                    Icon = "Broom",
+                    Name = "Clean Taskbar",
+                    Description = "Removes all pinned items from the Taskbar",
+                    InputType = InputType.Action,
+                    IsSubjectivePreference = true,
+                    RequiresConfirmation = true,
+                    RestartProcess = "Explorer",
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Taskband",
+                            ValueName = "Favorites",
+                            ValueType = RegistryValueKind.Binary,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { new byte[0] },
+                            DisabledValue = new object?[] { null },
+                            IsPrimary = true,
+                        },
+                    },
+                },
+                // customize-taskbar-news-and-interests — Winhance "Show News and Interests" 1:1:
+                //   Windows 10 only; EnableFeeds group policy (HKCU + HKLM): show=1/hide=0.
+                new SettingDefinition
+                {
+                    Id = "customize-taskbar-news-and-interests",
+                    Icon = "Newspaper",
+                    Name = "Show News and Interests",
+                    Description = "Show the News and Interests widget that displays headlines, weather, stocks, and other personalized content",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = true,
+                    IsWindows10Only = true,
+                    RestartProcess = "Explorer",
+                    RecommendedToggleState = false,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Policies\Microsoft\Windows\Windows Feeds",
+                            ValueName = "EnableFeeds",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = 0,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 1, null },
+                            DisabledValue = new object?[] { 0 },
+                            IsGroupPolicy = true,
+                            IsPrimary = true,
+                        },
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\Windows Feeds",
+                            ValueName = "EnableFeeds",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = 0,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { 1, null },
+                            DisabledValue = new object?[] { 0 },
+                            IsGroupPolicy = true,
+                        },
+                    },
+                },
                 // customize-taskbar-align-left — TaskbarAl: enable=0 (left), disable=1 (center); absent=disabled
                 new SettingDefinition
                 {
