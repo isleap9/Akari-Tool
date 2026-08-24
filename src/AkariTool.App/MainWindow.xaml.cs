@@ -91,7 +91,6 @@ public sealed partial class MainWindow : Window
     private readonly ISettingsService _settings;
     private readonly ToolService _tool;
     private readonly IFileService _files;
-    private readonly SettingBackupService _backup;
     private readonly INavBadgeService _navBadges;
     private readonly IDispatcherService _dispatcher;
     private IDisposable? _navBadgeSubscription;
@@ -138,7 +137,6 @@ public sealed partial class MainWindow : Window
         ISettingsService settings,
         ToolService tool,
         IFileService files,
-        SettingBackupService backup,
         IDispatcherService dispatcherService,
         INavBadgeService navBadges)
     {
@@ -150,7 +148,6 @@ public sealed partial class MainWindow : Window
         _settings = settings;
         _tool = tool;
         _files = files;
-        _backup = backup;
         _navBadges = navBadges;
 
         // Late-initialized service (see DispatcherService remarks): the DI container
@@ -441,46 +438,6 @@ public sealed partial class MainWindow : Window
         {
             _navigation.NavigateTo(pageType);
         }
-    }
-
-    // ── Global search (rail AutoSuggestBox → TweakRegistry.Search) ─────────────
-
-    /// <summary>Rail global-search projection: a TweakRegistry hit as a display row
-    /// the AutoSuggestBox can show ("Name — TabLabel") and navigate from. Local to the shell.</summary>
-    private sealed record SearchResult(string Display, string Tag, string Name);
-
-    private void GlobalSearch_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
-    {
-        if (args.Reason != AutoSuggestionBoxTextChangeReason.UserInput) return;
-
-        var query = sender.Text.Trim();
-        if (query.Length < 2) { sender.ItemsSource = null; return; }
-
-        sender.ItemsSource = _backup.Search(query, max: 10)
-            .Select(h => new SearchResult($"{h.Name}  —  {h.TabLabel}", h.TabTag, h.Name))
-            .ToList();
-    }
-
-    private void GlobalSearch_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
-    {
-        // A tapped/entered suggestion arrives as ChosenSuggestion; a bare Enter (no pick)
-        // falls back to the top hit for the typed text.
-        var result = args.ChosenSuggestion as SearchResult
-            ?? _backup.Search(sender.Text.Trim(), max: 1)
-                  .Select(h => new SearchResult($"{h.Name}  —  {h.TabLabel}", h.TabTag, h.Name))
-                  .FirstOrDefault();
-        if (result is null) return;
-
-        // 1. Navigate + rail highlight — the existing public path (same as Home cards).
-        SelectRailTag(result.Tag);
-
-        // 2. Pre-fill the destination tweak page's own per-page search. The page VMs are
-        //    DI SINGLETONS keyed by NavTag, so we set SearchText on the singleton (which
-        //    persists into the page whenever it renders) — no page-instance handle needed.
-        //    OnSearchTextChanged → ApplySearch already filters to the matched row.
-        var vm = App.Services.GetServices<SettingPageViewModel>()
-                             .FirstOrDefault(v => v.NavTag == result.Tag);
-        if (vm is not null) vm.SearchText = result.Name;
     }
 
     private void OnNavigationFailed(object sender, NavigationFailedEventArgs e)

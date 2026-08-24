@@ -92,27 +92,6 @@
                 <CornerRadius x:Key="NavigationViewContentGridCornerRadius">0</CornerRadius>
             </muxc:NavigationView.Resources>
 
-            <!-- Global search: queries TweakRegistry across all 7 tweak tabs; picking a
-                 result navigates to its tab and pre-fills that page's own search box. -->
-            <muxc:NavigationView.AutoSuggestBox>
-                <AutoSuggestBox
-                    x:Name="GlobalSearch"
-                    PlaceholderText="Search all settings…"
-                    QueryIcon="Find"
-                    TextMemberPath="Display"
-                    TextChanged="GlobalSearch_TextChanged"
-                    QuerySubmitted="GlobalSearch_QuerySubmitted">
-                    <!-- ItemTemplate is required: without it the dropdown renders each
-                         item via ToString() (the record's "SearchResult { Display = … }").
-                         TextMemberPath only fills the text box after a pick, not the list. -->
-                    <AutoSuggestBox.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding Display}" TextTrimming="CharacterEllipsis" />
-                        </DataTemplate>
-                    </AutoSuggestBox.ItemTemplate>
-                </AutoSuggestBox>
-            </muxc:NavigationView.AutoSuggestBox>
-
             <!-- Rail tags MUST match the routing contract (see MainWindow.xaml.cs).
                  Phase A: Home routes to HomePage, every other tag to PlaceholderPage. -->
             <muxc:NavigationView.MenuItems>
