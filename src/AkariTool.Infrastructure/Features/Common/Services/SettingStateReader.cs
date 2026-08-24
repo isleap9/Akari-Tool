@@ -71,9 +71,7 @@ public sealed class SettingStateReader(
 
                 if (currentValue is byte[] blob && registrySetting.BinaryByteIndex.HasValue && registrySetting.BitMask.HasValue)
                 {
-                    int byteIdx = registrySetting.BinaryByteIndex.Value;
-                    byte bitMask = registrySetting.BitMask.Value;
-                    return byteIdx < blob.Length && (blob[byteIdx] & bitMask) != 0;
+                    return BitIsSet(blob, registrySetting.BinaryByteIndex.Value, registrySetting.BitMask.Value);
                 }
 
                 return ValuesEqual(currentValue, registrySetting.EnabledValue?[0]);
@@ -133,6 +131,15 @@ public sealed class SettingStateReader(
                     {
                         readValue = subkey?.GetValue(registrySetting.ValueName);
                     }
+                }
+
+                // Bit-mask binary backing value (e.g. ShellState for "Click items as
+                // follows"): reduce the raw blob to the 0/1 the ComboBox options map —
+                // Winhance stores 1 = bit set / 0 = clear, not the raw byte[], so a raw
+                // blob would never match and the dropdown would read Custom.
+                if (readValue is byte[] blob && registrySetting.BinaryByteIndex.HasValue && registrySetting.BitMask.HasValue)
+                {
+                    readValue = BitIsSet(blob, registrySetting.BinaryByteIndex.Value, registrySetting.BitMask.Value) ? 1 : 0;
                 }
 
                 // Winhance ResolveRawValuesToIndex parity: a live-absent value resolves to
@@ -397,6 +404,15 @@ public sealed class SettingStateReader(
         subkey = hive.OpenSubKey(subPath, writable: false);
         return true;
     }
+
+    /// <summary>
+    /// True when <paramref name="mask"/> is set in <paramref name="blob"/> at
+    /// <paramref name="byteIndex"/>. Shared by the toggle reader and the Selection
+    /// reader so a REG_BINARY bit (e.g. ShellState) reduces to the same 0/1 the
+    /// catalog options map. Out-of-range index reads as clear.
+    /// </summary>
+    internal static bool BitIsSet(byte[] blob, int byteIndex, byte mask)
+        => byteIndex >= 0 && byteIndex < blob.Length && (blob[byteIndex] & mask) != 0;
 
     internal static bool ValuesEqual(object? a, object? b)
     {

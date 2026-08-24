@@ -441,4 +441,27 @@ public class SettingStateReaderTests
             new byte[] { 0x00, 0x00 },
             new byte[] { 0x00, 0x00, 0x00, 0x00 }).Should().BeFalse();
     }
+
+    // ── REG_BINARY bit extraction (ShellState "Click items as follows" Selection) ──
+
+    [Fact]
+    public void BitIsSet_MaskSetAtByte_ReturnsTrue()
+    {
+        // ShellState byte 4, bit 0x20 set
+        var blob = new byte[] { 0, 0, 0, 0, 0x20, 0, 0, 0 };
+        SettingStateReader.BitIsSet(blob, 4, 0x20).Should().BeTrue();
+    }
+
+    [Fact]
+    public void BitIsSet_MaskClearAtByte_ReturnsFalse()
+    {
+        var blob = new byte[] { 0, 0, 0, 0, 0x00, 0, 0, 0 };
+        SettingStateReader.BitIsSet(blob, 4, 0x20).Should().BeFalse();
+    }
+
+    [Fact]
+    public void BitIsSet_ByteIndexOutOfRange_ReturnsFalse()
+    {
+        SettingStateReader.BitIsSet(new byte[] { 0x20 }, 4, 0x20).Should().BeFalse();
+    }
 }

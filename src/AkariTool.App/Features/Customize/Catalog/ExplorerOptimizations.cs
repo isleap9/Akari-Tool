@@ -523,30 +523,55 @@ public static class ExplorerOptimizations
                         },
                     },
                 },
-                // customize-explorer-click-items — SingleClick: on=1 / off=0 (or absent)
+                // customize-explorer-click-items — Winhance "Click items as follows" 1:1:
+                //   Selection driven by ShellState (REG_BINARY, byte 4, bit 0x20) + IconUnderline
+                //   (DWord). ShellState bit set = double-click default (1), clear = single-click (0);
+                //   IconUnderline 3 = no underline / browser-consistent, 2 = underline on hover.
+                //   (Replaces the earlier SingleClick DWORD toggle, which was not the real Folder
+                //    Options mechanism — see CLAUDE.md.)
                 new SettingDefinition
                 {
                     Id = "customize-explorer-click-items",
                     Icon = "CursorClick",
                     IconPack = "Fluent",
-                    Name = "Single-Click to Open Items",
-                    Description = "Opens files and folders with a single click instead of a double-click",
-                    InputType = InputType.Toggle,
+                    Name = "Click Items as Follows",
+                    Description = "Choose whether to open files and folders with a single click (like web links) or double-click (traditional)",
+                    InputType = InputType.Selection,
                     IsSubjectivePreference = true,
-                    RecommendedToggleState = false,
-                    DefaultToggleState = false,
+                    RestartProcess = "Explorer",
                     RegistrySettings = new[]
                     {
                         new RegistrySetting
                         {
-                            KeyPath = @"HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced",
-                            ValueName = "SingleClick",
-                            ValueType = RegistryValueKind.DWord,
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer",
+                            ValueName = "ShellState",
+                            ValueType = RegistryValueKind.Binary,
+                            BinaryByteIndex = 4,
+                            BitMask = 0x20,
                             RecommendedValue = null,
                             DefaultValue = null,
-                            EnabledValue = new object?[] { 1 },
-                            DisabledValue = new object?[] { 0, null },
-                        }
+                            IsPrimary = true,
+                        },
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer",
+                            ValueName = "IconUnderline",
+                            ValueType = RegistryValueKind.DWord,
+                            RecommendedValue = null,
+                            // Absent on a fresh install; an absent IconUnderline behaves as 3
+                            // (no underline — the double-click default). Substituting 3 lets the
+                            // default option match when ShellState is present but IconUnderline is not.
+                            DefaultValue = 3,
+                        },
+                    },
+                    ComboBox = new ComboBoxMetadata
+                    {
+                        Options = new[]
+                        {
+                            new ComboBoxOption { DisplayName = "Double-click to open an item (single-click to select)", IsDefault = true, IsRecommended = true, ValueMappings = new Dictionary<string, object?> { ["ShellState"] = 1, ["IconUnderline"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Single-click to open (underline icon titles consistent with browser)", ValueMappings = new Dictionary<string, object?> { ["ShellState"] = 0, ["IconUnderline"] = 3 } },
+                            new ComboBoxOption { DisplayName = "Single-click to open (underline icon titles only when pointing)", ValueMappings = new Dictionary<string, object?> { ["ShellState"] = 0, ["IconUnderline"] = 2 } },
+                        },
                     },
                 },
                 // customize-explorer-classic-context-menu — Winhance explorer-customization-context-menu 1:1:
