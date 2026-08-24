@@ -24,6 +24,7 @@ public static class StartMenuOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-start-clean-pins",
+                    Icon = "Broom",
                     Name = "Clean Start Menu Pins",
                     Description = "Removes all pinned apps from the Start Menu, leaving a clean empty layout",
                     InputType = InputType.Action,
@@ -70,6 +71,7 @@ public static class StartMenuOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-start-hide-recommended-policy",
+                    Icon = "TableStar",
                     Name = "Hide Recommended Section (Policy)",
                     Description = "Completely removes the Recommended section from Start using the Education-SKU policy trick",
                     InputType = InputType.Toggle,
@@ -124,6 +126,8 @@ public static class StartMenuOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-start-more-pins",
+                    Icon = "LayoutRowTwoFocusTopSettings",
+                    IconPack = "Fluent",
                     Name = "More Pins (Less Recommendations)",
                     Description = "Sets Start Menu layout to show more pinned apps and fewer recommendations",
                     InputType = InputType.Toggle,
@@ -149,6 +153,7 @@ public static class StartMenuOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-start-disable-recommended",
+                    Icon = "CreationOutline",
                     Name = "Disable Recommended Section",
                     Description = "Hides the Recommended apps/files section from the Start Menu",
                     InputType = InputType.Toggle,
@@ -173,6 +178,7 @@ public static class StartMenuOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-start-show-recent-apps",
+                    Icon = "StarBoxMultipleOutline",
                     Name = "Show Recently Added Apps",
                     Description = "Show a recently added apps list at the top of the Start menu",
                     InputType = InputType.Toggle,
@@ -197,6 +203,8 @@ public static class StartMenuOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-start-show-most-used",
+                    Icon = "Apps",
+                    IconPack = "Fluent",
                     Name = "Show Most Used Apps",
                     Description = "Show a most-used apps list in the Start menu",
                     InputType = InputType.Toggle,
@@ -221,6 +229,7 @@ public static class StartMenuOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-start-show-suggestions",
+                    Icon = "LightbulbOnOutline",
                     Name = "Show Suggestions in Start",
                     Description = "Show occasional app and tip suggestions in the Start menu",
                     InputType = InputType.Toggle,
@@ -245,6 +254,8 @@ public static class StartMenuOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-start-all-apps-view",
+                    Icon = "WindowApps",
+                    IconPack = "Fluent",
                     Name = "All Apps View",
                     Description = "How the All apps list is displayed in the Start menu",
                     InputType = InputType.Selection,
@@ -294,6 +305,7 @@ public static class StartMenuOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-start-disable-bing-search",
+                    Icon = "MicrosoftBing",
                     Name = "Disable Bing Search in Start",
                     Description = "Removes web (Bing) search results from the Start Menu search box",
                     InputType = InputType.Toggle,
@@ -330,6 +342,7 @@ public static class StartMenuOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-start-disable-account-notifications",
+                    Icon = "BellRingOutline",
                     Name = "Disable Account-Related Notifications",
                     Description = "Removes 'Add an account' and Microsoft account prompts from Start",
                     InputType = InputType.Toggle,
@@ -355,6 +368,7 @@ public static class StartMenuOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-start-disable-web-suggestions",
+                    Icon = "Web",
                     Name = "Disable Web Suggestions in Search",
                     Description = "Prevents Windows Search from showing online/web suggestions",
                     InputType = InputType.Toggle,
@@ -379,6 +393,7 @@ public static class StartMenuOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-start-show-recently-opened-items",
+                    Icon = "FileStarFourPointsOutline",
                     Name = "Show Recently Opened Items",
                     Description = "Shows recently opened files in Start, Jump Lists and File Explorer Quick Access",
                     InputType = InputType.Toggle,

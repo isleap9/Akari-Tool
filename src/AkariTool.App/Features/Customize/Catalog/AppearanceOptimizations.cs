@@ -28,6 +28,7 @@ public static class AppearanceOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-appearance-dark-mode-apps",
+                    Icon = "ThemeLightDark",
                     Name = "Dark Mode (Apps)",
                     Description = "Switches Windows apps to dark mode",
                     InputType = InputType.Toggle,
@@ -52,6 +53,7 @@ public static class AppearanceOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-appearance-dark-mode-system",
+                    Icon = "Brightness4",
                     Name = "Dark Mode (System)",
                     Description = "Switches the Windows shell, taskbar, and Start Menu to dark mode",
                     InputType = InputType.Toggle,
@@ -87,6 +89,7 @@ public static class AppearanceOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-appearance-transparency",
+                    Icon = "Opacity",
                     Name = "Transparency Effects",
                     Description = "Enables transparency and blur effects on the taskbar, Start Menu, and Action Center",
                     InputType = InputType.Toggle,
@@ -111,6 +114,7 @@ public static class AppearanceOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-appearance-oled-taskbar-transparency",
+                    Icon = "CircleOpacity",
                     Name = "OLED Taskbar Transparency",
                     Description = "Enables the deeper OLED-style taskbar transparency (requires Transparency Effects on)",
                     InputType = InputType.Toggle,
@@ -135,6 +139,7 @@ public static class AppearanceOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-appearance-dwm-effect-mode",
+                    Icon = "Blur",
                     Name = "Mica/Acrylic Effects (DWM)",
                     Description = "Forces DWM effect mode — enables Mica and Acrylic material effects on supported apps",
                     InputType = InputType.Toggle,
@@ -170,6 +175,7 @@ public static class AppearanceOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-appearance-accent-title-bars",
+                    Icon = "BorderColor",
                     Name = "Accent Color on Title Bars & Borders",
                     Description = "Shows your accent color on window title bars and borders instead of white/black",
                     InputType = InputType.Toggle,
@@ -193,6 +199,7 @@ public static class AppearanceOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-appearance-accent-taskbar-start",
+                    Icon = "Palette",
                     Name = "Accent Color on Taskbar & Start",
                     Description = "Shows your accent color on the taskbar and Start Menu",
                     InputType = InputType.Toggle,
@@ -231,6 +238,7 @@ public static class AppearanceOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-appearance-square-window-corners",
+                    Icon = "SquareOutline",
                     Name = "Square Window Corners",
                     Description = "Disables rounded window corners — restores the sharp square corners from Windows 10",
                     InputType = InputType.Toggle,
@@ -255,6 +263,7 @@ public static class AppearanceOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-appearance-drag-full-windows",
+                    Icon = "DragVariant",
                     Name = "Show Window Contents While Dragging",
                     Description = "Displays live window contents when dragging — disabling shows only an outline for lower CPU use",
                     InputType = InputType.Toggle,
@@ -279,6 +288,7 @@ public static class AppearanceOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-appearance-animate-windows",
+                    Icon = "Animation",
                     Name = "Animate Windows on Open/Close",
                     Description = "Enables the open/minimize/maximize animations for windows",
                     InputType = InputType.Toggle,

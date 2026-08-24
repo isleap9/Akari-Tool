@@ -28,22 +28,23 @@ public static class DesktopOptimizations
             {
                 // HideDesktopIcons\NewStartPanel {guid}: show (on) = 0 / hide (off) = 1.
                 // DefaultState per icon (Win11 ships Recycle Bin only); taste → no Recommended.
-                DesktopIcon("customize-desktop-icon-this-pc",       "Show This PC Icon",       "Shows the This PC (Computer) icon on the desktop",  "{20D04FE0-3AEA-1069-A2D8-08002B30309D}", false),
-                DesktopIcon("customize-desktop-icon-user-folder",   "Show User Folder Icon",   "Shows your personal user folder icon on the desktop", "{59031a47-3f72-44a7-89c5-5595fe6b30ee}", false),
-                DesktopIcon("customize-desktop-icon-network",       "Show Network Icon",       "Shows the Network icon on the desktop",             "{F02C1A0D-BE21-4350-88B0-7367FC96EF3C}", false),
-                DesktopIcon("customize-desktop-icon-recycle-bin",   "Show Recycle Bin Icon",   "Shows the Recycle Bin icon on the desktop",         "{645FF040-5081-101B-9F08-00AA002F954E}", true),
-                DesktopIcon("customize-desktop-icon-control-panel", "Show Control Panel Icon", "Shows the Control Panel icon on the desktop",       "{5399E694-6CE5-4D6C-8FCE-1D8870FDCBA0}", false),
-                DesktopIcon("customize-desktop-icon-libraries",     "Show Libraries Icon",     "Shows the Libraries folder icon on the desktop",    "{031E4825-7B94-4dc3-B131-E946B44C8DD5}", false),
+                DesktopIcon("customize-desktop-icon-this-pc",       "Show This PC Icon",       "Shows the This PC (Computer) icon on the desktop",  "{20D04FE0-3AEA-1069-A2D8-08002B30309D}", false, "Monitor"),
+                DesktopIcon("customize-desktop-icon-user-folder",   "Show User Folder Icon",   "Shows your personal user folder icon on the desktop", "{59031a47-3f72-44a7-89c5-5595fe6b30ee}", false, "FolderAccount"),
+                DesktopIcon("customize-desktop-icon-network",       "Show Network Icon",       "Shows the Network icon on the desktop",             "{F02C1A0D-BE21-4350-88B0-7367FC96EF3C}", false, "NetworkOutline"),
+                DesktopIcon("customize-desktop-icon-recycle-bin",   "Show Recycle Bin Icon",   "Shows the Recycle Bin icon on the desktop",         "{645FF040-5081-101B-9F08-00AA002F954E}", true, "TrashCanOutline"),
+                DesktopIcon("customize-desktop-icon-control-panel", "Show Control Panel Icon", "Shows the Control Panel icon on the desktop",       "{5399E694-6CE5-4D6C-8FCE-1D8870FDCBA0}", false, "ViewGrid"),
+                DesktopIcon("customize-desktop-icon-libraries",     "Show Libraries Icon",     "Shows the Libraries folder icon on the desktop",    "{031E4825-7B94-4dc3-B131-E946B44C8DD5}", false, "FolderTable"),
             },
         },
     ];
 
     // Factory: one desktop-icon visibility toggle. HideDesktopIcons\NewStartPanel {guid}:
     // 0 = shown, 1 = hidden.
-    private static SettingDefinition DesktopIcon(string id, string name, string description, string guid, bool defaultShown) =>
+    private static SettingDefinition DesktopIcon(string id, string name, string description, string guid, bool defaultShown, string icon) =>
         new SettingDefinition
         {
             Id = id,
+            Icon = icon,
             Name = name,
             Description = description,
             InputType = InputType.Toggle,
@@ -76,6 +77,7 @@ public static class DesktopOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-desktop-remove-shortcut-arrow",
+                    Icon = "ArrowTopLeftBoldOutline",
                     Name = "Remove Shortcut Arrow",
                     Description = "Removes the shortcut arrow overlay icon from desktop and file shortcuts",
                     InputType = InputType.Toggle,
@@ -113,6 +115,7 @@ public static class DesktopOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-desktop-remove-shortcut-suffix",
+                    Icon = "LinkVariant",
                     Name = "Remove '- Shortcut' Suffix",
                     Description = "Stops Windows appending '- Shortcut' to newly created shortcuts",
                     InputType = InputType.Toggle,
@@ -149,6 +152,8 @@ public static class DesktopOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-desktop-show-auto-login-option",
+                    Icon = "PersonKey",
+                    IconPack = "Fluent",
                     Name = "Show Auto-Login Option",
                     Description = "Re-enables the 'Users must enter a user name and password' checkbox in netplwiz",
                     InputType = InputType.Toggle,
@@ -173,6 +178,7 @@ public static class DesktopOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-desktop-numlock-at-startup",
+                    Icon = "Numeric",
                     Name = "NumLock On at Startup",
                     Description = "Enables NumLock automatically when Windows starts",
                     InputType = InputType.Toggle,
@@ -209,6 +215,7 @@ public static class DesktopOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-desktop-dynamic-lighting",
+                    Icon = "TelevisionAmbientLight",
                     Name = "Dynamic Lighting",
                     Description = "Let Windows control RGB lighting on compatible devices (keyboards, mice, strips)",
                     InputType = InputType.Toggle,
@@ -232,6 +239,7 @@ public static class DesktopOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-desktop-foreground-lighting-control",
+                    Icon = "StringLightsOff",
                     Name = "Foreground Apps Control Lighting",
                     Description = "Let the app in the foreground take over RGB lighting from Windows",
                     InputType = InputType.Toggle,
@@ -267,6 +275,7 @@ public static class DesktopOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-desktop-disable-spotlight",
+                    Icon = "LockOutline",
                     Name = "Disable Windows Spotlight",
                     Description = "Stops Windows from changing the lock screen image via Spotlight (online)",
                     InputType = InputType.Toggle,
@@ -290,6 +299,7 @@ public static class DesktopOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-desktop-disable-lock-screen",
+                    Icon = "LockOff",
                     Name = "Disable Lock Screen",
                     Description = "Skips the lock screen and goes straight to the sign-in screen",
                     InputType = InputType.Toggle,
@@ -314,6 +324,7 @@ public static class DesktopOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-desktop-disable-lock-screen-tips",
+                    Icon = "LightbulbOffOutline",
                     Name = "Disable Lock Screen Tips & Tricks",
                     Description = "Removes fun facts, tips, and Spotlight info on the lock screen",
                     InputType = InputType.Toggle,
@@ -360,33 +371,34 @@ public static class DesktopOptimizations
                 RegionalDropdown("region.firstDayOfWeek", "First Day of Week",
                     "Sets the day calendars and date pickers start on. Applies to new processes — sign out and back in to apply everywhere",
                     "iFirstDayOfWeek",
-                    new[] { ("Monday", "0"), ("Tuesday", "1"), ("Wednesday", "2"), ("Thursday", "3"), ("Friday", "4"), ("Saturday", "5"), ("Sunday", "6") }),
+                    new[] { ("Monday", "0"), ("Tuesday", "1"), ("Wednesday", "2"), ("Thursday", "3"), ("Friday", "4"), ("Saturday", "5"), ("Sunday", "6") }, "CalendarWeekBegin"),
                 RegionalDropdown("region.measurement", "Measurement System",
                     "Sets the unit system Windows and apps use. Applies to new processes — sign out and back in to apply everywhere",
                     "iMeasure",
-                    new[] { ("Metric", "0"), ("U.S. (Imperial)", "1") }),
+                    new[] { ("Metric", "0"), ("U.S. (Imperial)", "1") }, "RulerSquare"),
                 RegionalDropdown("region.shortDate", "Short Date Format",
                     "Sets the short date pattern used across Windows. Applies to new processes — sign out and back in to apply everywhere",
                     "sShortDate",
-                    new[] { ("M/d/yyyy", "M/d/yyyy"), ("dd/MM/yyyy", "dd/MM/yyyy"), ("yyyy-MM-dd", "yyyy-MM-dd"), ("yyyy/MM/dd", "yyyy/MM/dd"), ("dd MMM yyyy", "dd MMM yyyy") }),
+                    new[] { ("M/d/yyyy", "M/d/yyyy"), ("dd/MM/yyyy", "dd/MM/yyyy"), ("yyyy-MM-dd", "yyyy-MM-dd"), ("yyyy/MM/dd", "yyyy/MM/dd"), ("dd MMM yyyy", "dd MMM yyyy") }, "CalendarMonth"),
                 RegionalDropdown("region.decimal", "Decimal Symbol",
                     "Sets the character used as the decimal separator. Applies to new processes — sign out and back in to apply everywhere",
                     "sDecimal",
-                    new[] { (". (Period)", "."), (", (Comma)", ",") }),
+                    new[] { (". (Period)", "."), (", (Comma)", ",") }, "Numeric"),
                 RegionalDropdown("region.currencyDecimal", "Currency Decimal Symbol",
                     "Sets the character used as the decimal separator in currency amounts. Applies to new processes — sign out and back in to apply everywhere",
                     "sMonDecimalSep",
-                    new[] { (". (Period)", "."), (", (Comma)", ",") }),
+                    new[] { (". (Period)", "."), (", (Comma)", ",") }, "CurrencySign"),
                 RegionalDropdown("region.listSeparator", "List Separator",
                     "Sets the character that separates list items, e.g. in CSV exports. Applies to new processes — sign out and back in to apply everywhere",
                     "sList",
-                    new[] { (", (Comma)", ","), ("; (Semicolon)", ";") }),
+                    new[] { (", (Comma)", ","), ("; (Semicolon)", ";") }, "FormatListBulleted"),
 
                 // os-set-utc (relocated) — RealTimeIsUniversal: enable = 1 / disable = delete (absent).
                 //   Reader: RealTimeIsUniversal == 1 → enabled, else false. Source sets no Recommended/Default.
                 new SettingDefinition
                 {
                     Id = "os-set-utc",
+                    Icon = "ClockCheckOutline",
                     Name = "Set Clock to UTC",
                     Description = "Stores the hardware clock as UTC — fixes time sync conflict when dual-booting with Linux",
                     InputType = InputType.Toggle,
@@ -411,10 +423,11 @@ public static class DesktopOptimizations
 
     // Factory: one HKCU\Control Panel\International REG_SZ preference dropdown. Pure preference —
     // no IsDefault/IsRecommended; a value matching no listed option reads back as Custom.
-    private static SettingDefinition RegionalDropdown(string id, string name, string description, string valueName, (string Label, string Data)[] options) =>
+    private static SettingDefinition RegionalDropdown(string id, string name, string description, string valueName, (string Label, string Data)[] options, string icon) =>
         new SettingDefinition
         {
             Id = id,
+            Icon = icon,
             Name = name,
             Description = description,
             InputType = InputType.Selection,

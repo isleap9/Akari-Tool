@@ -30,6 +30,8 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-show-file-extensions",
+                    Icon = "DocumentQuestionMark",
+                    IconPack = "Fluent",
                     Name = "Show File Extensions",
                     Description = "Shows file extensions for known file types (e.g. .exe, .txt) — hidden by default",
                     InputType = InputType.Toggle,
@@ -54,6 +56,7 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-show-hidden-files",
+                    Icon = "FileEyeOutline",
                     Name = "Show Hidden Files",
                     Description = "Makes hidden files and folders visible in Explorer",
                     InputType = InputType.Toggle,
@@ -78,6 +81,7 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-show-protected-os-files",
+                    Icon = "FileHidden",
                     Name = "Show Protected OS Files",
                     Description = "Shows protected system files — useful for advanced users (use with care)",
                     InputType = InputType.Toggle,
@@ -102,6 +106,8 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-full-path-title-bar",
+                    Icon = "PanelTopExpand",
+                    IconPack = "Fluent",
                     Name = "Show Full Path in Title Bar",
                     Description = "Displays the full folder path in the Explorer title bar instead of just the folder name",
                     InputType = InputType.Toggle,
@@ -127,6 +133,7 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-full-path-address-bar",
+                    Icon = "TextBoxOutline",
                     Name = "Show Full Path in Address Bar",
                     Description = "Displays the full path in the address bar instead of breadcrumbs",
                     InputType = InputType.Toggle,
@@ -149,6 +156,7 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-compact-view",
+                    Icon = "ViewCompact",
                     Name = "Compact View",
                     Description = "Reduces spacing between items in Explorer — more items visible without scrolling",
                     InputType = InputType.Toggle,
@@ -173,6 +181,8 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-launch-to-this-pc",
+                    Icon = "FolderOpen",
+                    IconPack = "Fluent",
                     Name = "Launch in This PC",
                     Description = "Opens Explorer to This PC instead of Quick Access",
                     InputType = InputType.Toggle,
@@ -197,6 +207,8 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-show-lnk-extension",
+                    Icon = "DocumentQuestionMark",
+                    IconPack = "Fluent",
                     Name = "Show .lnk File Extension",
                     Description = "Shows the .lnk extension on shortcuts. Requires 'Show File Extensions' to be on. Needs admin rights",
                     InputType = InputType.Toggle,
@@ -220,6 +232,8 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-always-show-menus",
+                    Icon = "WindowApps",
+                    IconPack = "Fluent",
                     Name = "Always Show Menus",
                     Description = "Always show the classic File Explorer menu bar",
                     InputType = InputType.Toggle,
@@ -244,6 +258,7 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-preview-handlers",
+                    Icon = "TableEye",
                     Name = "Show Preview Handlers in Preview Pane",
                     Description = "Render file contents in the preview pane",
                     InputType = InputType.Toggle,
@@ -268,6 +283,8 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-icon-on-thumbnails",
+                    Icon = "DocumentImage",
+                    IconPack = "Fluent",
                     Name = "Display File Icon on Thumbnails",
                     Description = "Overlay the file-type icon on thumbnail previews",
                     InputType = InputType.Toggle,
@@ -292,6 +309,7 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-office-files",
+                    Icon = "FileCloud",
                     Name = "Show Files from Office.com",
                     Description = "Show recent Office.com cloud files in Quick Access",
                     InputType = InputType.Toggle,
@@ -316,6 +334,7 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-recommendations",
+                    Icon = "StarOutline",
                     Name = "Show Recommendations",
                     Description = "Show the recommended files section in File Explorer Home",
                     InputType = InputType.Toggle,
@@ -340,6 +359,7 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-nav-cloud-states",
+                    Icon = "ArchiveSync",
                     Name = "Always Show Availability Status",
                     Description = "Always show cloud sync availability icons in the navigation pane",
                     InputType = InputType.Toggle,
@@ -364,6 +384,7 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-nav-expand-current",
+                    Icon = "FileTree",
                     Name = "Expand to Open Folder",
                     Description = "Automatically expand the navigation pane to the current folder",
                     InputType = InputType.Toggle,
@@ -388,6 +409,7 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-nav-all-folders",
+                    Icon = "FolderMultiple",
                     Name = "Show All Folders",
                     Description = "Show all folders (including Desktop, Recycle Bin) in the navigation pane",
                     InputType = InputType.Toggle,
@@ -413,6 +435,7 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-devices-default-printer",
+                    Icon = "PrinterOff",
                     Name = "Automatic Default Printer Management",
                     Description = "Let Windows manage which printer is the default (your last-used printer)",
                     InputType = InputType.Toggle,
@@ -437,6 +460,7 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-typing-behavior",
+                    Icon = "KeyboardOutline",
                     Name = "When Typing into List View",
                     Description = "What File Explorer does when you type in a list view",
                     InputType = InputType.Selection,
@@ -469,6 +493,7 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-icon-cache-size",
+                    Icon = "Cached",
                     Name = "Icon Cache Size",
                     Description = "Maximum number of icons Windows caches (larger can reduce icon reload flicker)",
                     InputType = InputType.Selection,
@@ -502,6 +527,8 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-click-items",
+                    Icon = "CursorClick",
+                    IconPack = "Fluent",
                     Name = "Single-Click to Open Items",
                     Description = "Opens files and folders with a single click instead of a double-click",
                     InputType = InputType.Toggle,
@@ -527,6 +554,8 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-classic-context-menu",
+                    Icon = "Navigation",
+                    IconPack = "Fluent",
                     Name = "Classic Right-Click Menu",
                     Description = "Restores the Windows 10 style right-click context menu in Windows 11",
                     InputType = InputType.Toggle,
@@ -555,6 +584,7 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-sync-provider-notifications",
+                    Icon = "CloudSync",
                     Name = "Sync Provider Notifications",
                     Description = "Show notifications from sync providers like OneDrive in File Explorer",
                     InputType = InputType.Toggle,
@@ -580,6 +610,7 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-checkbox-select",
+                    Icon = "CheckboxMarked",
                     Name = "Use Check Boxes to Select Items",
                     Description = "Adds checkboxes next to files and folders for easier multi-selection",
                     InputType = InputType.Toggle,
@@ -604,6 +635,7 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-icons-only",
+                    Icon = "ImageOff",
                     Name = "Always Show Icons, Never Thumbnails",
                     Description = "Displays generic file icons instead of image/document previews",
                     InputType = InputType.Toggle,
@@ -628,6 +660,8 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-folder-tips",
+                    Icon = "DocumentEndnote",
+                    IconPack = "Fluent",
                     Name = "Display File Size in Folder Tips",
                     Description = "Shows total size and file count when hovering over folders",
                     InputType = InputType.Toggle,
@@ -652,6 +686,7 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-status-bar",
+                    Icon = "DockBottom",
                     Name = "Show Status Bar",
                     Description = "Displays the bar at the bottom of Explorer showing item count and selected file sizes",
                     InputType = InputType.Toggle,
@@ -676,6 +711,8 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-persist-browsers",
+                    Icon = "WindowAd",
+                    IconPack = "Fluent",
                     Name = "Restore Previous Folder Windows at Logon",
                     Description = "Reopens Explorer windows that were open when you last shut down or logged off",
                     InputType = InputType.Toggle,
@@ -700,6 +737,7 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-separate-process",
+                    Icon = "WindowRestore",
                     Name = "Launch Folder Windows in a Separate Process",
                     Description = "Runs each Explorer window in its own process so one crash can't take down all windows",
                     InputType = InputType.Toggle,
@@ -724,6 +762,8 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-encrypted-color",
+                    Icon = "DocumentLock",
+                    IconPack = "Fluent",
                     Name = "Show Encrypted or Compressed NTFS Files in Color",
                     Description = "Displays encrypted files in green and compressed files in blue",
                     InputType = InputType.Toggle,
@@ -748,6 +788,7 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-hide-merge-conflicts",
+                    Icon = "FolderAlert",
                     Name = "Hide Folder Merge Conflicts",
                     Description = "Automatically merges same-name folders without showing a confirmation dialog",
                     InputType = InputType.Toggle,
@@ -772,6 +813,7 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-hide-empty-drives",
+                    Icon = "HarddiskRemove",
                     Name = "Hide Empty Drives",
                     Description = "Hides drives with no media inserted, like empty card readers or optical drives",
                     InputType = InputType.Toggle,
@@ -796,6 +838,7 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-show-info-tip",
+                    Icon = "TooltipText",
                     Name = "Show Pop-up Descriptions for Folder and Desktop Items",
                     Description = "Displays a tooltip with item details when hovering over files and folders",
                     InputType = InputType.Toggle,
@@ -821,6 +864,8 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-thumbnail-cache-cleanup",
+                    Icon = "ImageMultiple",
+                    IconPack = "Fluent",
                     Name = "Automatic Thumbnail Cache Cleanup",
                     Description = "Let Disk Cleanup automatically clear the thumbnail cache",
                     InputType = InputType.Toggle,
@@ -869,6 +914,7 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-disable-folder-auto-discovery",
+                    Icon = "FolderSearchOutline",
                     Name = "Disable Folder Auto-Discovery",
                     Description = "Stops Explorer from auto-changing folder view templates based on content",
                     InputType = InputType.Toggle,
@@ -904,6 +950,7 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-disable-quick-access",
+                    Icon = "StarOffOutline",
                     Name = "Disable Quick Access",
                     Description = "Stops Explorer from showing recent files and frequent folders in Quick Access",
                     InputType = InputType.Toggle,
@@ -945,6 +992,8 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-disable-sharing-wizard",
+                    Icon = "ShareAndroid",
+                    IconPack = "Fluent",
                     Name = "Disable Sharing Wizard",
                     Description = "Disables the simplified sharing wizard — enables advanced sharing dialog",
                     InputType = InputType.Toggle,
@@ -968,6 +1017,7 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-show-drive-letters-first",
+                    Icon = "AlphaCBox",
                     Name = "Show Drive Letters First",
                     Description = "Displays drive letters before the drive name in File Explorer (e.g. C: Windows instead of Windows (C:))",
                     InputType = InputType.Toggle,
@@ -996,6 +1046,7 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-disable-autoplay",
+                    Icon = "PlayBox",
                     Name = "Disable AutoPlay",
                     Description = "Stops the AutoPlay dialog when inserting USB drives, DVDs, or SD cards, and blocks autorun on all drive types. Off restores the Windows default",
                     InputType = InputType.Toggle,
@@ -1042,6 +1093,7 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-enable-photo-viewer",
+                    Icon = "ImageOutline",
                     Name = "Windows Photo Viewer",
                     Description = "Restores Windows Photo Viewer as an option for opening image files (BMP, GIF, JPG, PNG, TIF)",
                     InputType = InputType.Toggle,
@@ -1054,6 +1106,8 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-legacy-notepad",
+                    Icon = "NotepadEdit",
+                    IconPack = "Fluent",
                     Name = "Use Legacy Notepad",
                     Description = "Opens .txt files with classic Notepad instead of the modern Windows 11 Notepad app",
                     InputType = InputType.Toggle,
@@ -1080,6 +1134,7 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-folder-auto-discovery-policy",
+                    Icon = "FolderCogOutline",
                     Name = "Disable Folder Auto-Discovery (Policy)",
                     Description = "Sets FolderType to NotSpecified — stops Explorer overriding your view layout based on folder content",
                     InputType = InputType.Toggle,
@@ -1104,6 +1159,7 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-hide-home-gallery-hkcu",
+                    Icon = "Home",
                     Name = "Hide Home from Sidebar (HKCU)",
                     Description = "Sets System.IsPinnedToNameSpaceTree=0 on Home and Gallery CLSIDs — hides them from Explorer sidebar",
                     InputType = InputType.Toggle,
@@ -1136,18 +1192,19 @@ public static class ExplorerOptimizations
                 // ── Navigation Pane personal folders (NavPaneFolder factory) ─────────────
                 //   Show = NonEnum {guid} absent + NameSpace\{guid} HiddenByDefault absent;
                 //   Hide = both = 1. Read consults NonEnum {guid} (!= 1 → shown).
-                NavPaneFolder("customize-navpane-desktop",   "Show Desktop Folder",   "{B4BFCC3A-DB2C-424C-B029-7FE99A87C641}"),
-                NavPaneFolder("customize-navpane-documents", "Show Documents Folder", "{A8CDFF1C-4878-43be-B5FD-F8091C1C60D0}"),
-                NavPaneFolder("customize-navpane-downloads", "Show Downloads Folder", "{374DE290-123F-4565-9164-39C4925E467B}"),
-                NavPaneFolder("customize-navpane-music",     "Show Music Folder",     "{1CF1260C-4DD0-4ebb-811F-33C572699FDE}"),
-                NavPaneFolder("customize-navpane-pictures",  "Show Pictures Folder",  "{3ADD1653-EB32-4cb0-BBD7-DFA0ABB5ACCA}"),
-                NavPaneFolder("customize-navpane-videos",    "Show Videos Folder",    "{A0953C92-50DC-43bf-BE83-3742FED03C9C}"),
+                NavPaneFolder("customize-navpane-desktop",   "Show Desktop Folder",   "{B4BFCC3A-DB2C-424C-B029-7FE99A87C641}", "Monitor"),
+                NavPaneFolder("customize-navpane-documents", "Show Documents Folder", "{A8CDFF1C-4878-43be-B5FD-F8091C1C60D0}", "FileDocument"),
+                NavPaneFolder("customize-navpane-downloads", "Show Downloads Folder", "{374DE290-123F-4565-9164-39C4925E467B}", "Download"),
+                NavPaneFolder("customize-navpane-music",     "Show Music Folder",     "{1CF1260C-4DD0-4ebb-811F-33C572699FDE}", "Music"),
+                NavPaneFolder("customize-navpane-pictures",  "Show Pictures Folder",  "{3ADD1653-EB32-4cb0-BBD7-DFA0ABB5ACCA}", "Image"),
+                NavPaneFolder("customize-navpane-videos",    "Show Videos Folder",    "{A0953C92-50DC-43bf-BE83-3742FED03C9C}", "Video"),
                 // customize-navpane-libraries — HKCU CLSID pinned (primary read, on=1/off=0)
                 //   plus HKLM NonEnum {guid} + NameSpace\{guid} HiddenByDefault enforcement
                 //   (show = absent / hide = 1).
                 new SettingDefinition
                 {
                     Id = "customize-navpane-libraries",
+                    Icon = "FolderTable",
                     Name = "Show Libraries in Navigation Pane",
                     Description = "Pin the Libraries node to the File Explorer navigation pane",
                     InputType = InputType.Toggle,
@@ -1195,10 +1252,11 @@ public static class ExplorerOptimizations
 
     // Factory: one navigation-pane personal-folder toggle. Show = clear the NonEnum policy
     // value + NameSpace HiddenByDefault; hide = set both to 1. Read consults NonEnum {guid}.
-    private static SettingDefinition NavPaneFolder(string id, string name, string guid) =>
+    private static SettingDefinition NavPaneFolder(string id, string name, string guid, string icon) =>
         new SettingDefinition
         {
             Id = id,
+            Icon = icon,
             Name = name,
             Description = "Show this personal folder in the File Explorer navigation pane",
             InputType = InputType.Toggle,
@@ -1239,16 +1297,17 @@ public static class ExplorerOptimizations
                 // ── Six user folders (ThisPcFolders loop) ────────────────────────────────
                 //   HiddenByDefault written to the 64-bit + WOW6432Node MyComputer\NameSpace
                 //   views: show (on) = 0 / hide (off) = 1. Ship visible → DefaultState on.
-                ThisPcFolder("customize-explorer-this-pc-desktop",   "Show Desktop in This PC",   "Shows the Desktop folder under This PC",   "{B4BFCC3A-DB2C-424C-B029-7FE99A87C641}"),
-                ThisPcFolder("customize-explorer-this-pc-documents", "Show Documents in This PC", "Shows the Documents folder under This PC", "{D3162B92-9365-467A-956B-92703ACA08AF}"),
-                ThisPcFolder("customize-explorer-this-pc-downloads", "Show Downloads in This PC", "Shows the Downloads folder under This PC", "{088E3905-0323-4B02-9826-5D99428E115F}"),
-                ThisPcFolder("customize-explorer-this-pc-music",     "Show Music in This PC",     "Shows the Music folder under This PC",     "{3DFDF296-DBEC-4FB4-81D1-6A3438BCF4DE}"),
-                ThisPcFolder("customize-explorer-this-pc-pictures",  "Show Pictures in This PC",  "Shows the Pictures folder under This PC",  "{24AD3AD4-A569-4530-98E1-AB02F9417AA8}"),
-                ThisPcFolder("customize-explorer-this-pc-videos",    "Show Videos in This PC",    "Shows the Videos folder under This PC",    "{F86FA3AB-70D2-4FC7-9C99-FCBF05467F3A}"),
+                ThisPcFolder("customize-explorer-this-pc-desktop",   "Show Desktop in This PC",   "Shows the Desktop folder under This PC",   "{B4BFCC3A-DB2C-424C-B029-7FE99A87C641}", "Monitor"),
+                ThisPcFolder("customize-explorer-this-pc-documents", "Show Documents in This PC", "Shows the Documents folder under This PC", "{D3162B92-9365-467A-956B-92703ACA08AF}", "FileDocument"),
+                ThisPcFolder("customize-explorer-this-pc-downloads", "Show Downloads in This PC", "Shows the Downloads folder under This PC", "{088E3905-0323-4B02-9826-5D99428E115F}", "Download"),
+                ThisPcFolder("customize-explorer-this-pc-music",     "Show Music in This PC",     "Shows the Music folder under This PC",     "{3DFDF296-DBEC-4FB4-81D1-6A3438BCF4DE}", "Music"),
+                ThisPcFolder("customize-explorer-this-pc-pictures",  "Show Pictures in This PC",  "Shows the Pictures folder under This PC",  "{24AD3AD4-A569-4530-98E1-AB02F9417AA8}", "Image"),
+                ThisPcFolder("customize-explorer-this-pc-videos",    "Show Videos in This PC",    "Shows the Videos folder under This PC",    "{F86FA3AB-70D2-4FC7-9C99-FCBF05467F3A}", "Video"),
 
                 new SettingDefinition
                 {
                     Id = "customize-explorer-3d-objects",
+                    Icon = "Printer3d",
                     Name = "3D Objects Folder in This PC",
                     Description = "Shows the 3D Objects folder under This PC in File Explorer",
                     InputType = InputType.Toggle,
@@ -1269,6 +1328,7 @@ public static class ExplorerOptimizations
                 new SettingDefinition
                 {
                     Id = "customize-explorer-duplicate-removable-drives",
+                    Icon = "Usb",
                     Name = "Duplicate Removable Drives in Navigation Pane",
                     Description = "Shows removable drives in both This PC and the navigation pane sidebar",
                     InputType = InputType.Toggle,
@@ -1291,10 +1351,11 @@ public static class ExplorerOptimizations
 
     // Factory: one This PC user-folder toggle. HiddenByDefault (0 = shown, 1 = hidden) written
     // to both the 64-bit and WOW6432Node MyComputer\NameSpace views. Ships visible → default on.
-    private static SettingDefinition ThisPcFolder(string id, string name, string description, string guid) =>
+    private static SettingDefinition ThisPcFolder(string id, string name, string description, string guid, string icon) =>
         new SettingDefinition
         {
             Id = id,
+            Icon = icon,
             Name = name,
             Description = description,
             InputType = InputType.Toggle,
