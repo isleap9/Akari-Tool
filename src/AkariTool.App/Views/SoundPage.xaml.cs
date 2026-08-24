@@ -7,7 +7,7 @@ namespace AkariTool.Views;
 
 /// <summary>
 /// Sound page. Copy of GamingPage — the layout and all behaviour live in the
-/// shared templates + <see cref="TweakPageViewModel"/>; only the concrete VM type
+/// shared templates + <see cref="SettingPageViewModel"/>; only the concrete VM type
 /// and the flyout plumbing differ.
 /// </summary>
 public sealed partial class SoundPage : Page

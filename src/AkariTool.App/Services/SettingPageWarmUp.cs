@@ -7,10 +7,9 @@ namespace AkariTool.Services;
 /// <summary>
 /// Startup warm-up for the declarative SettingDefinition pages (Track A Phase 4).
 ///
-/// Parallel to <see cref="TweakRegistryWarmUp"/> but for pages built on
-/// <see cref="SettingPageViewModel"/>. These pages do NOT participate in
-/// TweakRegistry (no Backup/search range attribution yet), so this simply calls
-/// <c>Build()</c> once on each so a never-navigated tab is still populated.
+/// Builds each <see cref="SettingPageViewModel"/> once on a background thread so a
+/// never-navigated tab is still populated for Backup export + global search
+/// (both now served by <see cref="AkariTool.Services.SettingBackupService"/>).
 /// </summary>
 public static class SettingPageWarmUp
 {

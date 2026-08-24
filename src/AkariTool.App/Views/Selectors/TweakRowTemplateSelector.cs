@@ -25,8 +25,6 @@ public sealed partial class TweakRowTemplateSelector : DataTemplateSelector
 
     protected override DataTemplate? SelectTemplateCore(object item) => item switch
     {
-        DropdownTweakViewModel => DropdownTemplate,
-        ToggleTweakViewModel => ToggleTemplate,
         SettingItemViewModel s when s.IsPowerPlanSetting => PlanTemplate,
         SettingItemViewModel s when s.InputType == InputType.Selection => DropdownTemplate,
         SettingItemViewModel s when s.InputType == InputType.NumericRange => s.SupportsSeparateACDC

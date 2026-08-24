@@ -7,7 +7,7 @@ namespace AkariTool.Views;
 
 /// <summary>
 /// Notifications page. Copy of GamingPage — layout and behaviour live in the
-/// shared templates + <see cref="TweakPageViewModel"/>; only the concrete VM type
+/// shared templates + <see cref="SettingPageViewModel"/>; only the concrete VM type
 /// and the flyout plumbing differ.
 /// </summary>
 public sealed partial class NotificationsPage : Page

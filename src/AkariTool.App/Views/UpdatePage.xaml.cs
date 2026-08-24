@@ -7,7 +7,7 @@ namespace AkariTool.Views;
 
 /// <summary>
 /// Windows Updates page. Copy of the wave-1 page — layout and behaviour live in
-/// the shared templates + <see cref="TweakPageViewModel"/>; only the concrete VM
+/// the shared templates + <see cref="SettingPageViewModel"/>; only the concrete VM
 /// type and the flyout plumbing differ.
 /// </summary>
 public sealed partial class UpdatePage : Page

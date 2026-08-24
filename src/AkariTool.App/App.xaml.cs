@@ -62,15 +62,14 @@ public partial class App : Application
             _ = Services.GetRequiredService<AkariOSViewModel>().CheckOrphanedSessionAsync();
         }
 
-        // Warm up the tweak registry AFTER the shell is up: build every tweak-page
-        // VM once, on a single background thread, so Backup export + global search
-        // see every tab even if the user never navigates to it. Sequential (never
-        // parallel) — see TweakRegistryWarmUp for the threading rationale. This is
-        // also the seam the future staged-progress splash will hook into.
+        // Warm up the setting pages AFTER the shell is up: build every SettingPageViewModel
+        // once, on a single background thread, so Backup export + global search see every tab
+        // even if the user never navigates to it. Sequential (never parallel) — see
+        // SettingPageWarmUp for the threading rationale. This is also the seam the future
+        // staged-progress splash will hook into.
         var shell = MainWindow as MainWindow;
         _ = Task.Run(() =>
         {
-            TweakRegistryWarmUp.Run(Services, log);
             SettingPageWarmUp.Run(Services, log);
 
             // Drift check runs ONLY after warm-up: DriftScanner resolves each baseline
