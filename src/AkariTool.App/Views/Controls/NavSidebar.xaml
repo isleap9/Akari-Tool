@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="AkariTool.Views.Controls.NavSidebar"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:primitives="using:Microsoft.UI.Xaml.Controls.Primitives"
+    xmlns:local="using:AkariTool.Views.Controls"
+    xmlns:fluentIcons="using:FluentIcons.WinUI">
+
+    <Grid x:Name="SidebarGrid"
+          Width="{x:Bind ActualSidebarWidth, Mode=OneWay}"
+          Background="Transparent"
+          AutomationProperties.LandmarkType="Navigation">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />  <!-- Top nav buttons -->
+            <RowDefinition Height="*" />     <!-- Spacer -->
+            <RowDefinition Height="Auto" />  <!-- Bottom nav buttons -->
+        </Grid.RowDefinitions>
+
+        <!-- Top: primary destinations. -->
+        <StackPanel x:Name="TopNavPanel"
+                    Grid.Row="0"
+                    Spacing="4"
+                    Padding="{x:Bind NavPanelPadding, Mode=OneWay}"
+                    Margin="0,8,0,0">
+
+            <local:NavButton x:Name="SoftwareAppsButton"
+                             IconSymbol="Apps"
+                             Text="Software &amp; Apps"
+                             NavigationTag="SoftwareApps"
+                             IsCompact="{x:Bind IsCompact, Mode=OneWay}"
+                             Clicked="NavButton_Clicked" />
+
+            <local:NavButton x:Name="OptimizeButton"
+                             IconSymbol="Gauge"
+                             Text="Optimize"
+                             NavigationTag="Optimize"
+                             IsCompact="{x:Bind IsCompact, Mode=OneWay}"
+                             Clicked="NavButton_Clicked" />
+
+            <local:NavButton x:Name="CustomizeButton"
+                             IconSymbol="DesignIdeas"
+                             Text="Customize"
+                             NavigationTag="Customize"
+                             IsCompact="{x:Bind IsCompact, Mode=OneWay}"
+                             Clicked="NavButton_Clicked" />
+        </StackPanel>
+
+        <!-- Bottom: tools, settings, overflow. -->
+        <StackPanel x:Name="BottomNavPanel"
+                    Grid.Row="2"
+                    Spacing="4"
+                    Padding="{x:Bind NavPanelPadding, Mode=OneWay}"
+                    Margin="0,0,0,8">
+
+            <local:NavButton x:Name="AdvancedToolsButton"
+                             IconSymbol="WrenchScrewdriver"
+                             Text="Advanced Tools"
+                             NavigationTag="AdvancedTools"
+                             IsCompact="{x:Bind IsCompact, Mode=OneWay}"
+                             Clicked="NavButton_Clicked" />
+
+            <local:NavButton x:Name="SettingsButton"
+                             IconSymbol="Settings"
+                             Text="Settings"
+                             NavigationTag="Settings"
+                             IsCompact="{x:Bind IsCompact, Mode=OneWay}"
+                             Clicked="NavButton_Clicked" />
+
+            <local:NavButton x:Name="MoreButton"
+                             IconSymbol="ListBar"
+                             Text="More"
+                             NavigationTag="More"
+                             IsCompact="{x:Bind IsCompact, Mode=OneWay}"
+                             Clicked="NavButton_Clicked">
+                <primitives:FlyoutBase.AttachedFlyout>
+                    <MenuFlyout x:Name="MoreMenuFlyout" Placement="RightEdgeAlignedBottom">
+                        <!-- Version info (display only). -->
+                        <MenuFlyoutItem x:Name="VersionMenuItem" Text="Akari Tool" IsEnabled="False">
+                            <MenuFlyoutItem.Icon>
+                                <fluentIcons:FluentIcon Icon="Info" IconVariant="Regular" FontSize="20" />
+                            </MenuFlyoutItem.Icon>
+                        </MenuFlyoutItem>
+
+                        <MenuFlyoutSeparator />
+
+                        <MenuFlyoutItem x:Name="DocsMenuItem" Text="Documentation" Click="MoreMenuItem_Click" Tag="OpenDocs">
+                            <MenuFlyoutItem.Icon>
+                                <fluentIcons:FluentIcon Icon="BookQuestionMark" IconVariant="Regular" FontSize="20" />
+                            </MenuFlyoutItem.Icon>
+                        </MenuFlyoutItem>
+
+                        <MenuFlyoutItem x:Name="ReportBugMenuItem" Text="Report a Bug" Click="MoreMenuItem_Click" Tag="ReportBug">
+                            <MenuFlyoutItem.Icon>
+                                <fluentIcons:FluentIcon Icon="Bug" IconVariant="Regular" FontSize="20" />
+                            </MenuFlyoutItem.Icon>
+                        </MenuFlyoutItem>
+
+                        <MenuFlyoutItem x:Name="CheckUpdatesMenuItem" Text="Check for Updates" Click="MoreMenuItem_Click" Tag="CheckUpdates">
+                            <MenuFlyoutItem.Icon>
+                                <fluentIcons:FluentIcon Icon="ArrowSync" IconVariant="Regular" FontSize="20" />
+                            </MenuFlyoutItem.Icon>
+                        </MenuFlyoutItem>
+
+                        <MenuFlyoutSeparator />
+
+                        <MenuFlyoutItem x:Name="OpenLogsMenuItem" Text="Logs" Click="MoreMenuItem_Click" Tag="OpenLogs">
+                            <MenuFlyoutItem.Icon>
+                                <fluentIcons:FluentIcon Icon="DocumentText" IconVariant="Regular" FontSize="20" />
+                            </MenuFlyoutItem.Icon>
+                        </MenuFlyoutItem>
+
+                        <MenuFlyoutSeparator />
+
+                        <MenuFlyoutItem x:Name="CloseAppMenuItem" Text="Exit" Click="MoreMenuItem_Click" Tag="CloseApp">
+                            <MenuFlyoutItem.Icon>
+                                <fluentIcons:FluentIcon Icon="Dismiss" IconVariant="Regular" FontSize="20" />
+                            </MenuFlyoutItem.Icon>
+                        </MenuFlyoutItem>
+                    </MenuFlyout>
+                </primitives:FlyoutBase.AttachedFlyout>
+            </local:NavButton>
+        </StackPanel>
+    </Grid>
+</UserControl>
