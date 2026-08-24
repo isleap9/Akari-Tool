@@ -6,10 +6,12 @@ namespace AkariTool.Views;
 
 /// <summary>
 /// Software &amp; Apps hub page. Configures the shared <see cref="Controls.HubView"/> chrome
-/// and supplies its cards (Windows Apps / External Apps / Debloat). These are app-catalog
-/// pages with their own toolbars, so no pills, hub Quick Actions disabled, and the hub search
-/// is hidden; each drills into its page inside the hub's inner frame. Folds the old SOFTWARE
-/// rail group into one hub.
+/// and supplies its cards (Windows Apps / External Apps). These are app-catalog pages with
+/// their own toolbars, so no pills, hub Quick Actions disabled, and the hub search is hidden;
+/// each drills into its page inside the hub's inner frame.
+///
+/// Debloat is deprecated and no longer surfaced as a card (its page + scripts remain in the
+/// repo for possible future use).
 /// </summary>
 public sealed partial class SoftwareHubPage : Page
 {
@@ -29,10 +31,6 @@ public sealed partial class SoftwareHubPage : Page
         Hub.Cards.Add(new HubCardViewModel(
             "External Apps", "Install popular apps via winget",
             "", typeof(ExternalAppsPage)));
-
-        Hub.Cards.Add(new HubCardViewModel(
-            "Debloat", "Scripted debloat & cleanup presets",
-            "", typeof(DebloatPage)));
     }
 
     /// <summary>Drills straight into a catalog page (used by search / Home card routing).</summary>

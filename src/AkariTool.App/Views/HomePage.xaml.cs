@@ -42,7 +42,6 @@ public sealed partial class HomePage : Page
         {
             new CardDef("Windows Apps",  G("E71D"), "Manage built-in Windows apps & features",      "Bloatware"),
             new CardDef("External Apps", G("E896"), "Install apps via WinGet",                       "AppInstaller"),
-            new CardDef("Debloat",       G("E74D"), "Remove bloatware, Edge & OneDrive",             "Debloat"),
         });
 
         AddCardSection("OPTIMIZE", isFirst: false, new[]
