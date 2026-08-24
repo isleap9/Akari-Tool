@@ -534,7 +534,7 @@ public static class ExplorerOptimizations
                     Id = "customize-explorer-click-items",
                     Icon = "CursorClick",
                     IconPack = "Fluent",
-                    Name = "Click Items as Follows",
+                    Name = "Click items as follows",
                     Description = "Choose whether to open files and folders with a single click (like web links) or double-click (traditional)",
                     InputType = InputType.Selection,
                     IsSubjectivePreference = true,
@@ -550,7 +550,6 @@ public static class ExplorerOptimizations
                             BitMask = 0x20,
                             RecommendedValue = null,
                             DefaultValue = null,
-                            IsPrimary = true,
                         },
                         new RegistrySetting
                         {
