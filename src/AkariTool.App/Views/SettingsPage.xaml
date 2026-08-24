@@ -69,14 +69,46 @@
             ParagraphTemplate="{StaticResource ChangelogParagraphTemplate}" />
     </Page.Resources>
 
-    <ScrollViewer>
-        <StackPanel Padding="32,24,32,24" Spacing="16">
+    <!-- Matches the hub chrome: a big header (icon + title + description) on the flattened
+         background, with the page content in the same rounded neutral panel the hubs use.
+         Settings has no sub-pages, so there is no breadcrumb / inner frame. -->
+    <Grid Padding="28,0,20,0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />  <!-- Header -->
+            <RowDefinition Height="*" />     <!-- Content -->
+        </Grid.RowDefinitions>
 
-            <TextBlock
-                Text="Settings"
-                FontSize="26"
-                FontWeight="SemiBold"
-                Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="16" Margin="0,24,0,16">
+            <Viewbox Width="52" Height="52" Stretch="Uniform" VerticalAlignment="Center">
+                <TextBlock
+                    Text="&#xE713;"
+                    FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+            </Viewbox>
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock
+                    Text="Settings"
+                    FontSize="30"
+                    FontWeight="Bold"
+                    Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                    AutomationProperties.HeadingLevel="Level1" />
+                <TextBlock
+                    Text="Appearance, updates, and about."
+                    FontSize="13"
+                    Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                    Margin="0,2,0,0"
+                    TextWrapping="Wrap" />
+            </StackPanel>
+        </StackPanel>
+
+        <!-- Content panel -->
+        <Border Grid.Row="1"
+                Background="{ThemeResource SystemFillColorNeutralBackgroundBrush}"
+                CornerRadius="8"
+                Margin="0,0,0,12">
+            <ScrollViewer>
+                <StackPanel Padding="24,20,24,24" Spacing="16">
 
             <!-- ── Appearance (flat) ─────────────────────────────────────────── -->
             <TextBlock Margin="0,8,0,0" Text="Appearance" Style="{StaticResource BodyStrongTextBlockStyle}" />
@@ -197,6 +229,8 @@
 
             </Grid>
 
-        </StackPanel>
-    </ScrollViewer>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+    </Grid>
 </Page>
