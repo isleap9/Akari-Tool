@@ -10,6 +10,7 @@ public static class ExplorerOptimizations
     public static IReadOnlyList<SettingGroup> Build() =>
     [
         .. BuildView(),
+        .. BuildContextMenu(),
         .. BuildBehavior(),
         .. BuildAssociations(),
         .. BuildSidebar(),
@@ -1409,4 +1410,617 @@ public static class ExplorerOptimizations
                 },
             },
         };
+
+    // ── Context Menu verbs (Winhance ExplorerCustomizations "Context Menu" group 1:1) ──
+    // Each verb is applied via a RegContents .reg import (enable = create the verb key tree,
+    // disable = [-HKEY...] subtree delete) with a RegistrySettings probe for live detection —
+    // the same shape as the Photo Viewer / Legacy Notepad rows. Rows that only make sense with
+    // the classic (Win10) right-click menu declare a RequiresEnabled dependency on it.
+    private static IReadOnlyList<SettingGroup> BuildContextMenu() =>
+    [
+        new SettingGroup
+        {
+            Name = "Context Menu",
+            FeatureId = "customize-explorer-context-menu",
+            Settings = new[]
+            {
+                // customize-explorer-context-menu-take-ownership — HKCR\*\shell\TakeOwnership
+                new SettingDefinition
+                {
+                    Id = "customize-explorer-context-menu-take-ownership",
+                    Icon = "Security",
+                    Name = "Add 'Take Ownership' to Context Menu",
+                    Description = "Adds a right-click option to take ownership of files, folders, and drives with automatic permission elevation. May require temporarily disabling Windows Defender for protected files",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = true,
+                    RecommendedToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CLASSES_ROOT\*\shell\TakeOwnership",
+                            ValueName = "",
+                            ValueType = RegistryValueKind.String,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { "Take Ownership" },
+                            DisabledValue = new object?[] { null },
+                            IsPrimary = true,
+                        },
+                    },
+                    RegContents = new[]
+                    {
+                        new RegContentSetting
+                        {
+                            EnabledContent = @"Windows Registry Editor Version 5.00
+
+; Created by: Shawn Brink
+; Created on: January 28, 2015
+; Updated on: February 25, 2024
+; Tutorial: https://www.tenforums.com/tutorials/3841-add-take-ownership-context-menu-windows-10-a.html
+
+[-HKEY_CLASSES_ROOT\*\shell\TakeOwnership]
+[-HKEY_CLASSES_ROOT\*\shell\runas]
+
+[HKEY_CLASSES_ROOT\*\shell\TakeOwnership]
+@=""Take Ownership""
+""Extended""=-
+""HasLUAShield""=""""
+""NoWorkingDirectory""=""""
+""NeverDefault""=""""
+
+[HKEY_CLASSES_ROOT\*\shell\TakeOwnership\command]
+@=""powershell -windowstyle hidden -command \""Start-Process cmd -ArgumentList '/c takeown /f \\\""%1\\\"" && icacls \\\""%1\\\"" /grant *S-1-3-4:F /t /c /l & pause' -Verb runAs\""""
+""IsolatedCommand""=""powershell -windowstyle hidden -command \""Start-Process cmd -ArgumentList '/c takeown /f \\\""%1\\\"" && icacls \\\""%1\\\"" /grant *S-1-3-4:F /t /c /l & pause' -Verb runAs\""""
+
+[HKEY_CLASSES_ROOT\Directory\shell\TakeOwnership]
+@=""Take Ownership""
+""AppliesTo""=""NOT (System.ItemPathDisplay:=\""C:\\Users\"" OR System.ItemPathDisplay:=\""C:\\ProgramData\"" OR System.ItemPathDisplay:=\""C:\\Windows\"" OR System.ItemPathDisplay:=\""C:\\Windows\\System32\"" OR System.ItemPathDisplay:=\""C:\\Program Files\"" OR System.ItemPathDisplay:=\""C:\\Program Files (x86)\"")""
+""Extended""=-
+""HasLUAShield""=""""
+""NoWorkingDirectory""=""""
+""Position""=""middle""
+
+[HKEY_CLASSES_ROOT\Directory\shell\TakeOwnership\command]
+@=""powershell -windowstyle hidden -command \""$Y = ($null | choice).Substring(1,1); Start-Process cmd -ArgumentList ('/c takeown /f \\\""%1\\\"" /r /d ' + $Y + ' && icacls \\\""%1\\\"" /grant *S-1-3-4:F /t /c /l /q & pause') -Verb runAs\""""
+""IsolatedCommand""=""powershell -windowstyle hidden -command \""$Y = ($null | choice).Substring(1,1); Start-Process cmd -ArgumentList ('/c takeown /f \\\""%1\\\"" /r /d ' + $Y + ' && icacls \\\""%1\\\"" /grant *S-1-3-4:F /t /c /l /q & pause') -Verb runAs\""""
+
+[HKEY_CLASSES_ROOT\Drive\shell\runas]
+@=""Take Ownership""
+""Extended""=-
+""HasLUAShield""=""""
+""NoWorkingDirectory""=""""
+""Position""=""middle""
+""AppliesTo""=""NOT (System.ItemPathDisplay:=\""C:\\\"")""
+
+[HKEY_CLASSES_ROOT\Drive\shell\runas\command]
+@=""cmd.exe /c takeown /f \""%1\\\"" /r /d y && icacls \""%1\\\"" /grant *S-1-3-4:F /t /c & Pause""
+""IsolatedCommand""=""cmd.exe /c takeown /f \""%1\\\"" /r /d y && icacls \""%1\\\"" /grant *S-1-3-4:F /t /c & Pause""
+",
+                            DisabledContent = @"Windows Registry Editor Version 5.00
+
+[-HKEY_CLASSES_ROOT\*\shell\TakeOwnership]
+[-HKEY_CLASSES_ROOT\*\shell\runas]
+[-HKEY_CLASSES_ROOT\Directory\shell\TakeOwnership]
+[-HKEY_CLASSES_ROOT\Drive\shell\runas]
+",
+                            RequiresElevation = true,
+                        },
+                    },
+                },
+                // customize-explorer-context-menu-show-extensions — Windows.ShowFileExtensions verb
+                new SettingDefinition
+                {
+                    Id = "customize-explorer-context-menu-show-extensions",
+                    Icon = "DocumentQuestionMark",
+                    IconPack = "Fluent",
+                    Name = "Add 'Show/Hide Extensions' to Context Menu",
+                    Description = "Adds a right-click menu option to quickly toggle file extension visibility in File Explorer (only visible on the Classic Context Menu or Show More Options Menu in Windows 11)",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = true,
+                    RecommendedToggleState = false,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CLASSES_ROOT\AllFilesystemObjects\shell\Windows.ShowFileExtensions",
+                            ValueName = "ExplorerCommandHandler",
+                            ValueType = RegistryValueKind.String,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { "{4ac6c205-2853-4bf5-b47c-919a42a48a16}" },
+                            DisabledValue = new object?[] { null },
+                            IsPrimary = true,
+                        },
+                    },
+                    RegContents = new[]
+                    {
+                        new RegContentSetting
+                        {
+                            EnabledContent = @"Windows Registry Editor Version 5.00
+
+[HKEY_CLASSES_ROOT\AllFilesystemObjects\shell\Windows.ShowFileExtensions]
+""CommandStateSync""=""""
+""Description""=""@shell32.dll,-37571""
+""ExplorerCommandHandler""=""{4ac6c205-2853-4bf5-b47c-919a42a48a16}""
+""MUIVerb""=""@shell32.dll,-37570""
+
+[HKEY_CLASSES_ROOT\Directory\Background\shell\Windows.ShowFileExtensions]
+""CommandStateSync""=""""
+""Description""=""@shell32.dll,-37571""
+""ExplorerCommandHandler""=""{4ac6c205-2853-4bf5-b47c-919a42a48a16}""
+""MUIVerb""=""@shell32.dll,-37570""
+",
+                            DisabledContent = @"Windows Registry Editor Version 5.00
+
+[-HKEY_CLASSES_ROOT\AllFilesystemObjects\shell\Windows.ShowFileExtensions]
+[-HKEY_CLASSES_ROOT\Directory\Background\shell\Windows.ShowFileExtensions]
+",
+                            RequiresElevation = true,
+                        },
+                    },
+                    Dependencies = new[]
+                    {
+                        new SettingDependency
+                        {
+                            DependencyType = SettingDependencyType.RequiresEnabled,
+                            DependentSettingId = "customize-explorer-context-menu-show-extensions",
+                            RequiredSettingId = "customize-explorer-classic-context-menu",
+                        },
+                    },
+                },
+                // customize-explorer-context-menu-terminal — unblock the Terminal shell extension
+                new SettingDefinition
+                {
+                    Id = "customize-explorer-context-menu-terminal",
+                    Icon = "Console",
+                    Name = "Show 'Open in Windows Terminal' in Context Menu",
+                    Description = "Displays the Windows Terminal option when right-clicking folders and backgrounds in File Explorer",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = true,
+                    IsWindows11Only = true,
+                    RecommendedToggleState = true,
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Shell Extensions\Blocked",
+                            ValueName = "{9F156763-7844-4DC4-B2B1-901F640F5155}",
+                            ValueType = RegistryValueKind.String,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { null },
+                            DisabledValue = new object?[] { "" },
+                            IsPrimary = true,
+                        },
+                    },
+                },
+                // customize-explorer-context-menu-sfc — HKCR\Directory\Background\shell\SFC
+                new SettingDefinition
+                {
+                    Id = "customize-explorer-context-menu-sfc",
+                    Icon = "MagnifyScan",
+                    Name = "Add 'SFC /SCANNOW' to Context Menu",
+                    Description = "Adds right-click options to run System File Checker (SFC /SCANNOW) and view scan details from the desktop or folder background",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = true,
+                    RecommendedToggleState = false,
+                    AddedInVersion = "25.04.09",
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CLASSES_ROOT\Directory\Background\shell\SFC",
+                            ValueName = "MUIVerb",
+                            ValueType = RegistryValueKind.String,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { "SFC /SCANNOW" },
+                            DisabledValue = new object?[] { null },
+                            IsPrimary = true,
+                        },
+                    },
+                    RegContents = new[]
+                    {
+                        new RegContentSetting
+                        {
+                            EnabledContent = @"Windows Registry Editor Version 5.00
+
+; Created by: Shawn Brink
+; Created on: March 12, 2020
+; Tutorial: https://www.tenforums.com/tutorials/152128-how-add-sfc-scannow-context-menu-windows-10-a.html
+
+[HKEY_CLASSES_ROOT\Directory\Background\shell\SFC]
+""Icon""=""WmiPrvSE.exe""
+""MUIVerb""=""SFC /SCANNOW""
+""Position""=""Bottom""
+""Extended""=-
+""SubCommands""=""""
+
+[HKEY_CLASSES_ROOT\Directory\Background\shell\SFC\shell\001menu]
+""HasLUAShield""=""""
+""MUIVerb""=""Run SFC /SCANNOW""
+
+[HKEY_CLASSES_ROOT\Directory\Background\shell\SFC\shell\001menu\command]
+@=""PowerShell -ExecutionPolicy Bypass -windowstyle hidden -command \""Start-Process cmd -ArgumentList '/s,/k, sfc /scannow' -Verb runAs\""""
+
+[HKEY_CLASSES_ROOT\Directory\Background\shell\SFC\shell\002menu]
+""MUIVerb""=""SFC scan details log""
+
+[HKEY_CLASSES_ROOT\Directory\Background\shell\SFC\shell\002menu\command]
+@=""PowerShell -ExecutionPolicy Bypass (sls [SR] $env:windir\\Logs\\CBS\\CBS.log -s).Line >\""$env:userprofile\\Desktop\\sfcdetails.txt\""""
+",
+                            DisabledContent = @"Windows Registry Editor Version 5.00
+
+[-HKEY_CLASSES_ROOT\Directory\Background\shell\SFC]
+",
+                            RequiresElevation = true,
+                        },
+                    },
+                    Dependencies = new[]
+                    {
+                        new SettingDependency
+                        {
+                            DependencyType = SettingDependencyType.RequiresEnabled,
+                            DependentSettingId = "customize-explorer-context-menu-sfc",
+                            RequiredSettingId = "customize-explorer-classic-context-menu",
+                        },
+                    },
+                },
+                // customize-explorer-context-menu-dism — RepairWindowsImage verb (RegistrySettings-built, no .reg blob)
+                new SettingDefinition
+                {
+                    Id = "customize-explorer-context-menu-dism",
+                    Icon = "MedicalBag",
+                    Name = "Add 'Repair Windows Image' to Context Menu",
+                    Description = "Adds a right-click option to run DISM /RestoreHealth to repair the Windows system image from the desktop or folder background",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = true,
+                    RecommendedToggleState = false,
+                    AddedInVersion = "25.04.09",
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CLASSES_ROOT\Directory\Background\shell\RepairWindowsImage",
+                            ValueName = "MUIVerb",
+                            ValueType = RegistryValueKind.String,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { "Repair Windows Image" },
+                            DisabledValue = new object?[] { null },
+                            IsPrimary = true,
+                        },
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CLASSES_ROOT\Directory\Background\shell\RepairWindowsImage",
+                            ValueName = "Icon",
+                            ValueType = RegistryValueKind.String,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { "WmiPrvSE.exe" },
+                            DisabledValue = new object?[] { null },
+                        },
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CLASSES_ROOT\Directory\Background\shell\RepairWindowsImage",
+                            ValueName = "HasLUAShield",
+                            ValueType = RegistryValueKind.String,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { "" },
+                            DisabledValue = new object?[] { null },
+                        },
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CLASSES_ROOT\Directory\Background\shell\RepairWindowsImage\command",
+                            ValueName = "",
+                            ValueType = RegistryValueKind.String,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { "PowerShell -ExecutionPolicy Bypass -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/s,/k, DISM /Online /Cleanup-Image /RestoreHealth' -Verb runAs\"" },
+                            DisabledValue = new object?[] { null },
+                        },
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CLASSES_ROOT\Directory\Background\shell\RepairWindowsImage",
+                            ValueName = null,
+                            ValueType = RegistryValueKind.String,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = null,
+                            DisabledValue = null,
+                        },
+                    },
+                    Dependencies = new[]
+                    {
+                        new SettingDependency
+                        {
+                            DependencyType = SettingDependencyType.RequiresEnabled,
+                            DependentSettingId = "customize-explorer-context-menu-dism",
+                            RequiredSettingId = "customize-explorer-classic-context-menu",
+                        },
+                    },
+                },
+                // customize-explorer-context-menu-chkdsk — CHKDSK cascading verb
+                new SettingDefinition
+                {
+                    Id = "customize-explorer-context-menu-chkdsk",
+                    Icon = "Harddisk",
+                    Name = "Add 'CHKDSK' to Context Menu",
+                    Description = "Adds right-click options to run CHKDSK from the desktop or folder background with a prompt to select the drive letter",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = true,
+                    RecommendedToggleState = false,
+                    AddedInVersion = "25.04.09",
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CLASSES_ROOT\Directory\Background\shell\CHKDSK",
+                            ValueName = "MUIVerb",
+                            ValueType = RegistryValueKind.String,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { "CHKDSK" },
+                            DisabledValue = new object?[] { null },
+                            IsPrimary = true,
+                        },
+                    },
+                    RegContents = new[]
+                    {
+                        new RegContentSetting
+                        {
+                            EnabledContent = @"Windows Registry Editor Version 5.00
+
+[HKEY_CLASSES_ROOT\Directory\Background\shell\CHKDSK]
+""Icon""=""imageres.dll,-36""
+""MUIVerb""=""CHKDSK""
+""Position""=""Bottom""
+""SubCommands""=""""
+
+[HKEY_CLASSES_ROOT\Directory\Background\shell\CHKDSK\shell\001menu]
+""HasLUAShield""=""""
+""MUIVerb""=""Run CHKDSK (scan only)""
+
+[HKEY_CLASSES_ROOT\Directory\Background\shell\CHKDSK\shell\001menu\command]
+@=""PowerShell -ExecutionPolicy Bypass -windowstyle hidden -command \""Start-Process cmd -ArgumentList '/v:on,/s,/k, set /p d=Enter drive letter (e.g. C): & chkdsk !d!:' -Verb runAs\""""
+
+[HKEY_CLASSES_ROOT\Directory\Background\shell\CHKDSK\shell\002menu]
+""HasLUAShield""=""""
+""MUIVerb""=""Run CHKDSK /F (fix errors)""
+
+[HKEY_CLASSES_ROOT\Directory\Background\shell\CHKDSK\shell\002menu\command]
+@=""PowerShell -ExecutionPolicy Bypass -windowstyle hidden -command \""Start-Process cmd -ArgumentList '/v:on,/s,/k, set /p d=Enter drive letter (e.g. C): & chkdsk !d!: /f' -Verb runAs\""""
+
+[HKEY_CLASSES_ROOT\Directory\Background\shell\CHKDSK\shell\003menu]
+""HasLUAShield""=""""
+""MUIVerb""=""Run CHKDSK /R (locate bad sectors)""
+
+[HKEY_CLASSES_ROOT\Directory\Background\shell\CHKDSK\shell\003menu\command]
+@=""PowerShell -ExecutionPolicy Bypass -windowstyle hidden -command \""Start-Process cmd -ArgumentList '/v:on,/s,/k, set /p d=Enter drive letter (e.g. C): & chkdsk !d!: /r' -Verb runAs\""""
+",
+                            DisabledContent = @"Windows Registry Editor Version 5.00
+
+[-HKEY_CLASSES_ROOT\Directory\Background\shell\CHKDSK]
+",
+                            RequiresElevation = true,
+                        },
+                    },
+                    Dependencies = new[]
+                    {
+                        new SettingDependency
+                        {
+                            DependencyType = SettingDependencyType.RequiresEnabled,
+                            DependentSettingId = "customize-explorer-context-menu-chkdsk",
+                            RequiredSettingId = "customize-explorer-classic-context-menu",
+                        },
+                    },
+                },
+                // customize-explorer-context-menu-ps1 — 'Edit or Run with' cascading verb on .ps1
+                new SettingDefinition
+                {
+                    Id = "customize-explorer-context-menu-ps1",
+                    Icon = "Powershell",
+                    Name = "Add 'Edit or Run with' to PS1 Context Menu",
+                    Description = "Adds a right-click cascading menu to .ps1 files with options to run or edit with PowerShell, PowerShell 7, PowerShell ISE, and Notepad (including as administrator). PowerShell 7 must be installed separately for the PowerShell 7 options to work",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = true,
+                    RecommendedToggleState = false,
+                    AddedInVersion = "25.04.09",
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CLASSES_ROOT\SystemFileAssociations\.ps1\Shell\Edit-Run-with",
+                            ValueName = "MUIVerb",
+                            ValueType = RegistryValueKind.String,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { "Edit or Run with" },
+                            DisabledValue = new object?[] { null },
+                            IsPrimary = true,
+                        },
+                    },
+                    RegContents = new[]
+                    {
+                        new RegContentSetting
+                        {
+                            EnabledContent = @"Windows Registry Editor Version 5.00
+
+; Created by: Shawn Brink
+; Created on: December 4, 2023
+; Tutorial: https://www.elevenforum.com/t/add-edit-or-run-with-to-ps1-file-context-menu-in-windows-11.20366/
+
+[HKEY_CLASSES_ROOT\SystemFileAssociations\.ps1\Shell\Edit-Run-with]
+""MUIVerb""=""Edit or Run with""
+""SubCommands""=""""
+
+[HKEY_CLASSES_ROOT\SystemFileAssociations\.ps1\Shell\Edit-Run-with\shell\001flyout]
+""MUIVerb""=""Run with PowerShell""
+""Icon""=""powershell.exe""
+
+[HKEY_CLASSES_ROOT\SystemFileAssociations\.ps1\Shell\Edit-Run-with\shell\001flyout\Command]
+@=""\""C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe\"" \""-Command\"" \""if((Get-ExecutionPolicy ) -ne 'AllSigned') { Set-ExecutionPolicy -Scope Process Bypass }; & '%1'\""""
+
+[HKEY_CLASSES_ROOT\SystemFileAssociations\.ps1\Shell\Edit-Run-with\shell\002flyout]
+""MUIVerb""=""Run with PowerShell as administrator""
+""HasLUAShield""=""""
+""Icon""=""powershell.exe""
+
+[HKEY_CLASSES_ROOT\SystemFileAssociations\.ps1\Shell\Edit-Run-with\shell\002flyout\Command]
+@=""\""C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe\"" \""-Command\"" \""\""& {Start-Process PowerShell.exe -ArgumentList '-ExecutionPolicy RemoteSigned -File \\\""%1\\\""' -Verb RunAs}\""""
+
+[HKEY_CLASSES_ROOT\SystemFileAssociations\.ps1\Shell\Edit-Run-with\shell\003flyout]
+""MUIVerb""=""Run with PowerShell 7""
+""Icon""=""pwsh.exe""
+""CommandFlags""=dword:00000020
+
+[HKEY_CLASSES_ROOT\SystemFileAssociations\.ps1\Shell\Edit-Run-with\shell\003flyout\Command]
+@=""\""C:\\Program Files\\PowerShell\\7\\pwsh.exe\"" \""-Command\"" \""if((Get-ExecutionPolicy ) -ne 'AllSigned') { Set-ExecutionPolicy -Scope Process Bypass }; & '%1'\""""
+
+[HKEY_CLASSES_ROOT\SystemFileAssociations\.ps1\Shell\Edit-Run-with\shell\004flyout]
+""MUIVerb""=""Run with PowerShell 7 as administrator""
+""HasLUAShield""=""""
+""Icon""=""pwsh.exe""
+
+[HKEY_CLASSES_ROOT\SystemFileAssociations\.ps1\Shell\Edit-Run-with\shell\004flyout\Command]
+@=""\""C:\\Program Files\\PowerShell\\7\\pwsh.exe\"" \""-Command\"" \""\""& {Start-Process pwsh.exe -ArgumentList '-ExecutionPolicy RemoteSigned -File \\\""%1\\\""' -Verb RunAs}\""""
+
+[HKEY_CLASSES_ROOT\SystemFileAssociations\.ps1\Shell\Edit-Run-with\shell\005flyout]
+""MUIVerb""=""Edit with PowerShell ISE""
+""Icon""=""powershell_ise.exe""
+""CommandFlags""=dword:00000020
+
+[HKEY_CLASSES_ROOT\SystemFileAssociations\.ps1\Shell\Edit-Run-with\shell\005flyout\Command]
+@=""\""C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell_ise.exe\"" \""%1\""""
+
+[HKEY_CLASSES_ROOT\SystemFileAssociations\.ps1\Shell\Edit-Run-with\shell\006flyout]
+""MUIVerb""=""Edit with PowerShell ISE as administrator""
+""HasLUAShield""=""""
+""Icon""=""powershell_ise.exe""
+
+[HKEY_CLASSES_ROOT\SystemFileAssociations\.ps1\Shell\Edit-Run-with\shell\006flyout\Command]
+@=""PowerShell -windowstyle hidden -Command \""Start-Process cmd -ArgumentList '/s,/c,start PowerShell_ISE.exe \""\""%1\""\""'  -Verb RunAs\""""
+
+[HKEY_CLASSES_ROOT\SystemFileAssociations\.ps1\Shell\Edit-Run-with\shell\007flyout]
+""MUIVerb""=""Edit with PowerShell ISE (x86)""
+""Icon""=""powershell_ise.exe""
+""CommandFlags""=dword:00000020
+
+[HKEY_CLASSES_ROOT\SystemFileAssociations\.ps1\Shell\Edit-Run-with\shell\007flyout\Command]
+@=""\""C:\\WINDOWS\\syswow64\\WindowsPowerShell\\v1.0\\powershell_ise.exe\"" \""%1\""""
+
+[HKEY_CLASSES_ROOT\SystemFileAssociations\.ps1\Shell\Edit-Run-with\shell\008flyout]
+""MUIVerb""=""Edit with PowerShell ISE (x86) as administrator""
+""HasLUAShield""=""""
+""Icon""=""powershell_ise.exe""
+
+[HKEY_CLASSES_ROOT\SystemFileAssociations\.ps1\Shell\Edit-Run-with\shell\008flyout\Command]
+@=""PowerShell -windowstyle hidden -Command \""Start-Process cmd -ArgumentList '/s,/c,start C:\\WINDOWS\\syswow64\\WindowsPowerShell\\v1.0\\powershell_ise.exe \""\""%1\""\""'  -Verb RunAs\""""
+
+[HKEY_CLASSES_ROOT\SystemFileAssociations\.ps1\Shell\Edit-Run-with\shell\009flyout]
+""MUIVerb""=""Edit with Notepad""
+""Icon""=""notepad.exe""
+""CommandFlags""=dword:00000020
+
+[HKEY_CLASSES_ROOT\SystemFileAssociations\.ps1\Shell\Edit-Run-with\shell\009flyout\Command]
+@=""\""C:\\Windows\\System32\\notepad.exe\"" \""%1\""""
+
+[HKEY_CLASSES_ROOT\SystemFileAssociations\.ps1\Shell\Edit-Run-with\shell\010flyout]
+""MUIVerb""=""Edit with Notepad as administrator""
+""HasLUAShield""=""""
+""Icon""=""notepad.exe""
+
+[HKEY_CLASSES_ROOT\SystemFileAssociations\.ps1\Shell\Edit-Run-with\shell\010flyout\Command]
+@=""PowerShell -windowstyle hidden -Command \""Start-Process cmd -ArgumentList '/s,/c,start C:\\Windows\\System32\\notepad.exe \""\""%1\""\""'  -Verb RunAs\""""
+",
+                            DisabledContent = @"Windows Registry Editor Version 5.00
+
+[-HKEY_CLASSES_ROOT\SystemFileAssociations\.ps1\Shell\Edit-Run-with]
+",
+                            RequiresElevation = true,
+                        },
+                    },
+                    Dependencies = new[]
+                    {
+                        new SettingDependency
+                        {
+                            DependencyType = SettingDependencyType.RequiresEnabled,
+                            DependentSettingId = "customize-explorer-context-menu-ps1",
+                            RequiredSettingId = "customize-explorer-classic-context-menu",
+                        },
+                    },
+                },
+                // customize-explorer-context-menu-compress-to — CompressTo full menu (Win11 24H2+)
+                new SettingDefinition
+                {
+                    Id = "customize-explorer-context-menu-compress-to",
+                    Icon = "FolderZip",
+                    IconPack = "Fluent",
+                    Name = "Add 'Compress To' to Context Menu",
+                    Description = "Adds a right-click option to compress files and folders into various archive formats (ZIP, 7z, TAR) directly from the classic context menu",
+                    InputType = InputType.Toggle,
+                    IsSubjectivePreference = true,
+                    IsWindows11Only = true,
+                    MinimumBuildNumber = 26100,
+                    RecommendedToggleState = false,
+                    AddedInVersion = "25.04.09",
+                    RegistrySettings = new[]
+                    {
+                        new RegistrySetting
+                        {
+                            KeyPath = @"HKEY_CLASSES_ROOT\*\shell\CompressToFullMenu_ForOldContextMenu",
+                            ValueName = "ExplorerCommandHandler",
+                            ValueType = RegistryValueKind.String,
+                            RecommendedValue = null,
+                            DefaultValue = null,
+                            EnabledValue = new object?[] { "{7AE6900F-6EB0-44A2-9CA1-DB2F7EF352AF}" },
+                            DisabledValue = new object?[] { null },
+                            IsPrimary = true,
+                        },
+                    },
+                    RegContents = new[]
+                    {
+                        new RegContentSetting
+                        {
+                            EnabledContent = @"Windows Registry Editor Version 5.00
+
+; Credit: ThioJoe - https://github.com/ThioJoe/
+; Source: https://gist.github.com/ThioJoe/f4b0799e2f0d95466f4c2bd4e46d1e67
+
+[HKEY_CLASSES_ROOT\*\shell\CompressToFullMenu_ForOldContextMenu]
+""CommandStateSync""=""""
+""ExplorerCommandHandler""=""{7AE6900F-6EB0-44A2-9CA1-DB2F7EF352AF}""
+""MUIVerb""=""@Windows.UI.FileExplorer.dll,-51797""
+""Note""=""Copied from original Command Store command: Windows.CompressTo""
+
+[HKEY_CLASSES_ROOT\Folder\shell\CompressToFullMenu_ForOldContextMenu]
+""CommandStateSync""=""""
+""ExplorerCommandHandler""=""{7AE6900F-6EB0-44A2-9CA1-DB2F7EF352AF}""
+""MUIVerb""=""@Windows.UI.FileExplorer.dll,-51797""
+""Note""=""Copied from original Command Store command: Windows.CompressTo""
+",
+                            DisabledContent = @"Windows Registry Editor Version 5.00
+
+[-HKEY_CLASSES_ROOT\*\shell\CompressToFullMenu_ForOldContextMenu]
+
+[-HKEY_CLASSES_ROOT\Folder\shell\CompressToFullMenu_ForOldContextMenu]
+",
+                            RequiresElevation = true,
+                        },
+                    },
+                    Dependencies = new[]
+                    {
+                        new SettingDependency
+                        {
+                            DependencyType = SettingDependencyType.RequiresEnabled,
+                            DependentSettingId = "customize-explorer-context-menu-compress-to",
+                            RequiredSettingId = "customize-explorer-classic-context-menu",
+                        },
+                    },
+                },
+            },
+        },
+    ];
 }
