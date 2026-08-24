@@ -58,7 +58,7 @@ public sealed partial class MainWindow : Window
         // Software & Apps hub (SoftwareHubPage): the single rail entry for the software
         // section. The three detail tags keep their PageMap entries for hub/search
         // resolution; SelectRailTag routes them through the hub.
-        ["SoftwareHub"] = typeof(SoftwareHubPage),
+        ["SoftwareHub"] = typeof(SoftwareAppsPage),
         ["AppInstaller"] = typeof(ExternalAppsPage),
         ["Bloatware"] = typeof(WindowsAppsPage),
         ["Debloat"] = typeof(DebloatPage),
@@ -372,7 +372,7 @@ public sealed partial class MainWindow : Window
         PowerPage => "Optimize",
         // Software hub + its catalog pages (hosted in the hub inner frame) keep the
         // single "Software & Apps" rail item highlighted.
-        SoftwareHubPage => "SoftwareHub",
+        SoftwareAppsPage => "SoftwareHub",
         ExternalAppsPage => "SoftwareHub",
         WindowsAppsPage => "SoftwareHub",
         DebloatPage => "SoftwareHub",
@@ -436,7 +436,7 @@ public sealed partial class MainWindow : Window
         if (SoftwareDetailTags.Contains(tag))
         {
             SelectRailTag("SoftwareHub");
-            if (ContentFrame.Content is SoftwareHubPage hub
+            if (ContentFrame.Content is SoftwareAppsPage hub
                 && PageMap.TryGetValue(tag, out var detailType))
             {
                 hub.ShowDetailFor(detailType);

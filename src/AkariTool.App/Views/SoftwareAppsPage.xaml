@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Software & Apps (rail tag "SoftwareHub") — Winhance-style single tabbed page. A hub-style
+    header, a two-segment tab header (Windows Apps & Features / External Software), and an inner
+    frame that hosts the existing catalog pages (WindowsAppsPage / ExternalAppsPage). Stage A of
+    the Software parity work: tabbed shell. The shared toolbar (Stage B) and Card/Table/Compact
+    view modes (Stage C) build on this.
+-->
+<Page
+    x:Class="AkariTool.Views.SoftwareAppsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    NavigationCacheMode="Required">
+
+    <Grid Padding="28,0,20,0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />  <!-- Header -->
+            <RowDefinition Height="Auto" />  <!-- Tabs -->
+            <RowDefinition Height="*" />     <!-- Content -->
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="16" Margin="0,24,0,16">
+            <Viewbox Width="52" Height="52" Stretch="Uniform" VerticalAlignment="Center">
+                <TextBlock
+                    Text="&#xE71D;"
+                    FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+            </Viewbox>
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock
+                    Text="Software &amp; Apps"
+                    FontSize="30"
+                    FontWeight="Bold"
+                    Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                    AutomationProperties.HeadingLevel="Level1" />
+                <TextBlock
+                    Text="Manage Windows apps and install software."
+                    FontSize="13"
+                    Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                    Margin="0,2,0,0"
+                    TextWrapping="Wrap" />
+            </StackPanel>
+        </StackPanel>
+
+        <!-- Two-segment tab header -->
+        <Border Grid.Row="1"
+                Margin="0,0,0,12"
+                CornerRadius="8"
+                Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                Padding="3">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <ToggleButton x:Name="TabWindows" Grid.Column="0"
+                              HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                              Background="Transparent" BorderThickness="0" CornerRadius="6"
+                              Padding="10,8" Click="Tab_Click" Tag="Windows">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE71D;" FontSize="14" />
+                        <TextBlock Text="Windows Apps &amp; Features" FontWeight="SemiBold" />
+                    </StackPanel>
+                </ToggleButton>
+                <ToggleButton x:Name="TabExternal" Grid.Column="1"
+                              HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                              Background="Transparent" BorderThickness="0" CornerRadius="6"
+                              Padding="10,8" Click="Tab_Click" Tag="External">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE896;" FontSize="14" />
+                        <TextBlock Text="External Software" FontWeight="SemiBold" />
+                    </StackPanel>
+                </ToggleButton>
+            </Grid>
+        </Border>
+
+        <!-- Content panel: the active catalog page (its own toolbar/grid) inside the inner frame. -->
+        <Border Grid.Row="2"
+                Background="{ThemeResource SystemFillColorNeutralBackgroundBrush}"
+                CornerRadius="8"
+                Margin="0,0,0,12">
+            <Frame x:Name="TabFrame" />
+        </Border>
+    </Grid>
+</Page>
