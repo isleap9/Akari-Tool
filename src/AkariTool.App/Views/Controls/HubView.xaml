@@ -126,36 +126,72 @@
                 </DropDownButton>
             </StackPanel>
 
-            <!-- Quick Actions. -->
-            <DropDownButton x:Name="QuickActionsButton" Grid.Column="1" VerticalAlignment="Center" Margin="0,0,4,0">
-                <DropDownButton.Content>
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <FontIcon Glyph="&#xE945;" FontSize="14" />
-                        <TextBlock Text="Quick Actions" VerticalAlignment="Center" />
-                    </StackPanel>
-                </DropDownButton.Content>
-                <DropDownButton.Flyout>
-                    <MenuFlyout Placement="BottomEdgeAlignedRight">
-                        <MenuFlyoutItem x:Name="ApplyRecommendedItem" Text="Apply Recommended" Click="ApplyRecommended_Click">
-                            <MenuFlyoutItem.Icon>
-                                <FontIcon Glyph="&#xE735;" FontSize="14" />
-                            </MenuFlyoutItem.Icon>
-                        </MenuFlyoutItem>
-                        <MenuFlyoutItem x:Name="ResetDefaultsItem" Text="Reset to Defaults" Click="ResetDefaults_Click">
-                            <MenuFlyoutItem.Icon>
-                                <FontIcon Glyph="&#xE777;" FontSize="14" />
-                            </MenuFlyoutItem.Icon>
-                        </MenuFlyoutItem>
-                        <MenuFlyoutSeparator />
-                        <!-- Akari-specific action (no Winhance equivalent) — preserved per CLAUDE.md. -->
-                        <MenuFlyoutItem x:Name="CreateRestorePointItem" Text="Create Restore Point" Click="CreateRestorePoint_Click">
-                            <MenuFlyoutItem.Icon>
-                                <FontIcon Glyph="&#xE7B8;" FontSize="14" />
-                            </MenuFlyoutItem.Icon>
-                        </MenuFlyoutItem>
-                    </MenuFlyout>
-                </DropDownButton.Flyout>
-            </DropDownButton>
+            <!-- Quick Actions (old rich look: each action shows its live pending count).
+                 Subtitles are filled on flyout open from the current detail page's VM. -->
+            <Button x:Name="QuickActionsButton" Grid.Column="1" VerticalAlignment="Center"
+                    Margin="0,0,4,0" Padding="12,7,10,7" CornerRadius="8"
+                    AutomationProperties.Name="Quick actions"
+                    ToolTipService.ToolTip="Bulk actions for every setting on this page">
+                <StackPanel Orientation="Horizontal">
+                    <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE945;" FontSize="12"
+                              Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                              Margin="0,0,7,0" VerticalAlignment="Center" />
+                    <TextBlock Text="Quick actions" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE70D;" FontSize="10"
+                              Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                              Margin="7,1,0,0" VerticalAlignment="Center" />
+                </StackPanel>
+                <Button.Flyout>
+                    <Flyout x:Name="QuickActionsFlyout" Opening="QuickActionsFlyout_Opening">
+                        <StackPanel MinWidth="280">
+
+                            <Button Click="ApplyRecommended_Click" Background="Transparent" BorderThickness="0"
+                                    Padding="6,4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left">
+                                <StackPanel Orientation="Horizontal">
+                                    <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE735;" FontSize="14"
+                                              Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                              Margin="2,0,10,0" VerticalAlignment="Center" />
+                                    <StackPanel Margin="0,4">
+                                        <TextBlock Text="Apply all recommended" FontSize="13" FontWeight="SemiBold" />
+                                        <TextBlock x:Name="RecommendedSubtitleText" FontSize="11"
+                                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="0,1,0,0" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Button>
+
+                            <Button Click="ResetDefaults_Click" Background="Transparent" BorderThickness="0"
+                                    Padding="6,4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left">
+                                <StackPanel Orientation="Horizontal">
+                                    <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE777;" FontSize="14"
+                                              Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                              Margin="2,0,10,0" VerticalAlignment="Center" />
+                                    <StackPanel Margin="0,4">
+                                        <TextBlock Text="Restore Windows defaults" FontSize="13" FontWeight="SemiBold" />
+                                        <TextBlock x:Name="DefaultSubtitleText" FontSize="11"
+                                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="0,1,0,0" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Button>
+
+                            <Border Height="1" Background="{ThemeResource DividerStrokeColorDefaultBrush}" Margin="4" />
+
+                            <Button Click="CreateRestorePoint_Click" Background="Transparent" BorderThickness="0"
+                                    Padding="6,4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left">
+                                <StackPanel Orientation="Horizontal">
+                                    <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE7B8;" FontSize="14"
+                                              Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                              Margin="2,0,10,0" VerticalAlignment="Center" />
+                                    <StackPanel Margin="0,4">
+                                        <TextBlock Text="Create restore point" FontSize="13" FontWeight="SemiBold" />
+                                        <TextBlock Text="System snapshot before you change anything" FontSize="11"
+                                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="0,1,0,0" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Flyout>
+                </Button.Flyout>
+            </Button>
 
             <!-- View menu. -->
             <DropDownButton x:Name="ViewMenuButton" Grid.Column="2" VerticalAlignment="Center">

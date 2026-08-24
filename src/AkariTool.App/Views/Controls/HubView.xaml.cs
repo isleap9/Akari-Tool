@@ -186,18 +186,34 @@ public sealed partial class HubView : UserControl
         if (_currentCard is not null) CardNavigated?.Invoke(this, _currentCard);
     }
 
+    private void QuickActionsFlyout_Opening(object sender, object e)
+    {
+        // Recompute counts when the menu opens (same predicate the bulk engine runs, so the
+        // menu never advertises work the run then skips) and surface them as subtitles —
+        // the old per-page Quick Actions behavior.
+        if (CurrentPageViewModel is { } vm)
+        {
+            vm.RefreshQuickActionCounts();
+            RecommendedSubtitleText.Text = vm.RecommendedPendingSubtitle;
+            DefaultSubtitleText.Text = vm.DefaultPendingSubtitle;
+        }
+    }
+
     private async void ApplyRecommended_Click(object sender, RoutedEventArgs e)
     {
+        QuickActionsFlyout.Hide();   // dismiss before the command's dialog opens
         if (CurrentPageViewModel is { } vm) await vm.ApplyAllRecommendedAsync();
     }
 
     private async void ResetDefaults_Click(object sender, RoutedEventArgs e)
     {
+        QuickActionsFlyout.Hide();
         if (CurrentPageViewModel is { } vm) await vm.RestoreDefaultsAsync();
     }
 
     private async void CreateRestorePoint_Click(object sender, RoutedEventArgs e)
     {
+        QuickActionsFlyout.Hide();
         if (CurrentPageViewModel is { } vm) await vm.CreateRestorePointAsync();
     }
 
