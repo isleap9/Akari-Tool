@@ -156,26 +156,13 @@
                         <FontIcon Glyph="&#xE790;" />
                     </muxc:NavigationViewItem.Icon>
                 </muxc:NavigationViewItem>
-                <muxc:NavigationViewItem Content="Tools" Tag="Tools">
-                    <muxc:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE90F;" />
-                    </muxc:NavigationViewItem.Icon>
-                </muxc:NavigationViewItem>
-
                 <muxc:NavigationViewItemHeader Content="ADVANCED" />
-                <muxc:NavigationViewItem Content="Advanced Tools" Tag="Advanced">
+                <!-- Advanced Tools is now a hub (AdvancedHubPage): Image & Deployment, System
+                     Tools, Backup & Restore and Verify are cards drilling into the hub's inner
+                     frame. The old Tools / Advanced / Backup / Verify entries folded in. -->
+                <muxc:NavigationViewItem Content="Advanced Tools" Tag="AdvancedHub">
                     <muxc:NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xEC7A;" />
-                    </muxc:NavigationViewItem.Icon>
-                </muxc:NavigationViewItem>
-                <muxc:NavigationViewItem Content="Backup &amp; Restore" Tag="Backup">
-                    <muxc:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE777;" />
-                    </muxc:NavigationViewItem.Icon>
-                </muxc:NavigationViewItem>
-                <muxc:NavigationViewItem Content="Verify" Tag="Verify">
-                    <muxc:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE73E;" />
                     </muxc:NavigationViewItem.Icon>
                 </muxc:NavigationViewItem>
             </muxc:NavigationView.MenuItems>

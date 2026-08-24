@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Advanced Tools hub (rail tag "AdvancedHub"). Hosts the shared HubView chrome and supplies
+    its overview cards: Image & Deployment (WIM wizard + autounattend), System Tools, Backup &
+    Restore, and Verify. All are bespoke pages (no settings VM → no pills); each drills into
+    its page inside the HubView inner frame. Folds the old Advanced Tools / Tools / Backup /
+    Verify rail entries into one hub (D1b).
+-->
+<Page
+    x:Class="AkariTool.Views.AdvancedHubPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:AkariTool.Views.Controls"
+    NavigationCacheMode="Required">
+
+    <controls:HubView x:Name="Hub" />
+</Page>

@@ -87,6 +87,12 @@ public sealed partial class HubView : UserControl
         set => SearchBox.PlaceholderText = value;
     }
 
+    /// <summary>Show/hide the header search box (hubs of bespoke pages have no per-page search).</summary>
+    public bool ShowSearch
+    {
+        set => SearchBox.Visibility = value ? Visibility.Visible : Visibility.Collapsed;
+    }
+
     #endregion
 
     #region Overview / detail switching

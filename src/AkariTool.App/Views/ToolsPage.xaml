@@ -15,11 +15,8 @@
     NavigationCacheMode="Required">
 
     <ScrollViewer>
-        <StackPanel Padding="32,24,32,24" MaxWidth="960" HorizontalAlignment="Center">
-            <StackPanel Margin="0,0,0,12">
-                <TextBlock Text="Tools" FontSize="26" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
-                <TextBlock Text="System utilities, repair tools, and quick shortcuts." FontSize="13" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="0,4,0,0" TextWrapping="Wrap" />
-            </StackPanel>
+        <StackPanel Padding="24,16,24,24" MaxWidth="960" HorizontalAlignment="Center">
+            <!-- Header/breadcrumb are provided by the Advanced Tools hub; this page is bare. -->
             <StackPanel x:Name="RootPanel" />
         </StackPanel>
     </ScrollViewer>

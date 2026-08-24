@@ -58,6 +58,10 @@ public sealed partial class MainWindow : Window
         ["AppInstaller"] = typeof(ExternalAppsPage),
         ["Bloatware"] = typeof(WindowsAppsPage),
         ["Debloat"] = typeof(DebloatPage),
+        // Advanced Tools hub (AdvancedHubPage): the single rail entry for the ADVANCED
+        // section. The detail tags below keep their PageMap entries so the hub + global
+        // search can resolve tag → page type; SelectRailTag routes them through the hub.
+        ["AdvancedHub"] = typeof(AdvancedHubPage),
         ["Backup"] = typeof(BackupPage),
         ["Advanced"] = typeof(AdvancedToolsPage),
         ["Tools"] = typeof(ToolsPage),
@@ -74,6 +78,10 @@ public sealed partial class MainWindow : Window
     // Customize sections fold into the Customize hub the same way — no rail item each.
     private static readonly HashSet<string> CustomizeDetailTags = new()
     { "Taskbar", "Explorer", "Appearance", "StartMenu", "Desktop" };
+
+    // Advanced Tools sections fold into the Advanced Tools hub — no rail item each.
+    private static readonly HashSet<string> AdvancedDetailTags = new()
+    { "Advanced", "Tools", "Backup", "Verify" };
 
     private readonly INavigationService _navigation;
     private readonly IDialogService _dialogs;
@@ -360,10 +368,13 @@ public sealed partial class MainWindow : Window
         ExternalAppsPage => "AppInstaller",
         WindowsAppsPage => "Bloatware",
         DebloatPage => "Debloat",
-        BackupPage => "Backup",
-        AdvancedToolsPage => "Advanced",
-        ToolsPage => "Tools",
-        VerifyPage => "Verify",
+        // Advanced Tools hub + its detail pages (hosted in the hub inner frame) keep the
+        // single "Advanced Tools" rail item highlighted.
+        AdvancedHubPage => "AdvancedHub",
+        BackupPage => "AdvancedHub",
+        AdvancedToolsPage => "AdvancedHub",
+        ToolsPage => "AdvancedHub",
+        VerifyPage => "AdvancedHub",
         AkariOSPage => "Optimize",
         PlaceholderPage p => p.ViewModel.TabTag,
         _ => null,
@@ -394,6 +405,18 @@ public sealed partial class MainWindow : Window
         {
             SelectRailTag("Customize");
             if (ContentFrame.Content is CustomizePage hub
+                && PageMap.TryGetValue(tag, out var detailType))
+            {
+                hub.ShowDetailFor(detailType);
+            }
+            return;
+        }
+
+        // Advanced Tools detail sections — same pattern through the Advanced Tools hub.
+        if (AdvancedDetailTags.Contains(tag))
+        {
+            SelectRailTag("AdvancedHub");
+            if (ContentFrame.Content is AdvancedHubPage hub
                 && PageMap.TryGetValue(tag, out var detailType))
             {
                 hub.ShowDetailFor(detailType);
