@@ -398,11 +398,16 @@ public sealed class SettingStateReader(
         return true;
     }
 
-    private static bool ValuesEqual(object? a, object? b)
+    internal static bool ValuesEqual(object? a, object? b)
     {
         if (a == null && b == null) return true;
         if (a == null || b == null) return false;
         if (Equals(a, b)) return true;
+
+        // REG_BINARY full-array values (e.g. the shortcut-suffix toggle) compare by
+        // content — without this two distinct byte[] instances fall through to
+        // ToString() ("System.Byte[]" == "System.Byte[]") and always match.
+        if (a is byte[] ba && b is byte[] bb) return ba.SequenceEqual(bb);
 
         try
         {

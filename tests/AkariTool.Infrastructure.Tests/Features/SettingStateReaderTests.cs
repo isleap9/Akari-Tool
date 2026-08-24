@@ -411,4 +411,34 @@ public class SettingStateReaderTests
         SettingStateReader.ResolveDnsServerIndex(MakeDnsSetting(), nameServer, primaryDns)
             .Should().Be(expected);
     }
+
+    // ── REG_BINARY full-array comparison (shortcut-suffix toggle) ──────────────
+    // Regression: two distinct byte[] instances used to fall through ValuesEqual to
+    // ToString() ("System.Byte[]" == "System.Byte[]") and always match, so a full-array
+    // binary toggle read as enabled regardless of its real value.
+
+    [Fact]
+    public void ValuesEqual_ByteArrays_SameContent_ReturnsTrue()
+    {
+        SettingStateReader.ValuesEqual(
+            new byte[] { 0x00, 0x00, 0x00, 0x00 },
+            new byte[] { 0x00, 0x00, 0x00, 0x00 }).Should().BeTrue();
+    }
+
+    [Fact]
+    public void ValuesEqual_ByteArrays_DifferentContent_ReturnsFalse()
+    {
+        // enabled (00 00 00 00) vs disabled (1E 00 00 00) must NOT match
+        SettingStateReader.ValuesEqual(
+            new byte[] { 0x1E, 0x00, 0x00, 0x00 },
+            new byte[] { 0x00, 0x00, 0x00, 0x00 }).Should().BeFalse();
+    }
+
+    [Fact]
+    public void ValuesEqual_ByteArrays_DifferentLength_ReturnsFalse()
+    {
+        SettingStateReader.ValuesEqual(
+            new byte[] { 0x00, 0x00 },
+            new byte[] { 0x00, 0x00, 0x00, 0x00 }).Should().BeFalse();
+    }
 }
