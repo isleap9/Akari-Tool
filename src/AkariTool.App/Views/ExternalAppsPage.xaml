@@ -202,22 +202,9 @@
          built catalog + selection state, so the Frame must reuse this page instance
          rather than rebuild it per navigation. -->
     <ScrollViewer>
-        <StackPanel Padding="32,24,32,24" MaxWidth="1100" HorizontalAlignment="Stretch">
-
-            <!-- ── Page header ─────────────────────────────────────────────── -->
-            <StackPanel Margin="0,0,0,20">
-                <TextBlock
-                    Text="{x:Bind ViewModel.Title}"
-                    FontSize="26"
-                    FontWeight="SemiBold"
-                    Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
-                <TextBlock
-                    Text="{x:Bind ViewModel.Subtitle}"
-                    FontSize="13"
-                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                    Margin="0,4,0,0"
-                    TextWrapping="Wrap" />
-            </StackPanel>
+        <StackPanel Padding="24,16,24,24" MaxWidth="1100" HorizontalAlignment="Stretch">
+            <!-- Header/breadcrumb are provided by the Software & Apps hub; this page keeps
+                 its own action bar / search / select-all toolbar below. -->
 
             <!-- ── Action bar + selected count ─────────────────────────────── -->
             <Grid Margin="0,0,0,14">

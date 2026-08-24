@@ -55,6 +55,10 @@ public sealed partial class MainWindow : Window
         ["StartMenu"] = typeof(StartMenuPage),
         ["Desktop"] = typeof(DesktopPage),
         ["Power"] = typeof(PowerPage),
+        // Software & Apps hub (SoftwareHubPage): the single rail entry for the software
+        // section. The three detail tags keep their PageMap entries for hub/search
+        // resolution; SelectRailTag routes them through the hub.
+        ["SoftwareHub"] = typeof(SoftwareHubPage),
         ["AppInstaller"] = typeof(ExternalAppsPage),
         ["Bloatware"] = typeof(WindowsAppsPage),
         ["Debloat"] = typeof(DebloatPage),
@@ -82,6 +86,10 @@ public sealed partial class MainWindow : Window
     // Advanced Tools sections fold into the Advanced Tools hub — no rail item each.
     private static readonly HashSet<string> AdvancedDetailTags = new()
     { "Advanced", "Tools", "Backup", "Verify" };
+
+    // Software catalog pages fold into the Software & Apps hub — no rail item each.
+    private static readonly HashSet<string> SoftwareDetailTags = new()
+    { "Bloatware", "AppInstaller", "Debloat" };
 
     private readonly INavigationService _navigation;
     private readonly IDialogService _dialogs;
@@ -362,9 +370,12 @@ public sealed partial class MainWindow : Window
         StartMenuPage => "Customize",
         DesktopPage => "Customize",
         PowerPage => "Optimize",
-        ExternalAppsPage => "AppInstaller",
-        WindowsAppsPage => "Bloatware",
-        DebloatPage => "Debloat",
+        // Software hub + its catalog pages (hosted in the hub inner frame) keep the
+        // single "Software & Apps" rail item highlighted.
+        SoftwareHubPage => "SoftwareHub",
+        ExternalAppsPage => "SoftwareHub",
+        WindowsAppsPage => "SoftwareHub",
+        DebloatPage => "SoftwareHub",
         // Advanced Tools hub + its detail pages (hosted in the hub inner frame) keep the
         // single "Advanced Tools" rail item highlighted.
         AdvancedHubPage => "AdvancedHub",
@@ -414,6 +425,18 @@ public sealed partial class MainWindow : Window
         {
             SelectRailTag("AdvancedHub");
             if (ContentFrame.Content is AdvancedHubPage hub
+                && PageMap.TryGetValue(tag, out var detailType))
+            {
+                hub.ShowDetailFor(detailType);
+            }
+            return;
+        }
+
+        // Software catalog pages — same pattern through the Software & Apps hub.
+        if (SoftwareDetailTags.Contains(tag))
+        {
+            SelectRailTag("SoftwareHub");
+            if (ContentFrame.Content is SoftwareHubPage hub
                 && PageMap.TryGetValue(tag, out var detailType))
             {
                 hub.ShowDetailFor(detailType);

@@ -101,20 +101,12 @@
                     </muxc:NavigationViewItem.Icon>
                 </muxc:NavigationViewItem>
 
-                <muxc:NavigationViewItemHeader Content="SOFTWARE" />
-                <muxc:NavigationViewItem Content="Windows Apps" Tag="Bloatware">
+                <!-- Software is now a hub (SoftwareHubPage): Windows Apps, External Apps and
+                     Debloat are cards drilling into the hub's inner frame. The old SOFTWARE
+                     group's three entries folded into this single rail item. -->
+                <muxc:NavigationViewItem Content="Software &amp; Apps" Tag="SoftwareHub">
                     <muxc:NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE71D;" />
-                    </muxc:NavigationViewItem.Icon>
-                </muxc:NavigationViewItem>
-                <muxc:NavigationViewItem Content="External Apps" Tag="AppInstaller">
-                    <muxc:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE896;" />
-                    </muxc:NavigationViewItem.Icon>
-                </muxc:NavigationViewItem>
-                <muxc:NavigationViewItem Content="Debloat" Tag="Debloat">
-                    <muxc:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE74D;" />
                     </muxc:NavigationViewItem.Icon>
                 </muxc:NavigationViewItem>
 
