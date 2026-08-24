@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Optimize hub (rail tag "Optimize") — the Winhance hub model. Owns no tweaks; it hosts
+    the shared HubView chrome (header + breadcrumb + Quick Actions + View + inner frame) and
+    supplies the overview card list. AkariOS is a pinned card at the top; Gaming / Privacy /
+    Update / Notifications / Sound / Power drill into their (now bare) detail pages inside the
+    HubView inner frame. Card pills bind to each detail page's SettingPageViewModel counts.
+-->
+<Page
+    x:Class="AkariTool.Views.OptimizeHubPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:AkariTool.Views.Controls"
+    NavigationCacheMode="Required">
+
+    <controls:HubView x:Name="Hub" />
+</Page>

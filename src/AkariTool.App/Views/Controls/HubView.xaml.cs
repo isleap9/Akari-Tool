@@ -104,6 +104,10 @@ public sealed partial class HubView : UserControl
         BreadcrumbSeparator.Visibility = Visibility.Collapsed;
         BreadcrumbSection.Visibility = Visibility.Collapsed;
 
+        // Quick Actions + search act on a detail page only.
+        QuickActionsButton.IsEnabled = false;
+        SearchBox.Text = string.Empty;
+
         OverviewShown?.Invoke(this, EventArgs.Empty);
     }
 
@@ -122,6 +126,10 @@ public sealed partial class HubView : UserControl
         BreadcrumbSectionIcon.Text = card.Glyph;
         BreadcrumbSeparator.Visibility = Visibility.Visible;
         BreadcrumbSection.Visibility = Visibility.Visible;
+
+        // Quick Actions apply to settings pages only (AkariOS/Backup/Verify have no VM).
+        SearchBox.Text = string.Empty;
+        QuickActionsButton.IsEnabled = card.HasCounts;
     }
 
     #endregion
@@ -139,6 +147,16 @@ public sealed partial class HubView : UserControl
     }
 
     private void BreadcrumbRoot_Click(object sender, RoutedEventArgs e) => ShowOverview();
+
+    private void SearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
+    {
+        // On a detail page the search box filters that page's rows (the page's own
+        // SearchText → ApplySearch). On the overview it does nothing yet.
+        if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput && CurrentPageViewModel is { } vm)
+        {
+            vm.SearchText = sender.Text ?? string.Empty;
+        }
+    }
 
     private void SearchBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
         => SearchSubmitted?.Invoke(this, sender.Text?.Trim() ?? string.Empty);
@@ -158,6 +176,11 @@ public sealed partial class HubView : UserControl
     private async void ResetDefaults_Click(object sender, RoutedEventArgs e)
     {
         if (CurrentPageViewModel is { } vm) await vm.RestoreDefaultsAsync();
+    }
+
+    private async void CreateRestorePoint_Click(object sender, RoutedEventArgs e)
+    {
+        if (CurrentPageViewModel is { } vm) await vm.CreateRestorePointAsync();
     }
 
     private void ViewToggle_Click(object sender, RoutedEventArgs e)

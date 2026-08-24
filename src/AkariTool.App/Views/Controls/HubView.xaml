@@ -47,6 +47,7 @@
                 Width="220"
                 VerticalAlignment="Bottom"
                 QueryIcon="Find"
+                TextChanged="SearchBox_TextChanged"
                 QuerySubmitted="SearchBox_QuerySubmitted" />
         </Grid>
 
@@ -141,6 +142,13 @@
                         <MenuFlyoutItem x:Name="ResetDefaultsItem" Text="Reset to Defaults" Click="ResetDefaults_Click">
                             <MenuFlyoutItem.Icon>
                                 <FontIcon Glyph="&#xE777;" FontSize="14" />
+                            </MenuFlyoutItem.Icon>
+                        </MenuFlyoutItem>
+                        <MenuFlyoutSeparator />
+                        <!-- Akari-specific action (no Winhance equivalent) — preserved per CLAUDE.md. -->
+                        <MenuFlyoutItem x:Name="CreateRestorePointItem" Text="Create Restore Point" Click="CreateRestorePoint_Click">
+                            <MenuFlyoutItem.Icon>
+                                <FontIcon Glyph="&#xE7B8;" FontSize="14" />
                             </MenuFlyoutItem.Icon>
                         </MenuFlyoutItem>
                     </MenuFlyout>
