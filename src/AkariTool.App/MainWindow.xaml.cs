@@ -33,6 +33,11 @@ public sealed partial class MainWindow : Window
     private static readonly Dictionary<string, Type> PageMap = new()
     {
         ["Home"] = typeof(HomePage),
+        // Optimize hub (OptimizeHubPage): the single rail entry for the Optimize section.
+        // The detail tags below (Gaming…Power, AkariOS) keep their PageMap entries so the
+        // hub + global-search can resolve tag → detail page type, but they no longer have
+        // their own rail item — SelectRailTag routes them through the hub (see below).
+        ["Optimize"] = typeof(OptimizeHubPage),
         ["Gaming"] = typeof(GamingPage),
         ["Sound"] = typeof(SoundPage),
         ["Notifications"] = typeof(NotificationsPage),
@@ -60,6 +65,11 @@ public sealed partial class MainWindow : Window
         ["Settings"] = typeof(SettingsPage),
         ["AkariOS"] = typeof(AkariOSPage),
     };
+
+    // Optimize sections that folded into the hub — they have no rail item any more, so
+    // SelectRailTag routes them through OptimizeHubPage's inner frame instead.
+    private static readonly HashSet<string> OptimizeDetailTags = new()
+    { "Gaming", "Privacy", "Update", "Notifications", "Sound", "Power", "AkariOS" };
 
     private readonly INavigationService _navigation;
     private readonly IDialogService _dialogs;
@@ -328,18 +338,21 @@ public sealed partial class MainWindow : Window
     private static string? TagForPage(object? content) => content switch
     {
         HomePage => "Home",
-        GamingPage => "Gaming",
-        SoundPage => "Sound",
-        NotificationsPage => "Notifications",
-        UpdatePage => "Update",
-        PrivacyPage => "Privacy",
+        // Optimize hub + its detail pages (hosted in the hub's inner frame) all keep the
+        // single "Optimize" rail item highlighted.
+        OptimizeHubPage => "Optimize",
+        GamingPage => "Optimize",
+        SoundPage => "Optimize",
+        NotificationsPage => "Optimize",
+        UpdatePage => "Optimize",
+        PrivacyPage => "Optimize",
         CustomizePage => "Customize",
         TaskbarPage => "Customize",
         ExplorerPage => "Customize",
         AppearancePage => "Customize",
         StartMenuPage => "Customize",
         DesktopPage => "Customize",
-        PowerPage => "Power",
+        PowerPage => "Optimize",
         ExternalAppsPage => "AppInstaller",
         WindowsAppsPage => "Bloatware",
         DebloatPage => "Debloat",
@@ -347,7 +360,7 @@ public sealed partial class MainWindow : Window
         AdvancedToolsPage => "Advanced",
         ToolsPage => "Tools",
         VerifyPage => "Verify",
-        AkariOSPage => "AkariOS",
+        AkariOSPage => "Optimize",
         PlaceholderPage p => p.ViewModel.TabTag,
         _ => null,
     };
@@ -359,6 +372,19 @@ public sealed partial class MainWindow : Window
     /// </summary>
     public void SelectRailTag(string tag)
     {
+        // Optimize detail sections have no rail item — select the hub, then drill into the
+        // matching card so global search / Home cards land directly on the section.
+        if (OptimizeDetailTags.Contains(tag))
+        {
+            SelectRailTag("Optimize");
+            if (ContentFrame.Content is OptimizeHubPage hub
+                && PageMap.TryGetValue(tag, out var detailType))
+            {
+                hub.ShowDetailFor(detailType);
+            }
+            return;
+        }
+
         var item = AllNavItems().FirstOrDefault(i => (i.Tag as string) == tag);
         if (item is not null)
         {

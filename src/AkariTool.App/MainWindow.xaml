@@ -128,37 +128,10 @@
                 </muxc:NavigationViewItem>
 
                 <muxc:NavigationViewItemHeader Content="OPTIMIZE" />
-                <muxc:NavigationViewItem Content="AkariOS" Tag="AkariOS">
-                    <muxc:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE945;" />
-                    </muxc:NavigationViewItem.Icon>
-                </muxc:NavigationViewItem>
-                <muxc:NavigationViewItem Content="Gaming &amp; Performance" Tag="Gaming">
-                    <muxc:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE7FC;" />
-                    </muxc:NavigationViewItem.Icon>
-                </muxc:NavigationViewItem>
-                <muxc:NavigationViewItem Content="Privacy &amp; Security" Tag="Privacy">
-                    <muxc:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE72E;" />
-                    </muxc:NavigationViewItem.Icon>
-                </muxc:NavigationViewItem>
-                <muxc:NavigationViewItem Content="Windows Updates" Tag="Update">
-                    <muxc:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE895;" />
-                    </muxc:NavigationViewItem.Icon>
-                </muxc:NavigationViewItem>
-                <muxc:NavigationViewItem Content="Notifications" Tag="Notifications">
-                    <muxc:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE7E7;" />
-                    </muxc:NavigationViewItem.Icon>
-                </muxc:NavigationViewItem>
-                <muxc:NavigationViewItem Content="Sound" Tag="Sound">
-                    <muxc:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE767;" />
-                    </muxc:NavigationViewItem.Icon>
-                </muxc:NavigationViewItem>
-                <muxc:NavigationViewItem Content="Power" Tag="Power">
+                <!-- Optimize is now a hub (OptimizeHubPage): AkariOS is a pinned card and
+                     Gaming/Privacy/Update/Notifications/Sound/Power drill in via the hub's
+                     inner frame. The old flat entries collapsed into this single rail item. -->
+                <muxc:NavigationViewItem Content="Optimize" Tag="Optimize">
                     <muxc:NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE945;" />
                     </muxc:NavigationViewItem.Icon>

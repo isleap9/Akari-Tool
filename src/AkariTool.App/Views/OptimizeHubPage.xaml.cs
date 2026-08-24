@@ -1,3 +1,4 @@
+using System;
 using Microsoft.UI.Xaml.Controls;
 using WinUI.Framework.IoC;
 using AkariTool.ViewModels;
@@ -57,4 +58,8 @@ public sealed partial class OptimizeHubPage : Page
             "Sound", "Communication ducking, spatial audio & sound behavior",
             "", typeof(SoundPage), ServiceLocator.GetService<SoundViewModel>()));
     }
+
+    /// <summary>Drills straight into a section's detail page (used by global search / Home
+    /// cards routing through the hub). Returns false if this hub owns no such card.</summary>
+    public bool ShowDetailFor(Type detailPageType) => Hub.TryShowDetailByPageType(detailPageType);
 }

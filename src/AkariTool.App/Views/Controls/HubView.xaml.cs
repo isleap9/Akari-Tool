@@ -111,6 +111,18 @@ public sealed partial class HubView : UserControl
         OverviewShown?.Invoke(this, EventArgs.Empty);
     }
 
+    /// <summary>Drills into the card whose detail page matches <paramref name="pageType"/>.
+    /// Returns false if no card owns that page. Used by external navigation (global search,
+    /// Home cards) to land directly on a section.</summary>
+    public bool TryShowDetailByPageType(Type pageType)
+    {
+        foreach (var card in Cards)
+        {
+            if (card.DetailPageType == pageType) { ShowDetail(card); return true; }
+        }
+        return false;
+    }
+
     /// <summary>Drills into a card's detail page inside the inner frame.</summary>
     public void ShowDetail(HubCardViewModel card)
     {

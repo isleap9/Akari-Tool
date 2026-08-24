@@ -1,14 +1,13 @@
-using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
 using AkariTool.ViewModels;
+using Microsoft.UI.Xaml.Controls;
 using WinUI.Framework.IoC;
 
 namespace AkariTool.Views;
 
 /// <summary>
-/// Sound page. Copy of GamingPage — the layout and all behaviour live in the
-/// shared templates + <see cref="SettingPageViewModel"/>; only the concrete VM type
-/// and the flyout plumbing differ.
+/// Sound detail page. Hosted inside the Optimize hub's inner frame; the hub owns the
+/// header, search and Quick Actions, so this page renders only its section rows.
+/// DataContext is set to the VM so the hub's Quick Actions can act on it.
 /// </summary>
 public sealed partial class SoundPage : Page
 {
@@ -21,15 +20,9 @@ public sealed partial class SoundPage : Page
         // SINGLETON: rows register with TweakRegistry on construction and there is
         // no unregister, so the view model must not be rebuilt per navigation.
         ViewModel = ServiceLocator.GetService<SoundViewModel>();
+        DataContext = ViewModel;
 
-        // Build once. Idempotent + thread-safe — the startup warm-up may already
-        // have built it before this navigation, in which case this is a no-op.
+        // Build once. Idempotent — the startup warm-up may already have built it.
         ViewModel.Build();
     }
-
-    private void QuickActionsFlyout_Opening(object sender, object e)
-        => ViewModel.RefreshQuickActionCounts();
-
-    private void QuickActionItem_Click(object sender, RoutedEventArgs e)
-        => QuickActionsFlyout.Hide();
 }
