@@ -5,10 +5,12 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using AkariTool.Services;
 using AkariTool.Tabs;                                 // DriftScanner
-using AkariTool.ViewModels.Tweaks;                    // SettingPageViewModel
-using AkariTool.Core.Features.Common.Interfaces;      // INavBadgeService, IDispatcherService
+using AkariTool.ViewModels.Tweaks;                    // SettingPageViewModel, SettingItemViewModel
+using AkariTool.Core.Features.Common.Enums;           // SettingBadgeKind
+using AkariTool.Core.Features.Common.Interfaces;      // INavBadgeService, IDispatcherService, ITaskProgressService
 using AkariTool.Core.Interfaces;                      // IUpdateService
 using AkariTool.Core.Models.Update;                   // UpdateStatus
+using WinUI.Framework.IoC;                            // ServiceLocator
 using WinUI.Framework.Mvvm;
 using WinUI.Framework.Services;
 
@@ -137,11 +139,14 @@ public partial class HomeViewModel : ViewModelBase
     }
 
     /// <summary>
-    /// Applies the recommended settings across every declarative page by invoking each page's
-    /// own <c>ApplyAllRecommendedAsync()</c> — the exact code path the per-tab "Apply all
-    /// recommended" button runs. Delegating (rather than reimplementing a filtered loop here)
-    /// keeps Home 1:1 with the tabs: every recommended row is applied, including subjective
-    /// preferences such as VBS, and each page shows its own TaskProgress card while it works.
+    /// Applies the recommended settings across every declarative page in one pass, behind a
+    /// confirmation and a single TaskProgress card (Cancel observed between items).
+    ///
+    /// Middle ground between "re-apply everything" and "only the badge count": it applies every
+    /// recommended row that is NOT already at its recommended value — <b>including subjective
+    /// preferences</b> such as VBS (which the badge count excludes) — so nothing the tabs would
+    /// apply is skipped, yet rows already applied aren't needlessly re-written. Home invokes the
+    /// pages' existing per-row <c>ApplyRecommendedCommand</c>; it adds no apply logic.
     /// </summary>
     public async Task ApplyAllRecommendedAsync()
     {
@@ -154,13 +159,29 @@ public partial class HomeViewModel : ViewModelBase
             "Apply");
         if (!confirmed) return;
 
+        var work = _pages
+            .SelectMany(p => p.Sections
+                .SelectMany(s => s.Items.OfType<SettingItemViewModel>())
+                .Where(NeedsRecommendedApply)
+                .Select(i => (Page: p, Item: i)))
+            .ToList();
+        if (work.Count == 0) return;
+
         IsApplyingAll = true;
+        var progress = ServiceLocator.GetService<ITaskProgressService>();
+        var cts = progress.StartTask("Applying recommended settings…");
+        int done = 0;
         try
         {
-            // Sequential await: each page starts and completes its own progress card, so no
-            // nesting. Runs the same tested path as clicking Apply-All on each tab.
+            foreach (var (page, item) in work)
+            {
+                if (cts.IsCancellationRequested) break;
+                progress.UpdateProgress(done * 100 / work.Count, $"Applying {page.Title}…");
+                await item.ApplyRecommendedCommand.ExecuteAsync(null);
+                done++;
+            }
             foreach (var page in _pages)
-                await page.ApplyAllRecommendedAsync();
+                page.RefreshQuickActionCounts();
         }
         catch (Exception ex)
         {
@@ -168,10 +189,19 @@ public partial class HomeViewModel : ViewModelBase
         }
         finally
         {
+            progress.CompleteTask();
             IsApplyingAll = false;
             RefreshHealth();
         }
     }
+
+    // A row needs applying if it has a recommended quick-set and is not already at recommended.
+    // Subjective-preference rows are INTENTIONALLY included (unlike RefreshQuickActionCounts):
+    // they carry no highlighted "Recommended" badge, so they read as needing apply and get
+    // applied — the same rows the per-tab bulk button applies (e.g. VBS).
+    private static bool NeedsRecommendedApply(SettingItemViewModel i) =>
+        i.HasRecommendedQuickSet
+        && !i.Badges.Any(b => b.Kind == SettingBadgeKind.Recommended && b.IsHighlighted);
 
     private async Task RefreshSystemInfoAsync()
     {

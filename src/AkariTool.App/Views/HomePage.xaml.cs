@@ -383,6 +383,22 @@ public sealed partial class HomePage : Page
     // Back up config — routes to the Backup tab (export/import lives there); no new logic.
     private void BackupButton_Click(object sender, RoutedEventArgs e) => Navigate("Backup");
 
+    // ── Actionable health cells ────────────────────────────────────────────────
+
+    private void DriftedCell_Tapped(object sender, TappedRoutedEventArgs e) => Navigate("Verify");
+
+    private void UpdatesCell_Tapped(object sender, TappedRoutedEventArgs e) => Navigate("Update");
+
+    private void HealthCell_PointerEntered(object sender, PointerRoutedEventArgs e)
+    {
+        if (sender is Border b) b.BorderBrush = Res("ControlStrokeColorSecondaryBrush");
+    }
+
+    private void HealthCell_PointerExited(object sender, PointerRoutedEventArgs e)
+    {
+        if (sender is Border b) b.BorderBrush = Res("CardStrokeColorDefaultBrush");
+    }
+
     // ── Nav ───────────────────────────────────────────────────────────────────
 
     private static void Navigate(string tag) => (App.MainWindow as MainWindow)?.SelectRailTag(tag);

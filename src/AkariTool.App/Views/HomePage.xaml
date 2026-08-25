@@ -71,7 +71,18 @@
                             CornerRadius="12"
                             Padding="22,18,22,18"
                             Margin="0,0,0,14">
-                            <StackPanel>
+                            <Grid>
+                                <!-- Decorative crimson glow, top-right (clipped to the hero corners) -->
+                                <Border IsHitTestVisible="False" CornerRadius="12">
+                                    <Border.Background>
+                                        <RadialGradientBrush Center="1,0" GradientOrigin="1,0" RadiusX="0.75" RadiusY="1.3">
+                                            <GradientStop Color="#3CE0142A" Offset="0.0" />
+                                            <GradientStop Color="#00E0142A" Offset="1.0" />
+                                        </RadialGradientBrush>
+                                    </Border.Background>
+                                </Border>
+
+                                <StackPanel>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
@@ -137,10 +148,11 @@
                                                    TextWrapping="Wrap" Margin="0,3,0,0" />
                                     </StackPanel>
                                 </Grid>
-                            </StackPanel>
+                                </StackPanel>
+                            </Grid>
                         </Border>
 
-                        <!-- Health strip: 3 read-only signal cells -->
+                        <!-- Health strip: 3 read-only signal cells (drifted / updates navigate) -->
                         <Grid ColumnSpacing="12" Margin="0,0,0,14">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
@@ -164,8 +176,13 @@
                                 </StackPanel>
                             </Border>
 
-                            <!-- Settings drifted -->
+                            <!-- Settings drifted → Verify tab -->
                             <Border Grid.Column="1"
+                                    x:Name="DriftedCell"
+                                    Tapped="DriftedCell_Tapped"
+                                    PointerEntered="HealthCell_PointerEntered"
+                                    PointerExited="HealthCell_PointerExited"
+                                    ToolTipService.ToolTip="Review settings Windows reverted"
                                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                     BorderThickness="1" CornerRadius="10" Padding="16,13,16,13">
@@ -175,13 +192,18 @@
                                                Foreground="{ThemeResource HealthWarnBrush}" />
                                     <TextBlock Text="Settings drifted" FontSize="12"
                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="0,4,0,0" />
-                                    <TextBlock Text="Windows reverted" FontSize="10.5"
+                                    <TextBlock Text="Review in Verify ›" FontSize="10.5"
                                                Foreground="{ThemeResource TextFillColorTertiaryBrush}" Margin="0,1,0,0" />
                                 </StackPanel>
                             </Border>
 
-                            <!-- Update status -->
+                            <!-- Update status → Windows Updates tab -->
                             <Border Grid.Column="2"
+                                    x:Name="UpdatesCell"
+                                    Tapped="UpdatesCell_Tapped"
+                                    PointerEntered="HealthCell_PointerEntered"
+                                    PointerExited="HealthCell_PointerExited"
+                                    ToolTipService.ToolTip="Open Windows Updates"
                                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                     BorderThickness="1" CornerRadius="10" Padding="16,13,16,13">
@@ -192,7 +214,7 @@
                                                Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
                                     <TextBlock Text="Updates" FontSize="12"
                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="0,4,0,0" />
-                                    <TextBlock Text="Akari Tool" FontSize="10.5"
+                                    <TextBlock Text="Open Update tab ›" FontSize="10.5"
                                                Foreground="{ThemeResource TextFillColorTertiaryBrush}" Margin="0,1,0,0" />
                                 </StackPanel>
                             </Border>
