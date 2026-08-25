@@ -31,7 +31,16 @@ public sealed partial class SettingsPage : Page
         ViewModel = ServiceLocator.GetService<SettingsViewModel>();
         InitializeComponent();
 
-        // About section content (relocated verbatim from AboutPage).
+        // About section is built in code, so its brushes are resolved snapshots — rebuild it
+        // whenever the page's theme changes so the text re-resolves to the new theme (otherwise
+        // it keeps the build-time theme's colors, e.g. light text left unreadable on a light bg).
+        BuildAbout();
+        ActualThemeChanged += (_, _) => BuildAbout();
+    }
+
+    private void BuildAbout()
+    {
+        AboutHost.Children.Clear();
         AboutHost.Children.Add(HeaderCard());
         AboutHost.Children.Add(InfoCards());
         AboutHost.Children.Add(LinkRow());
@@ -215,5 +224,30 @@ public sealed partial class SettingsPage : Page
         ChangelogToggle.Content = _changelogExpanded ? "Show less" : "Show more";
     }
 
-    private static Brush Res(string key) => (Brush)Application.Current.Resources[key];
+    // Resolves a theme brush for the page's CURRENT theme. Application.Current.Resources[key]
+    // indexing has no element context and returns the Default (dark) entry regardless of the
+    // active theme, so walk the merged dictionaries' ThemeDictionaries for the right theme first.
+    private Brush Res(string key)
+    {
+        var theme = ActualTheme == ElementTheme.Light ? "Light" : "Default";
+        if (TryResolveThemed(Application.Current.Resources, key, theme, out var brush))
+            return brush!;
+        return (Brush)Application.Current.Resources[key];
+    }
+
+    private static bool TryResolveThemed(ResourceDictionary dict, string key, string theme, out Brush? brush)
+    {
+        brush = null;
+        if (dict.ThemeDictionaries.TryGetValue(theme, out var td)
+            && td is ResourceDictionary themed
+            && themed.TryGetValue(key, out var v) && v is Brush b)
+        {
+            brush = b;
+            return true;
+        }
+        foreach (var md in dict.MergedDictionaries)
+            if (TryResolveThemed(md, key, theme, out brush))
+                return true;
+        return false;
+    }
 }
