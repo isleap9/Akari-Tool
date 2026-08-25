@@ -102,6 +102,7 @@
                      pills and their selectors. Shared by every tweak tab. -->
                 <ResourceDictionary Source="ms-appx:///Views/Templates/TechnicalDetailsStyles.xaml" />
                 <ResourceDictionary Source="ms-appx:///Views/Templates/TweakTemplates.xaml" />
+                <ResourceDictionary Source="ms-appx:///Views/Templates/SoftwareViewTemplates.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

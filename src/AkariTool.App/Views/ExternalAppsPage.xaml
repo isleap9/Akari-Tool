@@ -230,10 +230,10 @@
                     Content="Select not installed" />
             </StackPanel>
 
-            <!-- ── Category sections ───────────────────────────────────────── -->
+            <!-- ── Category sections (ItemTemplate swapped by view mode in code-behind) ── -->
             <ItemsControl
-                ItemsSource="{x:Bind ViewModel.Sections}"
-                ItemTemplate="{StaticResource AppSectionTemplate}" />
+                x:Name="SectionsHost"
+                ItemsSource="{x:Bind ViewModel.Sections}" />
 
         </StackPanel>
     </ScrollViewer>

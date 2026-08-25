@@ -44,9 +44,28 @@ public sealed partial class SoftwareAppsPage : Page
         var vm = windows ? _windowsVm : _externalVm;
         DataContext = vm;
         SyncSortRadios(vm.SortMode);
+        SyncViewToggles(vm.ViewMode);
 
         if (TabFrame.CurrentSourcePageType != pageType)
             TabFrame.Navigate(pageType);
+    }
+
+    private void ViewMode_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is ToggleButton { Tag: string tag }
+            && DataContext is ISoftwareCatalogViewModel vm
+            && Enum.TryParse<SoftwareViewMode>(tag, out var mode))
+        {
+            vm.ViewMode = mode;
+            SyncViewToggles(mode);   // keep the trio exclusive even if the same one is re-clicked
+        }
+    }
+
+    private void SyncViewToggles(SoftwareViewMode mode)
+    {
+        ViewCard.IsChecked = mode == SoftwareViewMode.Card;
+        ViewTable.IsChecked = mode == SoftwareViewMode.Table;
+        ViewCompact.IsChecked = mode == SoftwareViewMode.Compact;
     }
 
     private void Sort_Click(object sender, RoutedEventArgs e)

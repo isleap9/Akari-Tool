@@ -26,6 +26,24 @@ public sealed partial class WindowsAppsPage : Page
         InitializeComponent();
 
         Loaded += (_, _) => ViewModel.StartDeferredLoads();
+
+        // View mode (Card / Table / Compact) swaps the section ItemTemplate, driven by the
+        // shared Software toolbar via the VM's ViewMode.
+        ApplyViewMode();
+        ViewModel.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(WindowsAppsViewModel.ViewMode)) ApplyViewMode();
+        };
+    }
+
+    private void ApplyViewMode()
+    {
+        SectionsHost.ItemTemplate = ViewModel.ViewMode switch
+        {
+            SoftwareViewMode.Table => (DataTemplate)Application.Current.Resources["SoftwareSectionTableTemplate"],
+            SoftwareViewMode.Compact => (DataTemplate)Application.Current.Resources["SoftwareSectionCompactTemplate"],
+            _ => (DataTemplate)Resources["WinAppSectionTemplate"],   // Card (page-local)
+        };
     }
 
     private void Card_Tapped(object sender, TappedRoutedEventArgs e)

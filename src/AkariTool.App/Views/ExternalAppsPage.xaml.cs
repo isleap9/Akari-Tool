@@ -30,6 +30,24 @@ public sealed partial class ExternalAppsPage : Page
         // Icons + the first installed-status read start on the UI thread once the
         // tree exists (BitmapImage is UI-thread affine).
         Loaded += (_, _) => ViewModel.StartDeferredLoads();
+
+        // View mode (Card / Table / Compact) swaps the section ItemTemplate. Driven by the
+        // shared Software toolbar via the VM's ViewMode.
+        ApplyViewMode();
+        ViewModel.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(ExternalAppsViewModel.ViewMode)) ApplyViewMode();
+        };
+    }
+
+    private void ApplyViewMode()
+    {
+        SectionsHost.ItemTemplate = ViewModel.ViewMode switch
+        {
+            SoftwareViewMode.Table => (DataTemplate)Application.Current.Resources["SoftwareSectionTableTemplate"],
+            SoftwareViewMode.Compact => (DataTemplate)Application.Current.Resources["SoftwareSectionCompactTemplate"],
+            _ => (DataTemplate)Resources["AppSectionTemplate"],   // Card (page-local)
+        };
     }
 
     // ── Card interaction (net8 card.Tapped / check.Click / link.Tapped) ───────

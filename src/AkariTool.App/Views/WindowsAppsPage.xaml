@@ -211,9 +211,10 @@
                 <CheckBox Margin="0,0,18,0" IsChecked="{x:Bind ViewModel.SelectNotInstalled, Mode=TwoWay}" Content="Select not installed" />
             </StackPanel>
 
+            <!-- ItemTemplate swapped by view mode in code-behind. -->
             <ItemsControl
-                ItemsSource="{x:Bind ViewModel.Sections}"
-                ItemTemplate="{StaticResource WinAppSectionTemplate}" />
+                x:Name="SectionsHost"
+                ItemsSource="{x:Bind ViewModel.Sections}" />
 
         </StackPanel>
     </ScrollViewer>
