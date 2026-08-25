@@ -131,7 +131,10 @@ public sealed partial class BackupViewModel : ObservableObject
             var xamlRoot = _dialogs.XamlRoot;
             if (xamlRoot is null) { SetImport("Import unavailable — no window.", ok: false); return; }
 
-            var review = new ImportReviewDialog(differing, preview.Unknown, xamlRoot);
+            var review = new ImportReviewDialog(
+                differing, preview.Unknown, xamlRoot,
+                owners: _backup.ItemOwners,
+                sections: null);
             if (!await review.ShowAsync() || review.SelectedIds.Count == 0)
             {
                 SetImport("Import cancelled — nothing was changed.", ok: true);

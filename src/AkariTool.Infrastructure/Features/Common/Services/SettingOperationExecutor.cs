@@ -22,9 +22,11 @@ public class SettingOperationExecutor(
     IPowerShellRunner powerShellRunner,
     IFileSystemService fileSystemService,
     IAkariLogService logService,
-    ISpecialSettingHandlerRegistry specialHandlerRegistry) : ISettingOperationExecutor
+    ISpecialSettingHandlerRegistry specialHandlerRegistry,
+    AkariTool.Core.Features.Common.Interfaces.IChangeHistoryService? changeHistory = null) : ISettingOperationExecutor
 {
     private readonly ISpecialSettingHandlerRegistry _specialHandlerRegistry = specialHandlerRegistry;
+    private readonly AkariTool.Core.Features.Common.Interfaces.IChangeHistoryService? _changeHistory = changeHistory;
 
     public async Task<OperationResult> ApplySettingOperationsAsync(SettingDefinition setting, bool enable, object? value, bool resetToDefault = false)
     {
@@ -37,6 +39,7 @@ public class SettingOperationExecutor(
             if (handled)
             {
                 await processRestartManager.HandleProcessAndServiceRestartsAsync(setting).ConfigureAwait(false);
+                LogHistory(setting, enable, value);
                 return OperationResult.Succeeded();
             }
         }
@@ -303,6 +306,9 @@ public class SettingOperationExecutor(
 
         await processRestartManager.HandleProcessAndServiceRestartsAsync(setting).ConfigureAwait(false);
 
+        if (allSucceeded)
+            LogHistory(setting, enable, value);
+
         if (!allSucceeded)
         {
             var message = $"One or more operations failed for '{setting.Id}': {string.Join(", ", failedOperations)}";
@@ -311,6 +317,53 @@ public class SettingOperationExecutor(
         }
 
         return OperationResult.Succeeded();
+    }
+
+    /// <summary>
+    /// Winhance ChangeHistory parity: one plain-language receipt line per successful
+    /// apply. Never throws; never runs when no history service is registered.
+    /// </summary>
+    private void LogHistory(SettingDefinition setting, bool enable, object? value)
+    {
+        if (_changeHistory == null) return;
+        try
+        {
+            string after = setting.InputType switch
+            {
+                InputType.Toggle or InputType.CheckBox => enable ? "On" : "Off",
+                InputType.Selection => DescribeSelectionValue(setting, value),
+                InputType.NumericRange => DescribeNumericValue(value),
+                _ => enable ? "Applied" : "Reverted",
+            };
+            _changeHistory.LogSettingChange(setting.Name, setting.GroupName, before: string.Empty, after: after);
+        }
+        catch
+        {
+            // Receipt is best-effort by contract.
+        }
+    }
+
+    private static string DescribeSelectionValue(SettingDefinition setting, object? value)
+    {
+        if (value is int idx)
+        {
+            var options = setting.ComboBox?.Options;
+            if (options != null && idx >= 0 && idx < options.Count)
+                return options[idx].DisplayName ?? $"Option {idx}";
+            return $"Option {idx}";
+        }
+        return value?.ToString() ?? "Custom";
+    }
+
+    private static string DescribeNumericValue(object? value)
+    {
+        if (value is Dictionary<string, object?> dict)
+        {
+            var ac = dict.TryGetValue("ACValue", out var a) ? a?.ToString() : "?";
+            var dc = dict.TryGetValue("DCValue", out var d) ? d?.ToString() : "?";
+            return dict.ContainsKey("DCValue") ? $"AC {ac} / DC {dc}" : ac ?? "";
+        }
+        return value?.ToString() ?? "";
     }
 
     private async Task RunCommandAsync(string command)

@@ -1122,23 +1122,34 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
 
         if (InputType == InputType.Toggle || InputType == InputType.CheckBox)
         {
-            bool? recState = SettingDefinitionToggleState.GetRecommendedToggleState(Definition);
-            bool? defState = SettingDefinitionToggleState.GetDefaultToggleState(Definition);
+            // Winhance 1:1: seed from the explicit toggle-level override, then fold ALL
+            // evidence sources (registry, scheduled tasks) — every source with an opinion
+            // can dim the flag; sources without one abstain (leave the flag untouched).
+            bool matchesRec = true;
+            bool matchesDef = true;
 
-            // Start from the explicit toggle-level comparison when present; otherwise the
-            // AND-identity (true) so the registry loop below can drive the flag. A literal
-            // "recState.HasValue && IsOn==recState.Value" seed would pin the null case to
-            // false and defeat the "let registry drive" intent stated in the spec.
-            bool matchesRec = recState.HasValue ? IsOn == recState.Value : true;
-            bool matchesDef = defState.HasValue ? IsOn == defState.Value : true;
+            if (Definition.RecommendedToggleState.HasValue
+                && IsOn != Definition.RecommendedToggleState.Value)
+                matchesRec = false;
+            if (Definition.DefaultToggleState.HasValue
+                && IsOn != Definition.DefaultToggleState.Value)
+                matchesDef = false;
 
-            // Fold registry evaluation in. When the explicit toggle-level state is set we
-            // keep it; when it is null we let the registry comparison drive the flag.
             foreach (var reg in Definition.RegistrySettings)
             {
                 var (regRec, regDef) = EvaluateRegistrySetting(reg);
-                if (!recState.HasValue) matchesRec = matchesRec && regRec;
-                if (!defState.HasValue) matchesDef = matchesDef && regDef;
+                if (!regRec) matchesRec = false;
+                if (!regDef) matchesDef = false;
+            }
+
+            foreach (var task in Definition.ScheduledTaskSettings)
+            {
+                // Toggle ON = task enabled. RecommendedState/DefaultState both represent the
+                // task-enabled state, so compare IsOn directly (Winhance parity).
+                if (task.RecommendedState.HasValue && IsOn != task.RecommendedState.Value)
+                    matchesRec = false;
+                if (task.DefaultState.HasValue && IsOn != task.DefaultState.Value)
+                    matchesDef = false;
             }
 
             if (Definition.IsSubjectivePreference)
@@ -1147,9 +1158,9 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
             }
             else
             {
-                if (recState.HasValue || Definition.RegistrySettings.Any(r => r.RecommendedValue != null))
+                if (HasAnyRecommendedData())
                     result.Add(new BadgePillState(SettingBadgeKind.Recommended, matchesRec, "Recommended", "Akari's recommended value"));
-                if (defState.HasValue || Definition.RegistrySettings.Any(r => r.DefaultValue != null))
+                if (HasAnyDefaultData())
                     result.Add(new BadgePillState(SettingBadgeKind.Default, matchesDef, "Windows Default", "Windows default value"));
             }
         }
@@ -1163,15 +1174,55 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
             }
             else
             {
-                bool matchesRec = SelectedIndex >= 0 && SelectedIndex < optionCount
-                    && Definition.ComboBox!.Options[SelectedIndex].IsRecommended;
-                bool matchesDef = SelectedIndex >= 0 && SelectedIndex < optionCount
-                    && Definition.ComboBox!.Options[SelectedIndex].IsDefault;
-                bool isCustom = SelectedIndex >= 0 && !matchesRec && !matchesDef;
+                bool matchesRec;
+                bool matchesDef;
+                bool isCustom;
 
-                if (Definition.ComboBox?.Options?.Any(o => o.IsRecommended) == true)
+                if (SupportsSeparateACDC)
+                {
+                    // Winhance 1:1: PowerCfg-backed Separate AC/DC selections drive via AC/DC
+                    // indices compared against RecommendedValueAC/DC — NOT SelectedIndex vs
+                    // option flags. On battery-less systems DC isn't writable/visible; skip DC
+                    // comparisons or a refresh would visibly flip the badge.
+                    bool considerDc = HasBattery;
+                    matchesRec = true;
+                    matchesDef = true;
+                    var pcfgList = Definition.PowerCfgSettings;
+                    var pcfg = pcfgList?.FirstOrDefault();
+
+                    if (pcfg != null)
+                    {
+                        if (pcfg.RecommendedValueAC.HasValue && !PowerCfgIndexMatchesValue(SelectedIndex, pcfg.RecommendedValueAC.Value))
+                            matchesRec = false;
+                        if (considerDc && pcfg.RecommendedValueDC.HasValue && !PowerCfgIndexMatchesValue(SelectedIndex, pcfg.RecommendedValueDC.Value))
+                            matchesRec = false;
+                        if (pcfg.DefaultValueAC.HasValue && !PowerCfgIndexMatchesValue(SelectedIndex, pcfg.DefaultValueAC.Value))
+                            matchesDef = false;
+                        if (considerDc && pcfg.DefaultValueDC.HasValue && !PowerCfgIndexMatchesValue(SelectedIndex, pcfg.DefaultValueDC.Value))
+                            matchesDef = false;
+                    }
+
+                    isCustom = !IsKnownSelectionValue();
+                }
+                else
+                {
+                    // Winhance 1:1: light pills when the currently-selected OPTION carries the
+                    // flag (multiple options may carry either — e.g. measurement system marks
+                    // both Metric and Imperial default per locale). Custom only when the value
+                    // is unmapped (out of range / Custom sentinel), never for a known option.
+                    bool anyRecommended = Definition.ComboBox?.Options?.Any(o => o.IsRecommended) == true;
+                    bool anyDefault = Definition.ComboBox?.Options?.Any(o => o.IsDefault) == true;
+
+                    matchesRec = anyRecommended && SelectedIndex >= 0 && SelectedIndex < optionCount
+                        && Definition.ComboBox!.Options[SelectedIndex].IsRecommended;
+                    matchesDef = anyDefault && SelectedIndex >= 0 && SelectedIndex < optionCount
+                        && Definition.ComboBox!.Options[SelectedIndex].IsDefault;
+                    isCustom = !IsKnownSelectionValue();
+                }
+
+                if (HasAnyRecommendedData())
                     result.Add(new BadgePillState(SettingBadgeKind.Recommended, matchesRec, "Recommended", "Akari's recommended value"));
-                if (Definition.ComboBox?.Options?.Any(o => o.IsDefault) == true)
+                if (HasAnyDefaultData())
                     result.Add(new BadgePillState(SettingBadgeKind.Default, matchesDef, "Windows Default", "Windows default value"));
                 if (isCustom)
                     result.Add(new BadgePillState(SettingBadgeKind.Custom, true, "Custom", "Custom value"));
@@ -1283,80 +1334,129 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
 
     private (bool matchesRec, bool matchesDef) EvaluateRegistrySetting(RegistrySetting reg)
     {
-        bool matchesRec;
+        // Winhance 1:1 — PURE computation against IsOn (no live registry reads).
+        // Resolution order for Recommended:
+        //   1. SettingDefinition.RecommendedToggleState (explicit toggle-level flag)
+        //   2. Per-RegistrySetting RecommendedValue mapped strictly (no null-sentinel derivation)
+        //   3. null → abstain (no badge match evidence)
+        // Default still derives from the null sentinel via ToggleTargetState — settings
+        // that ship with the registry key absent (e.g. EnabledValue = [1, null],
+        // DefaultValue = null) produce a Default badge matching the key-absent state.
+        if (!(InputType == InputType.Toggle || InputType == InputType.CheckBox))
+            return (true, true); // Selection/Numeric handled in ComputeBadgeState
+
+        bool? recommendedState = Definition.RecommendedToggleState
+            ?? (reg.RecommendedValue == null
+                ? (bool?)null
+                : SettingDefinitionToggleState.ToggleTargetState(reg.RecommendedValue, reg.EnabledValue, reg.DisabledValue));
+        bool matchesRec = recommendedState == IsOn;
+
+        // A group-policy reg with no declared DefaultValue usually has no opinion
+        // on the Windows default. However, for toggle settings the null-sentinel
+        // convention CAN express a meaningful default state ("key absent = policy not
+        // applied = Windows default behaviour"). When ToggleTargetState yields a result,
+        // use it; otherwise abstain.
         bool matchesDef;
-
-        if (!TryOpenSubkey(reg.KeyPath, out var subkey))
-            return (false, false);
-
-        using (subkey)
+        if (reg.IsGroupPolicy && reg.DefaultValue == null)
         {
-            if (subkey == null)
-            {
-                matchesRec = false;
-                matchesDef = SettingDefinitionToggleState.IsKeyExistenceToggle(reg) ? false : false;
-                return (matchesRec, matchesDef);
-            }
-
-            var currentValue = subkey.GetValue(reg.ValueName);
-            bool on = currentValue == null
-                ? (reg.EnabledValue?.Contains(null) == true)
-                : (reg.EnabledValue is { Length: > 0 } ev && ev[0] != null && ValuesEqual(currentValue, ev[0]));
-            bool off = currentValue == null
-                ? true
-                : (reg.DisabledValue is { Length: > 0 } dv && dv.Any(v => v == null || ValuesEqual(currentValue, v)));
-
-            // Recommendation/default live at the toggle level (recState/defState) when set;
-            // registry-driven rows match when the current state satisfies the enabled or
-            // disabled shape respectively (sentinel-aware, mirrors the state reader).
-            matchesRec = reg.RecommendedValue != null ? ValuesEqual(currentValue, reg.RecommendedValue) : on;
-            matchesDef = reg.DefaultValue != null ? ValuesEqual(currentValue, reg.DefaultValue) : off;
-            return (matchesRec, matchesDef);
+            var gpDefaultState = SettingDefinitionToggleState.ToggleTargetState(reg.DefaultValue, reg.EnabledValue, reg.DisabledValue);
+            if (gpDefaultState.HasValue)
+                matchesDef = gpDefaultState == IsOn;
+            else
+                matchesDef = true; // no opinion → abstain
         }
-    }
-
-    private static bool TryOpenSubkey(string keyPath, out RegistryKey? subkey)
-    {
-        subkey = null;
-
-        const string HklmPrefix = @"HKEY_LOCAL_MACHINE\";
-        const string HkcuPrefix = @"HKEY_CURRENT_USER\";
-
-        RegistryKey hive;
-        string subPath;
-
-        if (keyPath.StartsWith(HklmPrefix, StringComparison.Ordinal))
+        else if (SettingDefinitionToggleState.IsKeyExistenceToggle(reg))
         {
-            hive = Registry.LocalMachine;
-            subPath = keyPath.Substring(HklmPrefix.Length);
-        }
-        else if (keyPath.StartsWith(HkcuPrefix, StringComparison.Ordinal))
-        {
-            hive = Registry.CurrentUser;
-            subPath = keyPath.Substring(HkcuPrefix.Length);
+            // Key-existence toggles: Windows default is key-present (enabled = true).
+            matchesDef = IsOn == true;
         }
         else
         {
-            return false;
+            var defaultState = SettingDefinitionToggleState.ToggleTargetState(reg.DefaultValue, reg.EnabledValue, reg.DisabledValue);
+            matchesDef = defaultState == IsOn;
         }
 
-        subkey = hive.OpenSubKey(subPath, writable: false);
-        return true;
+        return (matchesRec, matchesDef);
     }
 
-    private static bool ValuesEqual(object? a, object? b)
+    /// <summary>Winhance 1:1: pill visibility — any evidence source carrying a recommendation.</summary>
+    private bool HasAnyRecommendedData()
     {
-        if (a == null && b == null) return true;
-        if (a == null || b == null) return false;
-        if (Equals(a, b)) return true;
-
-        try
-        {
-            return Convert.ToInt64(a) == Convert.ToInt64(b);
-        }
-        catch
-        {
-            return string.Equals(a.ToString(), b.ToString(), StringComparison.OrdinalIgnoreCase);
-        }
+        // Toggle-level explicit flag wins.
+        if ((InputType == InputType.Toggle || InputType == InputType.CheckBox)
+            && Definition.RecommendedToggleState.HasValue)
+            return true;
+        // Recommended is strict otherwise — explicit non-null per-RegistrySetting value.
+        if (Definition.RegistrySettings.Any(r => r.RecommendedValue != null))
+            return true;
+        if (InputType == InputType.Selection
+            && Definition.ComboBox?.Options?.Any(o => o.IsRecommended) == true)
+            return true;
+        if (Definition.ScheduledTaskSettings.Any(t => t.RecommendedState.HasValue))
+            return true;
+        if (Definition.PowerCfgSettings?.Any(
+                p => p.RecommendedValueAC.HasValue || p.RecommendedValueDC.HasValue) == true)
+            return true;
+        return false;
     }
+
+    /// <summary>Winhance 1:1: pill visibility for Default, including GP null-sentinel nuance.</summary>
+    private bool HasAnyDefaultData()
+    {
+        bool isToggleLike = InputType == InputType.Toggle || InputType == InputType.CheckBox;
+        // Toggle-level explicit flag wins.
+        if (isToggleLike && Definition.DefaultToggleState.HasValue)
+            return true;
+        // GP regs with null DefaultValue are usually write-only enforcers, but the
+        // null-sentinel convention can express a meaningful default for toggles.
+        if (Definition.RegistrySettings.Any(r =>
+                (!(r.IsGroupPolicy && r.DefaultValue == null)
+                 || (isToggleLike && SettingDefinitionToggleState.ToggleTargetState(r.DefaultValue, r.EnabledValue, r.DisabledValue).HasValue))
+                && (isToggleLike
+                    ? SettingDefinitionToggleState.IsKeyExistenceToggle(r)
+                      || SettingDefinitionToggleState.ToggleTargetState(r.DefaultValue, r.EnabledValue, r.DisabledValue).HasValue
+                    : r.DefaultValue != null)))
+            return true;
+        if (InputType == InputType.Selection
+            && Definition.ComboBox?.Options?.Any(o => o.IsDefault) == true)
+            return true;
+        if (Definition.ScheduledTaskSettings.Any(t => t.DefaultState.HasValue))
+            return true;
+        if (Definition.PowerCfgSettings?.Any(
+                p => p.DefaultValueAC.HasValue || p.DefaultValueDC.HasValue) == true)
+            return true;
+        return false;
+    }
+
+    /// <summary>
+    /// Winhance 1:1: Custom means UNMAPPED — index out of range or Custom sentinel.
+    /// A known option that simply carries no flag is never "Custom".
+    /// Separate AC/DC selections validate both AC/DC indices.
+    /// </summary>
+    private bool IsKnownSelectionValue()
+    {
+        if (InputType != InputType.Selection) return true;
+        var options = Definition.ComboBox?.Options;
+        if (options == null || options.Count == 0) return true;
+        if (SupportsSeparateACDC)
+            return SelectedIndex >= 0; // AC/DC selections drive via a single index in Akari's VM
+        return SelectedIndex >= 0 && SelectedIndex < options.Count;
+    }
+
+    /// <summary>Winhance 1:1: does the option at <paramref name="index"/> map to the target PowerCfg value?</summary>
+    private bool PowerCfgIndexMatchesValue(int index, int targetPowerCfgValue)
+    {
+        var options = Definition.ComboBox?.Options;
+        if (options == null || index < 0 || index >= options.Count) return false;
+
+        if (options[index].ValueMappings is { } mapping &&
+            mapping.TryGetValue("PowerCfgValue", out var val) && val != null)
+        {
+            try { return Convert.ToInt32(val) == targetPowerCfgValue; }
+            catch { }
+        }
+        return false;
+    }
+
+
 }

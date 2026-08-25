@@ -278,6 +278,8 @@ public sealed class WindowsRegistryService : IWindowsRegistryService
         catch { return false; }
     }
 
+    /// <summary>Winhance parity: interface-visible alias of the existing DeleteKey.</summary>
+
     public bool ValueExists(string keyPath, string valueName)
     {
         try

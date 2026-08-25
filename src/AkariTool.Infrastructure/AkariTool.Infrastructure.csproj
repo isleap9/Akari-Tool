@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../AkariTool.Core/AkariTool.Core.csproj" />
+    <ProjectReference Include="..\..\vendor\WinGet.Interop\WinGet.Interop.csproj" />
   </ItemGroup>
 
   <ItemGroup>

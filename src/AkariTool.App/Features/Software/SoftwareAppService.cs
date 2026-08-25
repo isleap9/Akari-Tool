@@ -35,6 +35,13 @@ public sealed class InstallSnapshot
     public HashSet<string> InstalledCapabilities { get; } = new(StringComparer.OrdinalIgnoreCase);
     public HashSet<string> EnabledFeatures { get; } = new(StringComparer.OrdinalIgnoreCase);
     public List<(string SubKeyName, string? DisplayName)> UninstallEntries { get; } = [];
+
+    /// <summary>
+    /// Winhance parity: installed winget package ids (COM composite catalog, CLI
+    /// export fallback), fetched lazily by the apply layer when any app still
+    /// needs winget detection. Null until fetched; null result means unavailable.
+    /// </summary>
+    public HashSet<string>? WinGetPackageIds { get; internal set; }
 }
 
 public static class SoftwareAppService
@@ -161,7 +168,7 @@ public static class SoftwareAppService
             // Layer 3b — winget package id / app name against registry entries.
             // Winget writes ARP entries whose DisplayName usually matches the app
             // name; SubKeyName often contains the winget package id.
-            if (app.WinGetPackageId != null)
+            if (!app.IsInstalled && app.WinGetPackageId != null)
             {
                 bool match = snapshot.UninstallEntries.Any(e =>
                     app.WinGetPackageId.Any(id =>
@@ -173,6 +180,25 @@ public static class SoftwareAppService
                     app.IsInstalled = true;
                     app.DetectedVia = AppDetectionSource.Registry;
                     continue;
+                }
+            }
+
+            // Layer 3c — WinGet installed-package ids (Winhance parity: exact-id
+            // match against the COM composite catalog / winget export inventory).
+            // Lazy: the ids are fetched once per snapshot, only when an app with
+            // winget ids is still undetected. Null ids = WinGet unavailable.
+            if (!app.IsInstalled && (app.WinGetPackageId != null || app.MsStoreId != null))
+            {
+                var wingetIds = GetOrFetchWinGetPackageIdsAsync(snapshot).GetAwaiter().GetResult();
+                if (wingetIds != null)
+                {
+                    bool matchedById = app.WinGetPackageId?.Any(pkgId => wingetIds.Contains(pkgId)) == true;
+                    bool matchedByStoreId = !string.IsNullOrEmpty(app.MsStoreId) && wingetIds.Contains(app.MsStoreId);
+                    if (matchedById || matchedByStoreId)
+                    {
+                        app.IsInstalled = true;
+                        app.DetectedVia = AppDetectionSource.WinGet;
+                    }
                 }
             }
 
@@ -190,6 +216,39 @@ public static class SoftwareAppService
                     }
                 }
             }
+        }
+    }
+
+    /// <summary>
+    /// Winhance GetOrFetchWinGetPackageIdsAsync parity: bootstrap winget, then
+    /// fetch installed package ids once per snapshot. Returns null when WinGet
+    /// is unavailable (callers skip the layer). Result is cached on the snapshot.
+    /// </summary>
+    private static async Task<HashSet<string>?> GetOrFetchWinGetPackageIdsAsync(InstallSnapshot snapshot)
+    {
+        if (snapshot.WinGetPackageIds != null)
+            return snapshot.WinGetPackageIds;
+
+        try
+        {
+            var bootstrapper = WinUI.Framework.IoC.ServiceLocator
+                .GetService<AkariTool.Core.Features.Apps.Interfaces.IWingetBootstrapper>();
+            var detection = WinUI.Framework.IoC.ServiceLocator
+                .GetService<AkariTool.Core.Features.Apps.Interfaces.IWingetInstalledDetectionService>();
+
+            if (bootstrapper == null || detection == null)
+                return null;
+
+            bool winGetReady = await bootstrapper.EnsureWinGetReadyAsync().ConfigureAwait(false);
+            if (!winGetReady)
+                return null;
+
+            snapshot.WinGetPackageIds = await detection.GetInstalledPackageIdsAsync().ConfigureAwait(false);
+            return snapshot.WinGetPackageIds;
+        }
+        catch
+        {
+            return null;
         }
     }
 
@@ -411,7 +470,9 @@ public static class SoftwareAppService
             return !output.Contains("Error", StringComparison.OrdinalIgnoreCase);
         }
 
-        // winget package ids, in declared order
+        // winget package ids, in declared order (Winhance 1:1: installs run via the
+        // CLI — Winhance's WinGetPackageInstaller is CLI-based; COM is used for
+        // installed-state detection only).
         if (app.WinGetPackageId != null)
         {
             foreach (var id in app.WinGetPackageId)

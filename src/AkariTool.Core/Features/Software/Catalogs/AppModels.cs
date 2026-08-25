@@ -15,7 +15,8 @@ public enum AppDetectionSource
     Registry,
     Capability,
     OptionalFeature,
-    FileSystem
+    FileSystem,
+    WinGet
 }
 
 /// <summary>

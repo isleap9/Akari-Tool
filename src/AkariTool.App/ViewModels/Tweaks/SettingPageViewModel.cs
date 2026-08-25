@@ -60,6 +60,19 @@ public abstract partial class SettingPageViewModel : ViewModelBase
     public abstract string NavTag { get; }
     public abstract string NavLabel { get; }
 
+    /// <summary>
+    /// Optional per-item status hook for bulk applies ("Applying recommended: X (3/14)").
+    /// The owning page sets this so the task-progress card can show live progress;
+    /// null = no live status (progress card stays indeterminate).
+    /// </summary>
+    public Action<string>? SetBulkStatus { get; set; }
+
+    private sealed class NullScope : IDisposable
+    {
+        public static readonly NullScope Instance = new();
+        public void Dispose() { }
+    }
+
     protected abstract IReadOnlyList<SettingGroup> BuildSettingGroups();
 
     /// <summary>
@@ -300,17 +313,43 @@ public abstract partial class SettingPageViewModel : ViewModelBase
     public async Task ApplyAllRecommendedAsync()
     {
         var progress = WinUI.Framework.IoC.ServiceLocator.GetService<ITaskProgressService>();
+        var restartManager = WinUI.Framework.IoC.ServiceLocator
+            .GetService<AkariTool.Infrastructure.Features.Common.Interfaces.IProcessRestartManager>();
+        var changeHistory = WinUI.Framework.IoC.ServiceLocator
+            .GetService<AkariTool.Core.Features.Common.Interfaces.IChangeHistoryService>();
         var cts = progress.StartTask("Applying recommended settings…");
         try
         {
-        foreach (var section in Sections)
-            foreach (var item in section.Items.OfType<SettingItemViewModel>())
+            var targets = Sections.SelectMany(s => s.Items)
+                .OfType<SettingItemViewModel>()
+                .Where(i => i.HasRecommendedQuickSet)
+                .ToList();
+
+            // Winhance BulkSettingsActionService parity: one change-history batch,
+            // per-item progress, restarts suppressed during the loop and flushed ONCE.
+            using var historyBatch = changeHistory?.BeginBatch("Apply Recommended");
+            using (restartManager?.SuppressRestarts() ?? NullScope.Instance)
             {
-                if (cts.IsCancellationRequested) break;
-                if (item.HasRecommendedQuickSet)
+                int done = 0;
+                foreach (var item in targets)
+                {
+                    if (cts.IsCancellationRequested) break;
+                    done++;
+                    SetBulkStatus?.Invoke($"Applying recommended: {item.Name} ({done}/{targets.Count})");
                     await item.ApplyRecommendedCommand.ExecuteAsync(null);
+                }
             }
-        RefreshQuickActionCounts();
+
+            if (restartManager != null)
+            {
+                var appliedDefs = Sections.SelectMany(s => s.Items)
+                    .OfType<SettingItemViewModel>()
+                    .Select(i => i.Definition)
+                    .ToList();
+                await restartManager.FlushCoalescedRestartsAsync(appliedDefs);
+            }
+
+            RefreshQuickActionCounts();
         }
         finally
         {
@@ -322,17 +361,41 @@ public abstract partial class SettingPageViewModel : ViewModelBase
     public async Task RestoreDefaultsAsync()
     {
         var progress = WinUI.Framework.IoC.ServiceLocator.GetService<ITaskProgressService>();
+        var restartManager = WinUI.Framework.IoC.ServiceLocator
+            .GetService<AkariTool.Infrastructure.Features.Common.Interfaces.IProcessRestartManager>();
+        var changeHistory = WinUI.Framework.IoC.ServiceLocator
+            .GetService<AkariTool.Core.Features.Common.Interfaces.IChangeHistoryService>();
         var cts = progress.StartTask("Restoring default settings…");
         try
         {
-        foreach (var section in Sections)
-            foreach (var item in section.Items.OfType<SettingItemViewModel>())
+            var targets = Sections.SelectMany(s => s.Items)
+                .OfType<SettingItemViewModel>()
+                .Where(i => i.HasDefaultQuickSet)
+                .ToList();
+
+            using var historyBatch = changeHistory?.BeginBatch("Restore Windows Defaults");
+            using (restartManager?.SuppressRestarts() ?? NullScope.Instance)
             {
-                if (cts.IsCancellationRequested) break;
-                if (item.HasDefaultQuickSet)
+                int done = 0;
+                foreach (var item in targets)
+                {
+                    if (cts.IsCancellationRequested) break;
+                    done++;
+                    SetBulkStatus?.Invoke($"Restoring default: {item.Name} ({done}/{targets.Count})");
                     await item.ApplyDefaultCommand.ExecuteAsync(null);
+                }
             }
-        RefreshQuickActionCounts();
+
+            if (restartManager != null)
+            {
+                var appliedDefs = Sections.SelectMany(s => s.Items)
+                    .OfType<SettingItemViewModel>()
+                    .Select(i => i.Definition)
+                    .ToList();
+                await restartManager.FlushCoalescedRestartsAsync(appliedDefs);
+            }
+
+            RefreshQuickActionCounts();
         }
         finally
         {

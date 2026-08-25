@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Akari Tool — Planned Import Review UI Changes (Proposal)</title>
+<style>
+  :root {
+    --bg: #0d0f13;
+    --card: #161a21;
+    --card2: #1c212b;
+    --border: #2a303c;
+    --text: #e8eaf0;
+    --muted: #9aa3b2;
+    --crimson: #E0142A;
+    --crimson-dim: rgba(224, 20, 42, .14);
+    --green: #3fb26f;
+    --amber: #e0a014;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+    padding: 32px 28px 60px;
+    max-width: 1180px;
+    margin: 0 auto;
+  }
+  h1 { font-size: 22px; font-weight: 650; letter-spacing: .2px; }
+  h1 span { color: var(--crimson); }
+  .sub { color: var(--muted); font-size: 13.5px; margin-top: 6px; max-width: 760px; line-height: 1.5; }
+  .banner {
+    display: flex; gap: 10px; align-items: center;
+    margin: 18px 0 26px; padding: 10px 14px;
+    background: var(--crimson-dim); border: 1px solid rgba(224,20,42,.35); border-radius: 8px;
+    font-size: 13px;
+  }
+  .banner b { color: #ff6b7d; }
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  @media (max-width: 900px) { .compare { grid-template-columns: 1fr; } }
+  .panel-label {
+    font-size: 11.5px; text-transform: uppercase; letter-spacing: 1.2px;
+    color: var(--muted); margin-bottom: 8px; font-weight: 600;
+  }
+  .panel-label.new { color: var(--green); }
+  .mock {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--card);
+    overflow: hidden;
+  }
+  .mock-titlebar {
+    padding: 14px 16px 4px;
+    font-size: 16px; font-weight: 600;
+  }
+  .mock-subtitle { padding: 2px 16px 12px; color: var(--muted); font-size: 12.5px; border-bottom: 1px solid var(--border); }
+  .mock-body { padding: 12px 14px 16px; }
+  .diffcount {
+    font-size: 12.5px; color: var(--muted); margin-bottom: 10px;
+  }
+  .diffcount b { color: var(--text); }
+
+  /* v1 rows */
+  .row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: 8px;
+    font-size: 13px;
+  }
+  .row:nth-child(odd) { background: var(--card2); }
+  .cb {
+    width: 15px; height: 15px; border-radius: 3.5px;
+    border: 1.5px solid #566072; flex-shrink: 0;
+    position: relative;
+  }
+  .cb.on { background: var(--crimson); border-color: var(--crimson); }
+  .cb.on::after {
+    content: "✓"; position: absolute; inset: -1px 0 auto 2px;
+    color: white; font-size: 11px; font-weight: 700;
+  }
+  .row .name { flex: 1; }
+  .chg { font-size: 11.5px; color: var(--muted); }
+  .chg b { color: var(--text); font-weight: 600; }
+  .arrow { color: var(--muted); margin: 0 4px; }
+
+  /* section headers (v2 proposal) */
+  .sec {
+    margin-top: 10px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    overflow: hidden;
+    background: var(--card);
+  }
+  .sec:first-of-type { margin-top: 0; }
+  .sechead {
+    display: flex; align-items: center; gap: 9px;
+    padding: 9px 12px;
+    background: var(--card2);
+    cursor: pointer; user-select: none;
+  }
+  .chev { color: var(--muted); font-size: 10px; width: 12px; text-align: center; }
+  .sectitle { font-size: 13px; font-weight: 650; flex: 1; }
+  .seccount { font-size: 11px; color: var(--muted); }
+  .group {
+    margin: 6px 10px;
+    border-left: 2px solid var(--border);
+    padding-left: 8px;
+  }
+  .grouphead {
+    display: flex; align-items: center; gap: 9px;
+    padding: 4px 6px; font-size: 12px; color: var(--muted); font-weight: 600;
+  }
+  .grouphead .name { color: var(--text); }
+  .items { padding-bottom: 6px; }
+  .items .row { padding: 5px 6px; font-size: 12.5px; }
+  .collapsed .group, .collapsed .items, .collapsed .grouphead { display: none; }
+
+  .dialog-foot {
+    display: flex; justify-content: flex-end; gap: 8px;
+    padding: 12px 16px; border-top: 1px solid var(--border);
+    background: var(--card);
+  }
+  .btn {
+    font-size: 13px; padding: 7px 16px; border-radius: 6px;
+    border: 1px solid var(--border); color: var(--text);
+    background: transparent;
+  }
+  .btn.primary { background: var(--crimson); border-color: var(--crimson); font-weight: 600; }
+
+  /* summary strip in proposal */
+  .summary {
+    display: flex; gap: 8px; margin: 4px 0 12px; flex-wrap: wrap;
+  }
+  .chip {
+    font-size: 11.5px; padding: 4px 10px; border-radius: 999px;
+    border: 1px solid var(--border); color: var(--muted);
+    display: flex; gap: 6px; align-items: center;
+  }
+  .chip b { color: var(--text); }
+  .chip.sel { border-color: var(--crimson); background: var(--crimson-dim); }
+  .chip.sel b { color: #ff6b7d; }
+  .chip .x { opacity: .55; }
+
+  .legend {
+    margin-top: 30px; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 14px;
+  }
+  .note {
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px 16px; font-size: 12.5px; color: var(--muted); line-height: 1.55;
+  }
+  .note b { color: var(--text); }
+  .note .tag {
+    display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 1px;
+    padding: 2px 7px; border-radius: 4px; margin-bottom: 8px;
+  }
+  .tag.keep { background: rgba(63,178,111,.15); color: var(--green); }
+  .tag.add { background: var(--crimson-dim); color: #ff6b7d; }
+  .tag.zero { background: rgba(154,163,178,.12); color: var(--muted); }
+
+  .footer { margin-top: 34px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+  .footer code { background: var(--card2); padding: 1px 6px; border-radius: 4px; font-size: 11.5px; }
+</style>
+</head>
+<body>
+
+<h1>Import Review — <span>planned UI change proposal</span></h1>
+<p class="sub">
+  What the import dialog would look like once it understands the new sectioned profile format (v2).
+  This page is a mock-up only — nothing here is implemented and no Akari Tool code was touched.
+</p>
+
+<div class="banner">⚠ <span><b>PROPOSAL ONLY.</b> Waiting for your approval before any UI code changes. Everything below the dialog layer already works without this.</span></div>
+
+<div class="compare">
+  <!-- CURRENT -->
+  <div>
+    <div class="panel-label">Today — current dialog (unchanged)</div>
+    <div class="mock">
+      <div class="mock-titlebar">Review changes before applying</div>
+      <div class="mock-subtitle">Flat checklist — every differing setting in one long list</div>
+      <div class="mock-body">
+        <div class="diffcount"><b>14</b> settings differ from your current configuration.</div>
+        <div class="row"><div class="cb on"></div><div class="name">Game Mode</div><div class="chg">On <span class="arrow">→</span> <b>Off</b></div></div>
+        <div class="row"><div class="cb on"></div><div class="name">Hardware GPU Scheduling</div><div class="chg">Off <span class="arrow">→</span> <b>On</b></div></div>
+        <div class="row"><div class="cb on"></div><div class="name">Network Throttling Index</div><div class="chg">10 <span class="arrow">→</span> <b>FFFFFFFF</b></div></div>
+        <div class="row"><div class="cb on"></div><div class="name">Taskbar Widgets</div><div class="chg">Shown <span class="arrow">→</span> <b>Hidden</b></div></div>
+        <div class="row"><div class="cb on"></div><div class="name">Search Highlight</div><div class="chg">On <span class="arrow">→</span> <b>Off</b></div></div>
+        <div class="row"><div class="cb on"></div><div class="name">Long File Paths</div><div class="chg">Off <span class="arrow">→</span> <b>On</b></div></div>
+        <div class="row" style="opacity:.45;"><div class="cb on"></div><div class="name">…9 more rows in one flat list…</div></div>
+      </div>
+      <div class="dialog-foot">
+        <button class="btn">Cancel</button>
+        <button class="btn primary">Apply Selected</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROPOSED -->
+  <div>
+    <div class="panel-label new">Proposed — section-aware dialog (v2 profiles)</div>
+    <div class="mock">
+      <div class="mock-titlebar">Review changes before applying</div>
+      <div class="mock-subtitle">Same checklist, grouped by tab → group, with per-section masters</div>
+      <div class="mock-body">
+        <div class="summary">
+          <div class="chip sel"><b>Gaming</b> · 3 <span class="x">✕</span></div>
+          <div class="chip sel"><b>Taskbar</b> · 2 <span class="x">✕</span></div>
+          <div class="chip"><b>Update</b> · 0 diffs</div>
+          <div class="chip"><b>Power</b> · 0 diffs</div>
+          <div class="chip"><b>Sound</b> · 0 diffs</div>
+        </div>
+
+        <div class="sec">
+          <div class="sechead">
+            <div class="cb on"></div>
+            <span class="chev">▼</span>
+            <span class="sectitle">Gaming &amp; Performance</span>
+            <span class="seccount">3 of 41 differ</span>
+          </div>
+          <div class="group">
+            <div class="grouphead"><div class="cb on" style="width:13px;height:13px;"></div><span class="name">Game Mode</span></div>
+            <div class="items">
+              <div class="row"><div class="cb on"></div><div class="name">Game Mode</div><div class="chg">On <span class="arrow">→</span> <b>Off</b></div></div>
+            </div>
+            <div class="grouphead"><div class="cb on" style="width:13px;height:13px;"></div><span class="name">Graphics &amp; Scheduling</span></div>
+            <div class="items">
+              <div class="row"><div class="cb on"></div><div class="name">Hardware GPU Scheduling</div><div class="chg">Off <span class="arrow">→</span> <b>On</b></div></div>
+              <div class="row"><div class="cb on"></div><div class="name">Network Throttling Index</div><div class="chg">10 <span class="arrow">→</span> <b>FFFFFFFF</b></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sec">
+          <div class="sechead">
+            <div class="cb on"></div>
+            <span class="chev">▼</span>
+            <span class="sectitle">Taskbar</span>
+            <span class="seccount">2 of 27 differ</span>
+          </div>
+          <div class="group">
+            <div class="grouphead"><div class="cb on" style="width:13px;height:13px;"></div><span class="name">Taskbar Icons</span></div>
+            <div class="items">
+              <div class="row"><div class="cb on"></div><div class="name">Taskbar Widgets</div><div class="chg">Shown <span class="arrow">→</span> <b>Hidden</b></div></div>
+              <div class="row"><div class="cb on"></div><div class="name">Search Highlight</div><div class="chg">On <span class="arrow">→</span> <b>Off</b></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sec collapsed">
+          <div class="sechead">
+            <div class="cb on"></div>
+            <span class="chev">►</span>
+            <span class="sectitle" style="color:var(--muted)">Explorer</span>
+            <span class="seccount">collapsed — expand to review</span>
+          </div>
+        </div>
+      </div>
+      <div class="dialog-foot">
+        <button class="btn">Cancel</button>
+        <button class="btn primary">Apply Selected (5)</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="legend">
+  <div class="note">
+    <span class="tag zero">UNCHANGED</span><br>
+    The Defender warning banner, per-item checkboxes, diff arrows, Cancel/Apply buttons and all
+    existing behavior stay exactly as they are today.
+  </div>
+  <div class="note">
+    <span class="tag add">NEW — v2 FILES ONLY</span><br>
+    Section/group headers with master checkboxes appear only when importing a version-2 profile.
+    Importing an old v1 backup shows today's flat list — zero behavior change.
+  </div>
+  <div class="note">
+    <span class="tag keep">HOW IT WORKS</span><br>
+    Unchecking a section or group header simply unchecks its items — the same
+    <code style="font-size:11px;">SelectedIds</code> mechanism as today. The engine
+    (<code style="font-size:11px;">AkariProfileScope</code>) already supports this; only the dialog wiring is missing.
+  </div>
+  <div class="note">
+    <span class="tag zero">FILES TOUCHED IF APPROVED</span><br>
+    Only <code style="font-size:11px;">ViewModels/Backup/ImportReviewDialog.cs</code>.
+    No XAML files, no pages, no shell, no other view models.
+  </div>
+</div>
+
+<div class="footer">
+  Engine status: v2 sectioned export/import already shipped service-side (build green, 229 tests passing).
+  Old v1 backups remain fully compatible either way.<br>
+  Mock-up generated for review — say the word and I'll implement, or we skip it and move to WinGet COM interop.
+</div>
+
+</body>
+</html>

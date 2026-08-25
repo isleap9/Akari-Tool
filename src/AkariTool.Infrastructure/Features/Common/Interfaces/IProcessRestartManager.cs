@@ -13,4 +13,11 @@ public interface IProcessRestartManager
     /// so that a single restart from the parent covers all of them.
     /// </summary>
     IDisposable SuppressRestarts();
+
+    /// <summary>
+    /// Winhance parity: after a suppressed bulk apply, restarts once per distinct
+    /// process/service that ANY applied setting required. Callers dispose their
+    /// SuppressRestarts scope first, then flush with the applied settings.
+    /// </summary>
+    Task FlushCoalescedRestartsAsync(System.Collections.Generic.IReadOnlyCollection<SettingDefinition> appliedSettings);
 }

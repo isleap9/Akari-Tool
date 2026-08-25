@@ -5,6 +5,7 @@ using AkariTool.Core.Features.Common.Interfaces;
 using AkariTool.Infrastructure.Services;
 using AkariTool.Infrastructure.Features.Common.Interfaces;
 using AkariTool.Infrastructure.Features.Common.Services;
+using AkariTool.Infrastructure.Features.Apps.Services;
 using AkariTool.Infrastructure.Features.Optimize.Services;
 
 namespace AkariTool.Infrastructure.DI;
@@ -60,7 +61,18 @@ public static class InfrastructureServiceExtensions
         services.AddSingleton<ISystemSettingsDiscoveryService, SystemSettingsDiscoveryService>();
         services.AddSingleton<ISpecialDiscoveryRegistry>(sp => new SpecialDiscoveryRegistry(
             new ISpecialSettingHandler[] { sp.GetRequiredService<WindowsUpdatePolicyHandler>() }));
-        services.AddSingleton<ISettingOperationExecutor, SettingOperationExecutor>();
+        services.AddSingleton<ISettingOperationExecutor>(sp => new SettingOperationExecutor(
+            sp.GetRequiredService<IWindowsRegistryService>(),
+            sp.GetRequiredService<IComboBoxResolver>(),
+            sp.GetRequiredService<IProcessRestartManager>(),
+            sp.GetRequiredService<IPowerCfgApplier>(),
+            sp.GetRequiredService<IScheduledTaskService>(),
+            sp.GetRequiredService<IProcessExecutor>(),
+            sp.GetRequiredService<IPowerShellRunner>(),
+            sp.GetRequiredService<IFileSystemService>(),
+            sp.GetRequiredService<IAkariLogService>(),
+            sp.GetRequiredService<ISpecialSettingHandlerRegistry>(),
+            changeHistory: sp.GetRequiredService<AkariTool.Core.Features.Common.Interfaces.IChangeHistoryService>()));
         services.AddSingleton<ISettingDependencyResolver, SettingDependencyResolver>();
 
         // SettingOperationExecutor's dependencies — all fully implemented (the write
@@ -94,6 +106,21 @@ public static class InfrastructureServiceExtensions
         services.AddSingleton<IWindowsVersionService, WindowsVersionService>();
         services.AddSingleton<IWindowsCompatibilityFilter, WindowsCompatibilityFilter>();
         services.AddSingleton<IHardwareCompatibilityFilter, HardwareCompatibilityFilter>();
+
+        // WinGet COM stack (Winhance parity): shared session + detection +
+        // bootstrapper + package installer. COM is the primary path (live
+        // progress); the CLI runner in SoftwareAppService stays as fallback.
+        services.AddSingleton<WinGetComSession>();
+        services.AddSingleton<AkariTool.Core.Features.Apps.Interfaces.IWingetDetectionService, WingetDetectionService>();
+        services.AddSingleton<AkariTool.Core.Features.Apps.Interfaces.IWingetInstalledDetectionService, WingetInstalledDetectionService>();
+        services.AddSingleton<AkariTool.Core.Features.Apps.Interfaces.IWingetBootstrapper, WingetBootstrapper>();
+        services.AddSingleton<AkariTool.Core.Features.Apps.Interfaces.IWingetPackageInstaller, WingetPackageInstaller>();
+
+        // Change history receipt + Group Policy cleanup (Winhance parity).
+        // History: %ProgramData%\AkariTool\ChangeHistory.txt, append-only, never throws.
+        services.AddSingleton<AkariTool.Core.Features.Common.Interfaces.IChangeHistoryService, ChangeHistoryService>();
+        // Policy: deletes IsGroupPolicy-flagged keys from the compatible registry.
+        services.AddSingleton<AkariTool.Core.Features.Common.Interfaces.IPolicyCleanupService, PolicyCleanupService>();
 
         // Priority 4d: Technical Details / Tooltip infrastructure
         services.AddSingleton<IRegeditLauncher, RegeditLauncher>();

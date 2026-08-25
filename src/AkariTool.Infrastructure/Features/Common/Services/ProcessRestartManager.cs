@@ -57,6 +57,33 @@ public sealed class ProcessRestartManager : IProcessRestartManager
             await RestartServiceAsync(setting.RestartService).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Winhance FlushCoalescedRestartsAsync 1:1: restart each distinct process and
+    /// service required by ANY applied setting — once. Called after a suppressed
+    /// bulk apply so Explorer etc. restart a single time instead of per tweak.
+    /// </summary>
+    public async Task FlushCoalescedRestartsAsync(System.Collections.Generic.IReadOnlyCollection<SettingDefinition> appliedSettings)
+    {
+        var processes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var services = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var setting in appliedSettings)
+        {
+            if (!string.IsNullOrWhiteSpace(setting.RestartProcess))
+                processes.Add(setting.RestartProcess);
+            if (!string.IsNullOrWhiteSpace(setting.RestartService))
+                services.Add(setting.RestartService);
+        }
+
+        _log.Log(LogLevel.Info, $"[ProcessRestart] Flushing coalesced restarts: {processes.Count} process(es), {services.Count} service(s)");
+
+        foreach (var processName in processes)
+            await RestartProcessAsync(processName).ConfigureAwait(false);
+
+        foreach (var serviceName in services)
+            await RestartServiceAsync(serviceName).ConfigureAwait(false);
+    }
+
     private async Task RestartProcessAsync(string processName)
     {
         await Task.Run(() =>
