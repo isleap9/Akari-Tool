@@ -101,15 +101,6 @@
                     </muxc:NavigationViewItem.Icon>
                 </muxc:NavigationViewItem>
 
-                <!-- Software is now a hub (SoftwareHubPage): Windows Apps, External Apps and
-                     Debloat are cards drilling into the hub's inner frame. The old SOFTWARE
-                     group's three entries folded into this single rail item. -->
-                <muxc:NavigationViewItem Content="Software &amp; Apps" Tag="SoftwareHub">
-                    <muxc:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE71D;" />
-                    </muxc:NavigationViewItem.Icon>
-                </muxc:NavigationViewItem>
-
                 <muxc:NavigationViewItemHeader Content="OPTIMIZE" />
                 <!-- Optimize is now a hub (OptimizeHubPage): AkariOS is a pinned card and
                      Gaming/Privacy/Update/Notifications/Sound/Power drill in via the hub's
@@ -127,6 +118,14 @@
                         <FontIcon Glyph="&#xE790;" />
                     </muxc:NavigationViewItem.Icon>
                 </muxc:NavigationViewItem>
+
+                <!-- Software & Apps hub (SoftwareAppsPage) — Windows Apps / External Apps tabs. -->
+                <muxc:NavigationViewItem Content="Software &amp; Apps" Tag="SoftwareHub">
+                    <muxc:NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE71D;" />
+                    </muxc:NavigationViewItem.Icon>
+                </muxc:NavigationViewItem>
+
                 <muxc:NavigationViewItemHeader Content="ADVANCED" />
                 <!-- Advanced Tools is now a hub (AdvancedHubPage): Image & Deployment, System
                      Tools, Backup & Restore and Verify are cards drilling into the hub's inner
