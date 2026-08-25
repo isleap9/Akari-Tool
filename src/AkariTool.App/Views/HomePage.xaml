@@ -16,10 +16,17 @@
     NavigationCacheMode="Required">
 
     <Page.Resources>
-        <!-- Semantic health colors (single dark world; app forces Dark). Crimson stays the
-             accent (AccentTextFillColorPrimaryBrush). -->
+        <!-- Health strip semantic colors. Crimson stays the accent (AccentTextFillColorPrimaryBrush). -->
         <SolidColorBrush x:Key="HealthWarnBrush" Color="#E0A83A" />
         <SolidColorBrush x:Key="HealthGoodBrush" Color="#3FB27F" />
+
+        <!-- The hero sits on the fixed dark wallpaper in BOTH themes, so its text/pill/divider
+             are pinned light — theme brushes would flip dark in light mode (dark-on-dark). -->
+        <SolidColorBrush x:Key="HeroTextPrimary" Color="#FFFFFFFF" />
+        <SolidColorBrush x:Key="HeroTextSecondary" Color="#D9FFFFFF" />
+        <SolidColorBrush x:Key="HeroTextTertiary" Color="#99FFFFFF" />
+        <SolidColorBrush x:Key="HeroPillFill" Color="#26FFFFFF" />
+        <SolidColorBrush x:Key="HeroLine" Color="#33FFFFFF" />
     </Page.Resources>
 
     <Grid Padding="28,0,20,0">
@@ -119,17 +126,17 @@
                                             Text="{x:Bind ViewModel.Edition, Mode=OneWay}"
                                             FontSize="21"
                                             FontWeight="Bold"
-                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
+                                            Foreground="{StaticResource HeroTextPrimary}" />
                                         <TextBlock
                                             Text="{x:Bind ViewModel.Version, Mode=OneWay}"
                                             FontSize="12.5"
-                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            Foreground="{StaticResource HeroTextSecondary}"
                                             Margin="0,2,0,0" />
                                     </StackPanel>
                                     <Border Grid.Column="1"
                                             VerticalAlignment="Center"
-                                            Background="{ThemeResource SubtleFillColorSecondaryBrush}"
-                                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                            Background="{StaticResource HeroPillFill}"
+                                            BorderBrush="{StaticResource HeroLine}"
                                             BorderThickness="1"
                                             CornerRadius="10"
                                             Padding="12,5,12,5">
@@ -137,12 +144,12 @@
                                             Text="{x:Bind ViewModel.HealthSummary, Mode=OneWay}"
                                             FontSize="12"
                                             FontWeight="SemiBold"
-                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                            Foreground="{StaticResource HeroTextSecondary}" />
                                     </Border>
                                 </Grid>
 
                                 <Border Height="1"
-                                        Background="{ThemeResource DividerStrokeColorDefaultBrush}"
+                                        Background="{StaticResource HeroLine}"
                                         Margin="0,16,0,16" />
 
                                 <Grid ColumnSpacing="24">
@@ -154,23 +161,23 @@
 
                                     <StackPanel Grid.Column="0">
                                         <TextBlock Text="PROCESSOR" FontSize="10"
-                                                   FontWeight="Medium" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                                                   FontWeight="Medium" Foreground="{StaticResource HeroTextTertiary}" />
                                         <TextBlock Text="{x:Bind ViewModel.Cpu, Mode=OneWay}" FontSize="13"
-                                                   Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                   Foreground="{StaticResource HeroTextPrimary}"
                                                    TextWrapping="Wrap" Margin="0,3,0,0" />
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">
                                         <TextBlock Text="GRAPHICS" FontSize="10"
-                                                   FontWeight="Medium" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                                                   FontWeight="Medium" Foreground="{StaticResource HeroTextTertiary}" />
                                         <TextBlock Text="{x:Bind ViewModel.Gpu, Mode=OneWay}" FontSize="13"
-                                                   Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                   Foreground="{StaticResource HeroTextPrimary}"
                                                    TextWrapping="Wrap" Margin="0,3,0,0" />
                                     </StackPanel>
                                     <StackPanel Grid.Column="2">
                                         <TextBlock Text="MEMORY" FontSize="10"
-                                                   FontWeight="Medium" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                                                   FontWeight="Medium" Foreground="{StaticResource HeroTextTertiary}" />
                                         <TextBlock Text="{x:Bind ViewModel.Memory, Mode=OneWay}" FontSize="13"
-                                                   Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                   Foreground="{StaticResource HeroTextPrimary}"
                                                    TextWrapping="Wrap" Margin="0,3,0,0" />
                                     </StackPanel>
                                 </Grid>
