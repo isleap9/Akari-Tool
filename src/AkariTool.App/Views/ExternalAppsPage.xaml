@@ -202,7 +202,7 @@
          built catalog + selection state, so the Frame must reuse this page instance
          rather than rebuild it per navigation. -->
     <ScrollViewer>
-        <StackPanel Padding="24,16,24,24" MaxWidth="1100" HorizontalAlignment="Stretch">
+        <StackPanel Padding="24,16,24,24" MaxWidth="1100" HorizontalAlignment="Center">
             <!-- The action bar (Install/Uninstall/Refresh + selected count) and search live in
                  the shared Software & Apps toolbar; this page keeps status, select-all and grid. -->
 

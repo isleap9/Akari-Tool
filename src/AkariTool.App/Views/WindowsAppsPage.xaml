@@ -194,7 +194,7 @@
     </Page.Resources>
 
     <ScrollViewer>
-        <StackPanel Padding="24,16,24,24" MaxWidth="1100" HorizontalAlignment="Stretch">
+        <StackPanel Padding="24,16,24,24" MaxWidth="1100" HorizontalAlignment="Center">
             <!-- The action bar (Remove/Install/Refresh + selected count) and search live in the
                  shared Software & Apps toolbar; this page keeps status, select-all and grid. -->
 
