@@ -33,28 +33,45 @@ public sealed partial class AppSectionViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Applies the search filter. Match test is verbatim from net8
-    /// <c>SoftwareTab.ApplySearch</c>: case-insensitive Contains over Name OR
-    /// Description; an empty query matches everything.
+    /// Applies the search filter with the current sort. Match test is verbatim from net8
+    /// <c>SoftwareTab.ApplySearch</c>: case-insensitive Contains over Name OR Description;
+    /// an empty query matches everything. Kept as a convenience overload (default sort).
     /// </summary>
-    public void ApplySearch(string query)
+    public void ApplySearch(string query) => ApplyFilterAndSort(query, SoftwareSortMode.NameAsc);
+
+    /// <summary>
+    /// Filters by <paramref name="query"/> then orders the visible cards by
+    /// <paramref name="sort"/>. VisibleCards is refilled (not collapsed in place) because
+    /// UniformGridLayout still reserves cells for collapsed children.
+    /// </summary>
+    public void ApplyFilterAndSort(string query, SoftwareSortMode sort)
     {
         bool empty = query.Length == 0;
 
-        VisibleCards.Clear();
-        bool any = false;
+        var matched = new List<AppCardViewModel>();
         foreach (var card in AllCards)
         {
             card.Visible = empty ||
                 card.App.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
                 card.App.Description.Contains(query, StringComparison.OrdinalIgnoreCase);
-            if (card.Visible)
-            {
-                VisibleCards.Add(card);
-                any = true;
-            }
+            if (card.Visible) matched.Add(card);
         }
 
-        IsVisible = any;
+        IEnumerable<AppCardViewModel> ordered = sort switch
+        {
+            SoftwareSortMode.NameDesc =>
+                matched.OrderByDescending(c => c.Name, StringComparer.OrdinalIgnoreCase),
+            SoftwareSortMode.InstalledFirst =>
+                matched.OrderByDescending(c => c.IsInstalled).ThenBy(c => c.Name, StringComparer.OrdinalIgnoreCase),
+            SoftwareSortMode.NotInstalledFirst =>
+                matched.OrderBy(c => c.IsInstalled).ThenBy(c => c.Name, StringComparer.OrdinalIgnoreCase),
+            _ /* NameAsc */ =>
+                matched.OrderBy(c => c.Name, StringComparer.OrdinalIgnoreCase),
+        };
+
+        VisibleCards.Clear();
+        foreach (var card in ordered) VisibleCards.Add(card);
+
+        IsVisible = matched.Count > 0;
     }
 }

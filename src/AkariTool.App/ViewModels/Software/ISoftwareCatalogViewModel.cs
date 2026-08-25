@@ -20,6 +20,9 @@ public interface ISoftwareCatalogViewModel
     bool SelectInstalled { get; set; }
     bool SelectNotInstalled { get; set; }
 
+    SoftwareViewMode ViewMode { get; set; }
+    SoftwareSortMode SortMode { get; set; }
+
     IAsyncRelayCommand InstallSelectedCommand { get; }
     IAsyncRelayCommand UninstallCommand { get; }
     IAsyncRelayCommand RefreshStatusCommand { get; }

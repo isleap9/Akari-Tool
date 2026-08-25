@@ -70,7 +70,18 @@ public sealed partial class WindowsAppsViewModel : ObservableObject, ISoftwareCa
     partial void OnSearchTextChanged(string value)
     {
         var query = value.Trim();
-        foreach (var section in Sections) section.ApplySearch(query);
+        foreach (var section in Sections) section.ApplyFilterAndSort(query, SortMode);
+    }
+
+    // ── View + sort (shared Software toolbar) ──────────────────────────────────
+
+    [ObservableProperty] public partial SoftwareViewMode ViewMode { get; set; } = SoftwareViewMode.Card;
+    [ObservableProperty] public partial SoftwareSortMode SortMode { get; set; } = SoftwareSortMode.NameAsc;
+
+    partial void OnSortModeChanged(SoftwareSortMode value)
+    {
+        var query = SearchText.Trim();
+        foreach (var section in Sections) section.ApplyFilterAndSort(query, value);
     }
 
     // ── Select-all row ────────────────────────────────────────────────────────

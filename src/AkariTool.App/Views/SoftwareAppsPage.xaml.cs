@@ -41,10 +41,30 @@ public sealed partial class SoftwareAppsPage : Page
         TabExternal.IsChecked = !windows;
 
         // The shared toolbar + search bind to the active catalog VM.
-        DataContext = windows ? _windowsVm : _externalVm;
+        var vm = windows ? _windowsVm : _externalVm;
+        DataContext = vm;
+        SyncSortRadios(vm.SortMode);
 
         if (TabFrame.CurrentSourcePageType != pageType)
             TabFrame.Navigate(pageType);
+    }
+
+    private void Sort_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is RadioMenuFlyoutItem { Tag: string tag }
+            && DataContext is ISoftwareCatalogViewModel vm
+            && Enum.TryParse<SoftwareSortMode>(tag, out var mode))
+        {
+            vm.SortMode = mode;
+        }
+    }
+
+    private void SyncSortRadios(SoftwareSortMode mode)
+    {
+        SortNameAsc.IsChecked = mode == SoftwareSortMode.NameAsc;
+        SortNameDesc.IsChecked = mode == SoftwareSortMode.NameDesc;
+        SortInstalledFirst.IsChecked = mode == SoftwareSortMode.InstalledFirst;
+        SortNotInstalledFirst.IsChecked = mode == SoftwareSortMode.NotInstalledFirst;
     }
 
     /// <summary>Selects the tab whose catalog page matches <paramref name="detailPageType"/>
