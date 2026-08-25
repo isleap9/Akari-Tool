@@ -34,6 +34,7 @@ public partial class HomeViewModel : ViewModelBase
     private readonly IDispatcherService _dispatcher;
     private readonly IEnumerable<SettingPageViewModel> _pages;
     private readonly TweakDialogs _dialogs;
+    private readonly ISystemRestoreService _restore;
     private IDisposable? _navBadgeSub;
 
     [ObservableProperty] public partial string Edition { get; set; } = "Detecting…";
@@ -50,6 +51,10 @@ public partial class HomeViewModel : ViewModelBase
     [ObservableProperty] public partial int DriftedCount { get; set; }
     [ObservableProperty] public partial string UpdateStatusText { get; set; } = "Checking…";
     [ObservableProperty] public partial bool IsUpdateAvailable { get; set; }
+
+    /// <summary>Whether System Restore protection is on for C: (drives the 4th health cell).</summary>
+    [ObservableProperty] public partial bool SystemProtectionOn { get; set; }
+    public string SystemProtectionText => SystemProtectionOn ? "On" : "Off";
 
     // Display strings (x:Bind targets a string; expose ToString'd values explicitly).
     public string RecommendedPendingDisplay => RecommendedPendingCount.ToString();
@@ -96,13 +101,16 @@ public partial class HomeViewModel : ViewModelBase
 
     partial void OnIsUpdateAvailableChanged(bool value) => OnPropertyChanged(nameof(IsHealthy));
 
+    partial void OnSystemProtectionOnChanged(bool value) => OnPropertyChanged(nameof(SystemProtectionText));
+
     public HomeViewModel(
         ILogService log,
         INavBadgeService navBadges,
         IUpdateService updateService,
         IDispatcherService dispatcher,
         IEnumerable<SettingPageViewModel> pages,
-        TweakDialogs dialogs)
+        TweakDialogs dialogs,
+        ISystemRestoreService restore)
     {
         _log = log;
         _navBadges = navBadges;
@@ -110,6 +118,7 @@ public partial class HomeViewModel : ViewModelBase
         _dispatcher = dispatcher;
         _pages = pages;
         _dialogs = dialogs;
+        _restore = restore;
 
         Title = "Akari Tool";
         Subtitle = "Your control center for Windows — optimization, software & utilities";
@@ -117,6 +126,13 @@ public partial class HomeViewModel : ViewModelBase
         SeedHealth();
         _ = RefreshSystemInfoAsync();
         _ = CheckUpdateAsync();
+        _ = CheckProtectionAsync();
+    }
+
+    private async Task CheckProtectionAsync()
+    {
+        try { SystemProtectionOn = await Task.Run(_restore.IsEnabledForC); }
+        catch (Exception ex) { _log.Info($"Home restore-protection check failed: {ex.Message}"); }
     }
 
     private void SeedHealth()

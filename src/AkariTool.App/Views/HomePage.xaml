@@ -161,9 +161,11 @@
                             </Grid>
                         </Border>
 
-                        <!-- Health strip: 3 read-only signal cells (drifted / updates navigate) -->
+                        <!-- Health strip: 4 read-only signal cells (drifted / updates navigate).
+                             Value colors are set state-aware in code-behind (UpdateHealthColors). -->
                         <Grid ColumnSpacing="12" Margin="0,0,0,14">
                             <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="*" />
@@ -206,8 +208,25 @@
                                 </StackPanel>
                             </Border>
 
-                            <!-- Update status → Windows Updates tab -->
+                            <!-- System protection (System Restore for C:) -->
                             <Border Grid.Column="2"
+                                    ToolTipService.ToolTip="System Restore protection for the system drive"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1" CornerRadius="10" Padding="16,13,16,13">
+                                <StackPanel>
+                                    <TextBlock Text="{x:Bind ViewModel.SystemProtectionText, Mode=OneWay}"
+                                               FontSize="26" FontWeight="Bold"
+                                               Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
+                                    <TextBlock Text="System protection" FontSize="12"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="0,4,0,0" />
+                                    <TextBlock Text="Restore points" FontSize="10.5"
+                                               Foreground="{ThemeResource TextFillColorTertiaryBrush}" Margin="0,1,0,0" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Update status → Windows Updates tab -->
+                            <Border Grid.Column="3"
                                     x:Name="UpdatesCell"
                                     Tapped="UpdatesCell_Tapped"
                                     PointerEntered="HealthCell_PointerEntered"
