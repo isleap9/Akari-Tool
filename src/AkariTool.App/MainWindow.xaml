@@ -69,83 +69,24 @@
             </StackPanel>
         </Grid>
 
-        <!-- Body: nav rail + content -->
-        <muxc:NavigationView
-            x:Name="Nav"
-            Grid.Row="1"
-            PaneDisplayMode="Left"
-            IsBackButtonVisible="Collapsed"
-            IsSettingsVisible="False"
-            OpenPaneLength="220"
-            SelectionChanged="Nav_SelectionChanged">
+        <!-- Body: slim nav sidebar (Winhance-style) + content -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
 
-            <!-- Flatten the NavigationView's built-in content panel: transparent background,
-                 no border, no rounded corner. Otherwise it draws its own panel behind the
-                 page, and a hub page then stacks a second panel on top ("two backgrounds").
-                 With this, the hub's own content surface is the single deeper panel — the
-                 look the NavSidebar shell (Stage 6) will have natively. -->
-            <muxc:NavigationView.Resources>
-                <SolidColorBrush x:Key="NavigationViewContentBackground" Color="Transparent" />
-                <SolidColorBrush x:Key="NavigationViewContentGridBorderBrush" Color="Transparent" />
-                <Thickness x:Key="NavigationViewContentGridBorderThickness">0</Thickness>
-                <CornerRadius x:Key="NavigationViewContentGridCornerRadius">0</CornerRadius>
-            </muxc:NavigationView.Resources>
-
-            <!-- Rail tags MUST match the routing contract (see MainWindow.xaml.cs).
-                 Phase A: Home routes to HomePage, every other tag to PlaceholderPage. -->
-            <muxc:NavigationView.MenuItems>
-                <muxc:NavigationViewItem Content="Home" Tag="Home">
-                    <muxc:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE80F;" />
-                    </muxc:NavigationViewItem.Icon>
-                </muxc:NavigationViewItem>
-
-                <muxc:NavigationViewItemHeader Content="OPTIMIZE" />
-                <!-- Optimize is now a hub (OptimizeHubPage): AkariOS is a pinned card and
-                     Gaming/Privacy/Update/Notifications/Sound/Power drill in via the hub's
-                     inner frame. The old flat entries collapsed into this single rail item. -->
-                <muxc:NavigationViewItem Content="Optimize" Tag="Optimize">
-                    <muxc:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE945;" />
-                    </muxc:NavigationViewItem.Icon>
-                </muxc:NavigationViewItem>
-                <!-- Single flat entry (like Advanced Tools): no children, no chevron.
-                     Category selection happens in the content area — CustomizePage is a
-                     card hub that navigates the content Frame to the 6 category pages. -->
-                <muxc:NavigationViewItem Content="Customize" Tag="Customize">
-                    <muxc:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE790;" />
-                    </muxc:NavigationViewItem.Icon>
-                </muxc:NavigationViewItem>
-
-                <!-- Software & Apps hub (SoftwareAppsPage) — Windows Apps / External Apps tabs. -->
-                <muxc:NavigationViewItem Content="Software &amp; Apps" Tag="SoftwareHub">
-                    <muxc:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE71D;" />
-                    </muxc:NavigationViewItem.Icon>
-                </muxc:NavigationViewItem>
-
-                <muxc:NavigationViewItemHeader Content="ADVANCED" />
-                <!-- Advanced Tools is now a hub (AdvancedHubPage): Image & Deployment, System
-                     Tools, Backup & Restore and Verify are cards drilling into the hub's inner
-                     frame. The old Tools / Advanced / Backup / Verify entries folded in. -->
-                <muxc:NavigationViewItem Content="Advanced Tools" Tag="AdvancedHub">
-                    <muxc:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xEC7A;" />
-                    </muxc:NavigationViewItem.Icon>
-                </muxc:NavigationViewItem>
-            </muxc:NavigationView.MenuItems>
-
-            <muxc:NavigationView.FooterMenuItems>
-                <muxc:NavigationViewItem Content="Settings" Tag="Settings">
-                    <muxc:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE713;" />
-                    </muxc:NavigationViewItem.Icon>
-                </muxc:NavigationViewItem>
-            </muxc:NavigationView.FooterMenuItems>
+            <!-- Rail tags MUST match the routing contract (see MainWindow.xaml.cs):
+                 Home / Optimize / Customize / SoftwareHub / AdvancedHub / Settings.
+                 ItemClicked routes through SelectRailTag; SelectedTag is synced back on
+                 navigation; per-hub pending counts are pushed via Sidebar.SetBadge. -->
+            <controls:NavSidebar
+                x:Name="Sidebar"
+                Grid.Column="0"
+                ItemClicked="Sidebar_ItemClicked" />
 
             <!-- Page host + docked live log console. -->
-            <Grid>
+            <Grid Grid.Column="1">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
@@ -228,7 +169,7 @@
                     </StackPanel>
                 </Border>
             </Grid>
-        </muxc:NavigationView>
+        </Grid>
 
         <!-- Status bar: ready state + theme toggle + LOG toggle + build stamp. -->
         <Border

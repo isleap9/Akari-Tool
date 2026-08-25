@@ -12,6 +12,7 @@ using AkariTool.ViewModels.AdvancedTools;
 using AkariTool.ViewModels.Software;
 using AkariTool.ViewModels.Tweaks;
 using AkariTool.Views;
+using AkariTool.Views.Controls;
 using WinUI.Framework.Navigation;
 using WinUI.Framework.Services;
 
@@ -106,35 +107,34 @@ public sealed partial class MainWindow : Window
     // Named (not a lambda) so OnClosed can unsubscribe the exact same delegate instance.
     private readonly EventHandler<AppTheme> _themeChangedHandler;
 
-    private void ApplyNavBadges(IEnumerable<NavBadgeUpdate> updates)
+    /// <summary>
+    /// Recomputes the sidebar badges: the per-page pending counts are aggregated onto their
+    /// owning hub button (e.g. Gaming + Privacy + … → Optimize), so a collapsed hub shows the
+    /// total work behind it. Cheap — reads the same counts the pages already track.
+    /// </summary>
+    private void RefreshNavBadges()
     {
-        foreach (var u in updates)
+        var perHub = new Dictionary<string, int>
         {
-            if (FindNavItem(u.Tag) is not { } item) continue;
-            item.InfoBadge = u.Count > 0 ? new InfoBadge { Value = u.Count } : null;
+            ["Home"] = 0, ["Optimize"] = 0, ["Customize"] = 0,
+            ["SoftwareHub"] = 0, ["AdvancedHub"] = 0, ["Settings"] = 0,
+        };
+        foreach (var u in _navBadges.ComputeNavBadges())
+        {
+            var hub = HubTagFor(u.Tag);
+            if (perHub.ContainsKey(hub)) perHub[hub] += u.Count;
         }
+        foreach (var (tag, count) in perHub)
+            Sidebar.SetBadge(tag, count);
     }
 
-    private NavigationViewItem? FindNavItem(object tag)
-    {
-        foreach (var mi in Nav.MenuItems)
-            if (TryFindNavItem(mi, tag, out var hit)) return hit;
-        foreach (var mi in Nav.FooterMenuItems)
-            if (TryFindNavItem(mi, tag, out var hit)) return hit;
-        return null;
-    }
-
-    private static bool TryFindNavItem(object container, object tag, out NavigationViewItem? found)
-    {
-        if (container is NavigationViewItem nvi)
-        {
-            if (Equals(nvi.Tag, tag)) { found = nvi; return true; }
-            foreach (var child in nvi.MenuItems)
-                if (TryFindNavItem(child, tag, out found)) return true;
-        }
-        found = null;
-        return false;
-    }
+    /// <summary>Maps a page/detail tag to the top-level sidebar tag that owns it.</summary>
+    private static string HubTagFor(string tag) =>
+        OptimizeDetailTags.Contains(tag) ? "Optimize"
+        : CustomizeDetailTags.Contains(tag) ? "Customize"
+        : AdvancedDetailTags.Contains(tag) ? "AdvancedHub"
+        : SoftwareDetailTags.Contains(tag) ? "SoftwareHub"
+        : tag;
 
     public MainWindow(
         INavigationService navigation,
@@ -171,11 +171,11 @@ public sealed partial class MainWindow : Window
         // service's IEnumerable<SettingPageViewModel> resolves AFTER construction —
         // eager resolution here would force all 11 page Builds onto the UI thread
         // during DI, stealing warm-up ownership.
-        Nav.Loaded += (_, _) =>
+        Sidebar.Loaded += (_, _) =>
         {
-            ApplyNavBadges(_navBadges.ComputeNavBadges());
-            _navBadgeSubscription = _navBadges.Subscribe((tag, count) =>
-                _dispatcher.RunOnUIThread(() => ApplyNavBadges([new NavBadgeUpdate(tag, count)])));
+            RefreshNavBadges();
+            _navBadgeSubscription = _navBadges.Subscribe((_, _) =>
+                _dispatcher.RunOnUIThread(RefreshNavBadges));
         };
 
         // Custom title bar + icon.
@@ -234,7 +234,6 @@ public sealed partial class MainWindow : Window
         _navigation.Frame = ContentFrame;
         ContentFrame.NavigationFailed += OnNavigationFailed;
         ContentFrame.Navigated += OnNavigated;
-        Nav.SelectionChanged += Nav_SelectionChanged;
 
         // Live log dock: the UI-log decorator raises a line for every log call.
         _uiLog.LineLogged += line =>
@@ -277,53 +276,15 @@ public sealed partial class MainWindow : Window
         Closed += OnClosed;
 
         // Land on Home.
-        Nav.SelectedItem = AllNavItems().FirstOrDefault(i => (i.Tag as string) == "Home");
+        SelectRailTag("Home");
     }
 
     // ── Nav routing ───────────────────────────────────────────────────────
 
-    /// <summary>Every NavigationViewItem in the rail, including nested MenuItems children.</summary>
-    private IEnumerable<NavigationViewItem> AllNavItems()
+    /// <summary>A sidebar button was clicked (or invoked via keyboard) — route by its tag.</summary>
+    private void Sidebar_ItemClicked(object? sender, NavButtonClickedEventArgs e)
     {
-        IEnumerable<NavigationViewItem> Walk(IList<object> items)
-        {
-            foreach (var o in items)
-            {
-                if (o is not NavigationViewItem nvi) continue;
-                yield return nvi;
-                foreach (var child in Walk(nvi.MenuItems)) yield return child;
-            }
-        }
-
-        foreach (var i in Walk(Nav.MenuItems)) yield return i;
-        foreach (var i in Walk(Nav.FooterMenuItems)) yield return i;
-    }
-
-    private void Nav_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
-    {
-        if (args.SelectedItem is not NavigationViewItem { Tag: string tag }) return;
-
-        if (PageMap.TryGetValue(tag, out var pageType))
-        {
-            // Guard on the tag the CURRENT page belongs to, not on an exact page-type
-            // match: 6 category pages (Taskbar…Desktop) all report the "Customize" tag,
-            // so if we're already on one of them and "Customize" is (re)selected, we must
-            // NOT navigate to the hub — that would bounce a search landing back to the
-            // card grid. Only navigate when the current page belongs to a different tag.
-            if (TagForPage(ContentFrame.Content) != tag)
-            {
-                _navigation.NavigateTo(pageType);
-            }
-        }
-        else
-        {
-            // Not migrated yet → placeholder, carrying the rail tag so it can name itself.
-            if (ContentFrame.CurrentSourcePageType != typeof(PlaceholderPage)
-                || ContentFrame.Content is not PlaceholderPage { ViewModel.TabTag: var current } || current != tag)
-            {
-                _navigation.NavigateTo(typeof(PlaceholderPage), tag);
-            }
-        }
+        if (e.Tag is { } tag) SelectRailTag(tag);
     }
 
     private void OnNavigated(object sender, NavigationEventArgs e)
@@ -338,10 +299,10 @@ public sealed partial class MainWindow : Window
     private void SyncSelectedItem()
     {
         string? tag = TagForPage(ContentFrame.Content);
-
         if (tag is null) return;
-        var item = AllNavItems().FirstOrDefault(i => (i.Tag as string) == tag);
-        if (item is not null) Nav.SelectedItem = item;
+        // TagForPage already resolves detail pages to their hub; HubTagFor covers any
+        // placeholder that still reports a raw detail tag. Result is one of the 6 sidebar tags.
+        Sidebar.SelectedTag = HubTagFor(tag);
     }
 
     /// <summary>
@@ -444,22 +405,25 @@ public sealed partial class MainWindow : Window
             return;
         }
 
-        var item = AllNavItems().FirstOrDefault(i => (i.Tag as string) == tag);
-        if (item is not null)
-        {
-            Nav.SelectedItem = item;
-            return;
-        }
-
-        // No rail item carries this tag — this happens for the 6 Customize category
-        // tags (Taskbar…Desktop), which have no sidebar entry any more. Navigate the
-        // content Frame straight to the page instead. SyncSelectedItem then highlights
-        // the "Customize" rail item (TagForPage maps all 6 to "Customize"), and
-        // Nav_SelectionChanged's tag-based guard keeps us on the category page rather
-        // than bouncing back to the hub.
+        // Top-level tag (Home / Optimize / Customize / SoftwareHub / AdvancedHub / Settings)
+        // or a category tag with no sidebar entry: navigate the content Frame straight to the
+        // page. OnNavigated → SyncSelectedItem then highlights the owning sidebar button. The
+        // TagForPage guard avoids re-navigating when we're already on a page of this tag (six
+        // Customize category pages all report "Customize", so re-selecting must not bounce a
+        // search landing back to the hub).
         if (PageMap.TryGetValue(tag, out var pageType))
         {
-            _navigation.NavigateTo(pageType);
+            if (TagForPage(ContentFrame.Content) != tag)
+                _navigation.NavigateTo(pageType);
+        }
+        else
+        {
+            // Not migrated yet → placeholder, carrying the tag so it can name itself.
+            if (ContentFrame.CurrentSourcePageType != typeof(PlaceholderPage)
+                || ContentFrame.Content is not PlaceholderPage { ViewModel.TabTag: var current } || current != tag)
+            {
+                _navigation.NavigateTo(typeof(PlaceholderPage), tag);
+            }
         }
     }
 
