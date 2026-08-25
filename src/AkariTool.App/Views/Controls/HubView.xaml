@@ -226,7 +226,7 @@
             <Grid>
                 <!-- Overview cards: capped width, centered (Winhance layout). -->
                 <ScrollViewer x:Name="OverviewScroll">
-                    <ItemsControl x:Name="CardItems" Padding="16,28,16,20"
+                    <ItemsControl x:Name="CardItems" Padding="16,40,16,24"
                                   MaxWidth="1000" HorizontalAlignment="Center">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="vm:HubCardViewModel">
