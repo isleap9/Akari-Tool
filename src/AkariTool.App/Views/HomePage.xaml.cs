@@ -95,7 +95,6 @@ public sealed partial class HomePage : Page
         CardsPanel.Children.Add(new TextBlock
         {
             Text = label,
-            FontFamily = new FontFamily("Consolas"),
             FontSize = 10,
             FontWeight = FontWeights.Medium,
             Foreground = Res("TextFillColorTertiaryBrush"),
@@ -263,7 +262,6 @@ public sealed partial class HomePage : Page
             ResultsPanel.Children.Add(new TextBlock
             {
                 Text = group.Key.ToUpperInvariant(),
-                FontFamily = new FontFamily("Consolas"),
                 FontSize = 11.5,
                 FontWeight = FontWeights.Medium,
                 Foreground = Res("TextFillColorTertiaryBrush"),

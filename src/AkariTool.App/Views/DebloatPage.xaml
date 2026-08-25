@@ -67,7 +67,6 @@
             <StackPanel>
                 <TextBlock
                     Text="{x:Bind Header}"
-                    FontFamily="Consolas"
                     FontSize="10.5"
                     FontWeight="Medium"
                     Foreground="{ThemeResource TextFillColorTertiaryBrush}"

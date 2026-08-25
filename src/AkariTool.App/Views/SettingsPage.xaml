@@ -187,7 +187,7 @@
                                             <TextBlock
                                                 Grid.Column="0"
                                                 Text="{x:Bind Version}"
-                                                FontFamily="Consolas" FontSize="13" FontWeight="SemiBold"
+                                                FontSize="13" FontWeight="SemiBold"
                                                 VerticalAlignment="Top"
                                                 Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
                                             <StackPanel Grid.Column="1" Spacing="4">
@@ -199,7 +199,7 @@
                                                     Background="{ThemeResource SystemFillColorSuccessBackgroundBrush}"
                                                     BorderBrush="{ThemeResource SystemFillColorSuccessBrush}"
                                                     BorderThickness="1">
-                                                    <TextBlock Text="CURRENT" FontFamily="Consolas" FontSize="9"
+                                                    <TextBlock Text="CURRENT" FontSize="9"
                                                                Foreground="{ThemeResource SystemFillColorSuccessBrush}" />
                                                 </Border>
                                                 <ItemsControl

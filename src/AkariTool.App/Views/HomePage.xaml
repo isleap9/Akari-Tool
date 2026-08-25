@@ -28,29 +28,46 @@
             <RowDefinition Height="*" />     <!-- Content -->
         </Grid.RowDefinitions>
 
-        <!-- Header -->
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="16" Margin="0,24,0,16">
-            <Viewbox Width="52" Height="52" Stretch="Uniform" VerticalAlignment="Center">
-                <TextBlock
-                    Text="&#xE80F;"
-                    FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
-            </Viewbox>
-            <StackPanel VerticalAlignment="Center">
-                <TextBlock
-                    Text="{x:Bind ViewModel.Title, Mode=OneWay}"
-                    FontSize="30"
-                    FontWeight="Bold"
-                    Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                    AutomationProperties.HeadingLevel="Level1" />
-                <TextBlock
-                    Text="{x:Bind ViewModel.Subtitle, Mode=OneWay}"
-                    FontSize="13"
-                    Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                    Margin="0,2,0,0"
-                    TextWrapping="Wrap" />
+        <!-- Header: icon + title (left), global search (top-right, matching the hub pages) -->
+        <Grid Grid.Row="0" Margin="0,24,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="16">
+                <Viewbox Width="52" Height="52" Stretch="Uniform" VerticalAlignment="Center">
+                    <TextBlock
+                        Text="&#xE80F;"
+                        FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                        Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                </Viewbox>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock
+                        Text="{x:Bind ViewModel.Title, Mode=OneWay}"
+                        FontSize="30"
+                        FontWeight="Bold"
+                        Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                        AutomationProperties.HeadingLevel="Level1" />
+                    <TextBlock
+                        Text="{x:Bind ViewModel.Subtitle, Mode=OneWay}"
+                        FontSize="13"
+                        Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                        Margin="0,2,0,0"
+                        TextWrapping="Wrap" />
+                </StackPanel>
             </StackPanel>
-        </StackPanel>
+
+            <AutoSuggestBox
+                x:Name="SearchBox"
+                Grid.Column="1"
+                Width="240"
+                VerticalAlignment="Bottom"
+                PlaceholderText="Search all tweaks…"
+                QueryIcon="Find"
+                TextChanged="SearchBox_TextChanged"
+                AutomationProperties.Name="Search all tweaks" />
+        </Grid>
 
         <!-- Content panel -->
         <Border Grid.Row="1"
@@ -136,21 +153,21 @@
                                     </Grid.ColumnDefinitions>
 
                                     <StackPanel Grid.Column="0">
-                                        <TextBlock Text="PROCESSOR" FontFamily="Consolas" FontSize="10"
+                                        <TextBlock Text="PROCESSOR" FontSize="10"
                                                    FontWeight="Medium" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
                                         <TextBlock Text="{x:Bind ViewModel.Cpu, Mode=OneWay}" FontSize="13"
                                                    Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                    TextWrapping="Wrap" Margin="0,3,0,0" />
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">
-                                        <TextBlock Text="GRAPHICS" FontFamily="Consolas" FontSize="10"
+                                        <TextBlock Text="GRAPHICS" FontSize="10"
                                                    FontWeight="Medium" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
                                         <TextBlock Text="{x:Bind ViewModel.Gpu, Mode=OneWay}" FontSize="13"
                                                    Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                    TextWrapping="Wrap" Margin="0,3,0,0" />
                                     </StackPanel>
                                     <StackPanel Grid.Column="2">
-                                        <TextBlock Text="MEMORY" FontFamily="Consolas" FontSize="10"
+                                        <TextBlock Text="MEMORY" FontSize="10"
                                                    FontWeight="Medium" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
                                         <TextBlock Text="{x:Bind ViewModel.Memory, Mode=OneWay}" FontSize="13"
                                                    Foreground="{ThemeResource TextFillColorPrimaryBrush}"
@@ -295,18 +312,8 @@
                         </StackPanel>
                     </StackPanel>
 
-                    <!-- Global search across every tab (SettingBackupService.Search) -->
-                    <AutoSuggestBox
-                        x:Name="SearchBox"
-                        PlaceholderText="Search all tweaks across every tab…"
-                        QueryIcon="Find"
-                        FontSize="14"
-                        Height="44"
-                        Margin="0,0,0,16"
-                        TextChanged="SearchBox_TextChanged"
-                        AutomationProperties.Name="Search all tweaks" />
-
-                    <!-- Search results (code-filled; shown while searching) -->
+                    <!-- Search box lives in the header (top-right); results render here while searching.
+                         Search results (code-filled; shown while searching) -->
                     <Border
                         x:Name="ResultsCard"
                         Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"

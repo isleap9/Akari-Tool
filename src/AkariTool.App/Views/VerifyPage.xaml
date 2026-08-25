@@ -110,7 +110,6 @@
                     <TextBlock
                         Text="{x:Bind ViewModel.StatusText, Mode=OneWay}"
                         FontSize="12"
-                        FontFamily="Consolas"
                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                         TextWrapping="Wrap"
                         Margin="0,0,0,12" />

@@ -104,6 +104,20 @@
                 <ResourceDictionary Source="ms-appx:///Views/Templates/TweakTemplates.xaml" />
                 <ResourceDictionary Source="ms-appx:///Views/Templates/SoftwareViewTemplates.xaml" />
             </ResourceDictionary.MergedDictionaries>
+
+            <!--
+              SINGLE APP FONT — Segoe UI Variable (the modern Windows 11 font).
+              Raw <TextBlock>s default to the old "Segoe UI"; controls use
+              ContentControlThemeFontFamily. Pinning both to Segoe UI Variable Text makes
+              the whole app one font. Monospace (Consolas) is intentionally retained only
+              for code/registry/log readouts, which set FontFamily locally and so win over
+              the implicit style below.
+            -->
+            <FontFamily x:Key="AppFontFamily">Segoe UI Variable Text, Segoe UI</FontFamily>
+            <FontFamily x:Key="ContentControlThemeFontFamily">Segoe UI Variable Text, Segoe UI</FontFamily>
+            <Style TargetType="TextBlock">
+                <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+            </Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>
