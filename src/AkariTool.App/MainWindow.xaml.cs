@@ -342,6 +342,7 @@ public sealed partial class MainWindow : Window
         ToolsPage => "AdvancedHub",
         VerifyPage => "AdvancedHub",
         AkariOSPage => "Optimize",
+        SettingsPage => "Settings",
         PlaceholderPage p => p.ViewModel.TabTag,
         _ => null,
     };
