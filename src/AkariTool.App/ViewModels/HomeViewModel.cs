@@ -129,11 +129,15 @@ public partial class HomeViewModel : ViewModelBase
         _ = CheckProtectionAsync();
     }
 
-    private async Task CheckProtectionAsync()
+    /// <summary>Re-reads System Restore protection status (e.g. after creating a restore point,
+    /// which enables protection when it was off). Safe to call from the UI thread.</summary>
+    public async Task RefreshProtectionAsync()
     {
         try { SystemProtectionOn = await Task.Run(_restore.IsEnabledForC); }
         catch (Exception ex) { _log.Info($"Home restore-protection check failed: {ex.Message}"); }
     }
+
+    private Task CheckProtectionAsync() => RefreshProtectionAsync();
 
     private void SeedHealth()
     {

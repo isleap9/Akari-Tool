@@ -377,6 +377,8 @@ public sealed partial class HomePage : Page
         {
             progressService.CompleteTask();
             RestorePointButton.IsEnabled = true;
+            // Creating a restore point enables System Restore when it was off — refresh the cell.
+            await ViewModel.RefreshProtectionAsync();
         }
     }
 
