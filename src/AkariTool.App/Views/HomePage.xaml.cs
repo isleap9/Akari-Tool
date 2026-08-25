@@ -1,11 +1,17 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Navigation;
 using AkariTool.Tabs;
 using AkariTool.Services;
 using AkariTool.ViewModels;
+using AkariTool.Core.Features.Common.Interfaces;
+using AkariTool.Infrastructure.Features.Common.Interfaces;
 using WinUI.Framework.IoC;
 
 namespace AkariTool.Views;
@@ -24,6 +30,10 @@ public sealed partial class HomePage : Page
 
     private readonly SettingBackupService _backup;
 
+    /// <summary>Per-tab recommended-pending counts (NavTag → count) used for the card chips.
+    /// Refreshed each time the page is navigated to.</summary>
+    private IReadOnlyDictionary<string, int> _pendingCounts = new Dictionary<string, int>();
+
     private sealed record CardDef(string Title, string Glyph, string Desc, string Tag);
 
     public HomePage()
@@ -34,10 +44,26 @@ public sealed partial class HomePage : Page
         BuildCards();
     }
 
+    // The page is cached (NavigationCacheMode="Required"), so refresh the live signals and
+    // the card pending-chips each time it's shown — the user may have applied tweaks on
+    // another tab since the last visit.
+    protected override void OnNavigatedTo(NavigationEventArgs e)
+    {
+        base.OnNavigatedTo(e);
+        ViewModel.RefreshHealth();
+        CardsPanel.Children.Clear();
+        BuildCards();
+    }
+
     // ── Quick-nav cards (net8 SOFTWARE / OPTIMIZE / ADVANCED groupings) ────────
 
     private void BuildCards()
     {
+        // Same aggregate the sidebar nav badges use — read-only, per NavTag.
+        _pendingCounts = ServiceLocator.GetService<INavBadgeService>()
+            .ComputeNavBadges()
+            .ToDictionary(b => b.Tag, b => b.Count);
+
         AddCardSection("SOFTWARE", isFirst: true, new[]
         {
             new CardDef("Windows Apps",  G("E71D"), "Manage built-in Windows apps & features",      "Bloatware"),
@@ -140,19 +166,46 @@ public sealed partial class HomePage : Page
         });
         Grid.SetColumn(text, 1);
 
-        var chevron = new TextBlock
+        var trailing = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 9,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+
+        // Recommended-pending chip (only tabs whose NavTag matches a SettingPageViewModel;
+        // aggregate/hub tabs like Customize or Tools show none — honest, no fake zeros).
+        if (_pendingCounts.TryGetValue(d.Tag, out var pending) && pending > 0)
+        {
+            trailing.Children.Add(new Border
+            {
+                Background = Res("AccentFillColorDefaultBrush"),
+                CornerRadius = new CornerRadius(10),
+                Padding = new Thickness(7, 1, 7, 1),
+                VerticalAlignment = VerticalAlignment.Center,
+                Child = new TextBlock
+                {
+                    Text = pending.ToString(),
+                    FontSize = 11,
+                    FontWeight = FontWeights.Bold,
+                    Foreground = new SolidColorBrush(Microsoft.UI.Colors.White),
+                },
+            });
+        }
+
+        trailing.Children.Add(new TextBlock
         {
             Text = G("E76C"),
             FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"),
             FontSize = 12,
             Foreground = Res("TextFillColorTertiaryBrush"),
             VerticalAlignment = VerticalAlignment.Center,
-        };
-        Grid.SetColumn(chevron, 2);
+        });
+        Grid.SetColumn(trailing, 2);
 
         row.Children.Add(iconBox);
         row.Children.Add(text);
-        row.Children.Add(chevron);
+        row.Children.Add(trailing);
 
         var card = new Border
         {
@@ -178,11 +231,13 @@ public sealed partial class HomePage : Page
 
         if (query.Length == 0)
         {
+            DashboardPanel.Visibility = Visibility.Visible;
             CardsPanel.Visibility = Visibility.Visible;
             ResultsCard.Visibility = Visibility.Collapsed;
             return;
         }
 
+        DashboardPanel.Visibility = Visibility.Collapsed;
         CardsPanel.Visibility = Visibility.Collapsed;
 
         // net8 grouped hits by tab; SettingBackupService.Search already returns TabLabel
@@ -272,6 +327,61 @@ public sealed partial class HomePage : Page
         row.Tapped += (_, _) => Navigate(hit.TabTag);
         return row;
     }
+
+    // ── Quick actions ─────────────────────────────────────────────────────────
+
+    // Apply-all-recommended — the VM runs the confirmation + unified progress loop over the
+    // pending rows across every page. Rebuild the cards afterwards so the pending chips update.
+    private async void ApplyAllButton_Click(object sender, RoutedEventArgs e)
+    {
+        await ViewModel.ApplyAllRecommendedAsync();
+        CardsPanel.Children.Clear();
+        BuildCards();
+    }
+
+    // Restore-point quick action — mirrors SettingPageViewModel.CreateRestorePointAsync:
+    // runs through the TaskProgressService card (indeterminate + Cancel) and reports the
+    // BackupResult. Home only triggers the existing service; it adds no restore logic.
+    private async void RestorePointButton_Click(object sender, RoutedEventArgs e)
+    {
+        var progressService = ServiceLocator.GetService<ITaskProgressService>();
+        var backup = ServiceLocator.GetService<ISystemBackupService>();
+        var dialogs = ServiceLocator.GetService<TweakDialogs>();
+        if (progressService is null || backup is null || dialogs is null) return;
+
+        RestorePointButton.IsEnabled = false;
+        var cts = progressService.StartTask("Creating system restore point...", isIndeterminate: true);
+        var progress = progressService.CreateDetailedProgress();
+        try
+        {
+            var result = await backup.CreateRestorePointAsync(progress: progress, cancellationToken: cts.Token);
+
+            if (result.Success && result.RestorePointCreated)
+            {
+                await dialogs.InfoAsync("Create Restore Point", "System Restore point created successfully.");
+            }
+            else
+            {
+                var failMsg = "Failed to create System Restore point.";
+                if (!string.IsNullOrEmpty(result.ErrorMessage))
+                    failMsg += $"\n\n{result.ErrorMessage}";
+                await dialogs.InfoAsync("Create Restore Point", failMsg);
+            }
+        }
+        catch (Exception ex)
+        {
+            ToolService.Current?.Log($"[RESTORE] Home quick action restore point failed: {ex.Message}");
+            await dialogs.InfoAsync("Create Restore Point", "Failed to create System Restore point.");
+        }
+        finally
+        {
+            progressService.CompleteTask();
+            RestorePointButton.IsEnabled = true;
+        }
+    }
+
+    // Back up config — routes to the Backup tab (export/import lives there); no new logic.
+    private void BackupButton_Click(object sender, RoutedEventArgs e) => Navigate("Backup");
 
     // ── Nav ───────────────────────────────────────────────────────────────────
 

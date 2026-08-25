@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Home (rail tag "Home") — Phase 9 real port replacing the Phase-A demo stub.
-    System-info banner (bound to the trimmed HomeViewModel) + a global search wired to
-    TweakRegistry.Search + a quick-nav card grid, both built in the code-behind. NOT a
-    tweak page — registers nothing.
+    Home (rail tag "Home") — "Command Center" rework.
+    Hub chrome header + a dashboard in the rounded neutral panel: a hero system card, a
+    health strip (recommended-pending / drifted / update status — all read-only signals the
+    app already computes), a quick-actions row, the global search (SettingBackupService.Search)
+    and the quick-nav card grid. NOT a tweak page — registers nothing.
 -->
 <Page
     x:Class="AkariTool.Views.HomePage"
@@ -14,8 +15,13 @@
     mc:Ignorable="d"
     NavigationCacheMode="Required">
 
-    <!-- Matches the hub chrome: a big header (icon + title + description) on the flattened
-         background, with the page content in the same rounded neutral panel the hubs use. -->
+    <Page.Resources>
+        <!-- Semantic health colors (single dark world; app forces Dark). Crimson stays the
+             accent (AccentTextFillColorPrimaryBrush). -->
+        <SolidColorBrush x:Key="HealthWarnBrush" Color="#E0A83A" />
+        <SolidColorBrush x:Key="HealthGoodBrush" Color="#3FB27F" />
+    </Page.Resources>
+
     <Grid Padding="28,0,20,0">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />  <!-- Header -->
@@ -54,114 +60,216 @@
             <ScrollViewer>
                 <StackPanel Padding="24,20,24,24" MaxWidth="1000" HorizontalAlignment="Center">
 
-            <!-- System information banner (restored old layout: big edition/version
-                 header over a 3-column Processor/Graphics/Memory stat row, in place
-                 of the newly-ported label-value grid — same ViewModel bindings,
-                 different presentation only). -->
-            <Border
-                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1"
-                CornerRadius="8"
-                Padding="20,16,20,16"
-                Margin="0,0,0,16">
-                <StackPanel>
-                    <TextBlock
-                        Text="{x:Bind ViewModel.Edition, Mode=OneWay}"
-                        FontSize="20"
-                        FontWeight="SemiBold"
-                        Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
-                    <TextBlock
-                        Text="{x:Bind ViewModel.Version, Mode=OneWay}"
-                        FontSize="12.5"
-                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                        Margin="0,2,0,0" />
+                    <!-- ── Dashboard (hero + health + quick actions); hidden while searching ── -->
+                    <StackPanel x:Name="DashboardPanel">
 
+                        <!-- Hero: system card with status pill -->
+                        <Border
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="12"
+                            Padding="22,18,22,18"
+                            Margin="0,0,0,14">
+                            <StackPanel>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock
+                                            Text="{x:Bind ViewModel.Edition, Mode=OneWay}"
+                                            FontSize="21"
+                                            FontWeight="Bold"
+                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
+                                        <TextBlock
+                                            Text="{x:Bind ViewModel.Version, Mode=OneWay}"
+                                            FontSize="12.5"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            Margin="0,2,0,0" />
+                                    </StackPanel>
+                                    <Border Grid.Column="1"
+                                            VerticalAlignment="Center"
+                                            Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="10"
+                                            Padding="12,5,12,5">
+                                        <TextBlock
+                                            Text="{x:Bind ViewModel.HealthSummary, Mode=OneWay}"
+                                            FontSize="12"
+                                            FontWeight="SemiBold"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                    </Border>
+                                </Grid>
+
+                                <Border Height="1"
+                                        Background="{ThemeResource DividerStrokeColorDefaultBrush}"
+                                        Margin="0,16,0,16" />
+
+                                <Grid ColumnSpacing="24">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="PROCESSOR" FontFamily="Consolas" FontSize="10"
+                                                   FontWeight="Medium" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                                        <TextBlock Text="{x:Bind ViewModel.Cpu, Mode=OneWay}" FontSize="13"
+                                                   Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                   TextWrapping="Wrap" Margin="0,3,0,0" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Text="GRAPHICS" FontFamily="Consolas" FontSize="10"
+                                                   FontWeight="Medium" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                                        <TextBlock Text="{x:Bind ViewModel.Gpu, Mode=OneWay}" FontSize="13"
+                                                   Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                   TextWrapping="Wrap" Margin="0,3,0,0" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="MEMORY" FontFamily="Consolas" FontSize="10"
+                                                   FontWeight="Medium" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                                        <TextBlock Text="{x:Bind ViewModel.Memory, Mode=OneWay}" FontSize="13"
+                                                   Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                   TextWrapping="Wrap" Margin="0,3,0,0" />
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Health strip: 3 read-only signal cells -->
+                        <Grid ColumnSpacing="12" Margin="0,0,0,14">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Recommended pending -->
+                            <Border Grid.Column="0"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1" CornerRadius="10" Padding="16,13,16,13">
+                                <StackPanel>
+                                    <TextBlock Text="{x:Bind ViewModel.RecommendedPendingDisplay, Mode=OneWay}"
+                                               FontSize="26" FontWeight="Bold"
+                                               Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                                    <TextBlock Text="Recommended pending" FontSize="12"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="0,4,0,0" />
+                                    <TextBlock Text="across all tabs" FontSize="10.5"
+                                               Foreground="{ThemeResource TextFillColorTertiaryBrush}" Margin="0,1,0,0" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Settings drifted -->
+                            <Border Grid.Column="1"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1" CornerRadius="10" Padding="16,13,16,13">
+                                <StackPanel>
+                                    <TextBlock Text="{x:Bind ViewModel.DriftedDisplay, Mode=OneWay}"
+                                               FontSize="26" FontWeight="Bold"
+                                               Foreground="{ThemeResource HealthWarnBrush}" />
+                                    <TextBlock Text="Settings drifted" FontSize="12"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="0,4,0,0" />
+                                    <TextBlock Text="Windows reverted" FontSize="10.5"
+                                               Foreground="{ThemeResource TextFillColorTertiaryBrush}" Margin="0,1,0,0" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Update status -->
+                            <Border Grid.Column="2"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1" CornerRadius="10" Padding="16,13,16,13">
+                                <StackPanel>
+                                    <TextBlock Text="{x:Bind ViewModel.UpdateStatusText, Mode=OneWay}"
+                                               FontSize="15" FontWeight="SemiBold"
+                                               TextWrapping="Wrap"
+                                               Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
+                                    <TextBlock Text="Updates" FontSize="12"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="0,4,0,0" />
+                                    <TextBlock Text="Akari Tool" FontSize="10.5"
+                                               Foreground="{ThemeResource TextFillColorTertiaryBrush}" Margin="0,1,0,0" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <!-- Quick actions -->
+                        <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,0,0,16">
+                            <Button x:Name="ApplyAllButton"
+                                    Style="{ThemeResource AccentButtonStyle}"
+                                    Click="ApplyAllButton_Click"
+                                    IsEnabled="{x:Bind ViewModel.CanApplyAll, Mode=OneWay}"
+                                    Padding="15,9,15,9">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Text="&#xE930;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                               FontSize="14" VerticalAlignment="Center" />
+                                    <TextBlock Text="{x:Bind ViewModel.ApplyAllLabel, Mode=OneWay}"
+                                               FontSize="12.5" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+
+                            <Button x:Name="RestorePointButton"
+                                    Click="RestorePointButton_Click"
+                                    Padding="15,9,15,9"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource AccentControlElevationBorderBrush}"
+                                    BorderThickness="1">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Text="&#xE777;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                               FontSize="14" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                               VerticalAlignment="Center" />
+                                    <TextBlock Text="Create restore point" FontSize="12.5" FontWeight="SemiBold"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+
+                            <Button x:Name="BackupButton"
+                                    Click="BackupButton_Click"
+                                    Padding="15,9,15,9"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Text="&#xE74E;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                               FontSize="14" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                               VerticalAlignment="Center" />
+                                    <TextBlock Text="Back up config" FontSize="12.5" FontWeight="SemiBold"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Global search across every tab (SettingBackupService.Search) -->
+                    <AutoSuggestBox
+                        x:Name="SearchBox"
+                        PlaceholderText="Search all tweaks across every tab…"
+                        QueryIcon="Find"
+                        FontSize="14"
+                        Height="44"
+                        Margin="0,0,0,16"
+                        TextChanged="SearchBox_TextChanged"
+                        AutomationProperties.Name="Search all tweaks" />
+
+                    <!-- Search results (code-filled; shown while searching) -->
                     <Border
-                        Height="1"
-                        Background="{ThemeResource DividerStrokeColorDefaultBrush}"
-                        Margin="0,14,0,14" />
+                        x:Name="ResultsCard"
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="18,10,18,10"
+                        Visibility="Collapsed">
+                        <StackPanel x:Name="ResultsPanel" />
+                    </Border>
 
-                    <Grid ColumnSpacing="24">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-
-                        <StackPanel Grid.Column="0">
-                            <TextBlock
-                                Text="PROCESSOR"
-                                FontFamily="Consolas"
-                                FontSize="10"
-                                FontWeight="Medium"
-                                Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
-                            <TextBlock
-                                Text="{x:Bind ViewModel.Cpu, Mode=OneWay}"
-                                FontSize="13"
-                                Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                                TextWrapping="Wrap"
-                                Margin="0,3,0,0" />
-                        </StackPanel>
-
-                        <StackPanel Grid.Column="1">
-                            <TextBlock
-                                Text="GRAPHICS"
-                                FontFamily="Consolas"
-                                FontSize="10"
-                                FontWeight="Medium"
-                                Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
-                            <TextBlock
-                                Text="{x:Bind ViewModel.Gpu, Mode=OneWay}"
-                                FontSize="13"
-                                Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                                TextWrapping="Wrap"
-                                Margin="0,3,0,0" />
-                        </StackPanel>
-
-                        <StackPanel Grid.Column="2">
-                            <TextBlock
-                                Text="MEMORY"
-                                FontFamily="Consolas"
-                                FontSize="10"
-                                FontWeight="Medium"
-                                Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
-                            <TextBlock
-                                Text="{x:Bind ViewModel.Memory, Mode=OneWay}"
-                                FontSize="13"
-                                Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                                TextWrapping="Wrap"
-                                Margin="0,3,0,0" />
-                        </StackPanel>
-                    </Grid>
-                </StackPanel>
-            </Border>
-
-            <!-- Global search across every tab (TweakRegistry.Search) -->
-            <AutoSuggestBox
-                x:Name="SearchBox"
-                PlaceholderText="Search all tweaks across every tab…"
-                QueryIcon="Find"
-                FontSize="14"
-                Height="44"
-                Margin="0,0,0,16"
-                TextChanged="SearchBox_TextChanged"
-                AutomationProperties.Name="Search all tweaks" />
-
-            <!-- Search results (code-filled; shown while searching) -->
-            <Border
-                x:Name="ResultsCard"
-                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1"
-                CornerRadius="8"
-                Padding="18,10,18,10"
-                Visibility="Collapsed">
-                <StackPanel x:Name="ResultsPanel" />
-            </Border>
-
-            <!-- Quick-nav card grid (code-filled; shown when not searching) -->
-            <StackPanel x:Name="CardsPanel" />
+                    <!-- Quick-nav card grid (code-filled; shown when not searching) -->
+                    <StackPanel x:Name="CardsPanel" />
 
                 </StackPanel>
             </ScrollViewer>
