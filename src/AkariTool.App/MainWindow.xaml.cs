@@ -215,14 +215,11 @@ public sealed partial class MainWindow : Window
             };
         }
 
-        // Theme BEFORE content paints. The framework theme service persists the
-        // choice; Akari's brand default is dark.
+        // Theme BEFORE content paints. The framework theme service persists the choice;
+        // "Default" follows the user's current Windows theme — no forced dark. The crimson
+        // accent is defined in both theme dictionaries (App.xaml), so it holds either way.
         _themes.RootElement = RootGrid;
         _themes.Initialize();
-        if (_themes.CurrentTheme == AppTheme.Default)
-        {
-            _themes.ApplyTheme(AppTheme.Dark);
-        }
 
         // Keep the title-bar logo/glyph in sync with theme changes from ANY source —
         // the title-bar toggle button, the Settings page theme picker, etc. Previously
