@@ -81,6 +81,7 @@
     <Content Include="Assets\AkariLogo.png" />
     <Content Include="Assets\AkariLogoLight.png" />
     <Content Include="Assets\AkariLogo.ico" />
+    <Content Include="Assets\AkariOSWallpaper.jpg" />
   </ItemGroup>
 
   <!-- Embedded payloads the ported LOGIC loads at runtime via GetManifestResourceStream

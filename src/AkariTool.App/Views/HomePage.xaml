@@ -69,20 +69,29 @@
                             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                             BorderThickness="1"
                             CornerRadius="12"
-                            Padding="22,18,22,18"
                             Margin="0,0,0,14">
                             <Grid>
-                                <!-- Decorative crimson glow, top-right (clipped to the hero corners) -->
+                                <!-- AkariOS wallpaper, full-bleed to the hero edges (clipped to corners) -->
                                 <Border IsHitTestVisible="False" CornerRadius="12">
                                     <Border.Background>
-                                        <RadialGradientBrush Center="1,0" GradientOrigin="1,0" RadiusX="0.75" RadiusY="1.3">
-                                            <GradientStop Color="#3CE0142A" Offset="0.0" />
-                                            <GradientStop Color="#00E0142A" Offset="1.0" />
-                                        </RadialGradientBrush>
+                                        <ImageBrush ImageSource="ms-appx:///Assets/AkariOSWallpaper.jpg"
+                                                    Stretch="UniformToFill" AlignmentY="Center" />
+                                    </Border.Background>
+                                </Border>
+                                <!-- Left-heavy dark scrim so title/spec text stays readable -->
+                                <Border IsHitTestVisible="False" CornerRadius="12">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                            <GradientStop Color="#E61B1B1E" Offset="0.0" />
+                                            <GradientStop Color="#A61B1B1E" Offset="0.5" />
+                                            <GradientStop Color="#401B1B1E" Offset="1.0" />
+                                        </LinearGradientBrush>
                                     </Border.Background>
                                 </Border>
 
-                                <StackPanel>
+                                <!-- Content keeps the padding the Border used to have, so the
+                                     image behind it goes edge-to-edge. -->
+                                <StackPanel Margin="22,18,22,18">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
