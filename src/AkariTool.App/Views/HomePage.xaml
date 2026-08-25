@@ -14,22 +14,45 @@
     mc:Ignorable="d"
     NavigationCacheMode="Required">
 
-    <ScrollViewer>
-        <StackPanel Padding="32,24,32,24" MaxWidth="1000" HorizontalAlignment="Center">
+    <!-- Matches the hub chrome: a big header (icon + title + description) on the flattened
+         background, with the page content in the same rounded neutral panel the hubs use. -->
+    <Grid Padding="28,0,20,0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />  <!-- Header -->
+            <RowDefinition Height="*" />     <!-- Content -->
+        </Grid.RowDefinitions>
 
-            <StackPanel Margin="0,0,0,16">
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="16" Margin="0,24,0,16">
+            <Viewbox Width="52" Height="52" Stretch="Uniform" VerticalAlignment="Center">
+                <TextBlock
+                    Text="&#xE80F;"
+                    FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+            </Viewbox>
+            <StackPanel VerticalAlignment="Center">
                 <TextBlock
                     Text="{x:Bind ViewModel.Title, Mode=OneWay}"
-                    FontSize="26"
-                    FontWeight="SemiBold"
-                    Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
+                    FontSize="30"
+                    FontWeight="Bold"
+                    Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                    AutomationProperties.HeadingLevel="Level1" />
                 <TextBlock
                     Text="{x:Bind ViewModel.Subtitle, Mode=OneWay}"
                     FontSize="13"
-                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                    Margin="0,4,0,0"
+                    Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                    Margin="0,2,0,0"
                     TextWrapping="Wrap" />
             </StackPanel>
+        </StackPanel>
+
+        <!-- Content panel -->
+        <Border Grid.Row="1"
+                Background="{ThemeResource SystemFillColorNeutralBackgroundBrush}"
+                CornerRadius="8"
+                Margin="0,0,0,12">
+            <ScrollViewer>
+                <StackPanel Padding="24,20,24,24" MaxWidth="1000" HorizontalAlignment="Center">
 
             <!-- System information banner (restored old layout: big edition/version
                  header over a 3-column Processor/Graphics/Memory stat row, in place
@@ -140,6 +163,8 @@
             <!-- Quick-nav card grid (code-filled; shown when not searching) -->
             <StackPanel x:Name="CardsPanel" />
 
-        </StackPanel>
-    </ScrollViewer>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+    </Grid>
 </Page>
