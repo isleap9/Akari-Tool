@@ -61,6 +61,8 @@ public sealed partial class HubCardViewModel : ObservableObject, IDisposable
 
     public int RecommendedCount => _pageVm?.RecommendedPendingCount ?? 0;
     public int DefaultCount => _pageVm?.DefaultPendingCount ?? 0;
+    public int RecommendedTotalCount => _pageVm?.RecommendedTotalCount ?? 0;
+    public int DefaultTotalCount => _pageVm?.DefaultTotalCount ?? 0;
 
     // Pills show only when there is a settings page AND that bucket has pending items.
     public Visibility RecommendedPillVisibility =>
@@ -69,16 +71,20 @@ public sealed partial class HubCardViewModel : ObservableObject, IDisposable
     public Visibility DefaultPillVisibility =>
         HasCounts && DefaultCount > 0 ? Visibility.Visible : Visibility.Collapsed;
 
-    public string RecommendedPillText => $"{RecommendedCount} Recommended";
-    public string DefaultPillText => $"{DefaultCount} Default";
+    public string RecommendedPillText => $"{RecommendedCount}/{RecommendedTotalCount} Recommended";
+    public string DefaultPillText => $"{DefaultCount}/{DefaultTotalCount} Default";
 
     private void OnPageVmPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName is nameof(SettingPageViewModel.RecommendedPendingCount)
-            or nameof(SettingPageViewModel.DefaultPendingCount))
+            or nameof(SettingPageViewModel.DefaultPendingCount)
+            or nameof(SettingPageViewModel.RecommendedTotalCount)
+            or nameof(SettingPageViewModel.DefaultTotalCount))
         {
             OnPropertyChanged(nameof(RecommendedCount));
             OnPropertyChanged(nameof(DefaultCount));
+            OnPropertyChanged(nameof(RecommendedTotalCount));
+            OnPropertyChanged(nameof(DefaultTotalCount));
             OnPropertyChanged(nameof(RecommendedPillVisibility));
             OnPropertyChanged(nameof(DefaultPillVisibility));
             OnPropertyChanged(nameof(RecommendedPillText));

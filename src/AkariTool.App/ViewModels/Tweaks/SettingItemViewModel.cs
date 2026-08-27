@@ -44,6 +44,9 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
         // ─── Technical Details (Winhance 1:1 port) ──────────────────────────────────
         private readonly TechnicalDetailsManager _technicalDetailsManager;
 
+        // ─── Power Plan row (only constructed for the power-plan-selection row) ─────
+        private readonly SettingPowerPlanController? _powerPlanController;
+
         private bool _suppress;
         private int _lastIndex = -1;
         private readonly ISystemSettingsDiscoveryService? _discoveryService;
@@ -143,8 +146,12 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
 
             if (IsPowerPlanSetting)
             {
-                DeletePlanCommand = new AsyncRelayCommand<PowerPlanComboBoxOption>(DeletePlanAsync);
-                RefreshPlanOptions();
+                _powerPlanController = new SettingPowerPlanController(
+                    _powerPlanComboBoxService, _powerService, _powerCatalog, _dialogs,
+                    SetSelectedIndexSilently, idx => _lastIndex = idx);
+                _powerPlanController.PowerPlanChanged += () => PowerPlanChanged?.Invoke();
+                DeletePlanCommand = new AsyncRelayCommand<PowerPlanComboBoxOption>(_powerPlanController.DeletePlanAsync);
+                _powerPlanController.RefreshPlanOptions();
             }
             else
             {
@@ -178,7 +185,10 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
         InputType == InputType.Selection && Definition.Recommendation?.LoadDynamicOptions == true;
 
     /// <summary>Dynamic Power Plan options backing the bespoke combo row.</summary>
-        public ObservableCollection<PowerPlanComboBoxOption> PlanOptions { get; } = new();
+        public ObservableCollection<PowerPlanComboBoxOption> PlanOptions =>
+            _powerPlanController?.PlanOptions ?? _emptyPlanOptions;
+
+        private static readonly ObservableCollection<PowerPlanComboBoxOption> _emptyPlanOptions = new();
 
         /// <summary>
         /// Delete command for a non-active, installed plan in the Power Plan dropdown.
@@ -509,7 +519,7 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
 
             if (IsPowerPlanSetting)
             {
-                await ApplyPowerPlanAsync(newIndex);
+                await _powerPlanController!.ApplyPowerPlanAsync(newIndex);
                 return;
             }
 
@@ -569,157 +579,19 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
         }
 
     // ── Power Plan row (dynamic options) ─────────────────────────────────────
-
-    /// <summary>
-    /// Blocking repopulation of <see cref="PlanOptions"/> + active-index resolution.
-    /// Runs in the row ctor (Build, on the warm-up background thread or the page
-    /// ctor) and after every successful plan write. The internal services
-    /// ConfigureAwait(false), so blocking here cannot deadlock a UI thread.
-    /// </summary>
-    private void RefreshPlanOptions()
-    {
-        if (_powerPlanComboBoxService == null || _powerService == null) return;
-
-        var options = _powerPlanComboBoxService.GetPowerPlanOptionsAsync().GetAwaiter().GetResult();
-        PlanOptions.Clear();
-        foreach (var option in options)
-            PlanOptions.Add(option);
-
-        int idx = 0;
-        var active = _powerService.GetActivePowerPlanAsync().GetAwaiter().GetResult();
-        if (active != null)
-        {
-            var match = options.FirstOrDefault(o =>
-                string.Equals(o.SystemPlan?.Guid, active.Guid, StringComparison.OrdinalIgnoreCase));
-            if (match != null) idx = match.Index;
-        }
-
-        SetSelectedIndexSilently(idx);
-        _lastIndex = idx;
-    }
-
-    /// <summary>
-    /// User picked a plan: activate it (importing the predefined plan first when it
-    /// is not yet on the system), then repopulate the dropdown and ask the page to
-    /// re-read sibling PowerCfg rows. Runs on the UI thread — no ConfigureAwait so
-    /// the bound-collection mutations stay on the dispatcher.
-    /// </summary>
-    private async Task ApplyPowerPlanAsync(int newIndex)
-    {
-        if (_powerService == null || _powerPlanComboBoxService == null) return;
-
-        var options = await _powerPlanComboBoxService.GetPowerPlanOptionsAsync();
-        if (newIndex < 0 || newIndex >= options.Count)
-        {
-            RefreshPlanOptions();
-            return;
-        }
-
-        var option = options[newIndex];
-        if (option.IsActive)
-        {
-            RefreshPlanOptions();
-            return;
-        }
-
-        string? guid = option.SystemPlan?.Guid ?? option.PredefinedPlan?.Guid;
-        if (string.IsNullOrEmpty(guid))
-        {
-            RefreshPlanOptions();
-            return;
-        }
-
-        bool ok;
-        if (option.ExistsOnSystem)
-        {
-            ok = await _powerService.ActivatePowerPlanAsync(guid);
-        }
-        else if (option.PredefinedPlan != null)
-        {
-            var import = await _powerService.ImportPowerPlanAsync(option.PredefinedPlan, _powerCatalog);
-            ok = import.Success;
-        }
-        else
-        {
-            ok = false;
-        }
-
-        if (!ok)
-        {
-            await _dialogs.InfoAsync("Power Plan", $"Could not activate the power plan \"{option.DisplayName}\".");
-            RefreshPlanOptions();
-            return;
-        }
-
-        RefreshPlanOptions();
-        PowerPlanChanged?.Invoke();
-    }
+    // Delegates to SettingPowerPlanController — see that class for the actual logic.
 
     /// <summary>
     /// Backup-restore seam: activates/imports the plan matching <paramref name="guid"/>
     /// (by system plan GUID or predefined plan GUID), reusing the same apply path as a
-    /// user pick. Returns false when no option carries that GUID, or the activation
-    /// failed. Also raises <see cref="PowerPlanChanged"/> so sibling PowerCfg rows
-    /// re-read under the newly active plan.
+    /// user pick. Returns false when this row isn't a power-plan row, no option carries
+    /// that GUID, or the activation failed. Also raises <see cref="PowerPlanChanged"/> so
+    /// sibling PowerCfg rows re-read under the newly active plan.
     /// </summary>
     public async Task<bool> ApplyPowerPlanByGuidAsync(string guid)
     {
-        if (_powerPlanComboBoxService == null) return false;
-
-        var options = await _powerPlanComboBoxService.GetPowerPlanOptionsAsync();
-        int index = -1;
-        for (int i = 0; i < options.Count; i++)
-        {
-            var o = options[i];
-            if (string.Equals(o.SystemPlan?.Guid, guid, StringComparison.OrdinalIgnoreCase)
-                || string.Equals(o.PredefinedPlan?.Guid, guid, StringComparison.OrdinalIgnoreCase))
-            {
-                index = i;
-                break;
-            }
-        }
-        if (index < 0) return false;
-
-        var active = options[index];
-        if (active.IsActive) return true; // already active — nothing to do
-
-        await ApplyPowerPlanAsync(index);
-        return true;
-    }
-
-    /// <summary>
-    /// Deletes an installed, non-active plan from the Power Plan dropdown. The
-    /// active plan and not-installed predefined plans are guarded.
-    /// </summary>
-    private async Task DeletePlanAsync(PowerPlanComboBoxOption? option)
-    {
-        if (option == null || _powerService == null) return;
-
-        if (!option.ExistsOnSystem || option.SystemPlan == null)
-        {
-            await _dialogs.InfoAsync("Power Plan", $"\"{option.DisplayName}\" is not installed on this system.");
-            return;
-        }
-
-        if (option.IsActive)
-        {
-            await _dialogs.InfoAsync("Power Plan", "You cannot delete the active power plan.");
-            return;
-        }
-
-        bool confirmed = await _dialogs.ConfirmAsync(
-            "Delete power plan", $"Delete the power plan \"{option.DisplayName}\"?", "Delete");
-        if (!confirmed) return;
-
-        bool ok = await _powerService.DeletePowerPlanAsync(option.SystemPlan.Guid);
-        if (!ok)
-        {
-            await _dialogs.InfoAsync("Power Plan", $"Could not delete the power plan \"{option.DisplayName}\".");
-            return;
-        }
-
-        RefreshPlanOptions();
-        PowerPlanChanged?.Invoke();
+        if (_powerPlanController == null) return false;
+        return await _powerPlanController.ApplyPowerPlanByGuidAsync(guid);
     }
 
     // Per-state toggle warning copy (Akari extension). ON shows EnableWarning, OFF DisableWarning.
@@ -1095,368 +967,13 @@ public sealed partial class SettingItemViewModel : ObservableObject, ISettingRow
 
     private void RefreshBadges()
     {
-        var computed = ComputeBadgeState();
+        var computed = SettingBadgeCalculator.Compute(
+            Definition, InputType, IsOn, SelectedIndex, NumericValue, AcNumericValue, DcNumericValue,
+            HasBattery, SupportsSeparateACDC);
         Badges.Clear();
         foreach (var pill in computed)
             Badges.Add(pill);
         OnPropertyChanged(nameof(HasBadges));
         AppliedStateChanged?.Invoke();
     }
-
-    private IReadOnlyList<BadgePillState> ComputeBadgeState()
-    {
-        var result = new List<BadgePillState>();
-
-        if (Definition.InputType == InputType.Action)
-            return result;
-
-        bool hasBadgeData =
-            Definition.RegistrySettings.Count > 0
-            || Definition.ScheduledTaskSettings.Count > 0
-            || Definition.ComboBox?.Options?.Any(o => o.IsRecommended || o.IsDefault) == true
-            || (Definition.PowerCfgSettings?.Any(p =>
-                p.RecommendedValueAC.HasValue || p.RecommendedValueDC.HasValue
-                || p.DefaultValueAC.HasValue || p.DefaultValueDC.HasValue) == true);
-        if (!hasBadgeData)
-            return result;
-
-        if (InputType == InputType.Toggle || InputType == InputType.CheckBox)
-        {
-            // Winhance 1:1: seed from the explicit toggle-level override, then fold ALL
-            // evidence sources (registry, scheduled tasks) — every source with an opinion
-            // can dim the flag; sources without one abstain (leave the flag untouched).
-            bool matchesRec = true;
-            bool matchesDef = true;
-
-            if (Definition.RecommendedToggleState.HasValue
-                && IsOn != Definition.RecommendedToggleState.Value)
-                matchesRec = false;
-            if (Definition.DefaultToggleState.HasValue
-                && IsOn != Definition.DefaultToggleState.Value)
-                matchesDef = false;
-
-            foreach (var reg in Definition.RegistrySettings)
-            {
-                var (regRec, regDef) = EvaluateRegistrySetting(reg);
-                if (!regRec) matchesRec = false;
-                if (!regDef) matchesDef = false;
-            }
-
-            foreach (var task in Definition.ScheduledTaskSettings)
-            {
-                // Toggle ON = task enabled. RecommendedState/DefaultState both represent the
-                // task-enabled state, so compare IsOn directly (Winhance parity).
-                if (task.RecommendedState.HasValue && IsOn != task.RecommendedState.Value)
-                    matchesRec = false;
-                if (task.DefaultState.HasValue && IsOn != task.DefaultState.Value)
-                    matchesDef = false;
-            }
-
-            if (Definition.IsSubjectivePreference)
-            {
-                result.Add(new BadgePillState(SettingBadgeKind.Preference, true, "Preference", "This is a preference setting"));
-            }
-            else
-            {
-                if (HasAnyRecommendedData())
-                    result.Add(new BadgePillState(SettingBadgeKind.Recommended, matchesRec, "Recommended", "Akari's recommended value"));
-                if (HasAnyDefaultData())
-                    result.Add(new BadgePillState(SettingBadgeKind.Default, matchesDef, "Windows Default", "Windows default value"));
-            }
-        }
-        else if (InputType == InputType.Selection)
-        {
-            int optionCount = Definition.ComboBox?.Options?.Count ?? 0;
-
-            if (Definition.IsSubjectivePreference)
-            {
-                result.Add(new BadgePillState(SettingBadgeKind.Preference, true, "Preference", "This is a preference setting"));
-            }
-            else
-            {
-                bool matchesRec;
-                bool matchesDef;
-                bool isCustom;
-
-                if (SupportsSeparateACDC)
-                {
-                    // Winhance 1:1: PowerCfg-backed Separate AC/DC selections drive via AC/DC
-                    // indices compared against RecommendedValueAC/DC — NOT SelectedIndex vs
-                    // option flags. On battery-less systems DC isn't writable/visible; skip DC
-                    // comparisons or a refresh would visibly flip the badge.
-                    bool considerDc = HasBattery;
-                    matchesRec = true;
-                    matchesDef = true;
-                    var pcfgList = Definition.PowerCfgSettings;
-                    var pcfg = pcfgList?.FirstOrDefault();
-
-                    if (pcfg != null)
-                    {
-                        if (pcfg.RecommendedValueAC.HasValue && !PowerCfgIndexMatchesValue(SelectedIndex, pcfg.RecommendedValueAC.Value))
-                            matchesRec = false;
-                        if (considerDc && pcfg.RecommendedValueDC.HasValue && !PowerCfgIndexMatchesValue(SelectedIndex, pcfg.RecommendedValueDC.Value))
-                            matchesRec = false;
-                        if (pcfg.DefaultValueAC.HasValue && !PowerCfgIndexMatchesValue(SelectedIndex, pcfg.DefaultValueAC.Value))
-                            matchesDef = false;
-                        if (considerDc && pcfg.DefaultValueDC.HasValue && !PowerCfgIndexMatchesValue(SelectedIndex, pcfg.DefaultValueDC.Value))
-                            matchesDef = false;
-                    }
-
-                    isCustom = !IsKnownSelectionValue();
-                }
-                else
-                {
-                    // Winhance 1:1: light pills when the currently-selected OPTION carries the
-                    // flag (multiple options may carry either — e.g. measurement system marks
-                    // both Metric and Imperial default per locale). Custom only when the value
-                    // is unmapped (out of range / Custom sentinel), never for a known option.
-                    bool anyRecommended = Definition.ComboBox?.Options?.Any(o => o.IsRecommended) == true;
-                    bool anyDefault = Definition.ComboBox?.Options?.Any(o => o.IsDefault) == true;
-
-                    matchesRec = anyRecommended && SelectedIndex >= 0 && SelectedIndex < optionCount
-                        && Definition.ComboBox!.Options[SelectedIndex].IsRecommended;
-                    matchesDef = anyDefault && SelectedIndex >= 0 && SelectedIndex < optionCount
-                        && Definition.ComboBox!.Options[SelectedIndex].IsDefault;
-                    isCustom = !IsKnownSelectionValue();
-                }
-
-                if (HasAnyRecommendedData())
-                    result.Add(new BadgePillState(SettingBadgeKind.Recommended, matchesRec, "Recommended", "Akari's recommended value"));
-                if (HasAnyDefaultData())
-                    result.Add(new BadgePillState(SettingBadgeKind.Default, matchesDef, "Windows Default", "Windows default value"));
-                if (isCustom)
-                    result.Add(new BadgePillState(SettingBadgeKind.Custom, true, "Custom", "Custom value"));
-            }
-        }
-        else if (InputType == InputType.NumericRange)
-        {
-            var pcfg = Definition.PowerCfgSettings?.FirstOrDefault();
-            if (pcfg == null) return result;
-
-            // Separate AC/DC with a battery present: per-mode pills so the user can see
-            // which mode matches recommended/default and which is custom. On battery-less
-            // systems DC is hidden and not writable — keep single-pill behaviour (1:1
-            // with Winhance).
-            bool perModeBadges = SupportsSeparateACDC
-                && HasBattery
-                && pcfg.PowerModeSupport == PowerModeSupport.Separate;
-
-            if (perModeBadges)
-            {
-                AddAcDcRecommendedPills(result, pcfg);
-                AddAcDcDefaultPills(result, pcfg);
-                AddAcDcCustomPills(result, pcfg);
-            }
-            else
-            {
-                // Compare display units; pcfg values are in system units.
-                bool considerDc = HasBattery;
-                bool matchesRec = true;
-                bool matchesDef = true;
-
-                if (SupportsSeparateACDC)
-                {
-                    if (pcfg.RecommendedValueAC.HasValue && AcNumericValue != ConvertFromSystemUnits(pcfg.RecommendedValueAC.Value))
-                        matchesRec = false;
-                    if (considerDc && pcfg.RecommendedValueDC.HasValue && DcNumericValue != ConvertFromSystemUnits(pcfg.RecommendedValueDC.Value))
-                        matchesRec = false;
-                    if (pcfg.DefaultValueAC.HasValue && AcNumericValue != ConvertFromSystemUnits(pcfg.DefaultValueAC.Value))
-                        matchesDef = false;
-                    if (considerDc && pcfg.DefaultValueDC.HasValue && DcNumericValue != ConvertFromSystemUnits(pcfg.DefaultValueDC.Value))
-                        matchesDef = false;
-                }
-                else
-                {
-                    if (pcfg.RecommendedValueAC.HasValue && NumericValue != ConvertFromSystemUnits(pcfg.RecommendedValueAC.Value))
-                        matchesRec = false;
-                    if (pcfg.DefaultValueAC.HasValue && NumericValue != ConvertFromSystemUnits(pcfg.DefaultValueAC.Value))
-                        matchesDef = false;
-                }
-
-                bool hasRecData = pcfg.RecommendedValueAC.HasValue || (considerDc && pcfg.RecommendedValueDC.HasValue);
-                bool hasDefData = pcfg.DefaultValueAC.HasValue || (considerDc && pcfg.DefaultValueDC.HasValue);
-
-                if (hasRecData)
-                    result.Add(new BadgePillState(SettingBadgeKind.Recommended, matchesRec, "Recommended", "Akari's recommended value"));
-                if (hasDefData)
-                    result.Add(new BadgePillState(SettingBadgeKind.Default, matchesDef, "Windows Default", "Windows default value"));
-                if (hasRecData || hasDefData)
-                    result.Add(new BadgePillState(SettingBadgeKind.Custom, !matchesRec && !matchesDef, "Custom", "Custom value"));
-            }
-        }
-
-        return result;
-    }
-
-    private void AddAcDcRecommendedPills(List<BadgePillState> row, PowerCfgSetting pcfg)
-    {
-        if (pcfg.RecommendedValueAC.HasValue)
-        {
-            bool match = AcNumericValue == ConvertFromSystemUnits(pcfg.RecommendedValueAC.Value);
-            row.Add(new BadgePillState(SettingBadgeKind.Recommended, match, "Recommended", "Akari's recommended value (plugged in)", SettingBadgeMode.AC));
-        }
-        if (pcfg.RecommendedValueDC.HasValue)
-        {
-            bool match = DcNumericValue == ConvertFromSystemUnits(pcfg.RecommendedValueDC.Value);
-            row.Add(new BadgePillState(SettingBadgeKind.Recommended, match, "Recommended", "Akari's recommended value (on battery)", SettingBadgeMode.DC));
-        }
-    }
-
-    private void AddAcDcDefaultPills(List<BadgePillState> row, PowerCfgSetting pcfg)
-    {
-        if (pcfg.DefaultValueAC.HasValue)
-        {
-            bool match = AcNumericValue == ConvertFromSystemUnits(pcfg.DefaultValueAC.Value);
-            row.Add(new BadgePillState(SettingBadgeKind.Default, match, "Windows Default", "Windows default value (plugged in)", SettingBadgeMode.AC));
-        }
-        if (pcfg.DefaultValueDC.HasValue)
-        {
-            bool match = DcNumericValue == ConvertFromSystemUnits(pcfg.DefaultValueDC.Value);
-            row.Add(new BadgePillState(SettingBadgeKind.Default, match, "Windows Default", "Windows default value (on battery)", SettingBadgeMode.DC));
-        }
-    }
-
-    private void AddAcDcCustomPills(List<BadgePillState> row, PowerCfgSetting pcfg)
-    {
-        if (pcfg.RecommendedValueAC.HasValue || pcfg.DefaultValueAC.HasValue)
-        {
-            bool acRec = pcfg.RecommendedValueAC.HasValue && AcNumericValue == ConvertFromSystemUnits(pcfg.RecommendedValueAC.Value);
-            bool acDef = pcfg.DefaultValueAC.HasValue && AcNumericValue == ConvertFromSystemUnits(pcfg.DefaultValueAC.Value);
-            row.Add(new BadgePillState(SettingBadgeKind.Custom, !acRec && !acDef, "Custom", "Custom value (plugged in)", SettingBadgeMode.AC));
-        }
-        if (pcfg.RecommendedValueDC.HasValue || pcfg.DefaultValueDC.HasValue)
-        {
-            bool dcRec = pcfg.RecommendedValueDC.HasValue && DcNumericValue == ConvertFromSystemUnits(pcfg.RecommendedValueDC.Value);
-            bool dcDef = pcfg.DefaultValueDC.HasValue && DcNumericValue == ConvertFromSystemUnits(pcfg.DefaultValueDC.Value);
-            row.Add(new BadgePillState(SettingBadgeKind.Custom, !dcRec && !dcDef, "Custom", "Custom value (on battery)", SettingBadgeMode.DC));
-        }
-    }
-
-    private (bool matchesRec, bool matchesDef) EvaluateRegistrySetting(RegistrySetting reg)
-    {
-        // Winhance 1:1 — PURE computation against IsOn (no live registry reads).
-        // Resolution order for Recommended:
-        //   1. SettingDefinition.RecommendedToggleState (explicit toggle-level flag)
-        //   2. Per-RegistrySetting RecommendedValue mapped strictly (no null-sentinel derivation)
-        //   3. null → abstain (no badge match evidence)
-        // Default still derives from the null sentinel via ToggleTargetState — settings
-        // that ship with the registry key absent (e.g. EnabledValue = [1, null],
-        // DefaultValue = null) produce a Default badge matching the key-absent state.
-        if (!(InputType == InputType.Toggle || InputType == InputType.CheckBox))
-            return (true, true); // Selection/Numeric handled in ComputeBadgeState
-
-        bool? recommendedState = Definition.RecommendedToggleState
-            ?? (reg.RecommendedValue == null
-                ? (bool?)null
-                : SettingDefinitionToggleState.ToggleTargetState(reg.RecommendedValue, reg.EnabledValue, reg.DisabledValue));
-        bool matchesRec = recommendedState == IsOn;
-
-        // A group-policy reg with no declared DefaultValue usually has no opinion
-        // on the Windows default. However, for toggle settings the null-sentinel
-        // convention CAN express a meaningful default state ("key absent = policy not
-        // applied = Windows default behaviour"). When ToggleTargetState yields a result,
-        // use it; otherwise abstain.
-        bool matchesDef;
-        if (reg.IsGroupPolicy && reg.DefaultValue == null)
-        {
-            var gpDefaultState = SettingDefinitionToggleState.ToggleTargetState(reg.DefaultValue, reg.EnabledValue, reg.DisabledValue);
-            if (gpDefaultState.HasValue)
-                matchesDef = gpDefaultState == IsOn;
-            else
-                matchesDef = true; // no opinion → abstain
-        }
-        else if (SettingDefinitionToggleState.IsKeyExistenceToggle(reg))
-        {
-            // Key-existence toggles: Windows default is key-present (enabled = true).
-            matchesDef = IsOn == true;
-        }
-        else
-        {
-            var defaultState = SettingDefinitionToggleState.ToggleTargetState(reg.DefaultValue, reg.EnabledValue, reg.DisabledValue);
-            matchesDef = defaultState == IsOn;
-        }
-
-        return (matchesRec, matchesDef);
-    }
-
-    /// <summary>Winhance 1:1: pill visibility — any evidence source carrying a recommendation.</summary>
-    private bool HasAnyRecommendedData()
-    {
-        // Toggle-level explicit flag wins.
-        if ((InputType == InputType.Toggle || InputType == InputType.CheckBox)
-            && Definition.RecommendedToggleState.HasValue)
-            return true;
-        // Recommended is strict otherwise — explicit non-null per-RegistrySetting value.
-        if (Definition.RegistrySettings.Any(r => r.RecommendedValue != null))
-            return true;
-        if (InputType == InputType.Selection
-            && Definition.ComboBox?.Options?.Any(o => o.IsRecommended) == true)
-            return true;
-        if (Definition.ScheduledTaskSettings.Any(t => t.RecommendedState.HasValue))
-            return true;
-        if (Definition.PowerCfgSettings?.Any(
-                p => p.RecommendedValueAC.HasValue || p.RecommendedValueDC.HasValue) == true)
-            return true;
-        return false;
-    }
-
-    /// <summary>Winhance 1:1: pill visibility for Default, including GP null-sentinel nuance.</summary>
-    private bool HasAnyDefaultData()
-    {
-        bool isToggleLike = InputType == InputType.Toggle || InputType == InputType.CheckBox;
-        // Toggle-level explicit flag wins.
-        if (isToggleLike && Definition.DefaultToggleState.HasValue)
-            return true;
-        // GP regs with null DefaultValue are usually write-only enforcers, but the
-        // null-sentinel convention can express a meaningful default for toggles.
-        if (Definition.RegistrySettings.Any(r =>
-                (!(r.IsGroupPolicy && r.DefaultValue == null)
-                 || (isToggleLike && SettingDefinitionToggleState.ToggleTargetState(r.DefaultValue, r.EnabledValue, r.DisabledValue).HasValue))
-                && (isToggleLike
-                    ? SettingDefinitionToggleState.IsKeyExistenceToggle(r)
-                      || SettingDefinitionToggleState.ToggleTargetState(r.DefaultValue, r.EnabledValue, r.DisabledValue).HasValue
-                    : r.DefaultValue != null)))
-            return true;
-        if (InputType == InputType.Selection
-            && Definition.ComboBox?.Options?.Any(o => o.IsDefault) == true)
-            return true;
-        if (Definition.ScheduledTaskSettings.Any(t => t.DefaultState.HasValue))
-            return true;
-        if (Definition.PowerCfgSettings?.Any(
-                p => p.DefaultValueAC.HasValue || p.DefaultValueDC.HasValue) == true)
-            return true;
-        return false;
-    }
-
-    /// <summary>
-    /// Winhance 1:1: Custom means UNMAPPED — index out of range or Custom sentinel.
-    /// A known option that simply carries no flag is never "Custom".
-    /// Separate AC/DC selections validate both AC/DC indices.
-    /// </summary>
-    private bool IsKnownSelectionValue()
-    {
-        if (InputType != InputType.Selection) return true;
-        var options = Definition.ComboBox?.Options;
-        if (options == null || options.Count == 0) return true;
-        if (SupportsSeparateACDC)
-            return SelectedIndex >= 0; // AC/DC selections drive via a single index in Akari's VM
-        return SelectedIndex >= 0 && SelectedIndex < options.Count;
-    }
-
-    /// <summary>Winhance 1:1: does the option at <paramref name="index"/> map to the target PowerCfg value?</summary>
-    private bool PowerCfgIndexMatchesValue(int index, int targetPowerCfgValue)
-    {
-        var options = Definition.ComboBox?.Options;
-        if (options == null || index < 0 || index >= options.Count) return false;
-
-        if (options[index].ValueMappings is { } mapping &&
-            mapping.TryGetValue("PowerCfgValue", out var val) && val != null)
-        {
-            try { return Convert.ToInt32(val) == targetPowerCfgValue; }
-            catch { }
-        }
-        return false;
-    }
-
-
 }

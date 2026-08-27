@@ -277,19 +277,30 @@ public abstract partial class SettingPageViewModel : ViewModelBase
     [ObservableProperty]
     public partial int DefaultPendingCount { get; set; }
 
-    public string RecommendedPendingSubtitle => RecommendedPendingCount > 0 ? $"{RecommendedPendingCount} pending" : "All applied";
-    public string DefaultPendingSubtitle => DefaultPendingCount > 0 ? $"{DefaultPendingCount} pending" : "All applied";
+    /// <summary>Count of non-subjective-preference rows that carry a recommended target at all (matched or not).</summary>
+    [ObservableProperty]
+    public partial int RecommendedTotalCount { get; set; }
+
+    /// <summary>Count of non-subjective-preference rows that carry a default target at all (matched or not).</summary>
+    [ObservableProperty]
+    public partial int DefaultTotalCount { get; set; }
+
+    public string RecommendedPendingSubtitle => RecommendedPendingCount > 0 ? $"{RecommendedPendingCount}/{RecommendedTotalCount} pending" : "All applied";
+    public string DefaultPendingSubtitle => DefaultPendingCount > 0 ? $"{DefaultPendingCount}/{DefaultTotalCount} pending" : "All applied";
 
     partial void OnRecommendedPendingCountChanged(int value) => OnPropertyChanged(nameof(RecommendedPendingSubtitle));
     partial void OnDefaultPendingCountChanged(int value) => OnPropertyChanged(nameof(DefaultPendingSubtitle));
+    partial void OnRecommendedTotalCountChanged(int value) => OnPropertyChanged(nameof(RecommendedPendingSubtitle));
+    partial void OnDefaultTotalCountChanged(int value) => OnPropertyChanged(nameof(DefaultPendingSubtitle));
 
     /// <summary>
-    /// Recomputes the pending counts: an item is "pending recommended" when it has a
-    /// recommended target and its Recommended badge is not currently highlighted.
+    /// Recomputes the pending/total counts: an item counts toward "total" when it carries
+    /// a recommended/default target at all, and additionally toward "pending" when its
+    /// badge for that target is not currently highlighted (i.e. not yet applied).
     /// </summary>
     public void RefreshQuickActionCounts()
     {
-        int rec = 0, def = 0;
+        int rec = 0, def = 0, recTotal = 0, defTotal = 0;
         foreach (var section in Sections)
             foreach (var item in section.Items.OfType<SettingItemViewModel>())
             {
@@ -298,15 +309,23 @@ public abstract partial class SettingPageViewModel : ViewModelBase
                 if (item.Definition.IsSubjectivePreference)
                     continue;
 
-                if (item.HasRecommendedQuickSet
-                    && !item.Badges.Any(b => b.Kind == AkariTool.Core.Features.Common.Enums.SettingBadgeKind.Recommended && b.IsHighlighted))
-                    rec++;
-                if (item.HasDefaultQuickSet
-                    && !item.Badges.Any(b => b.Kind == AkariTool.Core.Features.Common.Enums.SettingBadgeKind.Default && b.IsHighlighted))
-                    def++;
+                if (item.HasRecommendedQuickSet)
+                {
+                    recTotal++;
+                    if (!item.Badges.Any(b => b.Kind == AkariTool.Core.Features.Common.Enums.SettingBadgeKind.Recommended && b.IsHighlighted))
+                        rec++;
+                }
+                if (item.HasDefaultQuickSet)
+                {
+                    defTotal++;
+                    if (!item.Badges.Any(b => b.Kind == AkariTool.Core.Features.Common.Enums.SettingBadgeKind.Default && b.IsHighlighted))
+                        def++;
+                }
             }
         RecommendedPendingCount = rec;
         DefaultPendingCount = def;
+        RecommendedTotalCount = recTotal;
+        DefaultTotalCount = defTotal;
     }
 
     [RelayCommand]
