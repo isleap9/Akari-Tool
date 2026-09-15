@@ -1,8 +1,35 @@
 ﻿# ── Admin elevation ──────────────────────────────────────────────────────────
+# Web launch URL (used to re-elevate when started via `irm <url> | iex`, where
+# there is no script file on disk to re-run).
+$AkariUrl = "https://raw.githubusercontent.com/isleap9/Akari-Tool/main/akari.ps1"
 If (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]"Administrator")) {
-    Start-Process PowerShell.exe -ArgumentList ("-NoProfile -ExecutionPolicy Bypass -File `"{0}`"" -f $PSCommandPath) -Verb RunAs
+    if ($PSCommandPath -and (Test-Path -LiteralPath $PSCommandPath)) {
+        # normal case: relaunch the local file elevated
+        Start-Process PowerShell.exe -ArgumentList ("-NoProfile -ExecutionPolicy Bypass -File `"{0}`"" -f $PSCommandPath) -Verb RunAs
+    } else {
+        # launched via `irm <url> | iex` (no file on disk): re-fetch and run elevated
+        Start-Process PowerShell.exe -ArgumentList ("-NoProfile -ExecutionPolicy Bypass -Command `"irm {0} | iex`"" -f $AkariUrl) -Verb RunAs
+    }
     Exit
 }
+
+# ── Taskbar identity + console handling (custom taskbar icon, no PS console) ──
+Add-Type -Namespace Akari -Name Native -MemberDefinition @"
+[System.Runtime.InteropServices.DllImport("shell32.dll", SetLastError=true)]
+public static extern int SetCurrentProcessExplicitAppUserModelID(string AppID);
+[System.Runtime.InteropServices.DllImport("kernel32.dll")]
+public static extern System.IntPtr GetConsoleWindow();
+[System.Runtime.InteropServices.DllImport("user32.dll")]
+public static extern bool ShowWindow(System.IntPtr hWnd, int nCmdShow);
+"@
+# Give the process its own taskbar identity so it shows as "Akari Tool" with the
+# Akari icon (pinnable) instead of grouping under powershell.exe.
+try { [Akari.Native]::SetCurrentProcessExplicitAppUserModelID("Akari.Tool") | Out-Null } catch {}
+# Hide the PowerShell console window so only the app window appears in the taskbar.
+try {
+    $consoleWnd = [Akari.Native]::GetConsoleWindow()
+    if ($consoleWnd -ne [IntPtr]::Zero) { [Akari.Native]::ShowWindow($consoleWnd, 0) | Out-Null }  # 0 = SW_HIDE
+} catch {}
 
 # ── WPF assemblies ───────────────────────────────────────────────────────────
 Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase, System.Windows.Forms
@@ -46,7 +73,7 @@ function Invoke-ConsoleScript {
         To add or update one: drop a file at assets/text/<name>.ps1, recompile,
         and call `Invoke-ConsoleScript -Asset "<name>"` from a button handler.
     .PARAMETER Asset
-        Embedded asset key (the assets/text file's base name), e.g. "bloatware".
+        Embedded asset key (the assets/text file's base name), e.g. "smtht".
     .PARAMETER Confirm
         Optional prompt text. When set, a Yes/No warning dialog is shown first and
         the script only runs on Yes.
@@ -145,6 +172,45 @@ function Invoke-RunInBackground {
     }.GetNewClosure())
 
     $timer.Start()
+}
+
+function Invoke-UltimateScript {
+    <#
+    .SYNOPSIS
+        Runs the CURRENT upstream FR33THY "Ultimate" script for a repo-relative
+        path in an elevated PowerShell console (menu-driven, always latest).
+    .DESCRIPTION
+        Heavy / frequently-updated tweaks are not re-implemented inline in Akari.
+        Instead they delegate to the live upstream script so they never need
+        re-porting when Ultimate changes. To retarget in the future, change only
+        the -Path passed by the button handler.
+    .PARAMETER Path
+        Repo-relative path, e.g. "8 Advanced/1 Defender.ps1". Spaces and symbols
+        are URL-encoded per segment automatically.
+    .PARAMETER Confirm
+        Optional prompt text. When set, a Yes/No warning dialog is shown first and
+        the script only runs on Yes.
+    .PARAMETER Status
+        Status-bar text shown while launching.
+    #>
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [string]$Confirm,
+        [string]$Status = "Launching Ultimate script..."
+    )
+
+    if ($Confirm) {
+        $r = [System.Windows.MessageBox]::Show($Confirm, "Akari Tool", "YesNo", "Warning")
+        if ($r -ne "Yes") { return }
+    }
+
+    # URL-encode each path segment but keep the separators
+    $enc = ($Path -split '/' | ForEach-Object { [uri]::EscapeDataString($_) }) -join '/'
+    $url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate/main/$enc"
+
+    Set-Status $Status "#AAAAAA"
+    Start-Elevated -FilePath "powershell.exe" -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command `"& { iwr '$url' -UseBasicParsing | iex }`""
+    Set-Status "Ultimate script launched (menu-driven console)." "#66BB6A"
 }
 
 # Defender disable/enable — full inline. Writes the safe-mode helper script
@@ -573,6 +639,3085 @@ MAX pump and set fans to performance
 "@
     $r = [System.Windows.MessageBox]::Show("$tips`n`nRestart to BIOS now?", "BIOS Settings", "YesNo", "Information")
     if ($r -eq "Yes") { shutdown /r /fw /t 0 }
+}
+
+# CONTROL PANEL granular tweaks -- auto-generated from Fr33thy registryoptimize/defaults.
+# Pure PowerShell, no JSON. Edit by hand freely; each entry is a hashtable:
+#   Id         unique key (also the registry temp filename)
+#   Title      text shown on the row
+#   Tab        Debloat | Appearance | Tweaks | System   (which tab the row appears in)
+#   Section    card heading within that tab
+#   Revertible $true = shows Optimize/Default buttons; $false = single Apply (one-way)
+#   Optimize   .reg body applied by Optimize/Apply
+#   Default    .reg body applied by Default (empty when not revertible)
+# Add your own by copying an entry, changing the fields, and recompiling.
+
+$sync.CpTweaks = @(
+    @{
+        Id = 'disable_narrator'
+        Title = 'Disable Narrator'
+        Tab = 'Appearance'; Section = 'Ease of Access'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Narrator\NoRoam]
+"DuckAudio"=dword:00000000
+"WinEnterLaunchEnabled"=dword:00000000
+"ScriptingEnabled"=dword:00000000
+"OnlineServicesEnabled"=dword:00000000
+[HKEY_CURRENT_USER\Software\Microsoft\Narrator]
+"NarratorCursorHighlight"=dword:00000000
+"CoupleNarratorCursorKeyboard"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Narrator\NoRoam]
+"DuckAudio"=-
+"WinEnterLaunchEnabled"=-
+"ScriptingEnabled"=-
+"OnlineServicesEnabled"=-
+
+[HKEY_CURRENT_USER\Software\Microsoft\Narrator]
+"NarratorCursorHighlight"=-
+"CoupleNarratorCursorKeyboard"=-
+'@
+    }
+    @{
+        Id = 'disable_ease_of_access_settings'
+        Title = 'Disable Ease Of Access Settings'
+        Tab = 'Appearance'; Section = 'Ease of Access'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Ease of Access]
+"selfvoice"=dword:00000000
+"selfscan"=dword:00000000
+[HKEY_CURRENT_USER\Control Panel\Accessibility]
+"Sound on Activation"=dword:00000000
+"Warning Sounds"=dword:00000000
+[HKEY_CURRENT_USER\Control Panel\Accessibility\HighContrast]
+"Flags"="4194"
+[HKEY_CURRENT_USER\Control Panel\Accessibility\Keyboard Response]
+"Flags"="2"
+"AutoRepeatRate"="0"
+"AutoRepeatDelay"="0"
+[HKEY_CURRENT_USER\Control Panel\Accessibility\MouseKeys]
+"Flags"="130"
+"MaximumSpeed"="39"
+"TimeToMaximumSpeed"="3000"
+[HKEY_CURRENT_USER\Control Panel\Accessibility\StickyKeys]
+"Flags"="2"
+[HKEY_CURRENT_USER\Control Panel\Accessibility\ToggleKeys]
+"Flags"="34"
+[HKEY_CURRENT_USER\Control Panel\Accessibility\SoundSentry]
+"Flags"="0"
+"FSTextEffect"="0"
+"TextEffect"="0"
+"WindowsEffect"="0"
+[HKEY_CURRENT_USER\Control Panel\Accessibility\SlateLaunch]
+"ATapp"=""
+"LaunchAT"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Ease of Access]
+"selfvoice"=-
+"selfscan"=-
+
+[HKEY_CURRENT_USER\Control Panel\Accessibility]
+"Sound on Activation"=-
+"Warning Sounds"=-
+
+[HKEY_CURRENT_USER\Control Panel\Accessibility\HighContrast]
+"Flags"="126"
+
+[HKEY_CURRENT_USER\Control Panel\Accessibility\Keyboard Response]
+"Flags"="126"
+"AutoRepeatRate"="500"
+"AutoRepeatDelay"="1000"
+
+[HKEY_CURRENT_USER\Control Panel\Accessibility\MouseKeys]
+"Flags"="62"
+"MaximumSpeed"="80"
+"TimeToMaximumSpeed"="3000"
+
+[HKEY_CURRENT_USER\Control Panel\Accessibility\StickyKeys]
+"Flags"="510"
+
+[HKEY_CURRENT_USER\Control Panel\Accessibility\ToggleKeys]
+"Flags"="62"
+
+[HKEY_CURRENT_USER\Control Panel\Accessibility\SoundSentry]
+"Flags"="2"
+"FSTextEffect"="0"
+"TextEffect"="0"
+"WindowsEffect"="1"
+
+[HKEY_CURRENT_USER\Control Panel\Accessibility\SlateLaunch]
+"ATapp"="narrator"
+"LaunchAT"=dword:00000001
+'@
+    }
+    @{
+        Id = 'disable_notify_me_when_the_clock_changes'
+        Title = 'Disable Notify Me When The Clock Changes'
+        Tab = 'Appearance'; Section = 'Clock & Region'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Control Panel\TimeDate]
+"DstNotification"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Control Panel\TimeDate]
+"DstNotification"=-
+'@
+    }
+    @{
+        Id = 'open_file_explorer_to_this_pc'
+        Title = 'Open File Explorer To This Pc'
+        Tab = 'Appearance'; Section = 'File Explorer'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"LaunchTo"=dword:00000001
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"LaunchTo"=-
+'@
+    }
+    @{
+        Id = 'hide_frequent_folders_in_quick_access'
+        Title = 'Hide Frequent Folders In Quick Access'
+        Tab = 'Appearance'; Section = 'File Explorer'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer]
+"ShowFrequent"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer]
+"ShowFrequent"=-
+'@
+    }
+    @{
+        Id = 'show_file_name_extensions'
+        Title = 'Show File Name Extensions'
+        Tab = 'Appearance'; Section = 'File Explorer'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"HideFileExt"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"HideFileExt"=dword:00000001
+'@
+    }
+    @{
+        Id = 'disable_search_history'
+        Title = 'Disable Search History'
+        Tab = 'Appearance'; Section = 'File Explorer'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\SearchSettings]
+"IsDeviceSearchHistoryEnabled"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\SearchSettings]
+"IsDeviceSearchHistoryEnabled"=-
+'@
+    }
+    @{
+        Id = 'disable_show_files_from_office_com'
+        Title = 'Disable Show Files From Office.Com'
+        Tab = 'Appearance'; Section = 'File Explorer'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer]
+"ShowCloudFilesInQuickAccess"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer]
+"ShowCloudFilesInQuickAccess"=-
+'@
+    }
+    @{
+        Id = 'disable_display_file_size_information_in_fol'
+        Title = 'Disable Display File Size Information In Folder Tips'
+        Tab = 'Appearance'; Section = 'File Explorer'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"FolderContentsInfoTip"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"FolderContentsInfoTip"=-
+'@
+    }
+    @{
+        Id = 'enable_display_full_path_in_the_title_bar'
+        Title = 'Enable Display Full Path In The Title Bar'
+        Tab = 'Appearance'; Section = 'File Explorer'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\CabinetState]
+"FullPath"=dword:00000001
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\CabinetState]
+"FullPath"=dword:00000000
+'@
+    }
+    @{
+        Id = 'disable_show_pop_up_description_for_folder_a'
+        Title = 'Disable Show Pop-Up Description For Folder And Desktop Items'
+        Tab = 'Appearance'; Section = 'File Explorer'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"ShowInfoTip"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"ShowInfoTip"=dword:00000001
+'@
+    }
+    @{
+        Id = 'disable_show_preview_handlers_in_preview_pan'
+        Title = 'Disable Show Preview Handlers In Preview Pane'
+        Tab = 'Appearance'; Section = 'File Explorer'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"ShowPreviewHandlers"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"ShowPreviewHandlers"=-
+'@
+    }
+    @{
+        Id = 'disable_show_status_bar'
+        Title = 'Disable Show Status Bar'
+        Tab = 'Appearance'; Section = 'File Explorer'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"ShowStatusBar"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"ShowStatusBar"=dword:00000001
+'@
+    }
+    @{
+        Id = 'disable_show_sync_provider_notifications'
+        Title = 'Disable Show Sync Provider Notifications'
+        Tab = 'Appearance'; Section = 'File Explorer'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"ShowSyncProviderNotifications"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"ShowSyncProviderNotifications"=-
+'@
+    }
+    @{
+        Id = 'disable_use_sharing_wizard'
+        Title = 'Disable Use Sharing Wizard'
+        Tab = 'Appearance'; Section = 'File Explorer'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"SharingWizardOn"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"SharingWizardOn"=-
+'@
+    }
+    @{
+        Id = 'disable_show_network'
+        Title = 'Disable Show Network'
+        Tab = 'Appearance'; Section = 'File Explorer'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Classes\CLSID\{F02C1A0D-BE21-4350-88B0-7367FC96EF3C}]
+"System.IsPinnedToNameSpaceTree"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Classes\CLSID\{F02C1A0D-BE21-4350-88B0-7367FC96EF3C}]
+"System.IsPinnedToNameSpaceTree"=-
+'@
+    }
+    @{
+        Id = 'disable_lock'
+        Title = 'Disable Lock'
+        Tab = 'Tweaks'; Section = 'Hardware & Sound'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Explorer\FlyoutMenuSettings]
+"ShowLockOption"=dword:00000000
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Explorer\FlyoutMenuSettings]
+"ShowLockOption"=-
+'@
+    }
+    @{
+        Id = 'disable_sleep'
+        Title = 'Disable Sleep'
+        Tab = 'Tweaks'; Section = 'Hardware & Sound'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FlyoutMenuSettings]
+"ShowSleepOption"=dword:00000000
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FlyoutMenuSettings]
+"ShowSleepOption"=-
+'@
+    }
+    @{
+        Id = 'sound_communications_do_nothing'
+        Title = 'Sound Communications Do Nothing'
+        Tab = 'Tweaks'; Section = 'Hardware & Sound'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Multimedia\Audio]
+"UserDuckingPreference"=dword:00000003
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Multimedia\Audio]
+"UserDuckingPreference"=-
+'@
+    }
+    @{
+        Id = 'disable_startup_sound'
+        Title = 'Disable Startup Sound'
+        Tab = 'Tweaks'; Section = 'Hardware & Sound'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Authentication\LogonUI\BootAnimation]
+"DisableStartupSound"=dword:00000001
+[HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\EditionOverrides]
+"UserSetting_DisableStartupSound"=dword:00000001
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Authentication\LogonUI\BootAnimation]
+"DisableStartupSound"=dword:00000000
+
+[HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\EditionOverrides]
+"UserSetting_DisableStartupSound"=dword:00000000
+'@
+    }
+    @{
+        Id = 'sound_scheme_none'
+        Title = 'Sound Scheme None'
+        Tab = 'Tweaks'; Section = 'Hardware & Sound'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\AppEvents\Schemes]
+@=".None"
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\.Default\.Current]
+@=""
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\CriticalBatteryAlarm\.Current]
+@=""
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\DeviceConnect\.Current]
+@=""
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\DeviceDisconnect\.Current]
+@=""
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\DeviceFail\.Current]
+@=""
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\FaxBeep\.Current]
+@=""
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\LowBatteryAlarm\.Current]
+@=""
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\MailBeep\.Current]
+@=""
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\MessageNudge\.Current]
+@=""
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\Notification.Default\.Current]
+@=""
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\Notification.IM\.Current]
+@=""
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\Notification.Mail\.Current]
+@=""
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\Notification.Proximity\.Current]
+@=""
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\Notification.Reminder\.Current]
+@=""
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\Notification.SMS\.Current]
+@=""
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\ProximityConnection\.Current]
+@=""
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\SystemAsterisk\.Current]
+@=""
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\SystemExclamation\.Current]
+@=""
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\SystemHand\.Current]
+@=""
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\SystemNotification\.Current]
+@=""
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\WindowsUAC\.Current]
+@=""
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\sapisvr\DisNumbersSound\.current]
+@=""
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\sapisvr\HubOffSound\.current]
+@=""
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\sapisvr\HubOnSound\.current]
+@=""
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\sapisvr\HubSleepSound\.current]
+@=""
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\sapisvr\MisrecoSound\.current]
+@=""
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\sapisvr\PanelSound\.current]
+@=""
+'@
+        Default = @'
+[HKEY_CURRENT_USER\AppEvents\Schemes]
+@=".Default"
+
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\.Default\.Current]
+@="C:\\Windows\\media\\Windows Background.wav"
+
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\CriticalBatteryAlarm\.Current]
+@="C:\\Windows\\media\\Windows Foreground.wav"
+
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\DeviceConnect\.Current]
+@="C:\\Windows\\media\\Windows Hardware Insert.wav"
+
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\DeviceDisconnect\.Current]
+@="C:\\Windows\\media\\Windows Hardware Remove.wav"
+
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\DeviceFail\.Current]
+@="C:\\Windows\\media\\Windows Hardware Fail.wav"
+
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\FaxBeep\.Current]
+@="C:\\Windows\\media\\Windows Notify Email.wav"
+
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\LowBatteryAlarm\.Current]
+@="C:\\Windows\\media\\Windows Background.wav"
+
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\MailBeep\.Current]
+@="C:\\Windows\\media\\Windows Notify Email.wav"
+
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\MessageNudge\.Current]
+@="C:\\Windows\\media\\Windows Message Nudge.wav"
+
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\Notification.Default\.Current]
+@="C:\\Windows\\media\\Windows Notify System Generic.wav"
+
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\Notification.IM\.Current]
+@="C:\\Windows\\media\\Windows Notify Messaging.wav"
+
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\Notification.Mail\.Current]
+@="C:\\Windows\\media\\Windows Notify Email.wav"
+
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\Notification.Proximity\.Current]
+@="C:\\Windows\\media\\Windows Proximity Notification.wav"
+
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\Notification.Reminder\.Current]
+@="C:\\Windows\\media\\Windows Notify Calendar.wav"
+
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\Notification.SMS\.Current]
+@="C:\\Windows\\media\\Windows Notify Messaging.wav"
+
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\ProximityConnection\.Current]
+@="C:\\Windows\\media\\Windows Proximity Connection.wav"
+
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\SystemAsterisk\.Current]
+@="C:\\Windows\\media\\Windows Background.wav"
+
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\SystemExclamation\.Current]
+@="C:\\Windows\\media\\Windows Background.wav"
+
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\SystemHand\.Current]
+@="C:\\Windows\\media\\Windows Foreground.wav"
+
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\SystemNotification\.Current]
+@="C:\\Windows\\media\\Windows Background.wav"
+
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\.Default\WindowsUAC\.Current]
+@="C:\\Windows\\media\\Windows User Account Control.wav"
+
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\sapisvr\DisNumbersSound\.current]
+@="C:\\Windows\\media\\Speech Disambiguation.wav"
+
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\sapisvr\HubOffSound\.current]
+@="C:\\Windows\\media\\Speech Off.wav"
+
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\sapisvr\HubOnSound\.current]
+@="C:\\Windows\\media\\Speech On.wav"
+
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\sapisvr\HubSleepSound\.current]
+@="C:\\Windows\\media\\Speech Sleep.wav"
+
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\sapisvr\MisrecoSound\.current]
+@="C:\\Windows\\media\\Speech Misrecognition.wav"
+
+[HKEY_CURRENT_USER\AppEvents\Schemes\Apps\sapisvr\PanelSound\.current]
+@="C:\\Windows\\media\\Speech Disambiguation.wav"
+'@
+    }
+    @{
+        Id = 'disable_autoplay'
+        Title = 'Disable Autoplay'
+        Tab = 'Tweaks'; Section = 'Hardware & Sound'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\AutoplayHandlers]
+"DisableAutoplay"=dword:00000001
+'@
+        Default = @'
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\AutoplayHandlers]
+"DisableAutoplay"=dword:00000000
+'@
+    }
+    @{
+        Id = 'mouse_pointers_scheme_none'
+        Title = 'Mouse Pointers Scheme None'
+        Tab = 'Tweaks'; Section = 'Hardware & Sound'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Control Panel\Cursors]
+"AppStarting"=hex(2):00,00
+"Arrow"=hex(2):00,00
+"ContactVisualization"=dword:00000000
+"Crosshair"=hex(2):00,00
+"GestureVisualization"=dword:00000000
+"Hand"=hex(2):00,00
+"Help"=hex(2):00,00
+"IBeam"=hex(2):00,00
+"No"=hex(2):00,00
+"NWPen"=hex(2):00,00
+"Scheme Source"=dword:00000000
+"SizeAll"=hex(2):00,00
+"SizeNESW"=hex(2):00,00
+"SizeNS"=hex(2):00,00
+"SizeNWSE"=hex(2):00,00
+"SizeWE"=hex(2):00,00
+"UpArrow"=hex(2):00,00
+"Wait"=hex(2):00,00
+@=""
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Control Panel\Cursors]
+"AppStarting"="C:\\Windows\\cursors\\aero_working.ani"
+"Arrow"="C:\\Windows\\cursors\\aero_arrow.cur"
+"ContactVisualization"=dword:00000001
+"Crosshair"=""
+"GestureVisualization"=dword:0000001f
+"Hand"="C:\\Windows\\cursors\\aero_link.cur"
+"Help"="C:\\Windows\\cursors\\aero_helpsel.cur"
+"IBeam"=""
+"No"="C:\\Windows\\cursors\\aero_unavail.cur"
+"NWPen"="C:\\Windows\\cursors\\aero_pen.cur"
+"Scheme Source"=dword:00000002
+"SizeAll"="C:\\Windows\\cursors\\aero_move.cur"
+"SizeNESW"="C:\\Windows\\cursors\\aero_nesw.cur"
+"SizeNS"="C:\\Windows\\cursors\\aero_ns.cur"
+"SizeNWSE"="C:\\Windows\\cursors\\aero_nwse.cur"
+"SizeWE"="C:\\Windows\\cursors\\aero_ew.cur"
+"UpArrow"="C:\\Windows\\cursors\\aero_up.cur"
+"Wait"="C:\\Windows\\cursors\\aero_busy.ani"
+@="Windows Default"
+'@
+    }
+    @{
+        Id = 'disable_device_installation_settings'
+        Title = 'Disable Device Installation Settings'
+        Tab = 'Tweaks'; Section = 'Hardware & Sound'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Device Metadata]
+"PreventDeviceMetadataFromNetwork"=dword:00000001
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Device Metadata]
+"PreventDeviceMetadataFromNetwork"=dword:00000000
+'@
+    }
+    @{
+        Id = 'disable_allow_other_network_users_to_control'
+        Title = 'Disable Allow Other Network Users To Control Or Disable The Shared Internet Connection'
+        Tab = 'Tweaks'; Section = 'Network'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\System\ControlSet001\Control\Network\SharedAccessConnection]
+"EnableControl"=dword:00000000
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\System\ControlSet001\Control\Network\SharedAccessConnection]
+"EnableControl"=dword:00000001
+'@
+    }
+    @{
+        Id = 'disable_defragment_and_optimize_your_drives'
+        Title = 'Disable Defragment And Optimize Your Drives'
+        Tab = 'Tweaks'; Section = 'Visual Effects'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Dfrg\TaskSettings]
+"fAllVolumes"=dword:00000001
+"fDeadlineEnabled"=dword:00000000
+"fExclude"=dword:00000000
+"fTaskEnabled"=dword:00000000
+"fUpgradeRestored"=dword:00000001
+"TaskFrequency"=dword:00000004
+"Volumes"=" "
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Dfrg\TaskSettings]
+"fAllVolumes"=-
+"fDeadlineEnabled"=-
+"fExclude"=-
+"fTaskEnabled"=-
+"fUpgradeRestored"=-
+"TaskFrequency"=-
+"Volumes"=-
+'@
+    }
+    @{
+        Id = 'set_appearance_options_to_custom'
+        Title = 'Set Appearance Options To Custom'
+        Tab = 'Tweaks'; Section = 'Visual Effects'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects]
+"VisualFXSetting"=dword:3
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects]
+"VisualFXSetting"=-
+'@
+    }
+    @{
+        Id = 'enable_animate_controls_and_elements_inside_'
+        Title = 'Enable Animate Controls And Elements Inside Windows (Disabled Breaks Instagram Scrolling) (+7 more)'
+        Tab = 'Tweaks'; Section = 'Visual Effects'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Control Panel\Desktop]
+"UserPreferencesMask"=hex(2):90,12,03,80,12,00,00,00
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Control Panel\Desktop]
+"UserPreferencesMask"=hex(2):9e,1e,07,80,12,00,00,00
+'@
+    }
+    @{
+        Id = 'disable_animate_windows_when_minimizing_and_'
+        Title = 'Disable Animate Windows When Minimizing And Maximizing'
+        Tab = 'Tweaks'; Section = 'Visual Effects'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Control Panel\Desktop\WindowMetrics]
+"MinAnimate"="0"
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Control Panel\Desktop\WindowMetrics]
+"MinAnimate"="1"
+'@
+    }
+    @{
+        Id = 'disable_animations_in_the_taskbar'
+        Title = 'Disable Animations In The Taskbar'
+        Tab = 'Tweaks'; Section = 'Visual Effects'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"TaskbarAnimations"=dword:0
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"TaskbarAnimations"=dword:1
+'@
+    }
+    @{
+        Id = 'disable_enable_peek'
+        Title = 'Disable Enable Peek'
+        Tab = 'Tweaks'; Section = 'Visual Effects'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\DWM]
+"EnableAeroPeek"=dword:0
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\DWM]
+"EnableAeroPeek"=dword:1
+'@
+    }
+    @{
+        Id = 'disable_save_taskbar_thumbnail_previews'
+        Title = 'Disable Save Taskbar Thumbnail Previews'
+        Tab = 'Tweaks'; Section = 'Visual Effects'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\DWM]
+"AlwaysHibernateThumbnails"=dword:0
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\DWM]
+"AlwaysHibernateThumbnails"=dword:0
+'@
+    }
+    @{
+        Id = 'enable_show_thumbnails_instead_of_icons'
+        Title = 'Enable Show Thumbnails Instead Of Icons'
+        Tab = 'Tweaks'; Section = 'Visual Effects'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"IconsOnly"=dword:0
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"IconsOnly"=dword:0
+'@
+    }
+    @{
+        Id = 'disable_show_translucent_selection_rectangle'
+        Title = 'Disable Show Translucent Selection Rectangle'
+        Tab = 'Tweaks'; Section = 'Visual Effects'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"ListviewAlphaSelect"=dword:0
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"ListviewAlphaSelect"=dword:1
+'@
+    }
+    @{
+        Id = 'disable_show_window_contents_while_dragging'
+        Title = 'Disable Show Window Contents While Dragging'
+        Tab = 'Tweaks'; Section = 'Visual Effects'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Control Panel\Desktop]
+"DragFullWindows"="0"
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Control Panel\Desktop]
+"DragFullWindows"="1"
+'@
+    }
+    @{
+        Id = 'enable_smooth_edges_of_screen_fonts'
+        Title = 'Enable Smooth Edges Of Screen Fonts'
+        Tab = 'Tweaks'; Section = 'Visual Effects'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Control Panel\Desktop]
+"FontSmoothing"="2"
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Control Panel\Desktop]
+"FontSmoothing"="2"
+'@
+    }
+    @{
+        Id = 'disable_use_drop_shadows_for_icon_labels_on_'
+        Title = 'Disable Use Drop Shadows For Icon Labels On The Desktop'
+        Tab = 'Tweaks'; Section = 'Visual Effects'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"ListviewShadow"=dword:0
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"ListviewShadow"=dword:1
+'@
+    }
+    @{
+        Id = 'adjust_for_best_performance_of_programs'
+        Title = 'Adjust For Best Performance Of Programs'
+        Tab = 'Tweaks'; Section = 'Visual Effects'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\PriorityControl]
+"Win32PrioritySeparation"=dword:00000026
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\PriorityControl]
+"Win32PrioritySeparation"=dword:00000002
+'@
+    }
+    @{
+        Id = 'disable_remote_assistance'
+        Title = 'Disable Remote Assistance'
+        Tab = 'Tweaks'; Section = 'Visual Effects'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Remote Assistance]
+"fAllowToGetHelp"=dword:00000000
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Remote Assistance]
+"fAllowToGetHelp"=dword:00000001
+'@
+    }
+    @{
+        Id = 'disable_automatic_maintenance'
+        Title = 'Disable Automatic Maintenance'
+        Tab = 'Tweaks'; Section = 'Maintenance'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\Maintenance]
+"MaintenanceDisabled"=dword:00000001
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\Maintenance]
+"MaintenanceDisabled"=-
+'@
+    }
+    @{
+        Id = 'disable_report_problems'
+        Title = 'Disable Report Problems'
+        Tab = 'Tweaks'; Section = 'Maintenance'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Windows Error Reporting]
+"Disabled"=dword:00000001
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Windows Error Reporting]
+"Disabled"=-
+'@
+    }
+    @{
+        Id = 'disable_delivery_optimization'
+        Title = 'Disable Delivery Optimization'
+        Tab = 'Debloat'; Section = 'Windows Update'; Revertible = $true
+        Optimize = @'
+[HKEY_USERS\S-1-5-20\Software\Microsoft\Windows\CurrentVersion\DeliveryOptimization\Settings]
+"DownloadMode"=dword:00000000
+'@
+        Default = @'
+[HKEY_USERS\S-1-5-20\Software\Microsoft\Windows\CurrentVersion\DeliveryOptimization\Settings]
+"DownloadMode"=-
+'@
+    }
+    @{
+        Id = 'disable_find_my_device'
+        Title = 'Disable Find My Device'
+        Tab = 'Debloat'; Section = 'Privacy'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\Software\Microsoft\MdmCommon\SettingValues]
+"LocationSyncEnabled"=dword:00000000
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\Software\Microsoft\MdmCommon\SettingValues]
+"LocationSyncEnabled"=dword:00000001
+'@
+    }
+    @{
+        Id = 'disable_show_me_notification_in_the_settings'
+        Title = 'Disable Show Me Notification In The Settings App'
+        Tab = 'Debloat'; Section = 'Privacy'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\SystemSettings\AccountNotifications]
+"EnableAccountNotifications"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\SystemSettings\AccountNotifications]
+"EnableAccountNotifications"=-
+'@
+    }
+    @{
+        Id = 'disable_tailored_experiences'
+        Title = 'Disable Tailored Experiences'
+        Tab = 'Debloat'; Section = 'Privacy'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CPSS\Store\TailoredExperiencesWithDiagnosticDataEnabled]
+"Value"=dword:00000000
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Privacy]
+"TailoredExperiencesWithDiagnosticDataEnabled"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CPSS\Store\TailoredExperiencesWithDiagnosticDataEnabled]
+"Value"=dword:00000001
+
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Privacy]
+"TailoredExperiencesWithDiagnosticDataEnabled"=dword:00000001
+'@
+    }
+    @{
+        Id = 'disable_location'
+        Title = 'Disable Location'
+        Tab = 'Debloat'; Section = 'Privacy'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\location]
+"Value"="Deny"
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\location]
+"Value"="Allow"
+'@
+    }
+    @{
+        Id = 'disable_allow_location_override'
+        Title = 'Disable Allow Location Override'
+        Tab = 'Debloat'; Section = 'Privacy'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CPSS\Store\UserLocationOverridePrivacySetting]
+"Value"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CPSS\Store\UserLocationOverridePrivacySetting]
+"Value"=dword:00000001
+'@
+    }
+    @{
+        Id = 'disable_notify_when_apps_request_location'
+        Title = 'Disable Notify When Apps Request Location'
+        Tab = 'Debloat'; Section = 'Privacy'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\location]
+"ShowGlobalPrompts"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\location]
+"ShowGlobalPrompts"=-
+'@
+    }
+    @{
+        Id = 'enable_camera'
+        Title = 'Enable Camera'
+        Tab = 'Debloat'; Section = 'Privacy'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\webcam]
+"Value"="Allow"
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\webcam]
+"Value"="Allow"
+'@
+    }
+    @{
+        Id = 'enable_microphone'
+        Title = 'Enable Microphone'
+        Tab = 'Debloat'; Section = 'Privacy'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\microphone]
+"Value"="Allow"
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\microphone]
+"Value"="Allow"
+'@
+    }
+    @{
+        Id = 'disable_voice_activation'
+        Title = 'Disable Voice Activation'
+        Tab = 'Debloat'; Section = 'Privacy'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Speech_OneCore\Settings\VoiceActivation\UserPreferenceForAllApps]
+"AgentActivationEnabled"=dword:00000000
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Speech_OneCore\Settings\VoiceActivation\UserPreferenceForAllApps]
+"AgentActivationLastUsed"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Speech_OneCore\Settings\VoiceActivation\UserPreferenceForAllApps]
+"AgentActivationEnabled"=-
+"AgentActivationLastUsed"=-
+'@
+    }
+    @{
+        Id = 'disable_notifications'
+        Title = 'Disable Notifications'
+        Tab = 'Debloat'; Section = 'Notifications'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings]
+"NOC_GLOBAL_SETTING_ALLOW_NOTIFICATION_SOUND"=dword:00000000
+"NOC_GLOBAL_SETTING_ALLOW_CRITICAL_TOASTS_ABOVE_LOCK"=dword:00000000
+"NOC_GLOBAL_SETTING_ALLOW_TOASTS_ABOVE_LOCK"=dword:00000000
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings\Microsoft.SkyDrive.Desktop]
+"Enabled"=dword:00000000
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings\Windows.SystemToast.AutoPlay]
+"Enabled"=dword:00000000
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings\Windows.SystemToast.SecurityAndMaintenance]
+"Enabled"=dword:00000000
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings\windows.immersivecontrolpanel_cw5n1h2txyewy!microsoft.windows.immersivecontrolpanel]
+"Enabled"=dword:00000000
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings\Windows.SystemToast.CapabilityAccess]
+"Enabled"=dword:00000000
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings\Windows.SystemToast.StartupApp]
+"Enabled"=dword:00000000
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\UserProfileEngagement]
+"ScoobeSystemSettingEnabled"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings]
+"NOC_GLOBAL_SETTING_ALLOW_NOTIFICATION_SOUND"=-
+"NOC_GLOBAL_SETTING_ALLOW_CRITICAL_TOASTS_ABOVE_LOCK"=-
+"NOC_GLOBAL_SETTING_ALLOW_TOASTS_ABOVE_LOCK"=-
+
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings\Microsoft.SkyDrive.Desktop]
+"Enabled"=-
+
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings\Windows.SystemToast.AutoPlay]
+"Enabled"=-
+
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings\Windows.SystemToast.SecurityAndMaintenance]
+"Enabled"=-
+
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings\windows.immersivecontrolpanel_cw5n1h2txyewy!microsoft.windows.immersivecontrolpanel]
+"Enabled"=-
+
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings\Windows.SystemToast.CapabilityAccess]
+"Enabled"=-
+
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings\Windows.SystemToast.StartupApp]
+"Enabled"=dword:00000000
+
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\UserProfileEngagement]
+"ScoobeSystemSettingEnabled"=-
+'@
+    }
+    @{
+        Id = 'disable_account_info'
+        Title = 'Disable Account Info'
+        Tab = 'Debloat'; Section = 'Privacy'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\userAccountInformation]
+"Value"="Deny"
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\userAccountInformation]
+"Value"="Allow"
+'@
+    }
+    @{
+        Id = 'disable_contacts'
+        Title = 'Disable Contacts'
+        Tab = 'Debloat'; Section = 'Privacy'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\contacts]
+"Value"="Deny"
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\contacts]
+"Value"="Allow"
+'@
+    }
+    @{
+        Id = 'disable_calendar'
+        Title = 'Disable Calendar'
+        Tab = 'Debloat'; Section = 'Privacy'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\appointments]
+"Value"="Deny"
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\appointments]
+"Value"="Allow"
+'@
+    }
+    @{
+        Id = 'disable_phone_calls'
+        Title = 'Disable Phone Calls'
+        Tab = 'Debloat'; Section = 'Privacy'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\phoneCall]
+"Value"="Deny"
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\phoneCall]
+"Value"="Allow"
+'@
+    }
+    @{
+        Id = 'disable_call_history'
+        Title = 'Disable Call History'
+        Tab = 'Debloat'; Section = 'Privacy'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\phoneCallHistory]
+"Value"="Deny"
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\phoneCallHistory]
+"Value"="Allow"
+'@
+    }
+    @{
+        Id = 'disable_email'
+        Title = 'Disable Email'
+        Tab = 'Debloat'; Section = 'Privacy'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\email]
+"Value"="Deny"
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\email]
+"Value"="Allow"
+'@
+    }
+    @{
+        Id = 'disable_tasks'
+        Title = 'Disable Tasks'
+        Tab = 'Debloat'; Section = 'Privacy'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\userDataTasks]
+"Value"="Deny"
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\userDataTasks]
+"Value"="Allow"
+'@
+    }
+    @{
+        Id = 'disable_messaging'
+        Title = 'Disable Messaging'
+        Tab = 'Debloat'; Section = 'Privacy'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\chat]
+"Value"="Deny"
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\chat]
+"Value"="Allow"
+'@
+    }
+    @{
+        Id = 'disable_radios'
+        Title = 'Disable Radios'
+        Tab = 'Debloat'; Section = 'Privacy'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\radios]
+"Value"="Deny"
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\radios]
+"Value"="Allow"
+'@
+    }
+    @{
+        Id = 'disable_other_devices'
+        Title = 'Disable Other Devices'
+        Tab = 'Debloat'; Section = 'Privacy'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\bluetoothSync]
+"Value"="Deny"
+'@
+        Default = @'
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\bluetoothSync]
+"Value"=-
+'@
+    }
+    @{
+        Id = 'disable_app_diagnostics'
+        Title = 'Disable App Diagnostics'
+        Tab = 'Debloat'; Section = 'Privacy'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\appDiagnostics]
+"Value"="Deny"
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\appDiagnostics]
+"Value"="Allow"
+'@
+    }
+    @{
+        Id = 'disable_documents'
+        Title = 'Disable Documents'
+        Tab = 'Debloat'; Section = 'Privacy'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\documentsLibrary]
+"Value"="Deny"
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\documentsLibrary]
+"Value"="Allow"
+'@
+    }
+    @{
+        Id = 'disable_downloads_folder'
+        Title = 'Disable Downloads Folder'
+        Tab = 'Debloat'; Section = 'Privacy'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\downloadsFolder]
+"Value"="Deny"
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\downloadsFolder]
+"Value"=-
+'@
+    }
+    @{
+        Id = 'disable_music_library'
+        Title = 'Disable Music Library'
+        Tab = 'Debloat'; Section = 'Privacy'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\musicLibrary]
+"Value"="Deny"
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\musicLibrary]
+"Value"="Allow"
+'@
+    }
+    @{
+        Id = 'disable_pictures'
+        Title = 'Disable Pictures'
+        Tab = 'Debloat'; Section = 'Privacy'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\picturesLibrary]
+"Value"="Deny"
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\picturesLibrary]
+"Value"="Deny"
+'@
+    }
+    @{
+        Id = 'disable_videos'
+        Title = 'Disable Videos'
+        Tab = 'Debloat'; Section = 'Privacy'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\videosLibrary]
+"Value"="Deny"
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\videosLibrary]
+"Value"="Allow"
+'@
+    }
+    @{
+        Id = 'disable_file_system'
+        Title = 'Disable File System'
+        Tab = 'Debloat'; Section = 'Privacy'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\broadFileSystemAccess]
+"Value"="Deny"
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\broadFileSystemAccess]
+"Value"="Allow"
+'@
+    }
+    @{
+        Id = 'disable_text_and_image_generation'
+        Title = 'Disable Text And Image Generation'
+        Tab = 'Debloat'; Section = 'Privacy'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\systemAIModels]
+"Value"="Deny"
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\systemAIModels]
+"Value"="Allow"
+'@
+    }
+    @{
+        Id = 'disable_passkey_access'
+        Title = 'Disable Passkey Access'
+        Tab = 'Debloat'; Section = 'Privacy'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\passkeys]
+"Value"="Deny"
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\passkeys]
+"Value"="Allow"
+'@
+    }
+    @{
+        Id = 'disable_passkey_autofill_access'
+        Title = 'Disable Passkey Autofill Access'
+        Tab = 'Debloat'; Section = 'Privacy'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\passkeysEnumeration]
+"Value"="Deny"
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\passkeysEnumeration]
+"Value"="Allow"
+'@
+    }
+    @{
+        Id = 'disable_let_websites_show_me_locally_relevan'
+        Title = 'Disable Let Websites Show Me Locally Relevant Content By Accessing My Language List'
+        Tab = 'Debloat'; Section = 'Privacy'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Control Panel\International\User Profile]
+"HttpAcceptLanguageOptOut"=dword:00000001
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Control Panel\International\User Profile]
+"HttpAcceptLanguageOptOut"=-
+'@
+    }
+    @{
+        Id = 'disable_let_windows_improve_start_and_search'
+        Title = 'Disable Let Windows Improve Start And Search Results By Tracking App Launches'
+        Tab = 'Debloat'; Section = 'Privacy'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Policies\Microsoft\Windows\EdgeUI]
+"DisableMFUTracking"=dword:00000001
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\EdgeUI]
+"DisableMFUTracking"=dword:00000001
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Policies\Microsoft\Windows\EdgeUI]
+"DisableMFUTracking"=-
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\EdgeUI]
+"DisableMFUTracking"=-
+'@
+    }
+    @{
+        Id = 'disable_personal_inking_and_typing_dictionar'
+        Title = 'Disable Personal Inking And Typing Dictionary'
+        Tab = 'Debloat'; Section = 'Privacy'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\InputPersonalization]
+"RestrictImplicitInkCollection"=dword:00000001
+"RestrictImplicitTextCollection"=dword:00000001
+[HKEY_CURRENT_USER\Software\Microsoft\InputPersonalization\TrainedDataStore]
+"HarvestContacts"=dword:00000000
+[HKEY_CURRENT_USER\Software\Microsoft\Personalization\Settings]
+"AcceptedPrivacyPolicy"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\InputPersonalization]
+"RestrictImplicitInkCollection"=dword:00000000
+"RestrictImplicitTextCollection"=dword:00000000
+
+[HKEY_CURRENT_USER\Software\Microsoft\InputPersonalization\TrainedDataStore]
+"HarvestContacts"=dword:00000001
+
+[HKEY_CURRENT_USER\Software\Microsoft\Personalization\Settings]
+"AcceptedPrivacyPolicy"=dword:00000001
+'@
+    }
+    @{
+        Id = 'disable_sending_required_data'
+        Title = 'Disable Sending Required Data'
+        Tab = 'Debloat'; Section = 'Privacy'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\DataCollection]
+"AllowTelemetry"=dword:00000000
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\DataCollection]
+"AllowTelemetry"=-
+'@
+    }
+    @{
+        Id = 'feedback_frequency_never'
+        Title = 'Feedback Frequency Never'
+        Tab = 'Debloat'; Section = 'Privacy'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Siuf\Rules]
+"NumberOfSIUFInPeriod"=dword:00000000
+"PeriodInNanoSeconds"=-
+'@
+        Default = @'
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Siuf\Rules]
+"NumberOfSIUFInPeriod"=-
+"PeriodInNanoSeconds"=-
+'@
+    }
+    @{
+        Id = 'disable_store_my_activity_history_on_this_de'
+        Title = 'Disable Store My Activity History On This Device'
+        Tab = 'Debloat'; Section = 'Privacy'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\System]
+"PublishUserActivities"=dword:00000000
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\System]
+"PublishUserActivities"=-
+'@
+    }
+    @{
+        Id = 'disable_search_highlights'
+        Title = 'Disable Search Highlights'
+        Tab = 'Debloat'; Section = 'Search'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\SearchSettings]
+"IsDynamicSearchBoxEnabled"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\SearchSettings]
+"IsDynamicSearchBoxEnabled"=-
+'@
+    }
+    @{
+        Id = 'disable_safe_search'
+        Title = 'Disable Safe Search'
+        Tab = 'Debloat'; Section = 'Search'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\SearchSettings]
+"SafeSearchMode"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\SearchSettings]
+"SafeSearchMode"=-
+'@
+    }
+    @{
+        Id = 'disable_cloud_content_search_for_work_or_sch'
+        Title = 'Disable Cloud Content Search For Work Or School Account'
+        Tab = 'Debloat'; Section = 'Search'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\SearchSettings]
+"IsAADCloudSearchEnabled"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\SearchSettings]
+"IsAADCloudSearchEnabled"=-
+'@
+    }
+    @{
+        Id = 'disable_cloud_content_search_for_microsoft_a'
+        Title = 'Disable Cloud Content Search For Microsoft Account'
+        Tab = 'Debloat'; Section = 'Search'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\SearchSettings]
+"IsMSACloudSearchEnabled"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\SearchSettings]
+"IsMSACloudSearchEnabled"=-
+'@
+    }
+    @{
+        Id = 'disable_magnifier_settings'
+        Title = 'Disable Magnifier Settings'
+        Tab = 'Appearance'; Section = 'Ease of Access'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier]
+"FollowCaret"=dword:00000000
+"FollowNarrator"=dword:00000000
+"FollowMouse"=dword:00000000
+"FollowFocus"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier]
+"FollowCaret"=-
+"FollowNarrator"=-
+"FollowMouse"=-
+"FollowFocus"=-
+'@
+    }
+    @{
+        Id = 'disable_narrator_settings'
+        Title = 'Disable Narrator Settings'
+        Tab = 'Appearance'; Section = 'Ease of Access'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Narrator]
+"IntonationPause"=dword:00000000
+"ReadHints"=dword:00000000
+"ErrorNotificationType"=dword:00000000
+"EchoChars"=dword:00000000
+"EchoWords"=dword:00000000
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Narrator\NarratorHome]
+"MinimizeType"=dword:00000000
+"AutoStart"=dword:00000000
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Narrator\NoRoam]
+"EchoToggleKeys"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Narrator]
+"IntonationPause"=-
+"ReadHints"=-
+"ErrorNotificationType"=-
+"EchoChars"=-
+"EchoWords"=-
+
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Narrator\NarratorHome]
+"MinimizeType"=-
+"AutoStart"=-
+
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Narrator\NoRoam]
+"EchoToggleKeys"=-
+'@
+    }
+    @{
+        Id = 'disable_use_the_print_screen_key_to_open_scr'
+        Title = 'Disable Use The Print Screen Key To Open Screen Capture'
+        Tab = 'Appearance'; Section = 'Ease of Access'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Control Panel\Keyboard]
+"PrintScreenKeyForSnippingEnabled"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Control Panel\Keyboard]
+"PrintScreenKeyForSnippingEnabled"=-
+'@
+    }
+    @{
+        Id = 'disable_game_bar'
+        Title = 'Disable Game Bar'
+        Tab = 'Tweaks'; Section = 'Gaming'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\System\GameConfigStore]
+"GameDVR_Enabled"=dword:00000000
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\GameDVR]
+"AppCaptureEnabled"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\System\GameConfigStore]
+"GameDVR_Enabled"=dword:00000000
+
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\GameDVR]
+"AppCaptureEnabled"=-
+'@
+    }
+    @{
+        Id = 'disable_enable_open_xbox_game_bar_using_game'
+        Title = 'Disable Enable Open Xbox Game Bar Using Game Controller'
+        Tab = 'Tweaks'; Section = 'Gaming'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\GameBar]
+"UseNexusForGameBarEnabled"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\GameBar]
+"UseNexusForGameBarEnabled"=-
+'@
+    }
+    @{
+        Id = 'disable_use_view_menu_as_guide_button_in_app'
+        Title = 'Disable Use View + Menu As Guide Button In Apps'
+        Tab = 'Tweaks'; Section = 'Gaming'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\GameBar]
+"GamepadNexusChordEnabled"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\GameBar]
+"GamepadNexusChordEnabled"=-
+'@
+    }
+    @{
+        Id = 'other_settings'
+        Title = 'Other Settings'
+        Tab = 'Tweaks'; Section = 'Gaming'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\GameDVR]
+"AudioEncodingBitrate"=dword:0001f400
+"AudioCaptureEnabled"=dword:00000000
+"CustomVideoEncodingBitrate"=dword:003d0900
+"CustomVideoEncodingHeight"=dword:000002d0
+"CustomVideoEncodingWidth"=dword:00000500
+"HistoricalBufferLength"=dword:0000001e
+"HistoricalBufferLengthUnit"=dword:00000001
+"HistoricalCaptureEnabled"=dword:00000000
+"HistoricalCaptureOnBatteryAllowed"=dword:00000001
+"HistoricalCaptureOnWirelessDisplayAllowed"=dword:00000001
+"MaximumRecordLength"=hex(b):00,D0,88,C3,10,00,00,00
+"VideoEncodingBitrateMode"=dword:00000002
+"VideoEncodingResolutionMode"=dword:00000002
+"VideoEncodingFrameRateMode"=dword:00000000
+"EchoCancellationEnabled"=dword:00000001
+"CursorCaptureEnabled"=dword:00000000
+"VKToggleGameBar"=dword:00000000
+"VKMToggleGameBar"=dword:00000000
+"VKSaveHistoricalVideo"=dword:00000000
+"VKMSaveHistoricalVideo"=dword:00000000
+"VKToggleRecording"=dword:00000000
+"VKMToggleRecording"=dword:00000000
+"VKTakeScreenshot"=dword:00000000
+"VKMTakeScreenshot"=dword:00000000
+"VKToggleRecordingIndicator"=dword:00000000
+"VKMToggleRecordingIndicator"=dword:00000000
+"VKToggleMicrophoneCapture"=dword:00000000
+"VKMToggleMicrophoneCapture"=dword:00000000
+"VKToggleCameraCapture"=dword:00000000
+"VKMToggleCameraCapture"=dword:00000000
+"VKToggleBroadcast"=dword:00000000
+"VKMToggleBroadcast"=dword:00000000
+"MicrophoneCaptureEnabled"=dword:00000000
+"SystemAudioGain"=hex(b):10,27,00,00,00,00,00,00
+"MicrophoneGain"=hex(b):10,27,00,00,00,00,00,00
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\GameDVR]
+"AudioEncodingBitrate"=-
+"AudioCaptureEnabled"=-
+"CustomVideoEncodingBitrate"=-
+"CustomVideoEncodingHeight"=-
+"CustomVideoEncodingWidth"=-
+"HistoricalBufferLength"=-
+"HistoricalBufferLengthUnit"=-
+"HistoricalCaptureEnabled"=-
+"HistoricalCaptureOnBatteryAllowed"=-
+"HistoricalCaptureOnWirelessDisplayAllowed"=-
+"MaximumRecordLength"=-
+"VideoEncodingBitrateMode"=-
+"VideoEncodingResolutionMode"=-
+"VideoEncodingFrameRateMode"=-
+"EchoCancellationEnabled"=-
+"CursorCaptureEnabled"=-
+"VKToggleGameBar"=-
+"VKMToggleGameBar"=-
+"VKSaveHistoricalVideo"=-
+"VKMSaveHistoricalVideo"=-
+"VKToggleRecording"=-
+"VKMToggleRecording"=-
+"VKTakeScreenshot"=-
+"VKMTakeScreenshot"=-
+"VKToggleRecordingIndicator"=-
+"VKMToggleRecordingIndicator"=-
+"VKToggleMicrophoneCapture"=-
+"VKMToggleMicrophoneCapture"=-
+"VKToggleCameraCapture"=-
+"VKMToggleCameraCapture"=-
+"VKToggleBroadcast"=-
+"VKMToggleBroadcast"=-
+"MicrophoneCaptureEnabled"=-
+"SystemAudioGain"=-
+"MicrophoneGain"=-
+'@
+    }
+    @{
+        Id = 'disable_show_the_voice_typing_mic_button'
+        Title = 'Disable Show The Voice Typing Mic Button'
+        Tab = 'Appearance'; Section = 'Typing & Input'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\input\Settings]
+"IsVoiceTypingKeyEnabled"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\input\Settings]
+"IsVoiceTypingKeyEnabled"=-
+'@
+    }
+    @{
+        Id = 'disable_capitalize_the_first_letter_of_each_'
+        Title = 'Disable Capitalize The First Letter Of Each Sentence (+2 more)'
+        Tab = 'Appearance'; Section = 'Typing & Input'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\TabletTip\1.7]
+"EnableAutoShiftEngage"=dword:00000000
+"EnableKeyAudioFeedback"=dword:00000000
+"EnableDoubleTapSpace"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\TabletTip\1.7]
+"EnableAutoShiftEngage"=-
+"EnableKeyAudioFeedback"=-
+"EnableDoubleTapSpace"=-
+'@
+    }
+    @{
+        Id = 'disable_typing_insights'
+        Title = 'Disable Typing Insights'
+        Tab = 'Appearance'; Section = 'Typing & Input'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\input\Settings]
+"InsightsEnabled"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\input\Settings]
+"InsightsEnabled"=-
+'@
+    }
+    @{
+        Id = 'show_the_touch_keyboard_never'
+        Title = 'Show The Touch Keyboard Never'
+        Tab = 'Appearance'; Section = 'Typing & Input'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\TabletTip\1.7]
+"TouchKeyboardTapInvoke"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\TabletTip\1.7]
+"TouchKeyboardTapInvoke"=-
+'@
+    }
+    @{
+        Id = 'disable_language_bar'
+        Title = 'Disable Language Bar'
+        Tab = 'Appearance'; Section = 'Typing & Input'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\CTF\LangBar]
+"ExtraIconsOnMinimized"=dword:00000000
+"Label"=dword:00000000
+"ShowStatus"=dword:00000003
+"Transparency"=dword:000000ff
+'@
+        Default = @'
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\CTF\LangBar]
+"ExtraIconsOnMinimized"=-
+"Label"=-
+"ShowStatus"=-
+"Transparency"=-
+'@
+    }
+    @{
+        Id = 'disable_language_hotkey'
+        Title = 'Disable Language Hotkey'
+        Tab = 'Appearance'; Section = 'Typing & Input'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Keyboard Layout\Toggle]
+"Language Hotkey"="3"
+"Hotkey"="3"
+"Layout Hotkey"="3"
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Keyboard Layout\Toggle]
+"Language Hotkey"=-
+"Hotkey"=-
+"Layout Hotkey"=-
+'@
+    }
+    @{
+        Id = 'disable_calendar_events'
+        Title = 'Disable Calendar Events'
+        Tab = 'Appearance'; Section = 'Typing & Input'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Search]
+"GleamEnabled"=dword:00000000
+"WeatherEnabled"=dword:00000000
+"HolidayEnabled"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Search]
+"GleamEnabled"=-
+"WeatherEnabled"=-
+"HolidayEnabled"=-
+'@
+    }
+    @{
+        Id = 'disable_dynamic_lock'
+        Title = 'Disable Dynamic Lock'
+        Tab = 'System'; Section = 'Accounts & Sign-in'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows NT\CurrentVersion\Winlogon]
+"EnableGoodbye"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows NT\CurrentVersion\Winlogon]
+"EnableGoodbye"=-
+'@
+    }
+    @{
+        Id = 'disable_use_my_sign_in_info_after_restart'
+        Title = 'Disable Use My Sign In Info After Restart'
+        Tab = 'System'; Section = 'Accounts & Sign-in'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System]
+"DisableAutomaticRestartSignOn"=dword:00000001
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System]
+"DisableAutomaticRestartSignOn"=-
+'@
+    }
+    @{
+        Id = 'disable_for_improved_security_only_allow_win'
+        Title = 'Disable For Improved Security, Only Allow Windows Hello Sign-In'
+        Tab = 'System'; Section = 'Accounts & Sign-in'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\PasswordLess\Device]
+"DevicePasswordLessBuildVersion"=dword:00000000
+"DevicePasswordLessUpdateType"=dword:00000001
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\PasswordLess\Device]
+"DevicePasswordLessBuildVersion"=dword:00000002
+"DevicePasswordLessUpdateType"=-
+'@
+    }
+    @{
+        Id = 'disable_windows_backup'
+        Title = 'Disable Windows Backup'
+        Tab = 'System'; Section = 'Accounts & Sign-in'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\SettingSync]
+"DisableAccessibilitySettingSync"=dword:00000002
+"DisableAccessibilitySettingSyncUserOverride"=dword:00000001
+"DisableAppSyncSettingSync"=dword:00000002
+"DisableAppSyncSettingSyncUserOverride"=dword:00000001
+"DisableApplicationSettingSync"=dword:00000002
+"DisableApplicationSettingSyncUserOverride"=dword:00000001
+"DisableCredentialsSettingSync"=dword:00000002
+"DisableCredentialsSettingSyncUserOverride"=dword:00000001
+"DisableDesktopThemeSettingSync"=dword:00000002
+"DisableDesktopThemeSettingSyncUserOverride"=dword:00000001
+"DisableLanguageSettingSync"=dword:00000002
+"DisableLanguageSettingSyncUserOverride"=dword:00000001
+"DisablePersonalizationSettingSync"=dword:00000002
+"DisablePersonalizationSettingSyncUserOverride"=dword:00000001
+"DisableSettingSync"=dword:00000002
+"DisableSettingSyncUserOverride"=dword:00000001
+"DisableStartLayoutSettingSync"=dword:00000002
+"DisableStartLayoutSettingSyncUserOverride"=dword:00000001
+"DisableSyncOnPaidNetwork"=dword:00000001
+"DisableWebBrowserSettingSync"=dword:00000002
+"DisableWebBrowserSettingSyncUserOverride"=dword:00000001
+"DisableWindowsSettingSync"=dword:00000002
+"DisableWindowsSettingSyncUserOverride"=dword:00000001
+"EnableWindowsBackup"=dword:00000000
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\SettingSync]
+"DisableAccessibilitySettingSync"=-
+"DisableAccessibilitySettingSyncUserOverride"=-
+"DisableAppSyncSettingSync"=-
+"DisableAppSyncSettingSyncUserOverride"=-
+"DisableApplicationSettingSync"=-
+"DisableApplicationSettingSyncUserOverride"=-
+"DisableCredentialsSettingSync"=-
+"DisableCredentialsSettingSyncUserOverride"=-
+"DisableDesktopThemeSettingSync"=-
+"DisableDesktopThemeSettingSyncUserOverride"=-
+"DisableLanguageSettingSync"=-
+"DisableLanguageSettingSyncUserOverride"=-
+"DisablePersonalizationSettingSync"=-
+"DisablePersonalizationSettingSyncUserOverride"=-
+"DisableSettingSync"=-
+"DisableSettingSyncUserOverride"=-
+"DisableStartLayoutSettingSync"=-
+"DisableStartLayoutSettingSyncUserOverride"=-
+"DisableSyncOnPaidNetwork"=-
+"DisableWebBrowserSettingSync"=-
+"DisableWebBrowserSettingSyncUserOverride"=-
+"DisableWindowsSettingSync"=-
+"DisableWindowsSettingSyncUserOverride"=-
+"EnableWindowsBackup"=-
+'@
+    }
+    @{
+        Id = 'disable_automatically_update_maps'
+        Title = 'Disable Automatically Update Maps'
+        Tab = 'Debloat'; Section = 'Apps'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SYSTEM\Maps]
+"AutoUpdateEnabled"=dword:00000000
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SYSTEM\Maps]
+"AutoUpdateEnabled"=-
+'@
+    }
+    @{
+        Id = 'disable_archive_apps'
+        Title = 'Disable Archive Apps'
+        Tab = 'Debloat'; Section = 'Apps'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Appx]
+"AllowAutomaticAppArchiving"=dword:00000000
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Appx]
+"AllowAutomaticAppArchiving"=-
+'@
+    }
+    @{
+        Id = 'hide_recycle_bin_from_desktop'
+        Title = 'Hide Recycle Bin From Desktop'
+        Tab = 'Appearance'; Section = 'Personalization'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\ClassicStartMenu]
+"{645FF040-5081-101B-9F08-00AA002F954E}"=dword:00000001
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel]
+"{645FF040-5081-101B-9F08-00AA002F954E}"=dword:00000001
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\ClassicStartMenu]
+"{645FF040-5081-101B-9F08-00AA002F954E}"=-
+
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel]
+"{645FF040-5081-101B-9F08-00AA002F954E}"=-
+'@
+    }
+    @{
+        Id = 'always_hide_most_used_list_in_start_menu'
+        Title = 'Always Hide Most Used List In Start Menu'
+        Tab = 'Appearance'; Section = 'Personalization'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Explorer]
+"ShowOrHideMostUsedApps"=dword:00000002
+[HKEY_CURRENT_USER\SOFTWARE\Policies\Microsoft\Windows\Explorer]
+"ShowOrHideMostUsedApps"=-
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer]
+"NoStartMenuMFUprogramsList"=-
+"NoInstrumentation"=-
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer]
+"NoStartMenuMFUprogramsList"=-
+"NoInstrumentation"=-
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Explorer]
+"ShowOrHideMostUsedApps"=-
+
+[HKEY_CURRENT_USER\SOFTWARE\Policies\Microsoft\Windows\Explorer]
+"ShowOrHideMostUsedApps"=-
+
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer]
+"NoStartMenuMFUprogramsList"=-
+"NoInstrumentation"=-
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer]
+"NoStartMenuMFUprogramsList"=-
+"NoInstrumentation"=-
+'@
+    }
+    @{
+        Id = 'start_menu_hide_recommended'
+        Title = 'Start Menu Hide Recommended'
+        Tab = 'Appearance'; Section = 'Personalization'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\PolicyManager\current\device\Start]
+"HideRecommendedSection"=dword:00000001
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\PolicyManager\current\device\Education]
+"IsEducationEnvironment"=dword:00000001
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Explorer]
+"HideRecommendedSection"=dword:00000001
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\PolicyManager\current\device\Start]
+"HideRecommendedSection"=-
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\PolicyManager\current\device\Education]
+"IsEducationEnvironment"=-
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Explorer]
+"HideRecommendedSection"=-
+'@
+    }
+    @{
+        Id = 'more_pins_personalization_start'
+        Title = 'More Pins Personalization Start'
+        Tab = 'Appearance'; Section = 'Personalization'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"Start_Layout"=dword:00000001
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"Start_Layout"=-
+'@
+    }
+    @{
+        Id = 'disable_show_recently_added_apps'
+        Title = 'Disable Show Recently Added Apps'
+        Tab = 'Appearance'; Section = 'Personalization'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Explorer]
+"HideRecentlyAddedApps"=dword:00000001
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer]
+"HideRecentlyAddedApps"=dword:00000001
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Explorer]
+"HideRecentlyAddedApps"=-
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer]
+"HideRecentlyAddedApps"=-
+'@
+    }
+    @{
+        Id = 'disable_show_account_related_notifications'
+        Title = 'Disable Show Account-Related Notifications'
+        Tab = 'Appearance'; Section = 'Personalization'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"Start_AccountNotifications"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"Start_AccountNotifications"=-
+'@
+    }
+    @{
+        Id = 'disable_show_websites_from_your_browsing_his'
+        Title = 'Disable Show Websites From Your Browsing History'
+        Tab = 'Appearance'; Section = 'Personalization'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"Start_RecoPersonalizedSites"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"Start_RecoPersonalizedSites"=-
+'@
+    }
+    @{
+        Id = 'disable_show_recently_opened_items_in_start_'
+        Title = 'Disable Show Recently Opened Items In Start, Jump Lists And File Explorer'
+        Tab = 'Appearance'; Section = 'Personalization'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"Start_TrackDocs"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"Start_TrackDocs"=-
+'@
+    }
+    @{
+        Id = 'touch_keyboard_never'
+        Title = 'Touch Keyboard Never'
+        Tab = 'Appearance'; Section = 'Personalization'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\TabletTip\1.7]
+"TipbandDesiredVisibility"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\TabletTip\1.7]
+"TipbandDesiredVisibility"=-
+'@
+    }
+    @{
+        Id = 'show_smaller_taskbar_icons_never'
+        Title = 'Show Smaller Taskbar Icons Never'
+        Tab = 'Appearance'; Section = 'Personalization'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"IconSizePreference"=dword:00000001
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"IconSizePreference"=-
+'@
+    }
+    @{
+        Id = 'disable_desktop_preview'
+        Title = 'Disable Desktop Preview'
+        Tab = 'Appearance'; Section = 'Personalization'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"TaskbarSd"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"TaskbarSd"=-
+'@
+    }
+    @{
+        Id = 'remove_resume_from_taskbar'
+        Title = 'Remove Resume From Taskbar'
+        Tab = 'Appearance'; Section = 'Personalization'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"IsEnabled"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"IsEnabled"=-
+'@
+    }
+    @{
+        Id = 'remove_meet_now'
+        Title = 'Remove Meet Now'
+        Tab = 'Appearance'; Section = 'Personalization'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer]
+"HideSCAMeetNow"=dword:00000001
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer]
+"HideSCAMeetNow"=-
+'@
+    }
+    @{
+        Id = 'remove_news_and_interests'
+        Title = 'Remove News And Interests'
+        Tab = 'Appearance'; Section = 'Personalization'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Windows Feeds]
+"EnableFeeds"=dword:00000000
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Windows Feeds]
+"EnableFeeds"=-
+'@
+    }
+    @{
+        Id = 'show_all_taskbar_icons'
+        Title = 'Show All Taskbar Icons'
+        Tab = 'Appearance'; Section = 'Personalization'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer]
+"EnableAutoTray"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer]
+"EnableAutoTray"=-
+'@
+    }
+    @{
+        Id = 'remove_security_taskbar_icon'
+        Title = 'Remove Security Taskbar Icon'
+        Tab = 'Appearance'; Section = 'Personalization'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run]
+"SecurityHealth"=hex(3):07,00,00,00,05,DB,8A,69,8A,49,D9,01
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run]
+"SecurityHealth"=hex:04,00,00,00,00,00,00,00,00,00,00,00
+'@
+    }
+    @{
+        Id = 'disable_use_dynamic_lighting_on_my_devices'
+        Title = 'Disable Use Dynamic Lighting On My Devices'
+        Tab = 'Appearance'; Section = 'Personalization'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Lighting]
+"AmbientLightingEnabled"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Lighting]
+"AmbientLightingEnabled"=dword:00000001
+'@
+    }
+    @{
+        Id = 'disable_compatible_apps_in_the_foreground_al'
+        Title = 'Disable Compatible Apps In The Foreground Always Control Lighting'
+        Tab = 'Appearance'; Section = 'Personalization'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Lighting]
+"ControlledByForegroundApp"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Lighting]
+"ControlledByForegroundApp"=-
+'@
+    }
+    @{
+        Id = 'disable_match_my_windows_accent_color'
+        Title = 'Disable Match My Windows Accent Color'
+        Tab = 'Appearance'; Section = 'Personalization'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Lighting]
+"UseSystemAccentColor"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Lighting]
+"UseSystemAccentColor"=dword:00000001
+'@
+    }
+    @{
+        Id = 'disable_show_key_background'
+        Title = 'Disable Show Key Background'
+        Tab = 'Appearance'; Section = 'Personalization'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\TabletTip\1.7]
+"IsKeyBackgroundEnabled"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\TabletTip\1.7]
+"IsKeyBackgroundEnabled"=-
+'@
+    }
+    @{
+        Id = 'disable_show_recommendations_for_tips_shortc'
+        Title = 'Disable Show Recommendations For Tips Shortcuts New Apps And More'
+        Tab = 'Appearance'; Section = 'Personalization'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"Start_IrisRecommendations"=dword:00000000
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Start]
+"ShowRecentList"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"Start_IrisRecommendations"=-
+
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Start]
+"ShowRecentList"=-
+'@
+    }
+    @{
+        Id = 'disable_share_any_window_from_my_taskbar'
+        Title = 'Disable Share Any Window From My Taskbar'
+        Tab = 'Appearance'; Section = 'Personalization'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"TaskbarSn"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"TaskbarSn"=dword:00000000
+'@
+    }
+    @{
+        Id = 'disable_device_usage'
+        Title = 'Disable Device Usage'
+        Tab = 'Appearance'; Section = 'Personalization'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CloudExperienceHost\Intent\developer]
+"Intent"=dword:00000000
+"Priority"=dword:00000000
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CloudExperienceHost\Intent\gaming]
+"Intent"=dword:00000000
+"Priority"=dword:00000000
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CloudExperienceHost\Intent\family]
+"Intent"=dword:00000000
+"Priority"=dword:00000000
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CloudExperienceHost\Intent\creative]
+"Intent"=dword:00000000
+"Priority"=dword:00000000
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CloudExperienceHost\Intent\schoolwork]
+"Intent"=dword:00000000
+"Priority"=dword:00000000
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CloudExperienceHost\Intent\entertainment]
+"Intent"=dword:00000000
+"Priority"=dword:00000000
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CloudExperienceHost\Intent\business]
+"Intent"=dword:00000000
+"Priority"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CloudExperienceHost\Intent\developer]
+"Intent"=dword:00000000
+"Priority"=dword:00000000
+
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CloudExperienceHost\Intent\gaming]
+"Intent"=dword:00000000
+"Priority"=dword:00000000
+
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CloudExperienceHost\Intent\family]
+"Intent"=dword:00000000
+"Priority"=dword:00000000
+
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CloudExperienceHost\Intent\creative]
+"Intent"=dword:00000000
+"Priority"=dword:00000000
+
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CloudExperienceHost\Intent\schoolwork]
+"Intent"=dword:00000000
+"Priority"=dword:00000000
+
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CloudExperienceHost\Intent\entertainment]
+"Intent"=dword:00000000
+"Priority"=dword:00000000
+
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CloudExperienceHost\Intent\business]
+"Intent"=dword:00000000
+"Priority"=dword:00000000
+'@
+    }
+    @{
+        Id = 'disable_usb_issues_notify'
+        Title = 'Disable Usb Issues Notify'
+        Tab = 'Tweaks'; Section = 'Devices'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Shell\USB]
+"NotifyOnUsbErrors"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Shell\USB]
+"NotifyOnUsbErrors"=-
+'@
+    }
+    @{
+        Id = 'disable_let_windows_manage_my_default_printe'
+        Title = 'Disable Let Windows Manage My Default Printer'
+        Tab = 'Tweaks'; Section = 'Devices'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows NT\CurrentVersion\Windows]
+"LegacyDefaultPrinterMode"=dword:00000001
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows NT\CurrentVersion\Windows]
+"LegacyDefaultPrinterMode"=dword:ffffffff
+'@
+    }
+    @{
+        Id = 'disable_write_with_your_fingertip'
+        Title = 'Disable Write With Your Fingertip'
+        Tab = 'Tweaks'; Section = 'Devices'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\TabletTip\EmbeddedInkControl]
+"EnableInkingWithTouch"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\TabletTip\EmbeddedInkControl]
+"EnableInkingWithTouch"=-
+'@
+    }
+    @{
+        Id = 'disable_notifications_suggested'
+        Title = 'Disable Notifications Suggested'
+        Tab = 'Debloat'; Section = 'Notifications'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings\Windows.SystemToast.Suggested]
+"Enabled"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings\Windows.SystemToast.Suggested]
+"Enabled"=-
+'@
+    }
+    @{
+        Id = 'disable_suggested_actions'
+        Title = 'Disable Suggested Actions'
+        Tab = 'Debloat'; Section = 'Notifications'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\SmartActionPlatform\SmartClipboard]
+"Disabled"=dword:00000001
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\SmartActionPlatform\SmartClipboard]
+"Disabled"=-
+'@
+    }
+    @{
+        Id = 'disable_focus_assist'
+        Title = 'Disable Focus Assist'
+        Tab = 'Debloat'; Section = 'Notifications'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CloudStore\Store\Cache\DefaultAccount\$$windows.data.notifications.quiethourssettings\Current]
+"Data"=hex(3):02,00,00,00,B4,67,2B,68,F0,0B,D8,01,00,00,00,00,43,42,01,00,C2,0A,01,D2,14,28,4D,00,69,00,63,00,72,00,6F,00,73,00,6F,00,66,00,74,00,2E,00,51,00,75,00,69,00,65,00,74,00,48,00,6F,00,75,00,72,00,73,00,50,00,72,00,6F,00,66,00,69,00,6C,00,65,00,2E,00,55,00,6E,00,72,00,65,00,73,00,74,00,72,00,69,00,63,00,74,00,65,00,64,00,CA,28,D0,14,02,00,00
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CloudStore\Store\Cache\DefaultAccount\$quietmomentfullscreen$windows.data.notifications.quietmoment\Current]
+"Data"=hex(3):02,00,00,00,97,1D,2D,68,F0,0B,D8,01,00,00,00,00,43,42,01,00,C2,0A,01,D2,1E,26,4D,00,69,00,63,00,72,00,6F,00,73,00,6F,00,66,00,74,00,2E,00,51,00,75,00,69,00,65,00,74,00,48,00,6F,00,75,00,72,00,73,00,50,00,72,00,6F,00,66,00,69,00,6C,00,65,00,2E,00,41,00,6C,00,61,00,72,00,6D,00,73,00,4F,00,6E,00,6C,00,79,00,C2,28,01,CA,50,00,00
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CloudStore\Store\Cache\DefaultAccount\$quietmomentgame$windows.data.notifications.quietmoment\Current]
+"Data"=hex(3):02,00,00,00,6C,39,2D,68,F0,0B,D8,01,00,00,00,00,43,42,01,00,C2,0A,01,D2,1E,28,4D,00,69,00,63,00,72,00,6F,00,73,00,6F,00,66,00,74,00,2E,00,51,00,75,00,69,00,65,00,74,00,48,00,6F,00,75,00,72,00,73,00,50,00,72,00,6F,00,66,00,69,00,6C,00,65,00,2E,00,50,00,72,00,69,00,6F,00,72,00,69,00,74,00,79,00,4F,00,6E,00,6C,00,79,00,C2,28,01,CA,50,00,00
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CloudStore\Store\Cache\DefaultAccount\$quietmomentpostoobe$windows.data.notifications.quietmoment\Current]
+"Data"=hex(3):02,00,00,00,06,54,2D,68,F0,0B,D8,01,00,00,00,00,43,42,01,00,C2,0A,01,D2,1E,28,4D,00,69,00,63,00,72,00,6F,00,73,00,6F,00,66,00,74,00,2E,00,51,00,75,00,69,00,65,00,74,00,48,00,6F,00,75,00,72,00,73,00,50,00,72,00,6F,00,66,00,69,00,6C,00,65,00,2E,00,50,00,72,00,69,00,6F,00,72,00,69,00,74,00,79,00,4F,00,6E,00,6C,00,79,00,C2,28,01,CA,50,00,00
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CloudStore\Store\Cache\DefaultAccount\$quietmomentpresentation$windows.data.notifications.quietmoment\Current]
+"Data"=hex(3):02,00,00,00,83,6E,2D,68,F0,0B,D8,01,00,00,00,00,43,42,01,00,C2,0A,01,D2,1E,26,4D,00,69,00,63,00,72,00,6F,00,73,00,6F,00,66,00,74,00,2E,00,51,00,75,00,69,00,65,00,74,00,48,00,6F,00,75,00,72,00,73,00,50,00,72,00,6F,00,66,00,69,00,6C,00,65,00,2E,00,41,00,6C,00,61,00,72,00,6D,00,73,00,4F,00,6E,00,6C,00,79,00,C2,28,01,CA,50,00,00
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CloudStore\Store\Cache\DefaultAccount\$quietmomentscheduled$windows.data.notifications.quietmoment\Current]
+"Data"=hex(3):02,00,00,00,2E,8A,2D,68,F0,0B,D8,01,00,00,00,00,43,42,01,00,C2,0A,01,D2,1E,28,4D,00,69,00,63,00,72,00,6F,00,73,00,6F,00,66,00,74,00,2E,00,51,00,75,00,69,00,65,00,74,00,48,00,6F,00,75,00,72,00,73,00,50,00,72,00,6F,00,66,00,69,00,6C,00,65,00,2E,00,50,00,72,00,69,00,6F,00,72,00,69,00,74,00,79,00,4F,00,6E,00,6C,00,79,00,C2,28,01,D1,32,80,E0,AA,8A,99,30,D1,3C,80,E0,F6,C5,D5,0E,CA,50,00,00
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CloudStore\Store\Cache\DefaultAccount\$$windows.data.notifications.quiethourssettings\Current]
+"Data"=hex:02,00,00,00,74,a9,70,73,03,82,da,01,00,00,00,00,43,42,01,00,c2,0a,01,d2,14,28,4d,00,69,00,63,00,72,00,6f,00,73,00,6f,00,66,00,74,00,2e,00,51,00,75,00,69,00,65,00,74,00,48,00,6f,00,75,00,72,00,73,00,50,00,72,00,6f,00,66,00,69,00,6c,00,65,00,2e,00,55,00,6e,00,72,00,65,00,73,00,74,00,72,00,69,00,63,00,74,00,65,00,64,00,ca,28,00,00
+
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CloudStore\Store\Cache\DefaultAccount\$quietmomentfullscreen$windows.data.notifications.quietmoment\Current]
+"Data"=hex:02,00,00,00,82,a3,71,73,03,82,da,01,00,00,00,00,43,42,01,00,c2,0a,01,c2,14,01,d2,1e,26,4d,00,69,00,63,00,72,00,6f,00,73,00,6f,00,66,00,74,00,2e,00,51,00,75,00,69,00,65,00,74,00,48,00,6f,00,75,00,72,00,73,00,50,00,72,00,6f,00,66,00,69,00,6c,00,65,00,2e,00,41,00,6c,00,61,00,72,00,6d,00,73,00,4f,00,6e,00,6c,00,79,00,ca,50,00,00
+
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CloudStore\Store\Cache\DefaultAccount\$quietmomentgame$windows.data.notifications.quietmoment\Current]
+"Data"=hex:02,00,00,00,a5,c1,71,73,03,82,da,01,00,00,00,00,43,42,01,00,c2,0a,01,c2,14,01,d2,1e,28,4d,00,69,00,63,00,72,00,6f,00,73,00,6f,00,66,00,74,00,2e,00,51,00,75,00,69,00,65,00,74,00,48,00,6f,00,75,00,72,00,73,00,50,00,72,00,6f,00,66,00,69,00,6c,00,65,00,2e,00,50,00,72,00,69,00,6f,00,72,00,69,00,74,00,79,00,4f,00,6e,00,6c,00,79,00,ca,50,00,00
+
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CloudStore\Store\Cache\DefaultAccount\$quietmomentpostoobe$windows.data.notifications.quietmoment\Current]
+"Data"=hex:02,00,00,00,85,de,71,73,03,82,da,01,00,00,00,00,43,42,01,00,c2,0a,01,c2,14,01,d2,1e,28,4d,00,69,00,63,00,72,00,6f,00,73,00,6f,00,66,00,74,00,2e,00,51,00,75,00,69,00,65,00,74,00,48,00,6f,00,75,00,72,00,73,00,50,00,72,00,6f,00,66,00,69,00,6c,00,65,00,2e,00,50,00,72,00,69,00,6f,00,72,00,69,00,74,00,79,00,4f,00,6e,00,6c,00,79,00,ca,50,00,00
+
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CloudStore\Store\Cache\DefaultAccount\$quietmomentpresentation$windows.data.notifications.quietmoment\Current]
+"Data"=hex:02,00,00,00,a4,fa,71,73,03,82,da,01,00,00,00,00,43,42,01,00,c2,0a,01,c2,14,01,d2,1e,26,4d,00,69,00,63,00,72,00,6f,00,73,00,6f,00,66,00,74,00,2e,00,51,00,75,00,69,00,65,00,74,00,48,00,6f,00,75,00,72,00,73,00,50,00,72,00,6f,00,66,00,69,00,6c,00,65,00,2e,00,41,00,6c,00,61,00,72,00,6d,00,73,00,4f,00,6e,00,6c,00,79,00,ca,50,00,00
+
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CloudStore\Store\Cache\DefaultAccount\$quietmomentscheduled$windows.data.notifications.quietmoment\Current]
+"Data"=hex:02,00,00,00,fe,17,72,73,03,82,da,01,00,00,00,00,43,42,01,00,c2,0a,01,d2,1e,28,4d,00,69,00,63,00,72,00,6f,00,73,00,6f,00,66,00,74,00,2e,00,51,00,75,00,69,00,65,00,74,00,48,00,6f,00,75,00,72,00,73,00,50,00,72,00,6f,00,66,00,69,00,6c,00,65,00,2e,00,50,00,72,00,69,00,6f,00,72,00,69,00,74,00,79,00,4f,00,6e,00,6c,00,79,00,d1,32,80,e0,aa,8a,99,30,d1,3c,80,e0,f6,c5,d5,0e,ca,50,00,00
+'@
+    }
+    @{
+        Id = 'disable_turn_on_do_not_disturb_automatically'
+        Title = 'Disable Turn On Do Not Disturb Automatically'
+        Tab = 'Debloat'; Section = 'Notifications'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CloudStore\Store\DefaultAccount\Current\default$windows.data.donotdisturb.quietmoment$quietmomentlist\windows.data.donotdisturb.quietmoment$quietmomentpresentation]
+"Data"=hex(3):43,42,01,00,0A,02,01,00,2A,06,E2,F3,AA,CC,06,2A,2B,0E,5A,43,42,01,00,C2,0A,01,D2,1E,26,4D,00,69,00,63,00,72,00,6F,00,73,00,6F,00,66,00,74,00,2E,00,51,00,75,00,69,00,65,00,74,00,48,00,6F,00,75,00,72,00,73,00,50,00,72,00,6F,00,66,00,69,00,6C,00,65,00,2E,00,41,00,6C,00,61,00,72,00,6D,00,73,00,4F,00,6E,00,6C,00,79,00,CA,50,00,00,00,00,00
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CloudStore\Store\DefaultAccount\Current\default$windows.data.donotdisturb.quietmoment$quietmomentlist\windows.data.donotdisturb.quietmoment$quietmomentgame]
+"Data"=hex(3):43,42,01,00,0A,02,01,00,2A,06,E1,F3,AA,CC,06,2A,2B,0E,5E,43,42,01,00,C2,0A,01,D2,1E,28,4D,00,69,00,63,00,72,00,6F,00,73,00,6F,00,66,00,74,00,2E,00,51,00,75,00,69,00,65,00,74,00,48,00,6F,00,75,00,72,00,73,00,50,00,72,00,6F,00,66,00,69,00,6C,00,65,00,2E,00,50,00,72,00,69,00,6F,00,72,00,69,00,74,00,79,00,4F,00,6E,00,6C,00,79,00,CA,50,00,00,00,00,00
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CloudStore\Store\DefaultAccount\Current\default$windows.data.donotdisturb.quietmoment$quietmomentlist\windows.data.donotdisturb.quietmoment$quietmomentfullscreen]
+"Data"=hex(3):43,42,01,00,0A,02,01,00,2A,06,E0,F3,AA,CC,06,2A,2B,0E,5A,43,42,01,00,C2,0A,01,D2,1E,26,4D,00,69,00,63,00,72,00,6F,00,73,00,6F,00,66,00,74,00,2E,00,51,00,75,00,69,00,65,00,74,00,48,00,6F,00,75,00,72,00,73,00,50,00,72,00,6F,00,66,00,69,00,6C,00,65,00,2E,00,41,00,6C,00,61,00,72,00,6D,00,73,00,4F,00,6E,00,6C,00,79,00,CA,50,00,00,00,00,00
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CloudStore\Store\DefaultAccount\Current\default$windows.data.donotdisturb.quietmoment$quietmomentlist\windows.data.donotdisturb.quietmoment$quietmomentpostoobe]
+"Data"=hex(3):43,42,01,00,0A,02,01,00,2A,06,DF,F3,AA,CC,06,2A,2B,0E,5E,43,42,01,00,C2,0A,01,D2,1E,28,4D,00,69,00,63,00,72,00,6F,00,73,00,6F,00,66,00,74,00,2E,00,51,00,75,00,69,00,65,00,74,00,48,00,6F,00,75,00,72,00,73,00,50,00,72,00,6F,00,66,00,69,00,6C,00,65,00,2E,00,50,00,72,00,69,00,6F,00,72,00,69,00,74,00,79,00,4F,00,6E,00,6C,00,79,00,CA,50,00,00,00,00,00
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CloudStore\Store\DefaultAccount\Current\default$windows.data.donotdisturb.quietmoment$quietmomentlist\windows.data.donotdisturb.quietmoment$quietmomentpresentation]
+"Data"=hex:43,42,01,00,0a,02,01,00,2a,2a,00,00,00
+
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CloudStore\Store\DefaultAccount\Current\default$windows.data.donotdisturb.quietmoment$quietmomentlist\windows.data.donotdisturb.quietmoment$quietmomentgame]
+"Data"=hex:43,42,01,00,0a,02,01,00,2a,2a,00,00,00
+
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CloudStore\Store\DefaultAccount\Current\default$windows.data.donotdisturb.quietmoment$quietmomentlist\windows.data.donotdisturb.quietmoment$quietmomentfullscreen]
+"Data"=hex:43,42,01,00,0a,02,01,00,2a,2a,00,00,00
+
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CloudStore\Store\DefaultAccount\Current\default$windows.data.donotdisturb.quietmoment$quietmomentlist\windows.data.donotdisturb.quietmoment$quietmomentpostoobe]
+"Data"=hex:43,42,01,00,0a,02,01,00,2a,2a,00,00,00
+'@
+    }
+    @{
+        Id = 'disable_set_priority_notifications'
+        Title = 'Disable Set Priority Notifications'
+        Tab = 'Debloat'; Section = 'Notifications'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CloudStore\Store\DefaultAccount\Current\default$windows.data.donotdisturb.quiethoursprofile$quiethoursprofilelist\windows.data.donotdisturb.quiethoursprofile$microsoft.quiethoursprofile.priorityonly]
+"Data"=hex:43,42,01,00,0a,02,01,00,2a,06,be,89,ab,cc,06,2a,2b,0e,d0,03,43,42,01,00,c2,0a,01,cd,14,06,02,05,00,00,01,01,02,00,03,01,04,00,cc,32,12,05,28,4d,00,69,00,63,00,72,00,6f,00,73,00,6f,00,66,00,74,00,2e,00,53,00,63,00,72,00,65,00,65,00,6e,00,53,00,6b,00,65,00,74,00,63,00,68,00,5f,00,38,00,77,00,65,00,6b,00,79,00,62,00,33,00,64,00,38,00,62,00,62,00,77,00,65,00,21,00,41,00,70,00,70,00,29,4d,00,69,00,63,00,72,00,6f,00,73,00,6f,00,66,00,74,00,2e,00,57,00,69,00,6e,00,64,00,6f,00,77,00,73,00,41,00,6c,00,61,00,72,00,6d,00,73,00,5f,00,38,00,77,00,65,00,6b,00,79,00,62,00,33,00,64,00,38,00,62,00,62,00,77,00,65,00,21,00,41,00,70,00,70,00,31,4d,00,69,00,63,00,72,00,6f,00,73,00,6f,00,66,00,74,00,2e,00,58,00,62,00,6f,00,78,00,41,00,70,00,70,00,5f,00,38,00,77,00,65,00,6b,00,79,00,62,00,33,00,64,00,38,00,62,00,62,00,77,00,65,00,21,00,4d,00,69,00,63,00,72,00,6f,00,73,00,6f,00,66,00,74,00,2e,00,58,00,62,00,6f,00,78,00,41,00,70,00,70,00,2d,4d,00,69,00,63,00,72,00,6f,00,73,00,6f,00,66,00,74,00,2e,00,58,00,62,00,6f,00,78,00,47,00,61,00,6d,00,69,00,6e,00,67,00,4f,00,76,00,65,00,72,00,6c,00,61,00,79,00,5f,00,38,00,77,00,65,00,6b,00,79,00,62,00,33,00,64,00,38,00,62,00,62,00,77,00,65,00,21,00,41,00,70,00,70,00,29,57,00,69,00,6e,00,64,00,6f,00,77,00,73,00,2e,00,53,00,79,00,73,00,74,00,65,00,6d,00,2e,00,4e,00,65,00,61,00,72,00,53,00,68,00,61,00,72,00,65,00,45,00,78,00,70,00,65,00,72,00,69,00,65,00,6e,00,63,00,65,00,52,00,65,00,63,00,65,00,69,00,76,00,65,00,00,00,00,00
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CloudStore\Store\DefaultAccount\Current\default$windows.data.donotdisturb.quiethoursprofile$quiethoursprofilelist\windows.data.donotdisturb.quiethoursprofile$microsoft.quiethoursprofile.priorityonly]
+"Data"=hex:43,42,01,00,0a,02,01,00,2a,2a,00,00,00
+'@
+    }
+    @{
+        Id = 'disable_focus_settings'
+        Title = 'Disable Focus Settings'
+        Tab = 'Debloat'; Section = 'Notifications'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CloudStore\Store\DefaultAccount\Current\default$windows.data.shell.focussessionactivetheme\windows.data.shell.focussessionactivetheme${1b019365-25a5-4ff1-b50a-c155229afc8f}]
+"Data"=hex(3):43,42,01,00,0A,00,2A,06,F4,E2,AA,CC,06,2A,2B,0E,08,43,42,01,00,C2,0A,01,00,00,00,00
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CloudStore\Store\DefaultAccount\Current\default$windows.data.shell.focussessionactivetheme\windows.data.shell.focussessionactivetheme${1b019365-25a5-4ff1-b50a-c155229afc8f}]
+"Data"=-
+'@
+    }
+    @{
+        Id = 'battery_options_optimize_for_video_quality'
+        Title = 'Battery Options Optimize For Video Quality'
+        Tab = 'Tweaks'; Section = 'Performance'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\VideoSettings]
+"VideoQualityOnBattery"=dword:00000001
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\VideoSettings]
+"VideoQualityOnBattery"=-
+'@
+    }
+    @{
+        Id = 'disable_storage_sense'
+        Title = 'Disable Storage Sense'
+        Tab = 'Tweaks'; Section = 'Performance'; Revertible = $true
+        Optimize = @'
+"04"=dword:00000000
+'@
+        Default = @'
+[]
+"04"=-
+'@
+    }
+    @{
+        Id = 'disable_keep_windows_running_smoothly'
+        Title = 'Disable Keep Windows Running Smoothly'
+        Tab = 'Tweaks'; Section = 'Performance'; Revertible = $false
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\StorageSense]
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\StorageSense\Parameters]
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\StorageSense\Parameters\CachedSizes]
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\StorageSense\Parameters\StoragePolicy]
+'@
+        Default = ''
+    }
+    @{
+        Id = 'don_t_auto_delete_temp_files'
+        Title = 'Don''t Auto Delete Temp Files'
+        Tab = 'Tweaks'; Section = 'Performance'; Revertible = $true
+        Optimize = @'
+"2048"=dword:00000000
+'@
+        Default = @'
+[]
+"2048"=-
+'@
+    }
+    @{
+        Id = 'don_t_auto_empty_recycle_bin'
+        Title = 'Don''t Auto Empty Recycle Bin'
+        Tab = 'Tweaks'; Section = 'Performance'; Revertible = $true
+        Optimize = @'
+"08"=dword:00000000
+'@
+        Default = @'
+[]
+"08"=-
+'@
+    }
+    @{
+        Id = 'don_t_auto_delete_downloads'
+        Title = 'Don''t Auto Delete Downloads'
+        Tab = 'Tweaks'; Section = 'Performance'; Revertible = $true
+        Optimize = @'
+"256"=dword:00000000
+'@
+        Default = @'
+[]
+"256"=-
+'@
+    }
+    @{
+        Id = 'never_auto_run_storage_sense'
+        Title = 'Never Auto Run Storage Sense'
+        Tab = 'Tweaks'; Section = 'Performance'; Revertible = $true
+        Optimize = @'
+"32"=dword:00000000
+'@
+        Default = @'
+[]
+"32"=-
+'@
+    }
+    @{
+        Id = 'settings_set'
+        Title = 'Settings Set'
+        Tab = 'Tweaks'; Section = 'Performance'; Revertible = $true
+        Optimize = @'
+"StoragePoliciesChanged"=dword:00000001
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\StorageSense\Parameters\StoragePolicy\SpaceHistory]
+'@
+        Default = @'
+[]
+"StoragePoliciesChanged"=-
+'@
+    }
+    @{
+        Id = 'disable_drag_tray'
+        Title = 'Disable Drag Tray'
+        Tab = 'Tweaks'; Section = 'Performance'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CDP]
+"DragTrayEnabled"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CDP]
+"DragTrayEnabled"=-
+'@
+    }
+    @{
+        Id = 'disable_snap_window_settings'
+        Title = 'Disable Snap Window Settings'
+        Tab = 'Tweaks'; Section = 'Performance'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"SnapAssist"=dword:00000000
+"DITest"=dword:00000000
+"EnableSnapBar"=dword:00000000
+"EnableTaskGroups"=dword:00000000
+"EnableSnapAssistFlyout"=dword:00000000
+"SnapFill"=dword:00000000
+"JointResize"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"SnapAssist"=-
+"DITest"=-
+"EnableSnapBar"=-
+"EnableTaskGroups"=-
+"EnableSnapAssistFlyout"=-
+"SnapFill"=-
+"JointResize"=-
+'@
+    }
+    @{
+        Id = 'enable_endtask_menu_taskbar'
+        Title = 'Enable Endtask Menu Taskbar'
+        Tab = 'Tweaks'; Section = 'Performance'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced\TaskbarDeveloperSettings]
+"TaskbarEndTask"=dword:00000001
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced\TaskbarDeveloperSettings]
+"TaskbarEndTask"=dword:00000000
+'@
+    }
+    @{
+        Id = 'enable_long_paths'
+        Title = 'Enable Long Paths'
+        Tab = 'Tweaks'; Section = 'Performance'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem]
+"LongPathsEnabled"=dword:00000001
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem]
+"LongPathsEnabled"=-
+'@
+    }
+    @{
+        Id = 'alt_tab_open_windows_only'
+        Title = 'Alt Tab Open Windows Only'
+        Tab = 'Tweaks'; Section = 'Performance'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"MultiTaskingAltTabFilter"=dword:00000003
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"MultiTaskingAltTabFilter"=-
+'@
+    }
+    @{
+        Id = 'disable_share_across_devices'
+        Title = 'Disable Share Across Devices'
+        Tab = 'Tweaks'; Section = 'Performance'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\CDP]
+"RomeSdkChannelUserAuthzPolicy"=dword:00000000
+"CdpSessionUserAuthzPolicy"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\CDP]
+"RomeSdkChannelUserAuthzPolicy"=dword:00000001
+"CdpSessionUserAuthzPolicy"=-
+'@
+    }
+    @{
+        Id = 'disable_recommended_troubleshooter_preferenc'
+        Title = 'Disable Recommended Troubleshooter Preferences'
+        Tab = 'Tweaks'; Section = 'Performance'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\WindowsMitigation]
+"UserPreference"=dword:00000001
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\WindowsMitigation]
+"UserPreference"=-
+'@
+    }
+    @{
+        Id = 'disable_update_apps_automatically'
+        Title = 'Disable Update Apps Automatically'
+        Tab = 'Debloat'; Section = 'Store'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsStore\WindowsUpdate]
+"AutoDownload"=dword:00000002
+[HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Control\FeatureManagement\Overrides\14\2792562829]
+"EnabledState"=dword:00000002
+[HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Control\FeatureManagement\Overrides\14\3036241548]
+"EnabledState"=dword:00000002
+[HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Control\FeatureManagement\Overrides\14\734731404]
+"EnabledState"=dword:00000002
+[HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Control\FeatureManagement\Overrides\14\762256525]
+"EnabledState"=dword:00000002
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsStore\WindowsUpdate]
+"AutoDownload"=-
+
+[HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Control\FeatureManagement\Overrides\14\2792562829]
+"EnabledState"=-
+
+[HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Control\FeatureManagement\Overrides\14\3036241548]
+"EnabledState"=-
+
+[HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Control\FeatureManagement\Overrides\14\734731404]
+"EnabledState"=-
+
+[HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Control\FeatureManagement\Overrides\14\762256525]
+"EnabledState"=-
+'@
+    }
+    @{
+        Id = 'set_start_menu_apps_view_to_list'
+        Title = 'Set Start Menu Apps View To List'
+        Tab = 'Appearance'; Section = 'Start Menu'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Start]
+"AllAppsViewMode"=dword:00000002
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Start]
+"AllAppsViewMode"=dword:00000000
+'@
+    }
+    @{
+        Id = 'disable_windows_input_experience_preload'
+        Title = 'Disable Windows Input Experience Preload'
+        Tab = 'Debloat'; Section = 'Apps & Background'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\input]
+"IsInputAppPreloadEnabled"=dword:00000000
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Dsh]
+"IsPrelaunchEnabled"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\input]
+"IsInputAppPreloadEnabled"=-
+
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Dsh]
+"IsPrelaunchEnabled"=-
+'@
+    }
+    @{
+        Id = 'disable_ms_gamebar_notifications_with_xbox_c'
+        Title = 'Disable Ms-Gamebar Notifications With Xbox Controller Plugged In'
+        Tab = 'Debloat'; Section = 'Apps & Background'; Revertible = $true
+        Optimize = @'
+[HKEY_CLASSES_ROOT\ms-gamebar]
+"(Default)"="URL:ms-gamebar"
+"URL Protocol"=""
+"NoOpenWith"=""
+[HKEY_CLASSES_ROOT\ms-gamebar\shell\open\command]
+"(Default)"="%SystemRoot%\\System32\\systray.exe"
+[HKEY_CLASSES_ROOT\ms-gamebarservices]
+"(Default)"="URL:ms-gamebarservices"
+"URL Protocol"=""
+"NoOpenWith"=""
+[HKEY_CLASSES_ROOT\ms-gamebarservices\shell\open\command]
+"(Default)"="%SystemRoot%\\System32\\systray.exe"
+[HKEY_CLASSES_ROOT\ms-gamingoverlay]
+"(Default)"="URL:ms-gamingoverlay"
+"URL Protocol"=""
+"NoOpenWith"=""
+[HKEY_CLASSES_ROOT\ms-gamingoverlay\shell\open\command]
+"(Default)"="%SystemRoot%\\System32\\systray.exe"
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\WindowsRuntime\ActivatableClassId\Windows.Gaming.GameBar.PresenceServer.Internal.PresenceWriter]
+"ActivationType"=dword:00000000
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager]
+"ContentDeliveryAllowed"=dword:00000000
+"FeatureManagementEnabled"=dword:00000000
+"OemPreInstalledAppsEnabled"=dword:00000000
+"PreInstalledAppsEnabled"=dword:00000000
+"PreInstalledAppsEverEnabled"=dword:00000000
+"RotatingLockScreenEnabled"=dword:00000000
+"RotatingLockScreenOverlayEnabled"=dword:00000000
+"SilentInstalledAppsEnabled"=dword:00000000
+"SlideshowEnabled"=dword:00000000
+"SoftLandingEnabled"=dword:00000000
+"SubscribedContent-310093Enabled"=dword:00000000
+"SubscribedContent-314563Enabled"=dword:00000000
+"SubscribedContent-338388Enabled"=dword:00000000
+"SubscribedContent-338389Enabled"=dword:00000000
+"SubscribedContent-338393Enabled"=dword:00000000
+"SubscribedContent-353694Enabled"=dword:00000000
+"SubscribedContent-353696Enabled"=dword:00000000
+"SubscribedContent-353698Enabled"=dword:00000000
+"SubscribedContentEnabled"=dword:00000000
+"SystemPaneSuggestionsEnabled"=dword:00000000
+'@
+        Default = @'
+[HKEY_CLASSES_ROOT\ms-gamebar]
+"(Default)"=-
+"URL Protocol"=""
+"NoOpenWith"=-
+
+[HKEY_CLASSES_ROOT\ms-gamebar\shell\open\command]
+"(Default)"=-
+
+[HKEY_CLASSES_ROOT\ms-gamebarservices]
+"(Default)"=-
+"URL Protocol"=-
+"NoOpenWith"=-
+
+[HKEY_CLASSES_ROOT\ms-gamebarservices\shell\open\command]
+"(Default)"=-
+
+[HKEY_CLASSES_ROOT\ms-gamingoverlay]
+"(Default)"=-
+"URL Protocol"=""
+"NoOpenWith"=-
+
+[HKEY_CLASSES_ROOT\ms-gamingoverlay\shell\open\command]
+"(Default)"=-
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\WindowsRuntime\ActivatableClassId\Windows.Gaming.GameBar.PresenceServer.Internal.PresenceWriter]
+"ActivationType"=dword:00000001
+
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager]
+"ContentDeliveryAllowed"=dword:00000001
+"FeatureManagementEnabled"=dword:00000001
+"OemPreInstalledAppsEnabled"=dword:00000001
+"PreInstalledAppsEnabled"=dword:00000001
+"PreInstalledAppsEverEnabled"=dword:00000001
+"RotatingLockScreenEnabled"=dword:00000001
+"RotatingLockScreenOverlayEnabled"=dword:00000001
+"SilentInstalledAppsEnabled"=dword:00000001
+"SlideshowEnabled"=dword:00000001
+"SoftLandingEnabled"=dword:00000001
+"SubscribedContent-310093Enabled"=-
+"SubscribedContent-314563Enabled"=-
+"SubscribedContent-338388Enabled"=-
+"SubscribedContent-338389Enabled"=-
+"SubscribedContent-338393Enabled"=-
+"SubscribedContent-353694Enabled"=-
+"SubscribedContent-353696Enabled"=-
+"SubscribedContent-353698Enabled"=-
+"SubscribedContentEnabled"=dword:00000001
+"SystemPaneSuggestionsEnabled"=dword:00000001
+'@
+    }
+    @{
+        Id = 'remove_3d_objects'
+        Title = 'Remove 3D Objects'
+        Tab = 'Appearance'; Section = 'File Explorer'; Revertible = $false
+        Optimize = @'
+[-HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{0DB7E03F-FC29-4DC6-9020-FF41B59E513A}]
+[-HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{0DB7E03F-FC29-4DC6-9020-FF41B59E513A}]
+'@
+        Default = ''
+    }
+    @{
+        Id = 'remove_quick_access'
+        Title = 'Remove Quick Access'
+        Tab = 'Appearance'; Section = 'File Explorer'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer]
+"HubMode"=dword:00000001
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer]
+"HubMode"=-
+'@
+    }
+    @{
+        Id = 'remove_home_broken_on_new_update'
+        Title = 'Remove Home (Broken On New Update) (+1 more)'
+        Tab = 'Appearance'; Section = 'File Explorer'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Classes\CLSID\{e88865ea-0e1c-4e20-9aa6-edcd0212c87c}]
+"System.IsPinnedToNameSpaceTree"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Classes\CLSID\{e88865ea-0e1c-4e20-9aa6-edcd0212c87c}]
+"System.IsPinnedToNameSpaceTree"=-
+'@
+    }
+    @{
+        Id = 'disable_menu_show_delay'
+        Title = 'Disable Menu Show Delay'
+        Tab = 'Appearance'; Section = 'File Explorer'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Control Panel\Desktop]
+"MenuShowDelay"="0"
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Control Panel\Desktop]
+"MenuShowDelay"="400"
+'@
+    }
+    @{
+        Id = 'disable_driver_searching_updates'
+        Title = 'Disable Driver Searching & Updates'
+        Tab = 'System'; Section = 'System Extras'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\DriverSearching]
+"SearchOrderConfig"=dword:00000000
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\DriverSearching]
+"SearchOrderConfig"=dword:00000001
+'@
+    }
+    @{
+        Id = 'disable_phone_companion_in_start_menu'
+        Title = 'Disable Phone Companion In Start Menu'
+        Tab = 'System'; Section = 'System Extras'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Start]
+"RightCompanionToggledOpen"=dword:00000000
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Start\Companions\Microsoft.YourPhone_8wekyb3d8bbwe]
+"IsEnabled"=dword:00000000
+"IsAvailable"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Start]
+"RightCompanionToggledOpen"=-
+
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Start\Companions\Microsoft.YourPhone_8wekyb3d8bbwe]
+"IsEnabled"=-
+"IsAvailable"=-
+'@
+    }
+    @{
+        Id = 'more_info_on_bsod'
+        Title = 'More Info On Bsod'
+        Tab = 'System'; Section = 'System Extras'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\CrashControl]
+"DisplayParameters"=dword:00000001
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\CrashControl]
+"DisplayParameters"=dword:00000000
+'@
+    }
+    @{
+        Id = 'disable_windows_platform_binary_table'
+        Title = 'Disable Windows Platform Binary Table'
+        Tab = 'System'; Section = 'System Extras'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Session Manager]
+"DisableWpbtExecution"=dword:00000001
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Session Manager]
+"DisableWpbtExecution"=-
+'@
+    }
+    @{
+        Id = 'no_web_services_in_explorer'
+        Title = 'No Web Services In Explorer'
+        Tab = 'Appearance'; Section = 'File Explorer'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer]
+"NoWebServices"=dword:00000001
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer]
+"NoWebServices"=-
+'@
+    }
+    @{
+        Id = 'disable_cross_device_resume'
+        Title = 'Disable Cross Device Resume'
+        Tab = 'System'; Section = 'System Extras'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CrossDeviceResume\Configuration]
+"IsResumeAllowed"=dword:00000000
+"IsOneDriveResumeAllowed"=dword:00000000
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\PolicyManager\default\Connectivity\DisableCrossDeviceResume]
+"value"=dword:00000001
+[HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Control\FeatureManagement\Overrides\8\1387020943]
+"EnabledState"=dword:00000001
+[HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Control\FeatureManagement\Overrides\8\1694661260]
+"EnabledState"=dword:00000001
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CrossDeviceResume\Configuration]
+"IsResumeAllowed"=-
+"IsOneDriveResumeAllowed"=-
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\PolicyManager\default\Connectivity\DisableCrossDeviceResume]
+"value"=-
+
+[HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Control\FeatureManagement\Overrides\8\1387020943]
+"EnabledState"=-
+
+[HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Control\FeatureManagement\Overrides\8\1694661260]
+"EnabledState"=-
+'@
+    }
+    @{
+        Id = 'hide_home_in_settings'
+        Title = 'Hide Home In Settings'
+        Tab = 'System'; Section = 'System Extras'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer]
+"SettingsPageVisibility"="hide:home;"
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer]
+"SettingsPageVisibility"=-
+'@
+    }
+    @{
+        Id = 'disable_open_terminal_by_default'
+        Title = 'Disable Open Terminal By Default'
+        Tab = 'Appearance'; Section = 'File Explorer'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Console\%%Startup]
+"DelegationConsole"="{B23D10C0-E52E-411E-9D5B-C09FDF709C7D}"
+"DelegationTerminal"="{B23D10C0-E52E-411E-9D5B-C09FDF709C7D}"
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Console\%%Startup]
+"DelegationConsole"=-
+"DelegationTerminal"=-
+'@
+    }
+    @{
+        Id = 'black_powershell_console'
+        Title = 'Black Powershell Console'
+        Tab = 'System'; Section = 'System Extras'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\Console\%SystemRoot%_System32_WindowsPowerShell_v1.0_powershell.exe]
+"ScreenColors"=dword:0000000F
+'@
+        Default = @'
+[HKEY_CURRENT_USER\Console\%SystemRoot%_System32_WindowsPowerShell_v1.0_powershell.exe]
+"ScreenColors"=dword:00000056
+'@
+    }
+    @{
+        Id = 'fix_enter_your_pin_hello_face_sign_in_bug_al'
+        Title = 'Fix Enter Your Pin Hello Face Sign In Bug Allow Password Instead'
+        Tab = 'System'; Section = 'System Extras'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\PasswordLess\Device]
+"DevicePasswordLessBuildVersion"=dword:00000000
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\PasswordLess\Device]
+"DevicePasswordLessBuildVersion"=dword:00000002
+'@
+    }
+    @{
+        Id = 'disable_finish_setting_up_your_device'
+        Title = 'Disable Finish Setting Up Your Device'
+        Tab = 'System'; Section = 'System Extras'; Revertible = $true
+        Optimize = @'
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\UserProfileEngagement]
+"ScoobeSystemSettingEnabled"=dword:00000000
+'@
+        Default = @'
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\UserProfileEngagement]
+"ScoobeSystemSettingEnabled"=-
+'@
+    }
+    @{
+        Id = 'disable_background_blur_during_sign_in'
+        Title = 'Disable Background Blur During Sign-In'
+        Tab = 'System'; Section = 'System Extras'; Revertible = $true
+        Optimize = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\System]
+"DisableAcrylicBackgroundOnLogon"=dword:00000001
+'@
+        Default = @'
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\System]
+"DisableAcrylicBackgroundOnLogon"=-
+'@
+    }
+)
+
+# Apply one Control Panel tweak by Id. $Mode = 'optimize' (default) or 'default'.
+function Invoke-CpTweak {
+    param([Parameter(Mandatory)][string]$Id, [ValidateSet('optimize','default')][string]$Mode = 'optimize')
+    $t = $sync.CpTweaks | Where-Object { $_.Id -eq $Id } | Select-Object -First 1
+    if (-not $t) { return }
+    $body = if ($Mode -eq 'default') { $t.Default } else { $t.Optimize }
+    if ([string]::IsNullOrWhiteSpace($body)) { return }
+    $reg = "Windows Registry Editor Version 5.00`r`n`r`n" + $body.Trim()
+    $f = Join-Path $env:SystemRoot "Temp\akari_cp_$Id.reg"
+    [IO.File]::WriteAllText($f, $reg, (New-Object Text.UTF8Encoding($false)))
+    Start-Process reg.exe -ArgumentList "import `"$f`"" -WindowStyle Hidden -Wait
+    Set-Status ("{0}: {1} applied. Some settings need a sign-out." -f $t.Title, $Mode) "#66BB6A"
+}
+
+# Build the granular tweak rows into each tab's panel at startup (called from main.ps1).
+function Render-CpTweaks {
+    if (-not $sync.CpTweaks) { return }
+    $w = $sync.window
+    $cardStyle  = $w.FindResource('Card')
+    $hdrStyle   = $w.FindResource('CardGroupHeader')
+    $titleStyle = $w.FindResource('CardTitle')
+    $descStyle  = $w.FindResource('CardDesc')
+    $sepStyle   = $w.FindResource('Sep')
+    $btnStyle   = $w.FindResource('Btn')
+    $btnAccent  = $w.FindResource('BtnAccent')
+    $expStyle   = $w.FindResource('TweakExpander')
+    $star = New-Object System.Windows.GridLength -ArgumentList @([double]1, [System.Windows.GridUnitType]::Star)
+    $auto = [System.Windows.GridLength]::Auto
+
+    # search bookkeeping: each expander + each card's searchable text
+    $sync.CpExpanders = New-Object System.Collections.ArrayList
+    $sync.CpCards     = New-Object System.Collections.ArrayList
+
+    $panelMap = @{ Debloat = $sync.PanelDebloat; Appearance = $sync.PanelAppearance; Tweaks = $sync.PanelTweaks; System = $sync.PanelSystem }
+    foreach ($tab in $panelMap.Keys) {
+        $panel = $panelMap[$tab]
+        if (-not $panel) { continue }
+        $container = $panel.Content   # the StackPanel that already holds the curated cards
+        $tweaks = @($sync.CpTweaks | Where-Object { $_.Tab -eq $tab })
+        if ($tweaks.Count -eq 0) { continue }
+
+        # collapsed "Individual tweaks" expander holds all this tab's sections
+        $exp = New-Object System.Windows.Controls.Expander
+        $exp.Style = $expStyle
+        $exp.Header = "Individual tweaks  ($($tweaks.Count) settings)"
+        $exp.IsExpanded = $false
+        $inner = New-Object System.Windows.Controls.StackPanel
+        [void]$sync.CpExpanders.Add($exp)
+
+        # group by section, preserving first-seen order
+        $sections = [ordered]@{}
+        foreach ($t in $tweaks) {
+            if (-not $sections.Contains($t.Section)) { $sections[$t.Section] = New-Object System.Collections.ArrayList }
+            [void]$sections[$t.Section].Add($t)
+        }
+
+        foreach ($sec in $sections.Keys) {
+            $card = New-Object System.Windows.Controls.Border; $card.Style = $cardStyle
+            $sp = New-Object System.Windows.Controls.StackPanel
+            $hdr = New-Object System.Windows.Controls.TextBlock; $hdr.Style = $hdrStyle; $hdr.Text = $sec.ToUpper()
+            [void]$sp.Children.Add($hdr)
+            $cardText = $sec
+
+            $first = $true
+            foreach ($t in $sections[$sec]) {
+                $cardText += " " + $t.Title
+                if (-not $first) { $s = New-Object System.Windows.Controls.Separator; $s.Style = $sepStyle; [void]$sp.Children.Add($s) }
+                $first = $false
+
+                $grid = New-Object System.Windows.Controls.Grid
+                $c0 = New-Object System.Windows.Controls.ColumnDefinition; $c0.Width = $star
+                $c1 = New-Object System.Windows.Controls.ColumnDefinition; $c1.Width = $auto
+                $grid.ColumnDefinitions.Add($c0); $grid.ColumnDefinitions.Add($c1)
+
+                $tb = New-Object System.Windows.Controls.TextBlock; $tb.Style = $titleStyle
+                $tb.Text = $t.Title; $tb.VerticalAlignment = 'Center'; $tb.TextWrapping = 'Wrap'
+                [System.Windows.Controls.Grid]::SetColumn($tb, 0); [void]$grid.Children.Add($tb)
+
+                $btns = New-Object System.Windows.Controls.StackPanel; $btns.Orientation = 'Horizontal'
+                $btns.VerticalAlignment = 'Center'
+                [System.Windows.Controls.Grid]::SetColumn($btns, 1)
+                $id = $t.Id
+                if ($t.Revertible) {
+                    $bOpt = New-Object System.Windows.Controls.Button; $bOpt.Style = $btnAccent; $bOpt.Content = 'Optimize'
+                    $bOpt.Margin = New-Object System.Windows.Thickness -ArgumentList @([double]0, [double]0, [double]8, [double]0)
+                    $bOpt.Add_Click({ Invoke-CpTweak -Id $id -Mode 'optimize' }.GetNewClosure())
+                    $bDef = New-Object System.Windows.Controls.Button; $bDef.Style = $btnStyle; $bDef.Content = 'Default'
+                    $bDef.Add_Click({ Invoke-CpTweak -Id $id -Mode 'default' }.GetNewClosure())
+                    [void]$btns.Children.Add($bOpt); [void]$btns.Children.Add($bDef)
+                } else {
+                    $bApp = New-Object System.Windows.Controls.Button; $bApp.Style = $btnAccent; $bApp.Content = 'Apply'
+                    $bApp.ToolTip = 'One-way tweak (no automatic revert)'
+                    $bApp.Add_Click({ Invoke-CpTweak -Id $id -Mode 'optimize' }.GetNewClosure())
+                    [void]$btns.Children.Add($bApp)
+                }
+                [void]$grid.Children.Add($btns)
+                [void]$sp.Children.Add($grid)
+            }
+            $card.Child = $sp
+            [void]$inner.Children.Add($card)
+            [void]$sync.CpCards.Add([pscustomobject]@{ Card = $card; Text = $cardText.ToLowerInvariant(); Expander = $exp; Panel = "Panel$tab" })
+        }
+        $exp.Content = $inner
+        [void]$container.Children.Add($exp)
+    }
 }
 
 # DDU (Driver Clean) — Auto / Manual (1:1 with "5 Graphics/1 Driver Clean.ps1")
@@ -1284,6 +4429,129 @@ function Invoke-BtnControllerTest {
 
 function Invoke-BtnBufferbloat  { Start-Process "https://www.waveform.com/tools/bufferbloat" }
 function Invoke-BtnPcBuildGuide { Start-Process "https://pcpartpicker.com/user/fr33thy/saved" }
+
+# ── Home tab handlers ─────────────────────────────────────────────────────────
+
+# Create a system restore point (bypasses the once-per-24h throttle for this run)
+function Invoke-BtnHomeRestorePoint {
+    Invoke-RunInBackground -StatusStart "Creating restore point..." -StatusDone "Restore point created." -ScriptBlock {
+        try {
+            $drive = $env:SystemDrive
+            Enable-ComputerRestore -Drive "$drive\" -ErrorAction SilentlyContinue
+            # Allow more than one restore point per 24h
+            New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SystemRestore" `
+                -Name "SystemRestorePointCreationFrequency" -Value 0 -PropertyType DWord -Force -ErrorAction SilentlyContinue | Out-Null
+            Checkpoint-Computer -Description "Akari Tool" -RestorePointType "MODIFY_SETTINGS" -ErrorAction Stop
+        } catch {
+            $sync.window.Dispatcher.Invoke([action]{
+                [System.Windows.MessageBox]::Show(
+                    "Could not create a restore point automatically. System Protection may be turned off.`n`n$($_.Exception.Message)",
+                    "Restore Point", "OK", "Warning")
+            }, "Normal")
+        }
+    }
+}
+
+# Recommended-path shortcut buttons — jump to the matching tab
+function Invoke-BtnGoDebloat    { if ($sync.NavDebloat)    { $sync.NavDebloat.IsChecked    = $true } }
+function Invoke-BtnGoTweaks     { if ($sync.NavTweaks)     { $sync.NavTweaks.IsChecked     = $true } }
+function Invoke-BtnGoGraphics   { if ($sync.NavGraphics)   { $sync.NavGraphics.IsChecked   = $true } }
+function Invoke-BtnGoApps       { if ($sync.NavApps)       { $sync.NavApps.IsChecked       = $true } }
+function Invoke-BtnGoAppearance { if ($sync.NavAppearance) { $sync.NavAppearance.IsChecked = $true } }
+function Invoke-BtnGoSystem     { if ($sync.NavSystem)     { $sync.NavSystem.IsChecked     = $true } }
+
+# About links
+function Invoke-BtnHomeGuide  { Start-Process "https://youtu.be/zwPEDXteJYQ" }
+function Invoke-BtnHomeGithub { Start-Process "https://github.com/FR33THYFR33THY/Ultimate" }
+
+$script:AkariUrl = "https://raw.githubusercontent.com/isleap9/Akari-Tool/main/akari.ps1"
+
+# Write the embedded icon to the local install dir and return its path (for shortcuts)
+function Save-AkariIcon {
+    $dir = Join-Path $env:LOCALAPPDATA "AkariTool"
+    New-Item -ItemType Directory -Path $dir -Force -ErrorAction SilentlyContinue | Out-Null
+    $icoPath = Join-Path $dir "AkariLogo.ico"
+    if ($sync.assets -and $sync.assets.icon) {
+        try { [IO.File]::WriteAllBytes($icoPath, [Convert]::FromBase64String($sync.assets.icon)) } catch {}
+    }
+    return $icoPath
+}
+
+# Create a Desktop .lnk (elevated) with the Akari icon
+function New-AkariShortcut([string]$arguments, [string]$icoPath) {
+    $lnkPath = Join-Path ([Environment]::GetFolderPath("Desktop")) "Akari Tool.lnk"
+    $sh = New-Object -ComObject WScript.Shell
+    $sc = $sh.CreateShortcut($lnkPath)
+    $sc.TargetPath       = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe"
+    $sc.Arguments        = $arguments
+    $sc.WorkingDirectory = $env:SystemRoot
+    $sc.Description      = "Akari Tool"
+    if ($icoPath -and (Test-Path $icoPath)) { $sc.IconLocation = "$icoPath,0" }
+    $sc.Save()
+    # flip the "Run as administrator" bit so it goes straight to UAC
+    try {
+        $bytes = [IO.File]::ReadAllBytes($lnkPath)
+        $bytes[0x15] = $bytes[0x15] -bor 0x20
+        [IO.File]::WriteAllBytes($lnkPath, $bytes)
+    } catch {}
+    return $lnkPath
+}
+
+# Online: Desktop shortcut that re-runs the web launcher (always latest, nothing kept)
+function Invoke-BtnHomeShortcutOnline {
+    try {
+        $ico = Save-AkariIcon
+        $args = "-NoProfile -ExecutionPolicy Bypass -Command `"irm $script:AkariUrl | iex`""
+        New-AkariShortcut $args $ico | Out-Null
+        Set-Status "Online shortcut created on Desktop." "#66BB6A"
+        [System.Windows.MessageBox]::Show("Created 'Akari Tool' on your Desktop.`n`nIt runs the latest version from the web each time (internet required) and runs as admin.", "Desktop Shortcut", "OK", "Information") | Out-Null
+    } catch {
+        Set-Status "Could not create shortcut: $($_.Exception.Message)" "#EF5350"
+        [System.Windows.MessageBox]::Show("Could not create the shortcut:`n$($_.Exception.Message)", "Desktop Shortcut", "OK", "Warning") | Out-Null
+    }
+}
+
+# Offline: save a local copy of akari.ps1 under AppData + Desktop shortcut to it (tune offline)
+function Invoke-BtnHomeShortcutOffline {
+    # capture the running script path here (empty inside the background runspace)
+    $sync.AkariSrc = if ($PSCommandPath -and (Test-Path -LiteralPath $PSCommandPath)) { $PSCommandPath } else { "" }
+    Invoke-RunInBackground -StatusStart "Installing Akari Tool locally..." -StatusDone "Akari Tool installed." -ScriptBlock {
+        function Notice($m, $t) { $sync.window.Dispatcher.Invoke([action]{ [System.Windows.MessageBox]::Show($m, $t, "OK", "Information") | Out-Null }, "Normal") }
+        $url = "https://raw.githubusercontent.com/isleap9/Akari-Tool/main/akari.ps1"
+        try {
+            $dir = Join-Path $env:LOCALAPPDATA "AkariTool"
+            New-Item -ItemType Directory -Path $dir -Force -ErrorAction SilentlyContinue | Out-Null
+            $target = Join-Path $dir "akari.ps1"
+
+            # obtain the script: copy the running file if we have one, else download it
+            if ($sync.AkariSrc -and (Test-Path -LiteralPath $sync.AkariSrc)) {
+                Copy-Item -LiteralPath $sync.AkariSrc -Destination $target -Force
+            } else {
+                Invoke-WebRequest $url -OutFile $target -UseBasicParsing -ErrorAction Stop
+            }
+
+            # local icon
+            $icoPath = Join-Path $dir "AkariLogo.ico"
+            if ($sync.assets -and $sync.assets.icon) { [IO.File]::WriteAllBytes($icoPath, [Convert]::FromBase64String($sync.assets.icon)) }
+
+            # Desktop shortcut -> local file, elevated
+            $lnkPath = Join-Path ([Environment]::GetFolderPath("Desktop")) "Akari Tool.lnk"
+            $sh = New-Object -ComObject WScript.Shell
+            $sc = $sh.CreateShortcut($lnkPath)
+            $sc.TargetPath       = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe"
+            $sc.Arguments        = "-NoProfile -ExecutionPolicy Bypass -File `"$target`""
+            $sc.WorkingDirectory = $dir
+            $sc.Description      = "Akari Tool"
+            if (Test-Path $icoPath) { $sc.IconLocation = "$icoPath,0" }
+            $sc.Save()
+            try { $b = [IO.File]::ReadAllBytes($lnkPath); $b[0x15] = $b[0x15] -bor 0x20; [IO.File]::WriteAllBytes($lnkPath, $b) } catch {}
+
+            Notice "Installed to:`n$target`n`nA Desktop shortcut was created. It runs the local copy (works offline) and runs as admin." "Akari Tool Installed"
+        } catch {
+            $sync.window.Dispatcher.Invoke([action]{ [System.Windows.MessageBox]::Show("Install failed:`n$($_.Exception.Message)", "Akari Tool", "OK", "Warning") | Out-Null }, "Normal")
+        }
+    }
+}
 
 # Per-app installers — 1:1 with Ultimate "4 Installers/1 Installers.ps1"
 # (winget install + debloat config + shortcut cleanup), wrapped in Akari's GUI runner.
@@ -2018,6 +5286,39 @@ function Invoke-BtnNetworkDriver {
 function Invoke-BtnToBios {
     $r = [System.Windows.MessageBox]::Show("Restart to BIOS now?","Akari Tool","YesNo","Warning")
     if ($r -eq "Yes") { cmd /c "C:\Windows\System32\shutdown.exe /r /fw /t 0" }
+}
+
+# ── Scheduling tweaks (ported from AkariOS Companion) ──────────────────────────
+
+# SvcHost Split Threshold — higher values group services into fewer svchost
+# processes (less per-process overhead). Value written in KB.
+function Invoke-BtnSvcHostApply {
+    $vals = @(380000, 4194304, 8388608, 16777216, 33554432, 67108864, 134217728, 268435456)
+    $i = [int]$sync.CboSvcHost.SelectedIndex
+    if ($i -lt 0 -or $i -ge $vals.Count) { $i = 0 }
+    try {
+        New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control" `
+            -Name "SvcHostSplitThresholdInKB" -Value $vals[$i] -PropertyType DWord -Force -ErrorAction Stop | Out-Null
+        Set-Status "SvcHost split threshold set to $($vals[$i]) KB. Restart to apply." "#66BB6A"
+    } catch {
+        Set-Status "Failed to set SvcHost threshold: $($_.Exception.Message)" "#EF5350"
+    }
+}
+
+# Win32 Priority Separation — foreground/background CPU quantum. Value is decimal
+# of the hex shown in the dropdown (26=38, 2A=42, 28=40, 16=22, 06=6).
+# 26 (Hex) is Fr33thy Ultimate's recommendation and the default selection.
+function Invoke-BtnPrioritySepApply {
+    $vals = @(38, 42, 40, 22, 6)
+    $i = [int]$sync.CboPrioritySep.SelectedIndex
+    if ($i -lt 0 -or $i -ge $vals.Count) { $i = 0 }
+    try {
+        New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl" `
+            -Name "Win32PrioritySeparation" -Value $vals[$i] -PropertyType DWord -Force -ErrorAction Stop | Out-Null
+        Set-Status ("Win32 Priority Separation set to 0x{0:X} ({0}). Restart to apply." -f $vals[$i]) "#66BB6A"
+    } catch {
+        Set-Status "Failed to set Win32 Priority Separation: $($_.Exception.Message)" "#EF5350"
+    }
 }
 
 # BitLocker
@@ -2812,9 +6113,267 @@ function Invoke-BtnCopilotDefault {
     }
 }
 
-# Bloatware (kept as upstream menu — multiple options)
-function Invoke-BtnBloatwareRemove { Invoke-ConsoleScript -Asset "bloatware" -Status "Bloatware opened." }
+# ── Bloatware (native — ported from Ultimate's "Bloatware" menu) ──────────────
+# Remove All Bloatware (menu option 2): UWP apps, UWP features, legacy features,
+# legacy apps. Curated exclusion lists match upstream so nothing critical breaks.
+function Invoke-BtnBloatwareRemove {
+    $r = [System.Windows.MessageBox]::Show(
+        "Remove all pre-installed bloatware?`n`nThis uninstalls UWP bloat apps, optional UWP/legacy features, OneDrive, Remote Desktop Connection, the old Snipping Tool and other cruft. Curated exclusions keep Explorer, Store, Photos, Paint, Notepad and Defender working. You can reinstall components from the Reinstall row afterward.",
+        "Remove Bloatware", "YesNo", "Warning")
+    if ($r -ne "Yes") { return }
+
+    Invoke-RunInBackground -StatusStart "Removing bloatware..." -StatusDone "Bloatware removed. A restart is recommended." -ScriptBlock {
+        function Status([string]$t) {
+            $sync.window.Dispatcher.Invoke([action]{ $sync.StatusText.Text = $t; $sync.StatusText.Foreground = "#AAAAAA" }, "Normal")
+        }
+        $progresspreference = 'silentlycontinue'
+
+        # allow password sign in
+        cmd /c "reg add `"HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\PasswordLess\Device`" /v `"DevicePasswordLessBuildVersion`" /t REG_DWORD /d `"0`" /f >nul 2>&1"
+
+        # ── UWP Apps ──────────────────────────────────────────────────────────
+        Status "Bloatware: removing UWP apps..."
+        Get-AppXPackage -AllUsers | Where-Object {
+            # breaks file explorer
+            $_.Name -notlike '*CBS*' -and
+            $_.Name -notlike '*Microsoft.AV1VideoExtension*' -and
+            $_.Name -notlike '*Microsoft.AVCEncoderVideoExtension*' -and
+            $_.Name -notlike '*Microsoft.HEIFImageExtension*' -and
+            $_.Name -notlike '*Microsoft.HEVCVideoExtension*' -and
+            $_.Name -notlike '*Microsoft.MPEG2VideoExtension*' -and
+            $_.Name -notlike '*Microsoft.Paint*' -and
+            $_.Name -notlike '*Microsoft.RawImageExtension*' -and
+            # breaks windows server defender
+            $_.Name -notlike '*Microsoft.SecHealthUI*' -and
+            $_.Name -notlike '*Microsoft.VP9VideoExtensions*' -and
+            $_.Name -notlike '*Microsoft.WebMediaExtensions*' -and
+            $_.Name -notlike '*Microsoft.WebpImageExtension*' -and
+            $_.Name -notlike '*Microsoft.Windows.Photos*' -and
+            # breaks windows server task bar
+            $_.Name -notlike '*Microsoft.Windows.ShellExperienceHost*' -and
+            # breaks windows server start menu
+            $_.Name -notlike '*Microsoft.Windows.StartMenuExperienceHost*' -and
+            $_.Name -notlike '*Microsoft.WindowsNotepad*' -and
+            $_.Name -notlike '*NVIDIACorp.NVIDIAControlPanel*' -and
+            # breaks windows server immersive control panel
+            $_.Name -notlike '*windows.immersivecontrolpanel*'
+        } | Remove-AppxPackage -ErrorAction SilentlyContinue
+
+        # ── UWP Features ──────────────────────────────────────────────────────
+        Status "Bloatware: removing UWP features..."
+        Get-WindowsCapability -Online | Where-Object {
+            $_.Name -notlike '*Microsoft.Windows.Ethernet*' -and
+            $_.Name -notlike '*Microsoft.Windows.MSPaint*' -and
+            $_.Name -notlike '*Microsoft.Windows.Notepad*' -and
+            $_.Name -notlike '*Microsoft.Windows.Notepad.System*' -and
+            $_.Name -notlike '*Microsoft.Windows.Wifi*' -and
+            $_.Name -notlike '*NetFX3*' -and
+            # windows 11 breaks msi installers if removed
+            $_.Name -notlike '*VBSCRIPT*' -and
+            # breaks monitoring programs
+            $_.Name -notlike '*WMIC*' -and
+            # windows 10 breaks uwp snippingtool if removed
+            $_.Name -notlike '*Windows.Client.ShellComponents*'
+        } | ForEach-Object {
+            try { Remove-WindowsCapability -Online -Name $_.Name | Out-Null } catch { }
+        }
+
+        # ── Legacy Features ───────────────────────────────────────────────────
+        Status "Bloatware: removing legacy features..."
+        Get-WindowsOptionalFeature -Online | Where-Object {
+            $_.FeatureName -notlike '*DirectPlay*' -and
+            $_.FeatureName -notlike '*LegacyComponents*' -and
+            $_.FeatureName -notlike '*NetFx3*' -and
+            $_.FeatureName -notlike '*NetFx4*' -and
+            $_.FeatureName -notlike '*NetFx4-AdvSrvs*' -and
+            $_.FeatureName -notlike '*NetFx4ServerFeatures*' -and
+            # breaks search
+            $_.FeatureName -notlike '*SearchEngine-Client-Package*' -and
+            # breaks windows server desktop
+            $_.FeatureName -notlike '*Server-Shell*' -and
+            # breaks windows server defender
+            $_.FeatureName -notlike '*Windows-Defender*' -and
+            $_.FeatureName -notlike '*Server-Drivers-General*' -and
+            $_.FeatureName -notlike '*ServerCore-Drivers-General*' -and
+            $_.FeatureName -notlike '*ServerCore-Drivers-General-WOW64*' -and
+            $_.FeatureName -notlike '*Server-Gui-Mgmt*' -and
+            # breaks windows server nvidia app
+            $_.FeatureName -notlike '*WirelessNetworking*'
+        } | ForEach-Object {
+            try { Disable-WindowsOptionalFeature -Online -FeatureName $_.FeatureName -NoRestart -WarningAction SilentlyContinue | Out-Null } catch { }
+        }
+
+        # ── Legacy Apps ───────────────────────────────────────────────────────
+        Status "Bloatware: removing legacy apps..."
+        # uninstall brlapi
+        cmd /c "sc stop `"brlapi`" >nul 2>&1"
+        cmd /c "sc delete `"brlapi`" >nul 2>&1"
+        cmd /c "takeown /f `"$env:SystemRoot\brltty`" /r /d y >nul 2>&1"
+        cmd /c "icacls `"$env:SystemRoot\brltty`" /grant *S-1-5-32-544:F /t >nul 2>&1"
+        Remove-Item "$env:SystemRoot\brltty" -Recurse -Force -ErrorAction SilentlyContinue | Out-Null
+
+        # uninstall microsoft gameinput
+        $mgi = Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*" -ErrorAction SilentlyContinue |
+            Where-Object { $_.DisplayName -like "*Microsoft GameInput*" }
+        if ($mgi) { Start-Process "msiexec.exe" -ArgumentList "/x $($mgi.PSChildName) /qn /norestart" -Wait -NoNewWindow }
+
+        # uninstall onedrive
+        Stop-Process -Force -Name OneDrive -ErrorAction SilentlyContinue | Out-Null
+        cmd /c "C:\Windows\System32\OneDriveSetup.exe -uninstall >nul 2>&1"
+        Get-ChildItem -Path "C:\Program Files*\Microsoft OneDrive", "$env:LOCALAPPDATA\Microsoft\OneDrive" -Filter "OneDriveSetup.exe" -Recurse -ErrorAction SilentlyContinue |
+            ForEach-Object { Start-Process -Wait $_.FullName -ArgumentList "/uninstall /allusers" -WindowStyle Hidden -ErrorAction SilentlyContinue }
+        cmd /c "C:\Windows\SysWOW64\OneDriveSetup.exe -uninstall >nul 2>&1"
+        Get-ScheduledTask | Where-Object { $_.Taskname -match 'OneDrive' } | Unregister-ScheduledTask -Confirm:$false -ErrorAction SilentlyContinue
+
+        # uninstall remote desktop connection (silently close its window)
+        try { Start-Process "mstsc" -ArgumentList "/Uninstall" -ErrorAction SilentlyContinue } catch { }
+        $timeout = 0
+        while ((Get-Process -Name mstsc -ErrorAction SilentlyContinue) -and $timeout -le 100) {
+            $p = Get-Process -Name mstsc -ErrorAction SilentlyContinue
+            if ($p -and $p.MainWindowHandle -ne 0) { Stop-Process -Force -Name mstsc -ErrorAction SilentlyContinue | Out-Null; break }
+            Start-Sleep -Milliseconds 100; $timeout++
+        }
+        Stop-Process -Name mstsc -Force -ErrorAction SilentlyContinue
+
+        # windows 10 uninstall old snipping tool (silently close its window)
+        try { Start-Process "C:\Windows\System32\SnippingTool.exe" -ArgumentList "/Uninstall" -ErrorAction SilentlyContinue } catch { }
+        $timeout = 0
+        while ((Get-Process -Name SnippingTool -ErrorAction SilentlyContinue) -and $timeout -le 100) {
+            $p = Get-Process -Name SnippingTool -ErrorAction SilentlyContinue
+            if ($p -and $p.MainWindowHandle -ne 0) { Stop-Process -Force -Name SnippingTool -ErrorAction SilentlyContinue | Out-Null; break }
+            Start-Sleep -Milliseconds 100; $timeout++
+        }
+        Stop-Process -Name SnippingTool -Force -ErrorAction SilentlyContinue
+
+        # windows 10 uninstall update for x64-based windows systems
+        $ufw = Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*" -ErrorAction SilentlyContinue |
+            Where-Object { $_.DisplayName -like "*Update for x64-based Windows Systems*" }
+        if ($ufw) { Start-Process "msiexec.exe" -ArgumentList "/x $($ufw.PSChildName) /qn /norestart" -Wait -NoNewWindow }
+
+        # windows 10 uninstall microsoft update health tools
+        $uht = Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*" -ErrorAction SilentlyContinue |
+            Where-Object { $_.DisplayName -like "*Microsoft Update Health Tools*" }
+        if ($uht) { Start-Process "msiexec.exe" -ArgumentList "/x $($uht.PSChildName) /qn /norestart" -Wait -NoNewWindow }
+        cmd /c "reg delete `"HKLM\SYSTEM\ControlSet001\Services\uhssvc`" /f >nul 2>&1"
+        Unregister-ScheduledTask -TaskName PLUGScheduler -Confirm:$false -ErrorAction SilentlyContinue | Out-Null
+    }
+}
 function Invoke-BtnBloatwareCheck  { Start-Process "ms-settings:appsfeatures" }
+
+# Reinstall: Microsoft Store — re-register if present, else trigger a full reinstall.
+function Invoke-BtnBloatwareStore {
+    Invoke-RunInBackground -StatusStart "Reinstalling Microsoft Store..." -StatusDone "Microsoft Store reinstall finished." -ScriptBlock {
+        function Notice($m, $t) { $sync.window.Dispatcher.Invoke([action]{ [System.Windows.MessageBox]::Show($m, $t, "OK", "Information") | Out-Null }, "Normal") }
+        $progresspreference = 'silentlycontinue'
+        # 1) re-register the Store from its package files if they're still on disk
+        foreach ($p in (Get-AppxPackage -AllUsers *WindowsStore*)) {
+            $m = Join-Path $p.InstallLocation 'AppXManifest.xml'
+            if (Test-Path $m) { try { Add-AppxPackage -DisableDevelopmentMode -Register $m -ErrorAction Stop } catch {} }
+        }
+        # 2) if the Store is still gone, trigger Windows' built-in Store reinstall
+        if (-not (Get-AppxPackage -Name Microsoft.WindowsStore)) {
+            try { Start-Process "wsreset.exe" -ArgumentList "-i" -WindowStyle Hidden } catch {}
+        }
+
+        # 3) apply Ultimate's optimized Store settings (only if the Store is present)
+        if (Get-AppxPackage -Name Microsoft.WindowsStore) {
+            # disable app auto-updates
+            cmd /c "reg add `"HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsStore\WindowsUpdate`" /v `"AutoDownload`" /t REG_DWORD /d `"2`" /f >nul 2>&1"
+            "WinStore.App","backgroundTaskHost","StoreDesktopExtension" | ForEach-Object { Stop-Process -Name $_ -Force -ErrorAction SilentlyContinue }
+            Start-Sleep -Seconds 1
+
+            $storesettings = @'
+Windows Registry Editor Version 5.00
+
+[HKEY_LOCAL_MACHINE\Settings\LocalState]
+; disable video autoplay
+"VideoAutoplay"=hex(5f5e10b):00,96,9d,69,8d,cd,93,dc,01
+; disable notifications for app installations
+"EnableAppInstallNotifications"=hex(5f5e10b):00,36,d0,88,8e,cd,93,dc,01
+
+[HKEY_LOCAL_MACHINE\Settings\LocalState\PersistentSettings]
+; disable personalized experiences
+"PersonalizationEnabled"=hex(5f5e10b):00,0d,56,a1,8a,cd,93,dc,01
+'@
+            $regPath = "$env:SystemRoot\Temp\windowsstore.reg"
+            Set-Content -Path $regPath -Value $storesettings -Force
+            $settingsdat = "$env:LocalAppData\Packages\Microsoft.WindowsStore_8wekyb3d8bbwe\Settings\settings.dat"
+            if (Test-Path $settingsdat) {
+                reg load "HKLM\Settings" $settingsdat >$null 2>&1
+                if ($LASTEXITCODE -eq 0) {
+                    reg import $regPath >$null 2>&1
+                    [gc]::Collect(); Start-Sleep -Seconds 2
+                    reg unload "HKLM\Settings" >$null 2>&1
+                }
+            }
+        }
+
+        Start-Sleep -Seconds 1
+        if (Get-AppxPackage -Name Microsoft.WindowsStore) {
+            Notice "Microsoft Store re-registered and Ultimate's optimized Store settings applied." "Reinstall Store"
+        } else {
+            Notice "Triggered a Microsoft Store reinstall (wsreset -i). It can take a few minutes to appear; re-run this after it installs to apply the optimized Store settings." "Reinstall Store"
+        }
+    }
+}
+
+# Reinstall: all UWP apps (re-register everything still on disk)
+function Invoke-BtnBloatwareUWP {
+    Invoke-RunInBackground -StatusStart "Reinstalling UWP apps..." -StatusDone "UWP apps re-registered." -ScriptBlock {
+        function Notice($m, $t) { $sync.window.Dispatcher.Invoke([action]{ [System.Windows.MessageBox]::Show($m, $t, "OK", "Information") | Out-Null }, "Normal") }
+        $progresspreference = 'silentlycontinue'
+        $n = 0
+        foreach ($p in (Get-AppxPackage -AllUsers)) {
+            $m = Join-Path $p.InstallLocation 'AppXManifest.xml'
+            if ($p.InstallLocation -and (Test-Path $m)) { try { Add-AppxPackage -DisableDevelopmentMode -Register $m -ErrorAction Stop; $n++ } catch {} }
+        }
+        Notice "Re-registered $n installed UWP apps. Sign out and back in if any are still missing." "Reinstall UWP Apps"
+    }
+}
+
+# Reinstall: OneDrive
+function Invoke-BtnBloatwareOneDrive {
+    Invoke-RunInBackground -StatusStart "Installing OneDrive..." -StatusDone "OneDrive install finished." -ScriptBlock {
+        function Notice($m, $t) { $sync.window.Dispatcher.Invoke([action]{ [System.Windows.MessageBox]::Show($m, $t, "OK", "Information") | Out-Null }, "Normal") }
+        $progresspreference = 'silentlycontinue'
+        $setup = @("$env:SystemRoot\System32\OneDriveSetup.exe", "$env:SystemRoot\SysWOW64\OneDriveSetup.exe") | Where-Object { Test-Path $_ } | Select-Object -First 1
+        $done = $false
+        if ($setup) { try { Start-Process $setup -ErrorAction Stop; $done = $true } catch {} }
+        if (-not $done) { try { Start-Process "winget" -ArgumentList "install --id Microsoft.OneDrive -e --accept-package-agreements --accept-source-agreements --disable-interactivity" -WindowStyle Hidden -ErrorAction Stop; $done = $true } catch {} }
+        if ($done) { Notice "OneDrive installer launched." "Reinstall OneDrive" }
+        else { Notice "Could not find OneDriveSetup.exe or winget to install OneDrive." "Reinstall OneDrive" }
+    }
+}
+
+# Reinstall: Remote Desktop Connection
+function Invoke-BtnBloatwareRDC {
+    Invoke-RunInBackground -StatusStart "Installing Remote Desktop Connection..." -StatusDone "Remote Desktop Connection install finished." -ScriptBlock {
+        function Notice($m, $t) { $sync.window.Dispatcher.Invoke([action]{ [System.Windows.MessageBox]::Show($m, $t, "OK", "Information") | Out-Null }, "Normal") }
+        $progresspreference = 'silentlycontinue'
+        $dst = "$env:SystemRoot\Temp\RemoteDesktopConnection.exe"; $ok = $false
+        try {
+            Invoke-WebRequest "https://go.microsoft.com/fwlink/?linkid=2247659" -OutFile $dst -UseBasicParsing -ErrorAction Stop
+            Start-Process $dst -ErrorAction Stop; $ok = $true
+        } catch {}
+        if ($ok) { Notice "Remote Desktop Connection installer launched." "Reinstall RDC" }
+        else { Notice "Download failed. Remote Desktop Connection (mstsc) is usually built into Windows already." "Reinstall RDC" }
+    }
+}
+
+# Reinstall: Snipping Tool (modern ScreenSketch)
+function Invoke-BtnBloatwareSnip {
+    Invoke-RunInBackground -StatusStart "Reinstalling Snipping Tool..." -StatusDone "Snipping Tool reinstall finished." -ScriptBlock {
+        function Notice($m, $t) { $sync.window.Dispatcher.Invoke([action]{ [System.Windows.MessageBox]::Show($m, $t, "OK", "Information") | Out-Null }, "Normal") }
+        $progresspreference = 'silentlycontinue'
+        foreach ($p in (Get-AppXPackage -AllUsers *ScreenSketch*)) {
+            $m = Join-Path $p.InstallLocation 'AppXManifest.xml'
+            if (Test-Path $m) { try { Add-AppxPackage -DisableDevelopmentMode -Register $m -ErrorAction Stop } catch {} }
+        }
+        Start-Sleep -Seconds 1
+        if (Get-AppxPackage -Name Microsoft.ScreenSketch) { Notice "Snipping Tool is installed and re-registered." "Reinstall Snipping Tool" }
+        else { Notice "Snipping Tool package files were not found. Install it from the Microsoft Store once the Store is back." "Reinstall Snipping Tool" }
+    }
+}
 
 # Game Bar
 function Invoke-BtnGamebarOff {
@@ -3869,8 +7428,8 @@ function Invoke-BtnSound        { Start-Process "mmsys.cpl" }
 
 $sync.assets = @{}
 $sync.assets.logo = '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'
+$sync.assets.icon = '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'
 $sync.assets.appactions = '77u/V2luZG93cyBSZWdpc3RyeSBFZGl0b3IgVmVyc2lvbiA1LjAwCgpbSEtFWV9MT0NBTF9NQUNISU5FXFNldHRpbmdzXExvY2FsU3RhdGVcRGlzYWJsZWRBcHBzXQoiTWljcm9zb2Z0LlBhaW50Xzh3ZWt5YjNkOGJid2UiPWhleCg1ZjVlMTBiKTowMSw2MSxlZCwxMSwzNCxmNyw5ZixkYywwMQoiTWljcm9zb2Z0LldpbmRvd3MuUGhvdG9zXzh3ZWt5YjNkOGJid2UiPWhleCg1ZjVlMTBiKTowMSw2MSxlZCwxMSwzNCxmNyw5ZixkYywwMQoiTWljcm9zb2Z0V2luZG93cy5DbGllbnQuQ0JTX2N3NW4xaDJ0eHlld3kiPWhleCg1ZjVlMTBiKTowMSw2MSxlZCwxMSwzNCxmNyw5ZixkYywwMQo='
-$sync.assets.bloatware = 'ICAgICAgICAjIFNDUklQVCBSVU4gQVMgQURNSU4KICAgICAgICBJZiAoIShbU2VjdXJpdHkuUHJpbmNpcGFsLldpbmRvd3NQcmluY2lwYWxdW1NlY3VyaXR5LlByaW5jaXBhbC5XaW5kb3dzSWRlbnRpdHldOjpHZXRDdXJyZW50KCkpLklzSW5Sb2xlKFtTZWN1cml0eS5QcmluY2lwYWwuV2luZG93c0J1aWx0SW5Sb2xlXSJBZG1pbmlzdHJhdG9yIikpCiAgICAgICAge1N0YXJ0LVByb2Nlc3MgUG93ZXJTaGVsbC5leGUgLUFyZ3VtZW50TGlzdCAoIi1Ob1Byb2ZpbGUgLUV4ZWN1dGlvblBvbGljeSBCeXBhc3MgLUZpbGUgYCJ7MH1gIiIgLWYgJFBTQ29tbWFuZFBhdGgpIC1WZXJiIFJ1bkFzCiAgICAgICAgRXhpdH0KICAgICAgICAkSG9zdC5VSS5SYXdVSS5XaW5kb3dUaXRsZSA9ICRteUludm9jYXRpb24uTXlDb21tYW5kLkRlZmluaXRpb24gKyAiIChBZG1pbmlzdHJhdG9yKSIKICAgICAgICAkSG9zdC5VSS5SYXdVSS5CYWNrZ3JvdW5kQ29sb3IgPSAiQmxhY2siCiAgICAgICAgJEhvc3QuUHJpdmF0ZURhdGEuUHJvZ3Jlc3NCYWNrZ3JvdW5kQ29sb3IgPSAiQmxhY2siCiAgICAgICAgJEhvc3QuUHJpdmF0ZURhdGEuUHJvZ3Jlc3NGb3JlZ3JvdW5kQ29sb3IgPSAiV2hpdGUiCiAgICAgICAgQ2xlYXItSG9zdAoKICAgICAgICAjIFNDUklQVCBDSEVDSyBJTlRFUk5FVAogICAgICAgIGlmICghKFRlc3QtQ29ubmVjdGlvbiAtQ29tcHV0ZXJOYW1lICI4LjguOC44IiAtQ291bnQgMSAtUXVpZXQgLUVycm9yQWN0aW9uIFNpbGVudGx5Q29udGludWUpKSB7CiAgICAgICAgV3JpdGUtSG9zdCAiSW50ZXJuZXQgQ29ubmVjdGlvbiBSZXF1aXJlZGBuIiAtRm9yZWdyb3VuZENvbG9yIFJlZAogICAgICAgIFBhdXNlCiAgICAgICAgZXhpdAogICAgICAgIH0KCiAgICAgICAgIyBTQ1JJUFQgU0lMRU5UCiAgICAgICAgJHByb2dyZXNzcHJlZmVyZW5jZSA9ICdzaWxlbnRseWNvbnRpbnVlJwoKICAgICAgICAjIEFMTE9XIFBBU1NXT1JEIFNJR04gSU4KICAgICAgICBjbWQgL2MgInJlZyBhZGQgYCJIS0xNXFNPRlRXQVJFXE1pY3Jvc29mdFxXaW5kb3dzIE5UXEN1cnJlbnRWZXJzaW9uXFBhc3N3b3JkTGVzc1xEZXZpY2VgIiAvdiBgIkRldmljZVBhc3N3b3JkTGVzc0J1aWxkVmVyc2lvbmAiIC90IFJFR19EV09SRCAvZCBgIjBgIiAvZiA+bnVsIDI+JjEiCgogICAgICAgIGZ1bmN0aW9uIHNob3ctbWVudSB7CgkgICAgQ2xlYXItSG9zdAogICAgICAgIFdyaXRlLUhvc3QgIiAxLiBFeGl0IgoJICAgIFdyaXRlLUhvc3QgIiAyLiBSZW1vdmUgOiBBbGwgQmxvYXR3YXJlIChSZWNvbW1lbmRlZCkiCiAgICAgICAgV3JpdGUtSG9zdCAiIDMuIEluc3RhbGw6IFN0b3JlIgoJICAgIFdyaXRlLUhvc3QgIiA0LiBJbnN0YWxsOiBBbGwgVVdQIEFwcHMiCiAgICAgICAgV3JpdGUtSG9zdCAiIDUuIEluc3RhbGw6IFVXUCBGZWF0dXJlcyIKICAgICAgICBXcml0ZS1Ib3N0ICIgNi4gSW5zdGFsbDogTGVnYWN5IEZlYXR1cmVzIgoJICAgIFdyaXRlLUhvc3QgIiA3LiBJbnN0YWxsOiBPbmUgRHJpdmUiCiAgICAgICAgV3JpdGUtSG9zdCAiIDguIEluc3RhbGw6IFJlbW90ZSBEZXNrdG9wIENvbm5lY3Rpb24iCiAgICAgICAgV3JpdGUtSG9zdCAiIDkuIEluc3RhbGw6IFNuaXBwaW5nIFRvb2xgbiIKCSAgICAJICAgICAgICAgICAgICB9CgkgICAgc2hvdy1tZW51CiAgICAgICAgd2hpbGUgKCR0cnVlKSB7CiAgICAgICAgJGNob2ljZSA9IFJlYWQtSG9zdCAiICIKICAgICAgICBpZiAoJGNob2ljZSAtbWF0Y2ggJ15bMS05XSQnKSB7CiAgICAgICAgc3dpdGNoICgkY2hvaWNlKSB7CiAgICAgICAgMSB7CgpDbGVhci1Ib3N0CgpleGl0CgogICAgICAgICAgfQogICAgICAgIDIgewoKQ2xlYXItSG9zdAoKV3JpdGUtSG9zdCAiVW5pbnN0YWxsaW5nOiBVV1AgQXBwcy4gUGxlYXNlIHdhaXQuLi5gbiIKCkdldC1BcHBYUGFja2FnZSAtQWxsVXNlcnMgfCBXaGVyZS1PYmplY3QgewojIGJyZWFrcyBmaWxlIGV4cGxvcmVyCiRfLk5hbWUgLW5vdGxpa2UgJypDQlMqJyAtYW5kCiRfLk5hbWUgLW5vdGxpa2UgJypNaWNyb3NvZnQuQVYxVmlkZW9FeHRlbnNpb24qJyAtYW5kCiRfLk5hbWUgLW5vdGxpa2UgJypNaWNyb3NvZnQuQVZDRW5jb2RlclZpZGVvRXh0ZW5zaW9uKicgLWFuZAokXy5OYW1lIC1ub3RsaWtlICcqTWljcm9zb2Z0LkhFSUZJbWFnZUV4dGVuc2lvbionIC1hbmQKJF8uTmFtZSAtbm90bGlrZSAnKk1pY3Jvc29mdC5IRVZDVmlkZW9FeHRlbnNpb24qJyAtYW5kCiRfLk5hbWUgLW5vdGxpa2UgJypNaWNyb3NvZnQuTVBFRzJWaWRlb0V4dGVuc2lvbionIC1hbmQKJF8uTmFtZSAtbm90bGlrZSAnKk1pY3Jvc29mdC5QYWludConIC1hbmQKJF8uTmFtZSAtbm90bGlrZSAnKk1pY3Jvc29mdC5SYXdJbWFnZUV4dGVuc2lvbionIC1hbmQKIyBicmVha3Mgd2luZG93cyBzZXJ2ZXIgZGVmZW5kZXIKJF8uTmFtZSAtbm90bGlrZSAnKk1pY3Jvc29mdC5TZWNIZWFsdGhVSSonIC1hbmQKJF8uTmFtZSAtbm90bGlrZSAnKk1pY3Jvc29mdC5WUDlWaWRlb0V4dGVuc2lvbnMqJyAtYW5kCiRfLk5hbWUgLW5vdGxpa2UgJypNaWNyb3NvZnQuV2ViTWVkaWFFeHRlbnNpb25zKicgLWFuZAokXy5OYW1lIC1ub3RsaWtlICcqTWljcm9zb2Z0LldlYnBJbWFnZUV4dGVuc2lvbionIC1hbmQKJF8uTmFtZSAtbm90bGlrZSAnKk1pY3Jvc29mdC5XaW5kb3dzLlBob3RvcyonIC1hbmQKIyBicmVha3Mgd2luZG93cyBzZXJ2ZXIgdGFzayBiYXIKJF8uTmFtZSAtbm90bGlrZSAnKk1pY3Jvc29mdC5XaW5kb3dzLlNoZWxsRXhwZXJpZW5jZUhvc3QqJyAtYW5kCiMgYnJlYWtzIHdpbmRvd3Mgc2VydmVyIHN0YXJ0IG1lbnUKJF8uTmFtZSAtbm90bGlrZSAnKk1pY3Jvc29mdC5XaW5kb3dzLlN0YXJ0TWVudUV4cGVyaWVuY2VIb3N0KicgLWFuZAokXy5OYW1lIC1ub3RsaWtlICcqTWljcm9zb2Z0LldpbmRvd3NOb3RlcGFkKicgLWFuZAokXy5OYW1lIC1ub3RsaWtlICcqTlZJRElBQ29ycC5OVklESUFDb250cm9sUGFuZWwqJyAtYW5kCiMgYnJlYWtzIHdpbmRvd3Mgc2VydmVyIGltbWVyc2l2ZSBjb250cm9sIHBhbmVsCiRfLk5hbWUgLW5vdGxpa2UgJyp3aW5kb3dzLmltbWVyc2l2ZWNvbnRyb2xwYW5lbConCn0gfCBSZW1vdmUtQXBweFBhY2thZ2UgLUVycm9yQWN0aW9uIFNpbGVudGx5Q29udGludWUKCkNsZWFyLUhvc3QKCldyaXRlLUhvc3QgIlVuaW5zdGFsbGluZzogVVdQIEZlYXR1cmVzLiBQbGVhc2Ugd2FpdC4uLmBuIgoKR2V0LVdpbmRvd3NDYXBhYmlsaXR5IC1PbmxpbmUgfCBXaGVyZS1PYmplY3QgewokXy5OYW1lIC1ub3RsaWtlICcqTWljcm9zb2Z0LldpbmRvd3MuRXRoZXJuZXQqJyAtYW5kCiMgd2luZG93cyAxMAokXy5OYW1lIC1ub3RsaWtlICcqTWljcm9zb2Z0LldpbmRvd3MuTVNQYWludConIC1hbmQKIyB3aW5kb3dzIDEwCiRfLk5hbWUgLW5vdGxpa2UgJypNaWNyb3NvZnQuV2luZG93cy5Ob3RlcGFkKicgLWFuZAokXy5OYW1lIC1ub3RsaWtlICcqTWljcm9zb2Z0LldpbmRvd3MuTm90ZXBhZC5TeXN0ZW0qJyAtYW5kCiRfLk5hbWUgLW5vdGxpa2UgJypNaWNyb3NvZnQuV2luZG93cy5XaWZpKicgLWFuZAokXy5OYW1lIC1ub3RsaWtlICcqTmV0RlgzKicgLWFuZAojIHdpbmRvd3MgMTEgYnJlYWtzIG1zaSBpbnN0YWxsZXJzIGlmIHJlbW92ZWQKJF8uTmFtZSAtbm90bGlrZSAnKlZCU0NSSVBUKicgLWFuZAojIGJyZWFrcyBtb25pdG9yaW5nIHByb2dyYW1zCiRfLk5hbWUgLW5vdGxpa2UgJypXTUlDKicgLWFuZAojIHdpbmRvd3MgMTAgYnJlYWtzIHV3cCBzbmlwcGluZ3Rvb2wgaWYgcmVtb3ZlZAokXy5OYW1lIC1ub3RsaWtlICcqV2luZG93cy5DbGllbnQuU2hlbGxDb21wb25lbnRzKicKfSB8IEZvckVhY2gtT2JqZWN0IHsKdHJ5IHsKUmVtb3ZlLVdpbmRvd3NDYXBhYmlsaXR5IC1PbmxpbmUgLU5hbWUgJF8uTmFtZSB8IE91dC1OdWxsCn0gY2F0Y2ggeyB9Cn0KCkNsZWFyLUhvc3QKCldyaXRlLUhvc3QgIlVuaW5zdGFsbGluZzogTGVnYWN5IEZlYXR1cmVzLiBQbGVhc2Ugd2FpdC4uLmBuIgoKR2V0LVdpbmRvd3NPcHRpb25hbEZlYXR1cmUgLU9ubGluZSB8IFdoZXJlLU9iamVjdCB7CiRfLkZlYXR1cmVOYW1lIC1ub3RsaWtlICcqRGlyZWN0UGxheSonIC1hbmQKJF8uRmVhdHVyZU5hbWUgLW5vdGxpa2UgJypMZWdhY3lDb21wb25lbnRzKicgLWFuZAokXy5GZWF0dXJlTmFtZSAtbm90bGlrZSAnKk5ldEZ4MyonIC1hbmQKIyBicmVha3Mgd2luZG93cyBzZXJ2ZXIgdHVybiB3aW5kb3dzIGZlYXR1cmVzIG9uIG9yIG9mZgokXy5GZWF0dXJlTmFtZSAtbm90bGlrZSAnKk5ldEZ4NConIC1hbmQKJF8uRmVhdHVyZU5hbWUgLW5vdGxpa2UgJypOZXRGeDQtQWR2U3J2cyonIC1hbmQKIyBicmVha3Mgd2luZG93cyBzZXJ2ZXIgdHVybiB3aW5kb3dzIGZlYXR1cmVzIG9uIG9yIG9mZgokXy5GZWF0dXJlTmFtZSAtbm90bGlrZSAnKk5ldEZ4NFNlcnZlckZlYXR1cmVzKicgLWFuZAojIGJyZWFrcyBzZWFyY2gKJF8uRmVhdHVyZU5hbWUgLW5vdGxpa2UgJypTZWFyY2hFbmdpbmUtQ2xpZW50LVBhY2thZ2UqJyAtYW5kCiMgYnJlYWtzIHdpbmRvd3Mgc2VydmVyIGRlc2t0b3AKJF8uRmVhdHVyZU5hbWUgLW5vdGxpa2UgJypTZXJ2ZXItU2hlbGwqJyAtYW5kCiMgYnJlYWtzIHdpbmRvd3Mgc2VydmVyIGRlZmVuZGVyCiRfLkZlYXR1cmVOYW1lIC1ub3RsaWtlICcqV2luZG93cy1EZWZlbmRlcionIC1hbmQKIyBicmVha3Mgd2luZG93cyBzZXJ2ZXIgaW50ZXJuZXQKJF8uRmVhdHVyZU5hbWUgLW5vdGxpa2UgJypTZXJ2ZXItRHJpdmVycy1HZW5lcmFsKicgLWFuZAojIGJyZWFrcyB3aW5kb3dzIHNlcnZlciBpbnRlcm5ldAokXy5GZWF0dXJlTmFtZSAtbm90bGlrZSAnKlNlcnZlckNvcmUtRHJpdmVycy1HZW5lcmFsKicgLWFuZAojIGJyZWFrcyB3aW5kb3dzIHNlcnZlciBpbnRlcm5ldAokXy5GZWF0dXJlTmFtZSAtbm90bGlrZSAnKlNlcnZlckNvcmUtRHJpdmVycy1HZW5lcmFsLVdPVzY0KicgLWFuZAojIGJyZWFrcyB3aW5kb3dzIHNlcnZlciB0dXJuIHdpbmRvd3MgZmVhdHVyZXMgb24gb3Igb2ZmCiRfLkZlYXR1cmVOYW1lIC1ub3RsaWtlICcqU2VydmVyLUd1aS1NZ210KicgLWFuZAojIGJyZWFrcyB3aW5kb3dzIHNlcnZlciBudmlkaWEgYXBwCiRfLkZlYXR1cmVOYW1lIC1ub3RsaWtlICcqV2lyZWxlc3NOZXR3b3JraW5nKicKfSB8IEZvckVhY2gtT2JqZWN0IHsKdHJ5IHsKRGlzYWJsZS1XaW5kb3dzT3B0aW9uYWxGZWF0dXJlIC1PbmxpbmUgLUZlYXR1cmVOYW1lICRfLkZlYXR1cmVOYW1lIC1Ob1Jlc3RhcnQgLVdhcm5pbmdBY3Rpb24gU2lsZW50bHlDb250aW51ZSB8IE91dC1OdWxsCn0gY2F0Y2ggeyB9Cn0KCkNsZWFyLUhvc3QKCldyaXRlLUhvc3QgIlVuaW5zdGFsbGluZzogTGVnYWN5IEFwcHMuIFBsZWFzZSB3YWl0Li4uYG4iCgojIHVuaW5zdGFsbCBicmxhcGkKY21kIC9jICJzYyBzdG9wIGAiYnJsYXBpYCIgPm51bCAyPiYxIgpjbWQgL2MgInNjIGRlbGV0ZSBgImJybGFwaWAiID5udWwgMj4mMSIKY21kIC9jICJ0YWtlb3duIC9mIGAiJGVudjpTeXN0ZW1Sb290XGJybHR0eWAiIC9yIC9kIHkgPm51bCAyPiYxIgpjbWQgL2MgImljYWNscyBgIiRlbnY6U3lzdGVtUm9vdFxicmx0dHlgIiAvZ3JhbnQgKlMtMS01LTMyLTU0NDpGIC90ID5udWwgMj4mMSIKUmVtb3ZlLUl0ZW0gIiRlbnY6U3lzdGVtUm9vdFxicmx0dHkiIC1SZWN1cnNlIC1Gb3JjZSAtRXJyb3JBY3Rpb24gU2lsZW50bHlDb250aW51ZSB8IE91dC1OdWxsCgojIHVuaW5zdGFsbCBtaWNyb3NvZnQgZ2FtZWlucHV0CiRmaW5kbWljcm9zb2Z0Z2FtZWlucHV0ID0gIkhLTE06XFNPRlRXQVJFXE1pY3Jvc29mdFxXaW5kb3dzXEN1cnJlbnRWZXJzaW9uXFVuaW5zdGFsbFwqIgokbWljcm9zb2Z0Z2FtZWlucHV0ID0gR2V0LUl0ZW1Qcm9wZXJ0eSAkZmluZG1pY3Jvc29mdGdhbWVpbnB1dCAtRXJyb3JBY3Rpb24gU2lsZW50bHlDb250aW51ZSB8CldoZXJlLU9iamVjdCB7ICRfLkRpc3BsYXlOYW1lIC1saWtlICIqTWljcm9zb2Z0IEdhbWVJbnB1dCoiIH0KaWYgKCRtaWNyb3NvZnRnYW1laW5wdXQpIHsKJGd1aWQgPSAkbWljcm9zb2Z0Z2FtZWlucHV0LlBTQ2hpbGROYW1lClN0YXJ0LVByb2Nlc3MgIm1zaWV4ZWMuZXhlIiAtQXJndW1lbnRMaXN0ICIveCAkZ3VpZCAvcW4gL25vcmVzdGFydCIgLVdhaXQgLU5vTmV3V2luZG93Cn0KCiMgc3RvcCBvbmVkcml2ZSBydW5uaW5nClN0b3AtUHJvY2VzcyAtRm9yY2UgLU5hbWUgT25lRHJpdmUgLUVycm9yQWN0aW9uIFNpbGVudGx5Q29udGludWUgfCBPdXQtTnVsbAoKIyB1bmluc3RhbGwgb25lZHJpdmUKY21kIC9jICJDOlxXaW5kb3dzXFN5c3RlbTMyXE9uZURyaXZlU2V0dXAuZXhlIC11bmluc3RhbGwgPm51bCAyPiYxIgojIHVuaW5zdGFsbCBvZmZpY2UgMzY1IG9uZWRyaXZlCkdldC1DaGlsZEl0ZW0gLVBhdGggIkM6XFByb2dyYW0gRmlsZXMqXE1pY3Jvc29mdCBPbmVEcml2ZSIsICIkZW52OkxPQ0FMQVBQREFUQVxNaWNyb3NvZnRcT25lRHJpdmUiIC1GaWx0ZXIgIk9uZURyaXZlU2V0dXAuZXhlIiAtUmVjdXJzZSAtRXJyb3JBY3Rpb24gU2lsZW50bHlDb250aW51ZSB8CkZvckVhY2gtT2JqZWN0IHsgU3RhcnQtUHJvY2VzcyAtV2FpdCAkXy5GdWxsTmFtZSAtQXJndW1lbnRMaXN0ICIvdW5pbnN0YWxsIC9hbGx1c2VycyIgLVdpbmRvd1N0eWxlIEhpZGRlbiAtRXJyb3JBY3Rpb24gU2lsZW50bHlDb250aW51ZSB9CiMgd2luZG93cyAxMCB1bmluc3RhbGwgb25lZHJpdmUKY21kIC9jICJDOlxXaW5kb3dzXFN5c1dPVzY0XE9uZURyaXZlU2V0dXAuZXhlIC11bmluc3RhbGwgPm51bCAyPiYxIgojIHdpbmRvd3MgMTAgcmVtb3ZlIG9uZWRyaXZlIHNjaGVkdWxlZCB0YXNrcwpHZXQtU2NoZWR1bGVkVGFzayB8IFdoZXJlLU9iamVjdCB7JF8uVGFza25hbWUgLW1hdGNoICdPbmVEcml2ZSd9IHwgVW5yZWdpc3Rlci1TY2hlZHVsZWRUYXNrIC1Db25maXJtOiRmYWxzZQoKIyB1bmluc3RhbGwgcmVtb3RlIGRlc2t0b3AgY29ubmVjdGlvbgp0cnkgewpTdGFydC1Qcm9jZXNzICJtc3RzYyIgLUFyZ3VtZW50TGlzdCAiL1VuaW5zdGFsbCIgLUVycm9yQWN0aW9uIFNpbGVudGx5Q29udGludWUKfSBjYXRjaCB7IH0KIyBzaWxlbnQgd2luZG93IGZvciByZW1vdGUgZGVza3RvcCBjb25uZWN0aW9uCiRwcm9jZXNzRXhpc3RzID0gR2V0LVByb2Nlc3MgLU5hbWUgbXN0c2MgLUVycm9yQWN0aW9uIFNpbGVudGx5Q29udGludWUKaWYgKCRwcm9jZXNzRXhpc3RzKSB7CiRydW5uaW5nID0gJHRydWUKJHRpbWVvdXQgPSAwCmRvIHsKJG1zdHNjUHJvY2VzcyA9IEdldC1Qcm9jZXNzIC1OYW1lIG1zdHNjIC1FcnJvckFjdGlvbiBTaWxlbnRseUNvbnRpbnVlCmlmICgkbXN0c2NQcm9jZXNzIC1hbmQgJG1zdHNjUHJvY2Vzcy5NYWluV2luZG93SGFuZGxlIC1uZSAwKSB7ClN0b3AtUHJvY2VzcyAtRm9yY2UgLU5hbWUgbXN0c2MgLUVycm9yQWN0aW9uIFNpbGVudGx5Q29udGludWUgfCBPdXQtTnVsbAokcnVubmluZyA9ICRmYWxzZQp9ClN0YXJ0LVNsZWVwIC1NaWxsaXNlY29uZHMgMTAwCiR0aW1lb3V0KysKaWYgKCR0aW1lb3V0IC1ndCAxMDApIHsKU3RvcC1Qcm9jZXNzIC1OYW1lIG1zdHNjIC1Gb3JjZSAtRXJyb3JBY3Rpb24gU2lsZW50bHlDb250aW51ZQokcnVubmluZyA9ICRmYWxzZQp9Cn0gd2hpbGUgKCRydW5uaW5nKQp9ClN0YXJ0LVNsZWVwIC1TZWNvbmRzIDEKCiMgd2luZG93cyAxMCB1bmluc3RhbGwgb2xkIHNuaXBwaW5nIHRvb2wKdHJ5IHsKU3RhcnQtUHJvY2VzcyAiQzpcV2luZG93c1xTeXN0ZW0zMlxTbmlwcGluZ1Rvb2wuZXhlIiAtQXJndW1lbnRMaXN0ICIvVW5pbnN0YWxsIiAtRXJyb3JBY3Rpb24gU2lsZW50bHlDb250aW51ZQp9IGNhdGNoIHsgfQojIHNpbGVudCB3aW5kb3cgZm9yIHVuaW5zdGFsbCBvbGQgc25pcHBpbmcgdG9vbAokcHJvY2Vzc0V4aXN0cyA9IEdldC1Qcm9jZXNzIC1OYW1lIFNuaXBwaW5nVG9vbCAtRXJyb3JBY3Rpb24gU2lsZW50bHlDb250aW51ZQppZiAoJHByb2Nlc3NFeGlzdHMpIHsKJHJ1bm5pbmcgPSAkdHJ1ZQokdGltZW91dCA9IDAKZG8gewokc25pcFByb2Nlc3MgPSBHZXQtUHJvY2VzcyAtTmFtZSBTbmlwcGluZ1Rvb2wgLUVycm9yQWN0aW9uIFNpbGVudGx5Q29udGludWUKaWYgKCRzbmlwUHJvY2VzcyAtYW5kICRzbmlwUHJvY2Vzcy5NYWluV2luZG93SGFuZGxlIC1uZSAwKSB7ClN0b3AtUHJvY2VzcyAtRm9yY2UgLU5hbWUgU25pcHBpbmdUb29sIC1FcnJvckFjdGlvbiBTaWxlbnRseUNvbnRpbnVlIHwgT3V0LU51bGwKJHJ1bm5pbmcgPSAkZmFsc2UKfQpTdGFydC1TbGVlcCAtTWlsbGlzZWNvbmRzIDEwMAokdGltZW91dCsrCmlmICgkdGltZW91dCAtZ3QgMTAwKSB7ClN0b3AtUHJvY2VzcyAtTmFtZSBTbmlwcGluZ1Rvb2wgLUZvcmNlIC1FcnJvckFjdGlvbiBTaWxlbnRseUNvbnRpbnVlCiRydW5uaW5nID0gJGZhbHNlCn0KfSB3aGlsZSAoJHJ1bm5pbmcpCn0KU3RhcnQtU2xlZXAgLVNlY29uZHMgMQoKIyB3aW5kb3dzIDEwIHVuaW5zdGFsbCB1cGRhdGUgZm9yIHdpbmRvd3MgMTAgZm9yIHg2NC1iYXNlZCBzeXN0ZW1zCiRmaW5kdXBkYXRlZm9yd2luZG93cyA9ICJIS0xNOlxTT0ZUV0FSRVxNaWNyb3NvZnRcV2luZG93c1xDdXJyZW50VmVyc2lvblxVbmluc3RhbGxcKiIKJHVwZGF0ZWZvcndpbmRvd3MgPSBHZXQtSXRlbVByb3BlcnR5ICRmaW5kdXBkYXRlZm9yd2luZG93cyAtRXJyb3JBY3Rpb24gU2lsZW50bHlDb250aW51ZSB8CldoZXJlLU9iamVjdCB7ICRfLkRpc3BsYXlOYW1lIC1saWtlICIqVXBkYXRlIGZvciB4NjQtYmFzZWQgV2luZG93cyBTeXN0ZW1zKiIgfQppZiAoJHVwZGF0ZWZvcndpbmRvd3MpIHsKJGd1aWQgPSAkdXBkYXRlZm9yd2luZG93cy5QU0NoaWxkTmFtZQpTdGFydC1Qcm9jZXNzICJtc2lleGVjLmV4ZSIgLUFyZ3VtZW50TGlzdCAiL3ggJGd1aWQgL3FuIC9ub3Jlc3RhcnQiIC1XYWl0IC1Ob05ld1dpbmRvdwp9CgojIHdpbmRvd3MgMTAgdW5pbnN0YWxsIG1pY3Jvc29mdCB1cGRhdGUgaGVhbHRoIHRvb2xzCiRmaW5kdXBkYXRlaGVhbHRodG9vbHMgPSAiSEtMTTpcU09GVFdBUkVcTWljcm9zb2Z0XFdpbmRvd3NcQ3VycmVudFZlcnNpb25cVW5pbnN0YWxsXCoiCiR1cGRhdGVoZWFsdGh0b29scyA9IEdldC1JdGVtUHJvcGVydHkgJGZpbmR1cGRhdGVoZWFsdGh0b29scyAtRXJyb3JBY3Rpb24gU2lsZW50bHlDb250aW51ZSB8CldoZXJlLU9iamVjdCB7ICRfLkRpc3BsYXlOYW1lIC1saWtlICIqTWljcm9zb2Z0IFVwZGF0ZSBIZWFsdGggVG9vbHMqIiB9CmlmICgkdXBkYXRlaGVhbHRodG9vbHMpIHsKJGd1aWQgPSAkdXBkYXRlaGVhbHRodG9vbHMuUFNDaGlsZE5hbWUKU3RhcnQtUHJvY2VzcyAibXNpZXhlYy5leGUiIC1Bcmd1bWVudExpc3QgIi94ICRndWlkIC9xbiAvbm9yZXN0YXJ0IiAtV2FpdCAtTm9OZXdXaW5kb3cKfQpjbWQgL2MgInJlZyBkZWxldGUgYCJIS0xNXFNZU1RFTVxDb250cm9sU2V0MDAxXFNlcnZpY2VzXHVoc3N2Y2AiIC9mID5udWwgMj4mMSIKVW5yZWdpc3Rlci1TY2hlZHVsZWRUYXNrIC1UYXNrTmFtZSBQTFVHU2NoZWR1bGVyIC1Db25maXJtOiRmYWxzZSAtRXJyb3JBY3Rpb24gU2lsZW50bHlDb250aW51ZSB8IE91dC1OdWxsCgpzaG93LW1lbnUKCiAgICAgICAgICB9CiAgICAgICAgMyB7CgpDbGVhci1Ib3N0CgpXcml0ZS1Ib3N0ICJJbnN0YWxsaW5nOiBTdG9yZS4gUGxlYXNlIHdhaXQuLi4iCgojIGluc3RhbGwgc3RvcmUKR2V0LUFwcFhQYWNrYWdlIC1BbGxVc2VycyB8IFdoZXJlLU9iamVjdCB7CiRfLk5hbWUgLWxpa2UgJypTdG9yZSonCn0gfCBGb3JlYWNoIHtBZGQtQXBweFBhY2thZ2UgLURpc2FibGVEZXZlbG9wbWVudE1vZGUgLVJlZ2lzdGVyIC1FcnJvckFjdGlvbiBTaWxlbnRseUNvbnRpbnVlICIkKCRfLkluc3RhbGxMb2NhdGlvbilcQXBwWE1hbmlmZXN0LnhtbCJ9CgpTdGFydC1TbGVlcCAtU2Vjb25kcyA1CgpDbGVhci1Ib3N0CgpXcml0ZS1Ib3N0ICJTdG9yZSBTZXR0aW5nczogT3B0aW1pemUuLi4iCgojIG9wZW4gc3RvcmUgc2V0dGluZ3MgcGFnZSBzbyBkaXNhYmxlIHBlcnNvbmFsaXplZCBleHBlcmllbmNlcyBvbiBtcyBhY2NvdW50IHN0aWNrcwp0cnkgewpTdGFydC1Qcm9jZXNzICJtcy13aW5kb3dzLXN0b3JlOnNldHRpbmdzIgp9IGNhdGNoIHsgfQpTdGFydC1TbGVlcCAtU2Vjb25kcyA1CgojIHN0b3Agc3RvcmUgcnVubmluZwokc3RvcCA9ICJXaW5TdG9yZS5BcHAiLCAiYmFja2dyb3VuZFRhc2tIb3N0IiwgIlN0b3JlRGVza3RvcEV4dGVuc2lvbiIKJHN0b3AgfCBGb3JFYWNoLU9iamVjdCB7IFN0b3AtUHJvY2VzcyAtTmFtZSAkXyAtRm9yY2UgLUVycm9yQWN0aW9uIFNpbGVudGx5Q29udGludWUgfQpTdGFydC1TbGVlcCAtU2Vjb25kcyAyCgojIGRpc2FibGUgYXBwcyB1cGRhdGVzCmNtZCAvYyAicmVnIGFkZCBgIkhLTE1cU09GVFdBUkVcTWljcm9zb2Z0XFdpbmRvd3NcQ3VycmVudFZlcnNpb25cV2luZG93c1N0b3JlXFdpbmRvd3NVcGRhdGVgIiAvdiBgIkF1dG9Eb3dubG9hZGAiIC90IFJFR19EV09SRCAvZCBgIjJgIiAvZiA+bnVsIDI+JjEiCgojIGNyZWF0ZSByZWcgZmlsZQokc3RvcmVzZXR0aW5ncyA9IEAnCldpbmRvd3MgUmVnaXN0cnkgRWRpdG9yIFZlcnNpb24gNS4wMAoKW0hLRVlfTE9DQUxfTUFDSElORVxTZXR0aW5nc1xMb2NhbFN0YXRlXQo7IGRpc2FibGUgdmlkZW8gYXV0b3BsYXkKIlZpZGVvQXV0b3BsYXkiPWhleCg1ZjVlMTBiKTowMCw5Niw5ZCw2OSw4ZCxjZCw5MyxkYywwMQo7IGRpc2FibGUgbm90aWZpY2F0aW9ucyBmb3IgYXBwIGluc3RhbGxhdGlvbnMKIkVuYWJsZUFwcEluc3RhbGxOb3RpZmljYXRpb25zIj1oZXgoNWY1ZTEwYik6MDAsMzYsZDAsODgsOGUsY2QsOTMsZGMsMDEKCltIS0VZX0xPQ0FMX01BQ0hJTkVcU2V0dGluZ3NcTG9jYWxTdGF0ZVxQZXJzaXN0ZW50U2V0dGluZ3NdCjsgZGlzYWJsZSBwZXJzb25hbGl6ZWQgZXhwZXJpZW5jZXMKIlBlcnNvbmFsaXphdGlvbkVuYWJsZWQiPWhleCg1ZjVlMTBiKTowMCwwZCw1NixhMSw4YSxjZCw5MyxkYywwMQonQApTZXQtQ29udGVudCAtUGF0aCAiJGVudjpTeXN0ZW1Sb290XFRlbXBcd2luZG93c3N0b3JlLnJlZyIgLVZhbHVlICRzdG9yZXNldHRpbmdzIC1Gb3JjZQokc2V0dGluZ3NkYXQgPSAiJGVudjpMb2NhbEFwcERhdGFcUGFja2FnZXNcTWljcm9zb2Z0LldpbmRvd3NTdG9yZV84d2VreWIzZDhiYndlXFNldHRpbmdzXHNldHRpbmdzLmRhdCIKJHJlZ2ZpbGV3aW5kb3dzc3RvcmUgPSAiJGVudjpTeXN0ZW1Sb290XFRlbXBcd2luZG93c3N0b3JlLnJlZyIKCiMgbG9hZCBoaXZlCnJlZyBsb2FkICJIS0xNXFNldHRpbmdzIiAkc2V0dGluZ3NkYXQgPiRudWxsIDI+JjEKCiMgaW1wb3J0IHJlZyBmaWxlCmlmICgkTEFTVEVYSVRDT0RFIC1lcSAwKSB7CnJlZyBpbXBvcnQgJHJlZ2ZpbGV3aW5kb3dzc3RvcmUgPiRudWxsIDI+JjEKCiMgdW5sb2FkIGhpdmUKW2djXTo6Q29sbGVjdCgpClN0YXJ0LVNsZWVwIC1TZWNvbmRzIDIKcmVnIHVubG9hZCAiSEtMTVxTZXR0aW5ncyIgPiRudWxsIDI+JjEKfQpTdGFydC1TbGVlcCAtU2Vjb25kcyAyCgojIG9wZW4gc3RvcmUgc2V0dGluZ3MKU3RhcnQtUHJvY2VzcyAibXMtd2luZG93cy1zdG9yZTpzZXR0aW5ncyIKCnNob3ctbWVudQoKICAgICAgICAgIH0KICAgICAgICA0IHsKCkNsZWFyLUhvc3QKCldyaXRlLUhvc3QgIkluc3RhbGxpbmc6IEFsbCBVV1AgQXBwcy4gUGxlYXNlIHdhaXQuLi4iCgojIGluc3RhbGwgYWxsIHV3cCBhcHBzCkdldC1BcHB4UGFja2FnZSAtQWxsVXNlcnMgfCBGb3JlYWNoIHtBZGQtQXBweFBhY2thZ2UgLURpc2FibGVEZXZlbG9wbWVudE1vZGUgLVJlZ2lzdGVyIC1FcnJvckFjdGlvbiBTaWxlbnRseUNvbnRpbnVlICIkKCRfLkluc3RhbGxMb2NhdGlvbilcQXBwWE1hbmlmZXN0LnhtbCJ9IDI+JG51bGwKCnNob3ctbWVudQoKICAgICAgICAgIH0KICAgICAgICA1IHsKCkNsZWFyLUhvc3QKCldyaXRlLUhvc3QgIkluc3RhbGw6IFVXUCBGZWF0dXJlcy4uLmBuIgpXcml0ZS1Ib3N0ICJJbnN0YWxsaW5nIG11bHRpcGxlIGZlYXR1cmVzIGF0IG9uY2UgbWF5IGZhaWwiCldyaXRlLUhvc3QgIklmIHNvLCByZXN0YXJ0IFBDIGJldHdlZW4gZWFjaCBmZWF0dXJlIGluc3RhbGxgbiIKCiMgb3BlbiB1d3Agb3B0aW9uYWwgZmVhdHVyZXMKU3RhcnQtUHJvY2VzcyAibXMtc2V0dGluZ3M6b3B0aW9uYWxmZWF0dXJlcyIKCiMgdXdwIGxpc3QKV3JpdGUtSG9zdCAiIgpXcml0ZS1Ib3N0ICItLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0iCldyaXRlLUhvc3QgIiAgICAgIERlZmF1bHQgV2luZG93cyBJbnN0YWxsIExpc3QgVzExIgpXcml0ZS1Ib3N0ICItLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0iCldyaXRlLUhvc3QgIiIKV3JpdGUtSG9zdCAiLSBFeHRlbmRlZCBUaGVtZSBDb250ZW50IgpXcml0ZS1Ib3N0ICItIEZhY2lhbCBSZWNvZ25pdGlvbiAoV2luZG93cyBIZWxsbykiCldyaXRlLUhvc3QgIi0gSW50ZXJuZXQgRXhwbG9yZXIgbW9kZSIKV3JpdGUtSG9zdCAiLSBNYXRoIFJlY29nbml6ZXIiCldyaXRlLUhvc3QgIi0gTm90ZXBhZCAoc3lzdGVtKSIKV3JpdGUtSG9zdCAiLSBPcGVuU1NIIENsaWVudCIKV3JpdGUtSG9zdCAiLSBQcmludCBNYW5hZ2VtZW50IgpXcml0ZS1Ib3N0ICItIFN0ZXBzIFJlY29yZGVyIgpXcml0ZS1Ib3N0ICItIFdNSUMiCldyaXRlLUhvc3QgIi0gV2luZG93cyBNZWRpYSBQbGF5ZXIgTGVnYWN5IChBcHApIgpXcml0ZS1Ib3N0ICItIFdpbmRvd3MgUG93ZXJTaGVsbCBJU0UiCldyaXRlLUhvc3QgIi0gV29yZFBhZCIKV3JpdGUtSG9zdCAiIgpXcml0ZS1Ib3N0ICItLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0iCldyaXRlLUhvc3QgIiAgICAgIERlZmF1bHQgV2luZG93cyBJbnN0YWxsIExpc3QgVzEwIgpXcml0ZS1Ib3N0ICItLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0iCldyaXRlLUhvc3QgIiIKV3JpdGUtSG9zdCAiLSBJbnRlcm5ldCBFeHBsb3JlciAxMSIKV3JpdGUtSG9zdCAiLSBNYXRoIFJlY29nbml6ZXIiCldyaXRlLUhvc3QgIi0gTWljcm9zb2Z0IFF1aWNrIEFzc2lzdCAoQXBwKSIKV3JpdGUtSG9zdCAiLSBOb3RlcGFkIChzeXN0ZW0pIgpXcml0ZS1Ib3N0ICItIE9wZW5TU0ggQ2xpZW50IgpXcml0ZS1Ib3N0ICItIFByaW50IE1hbmFnZW1lbnQgQ29uc29sZSIKV3JpdGUtSG9zdCAiLSBTdGVwcyBSZWNvcmRlciIKV3JpdGUtSG9zdCAiLSBXaW5kb3dzIEZheCBhbmQgU2NhbiIKV3JpdGUtSG9zdCAiLSBXaW5kb3dzIEhlbGxvIEZhY2UiCldyaXRlLUhvc3QgIi0gV2luZG93cyBNZWRpYSBQbGF5ZXIgTGVnYWN5IChBcHApIgpXcml0ZS1Ib3N0ICItIFdpbmRvd3MgUG93ZXJTaGVsbCBJbnRlZ3JhdGVkIFNjcmlwdGluZyBFbnZpcm9ubWVudCIKV3JpdGUtSG9zdCAiLSBXb3JkUGFkIgpXcml0ZS1Ib3N0ICIiCgpQYXVzZQoKc2hvdy1tZW51CgogICAgICAgICAgfQogICAgICAgIDYgewoKQ2xlYXItSG9zdAoKV3JpdGUtSG9zdCAiSW5zdGFsbDogTGVnYWN5IEZlYXR1cmVzLi4uIgoKIyBvcGVuIGxlZ2FjeSBvcHRpb25hbCBmZWF0dXJlcwpTdGFydC1Qcm9jZXNzICJDOlxXaW5kb3dzXFN5c3RlbTMyXE9wdGlvbmFsRmVhdHVyZXMuZXhlIgoKIyBsZWdhY3kgbGlzdApXcml0ZS1Ib3N0ICIiCldyaXRlLUhvc3QgIi0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLSIKV3JpdGUtSG9zdCAiICAgICAgRGVmYXVsdCBXaW5kb3dzIEluc3RhbGwgTGlzdCBXMTEiCldyaXRlLUhvc3QgIi0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLSIKV3JpdGUtSG9zdCAiIgpXcml0ZS1Ib3N0ICItIC5OZXQgRnJhbWV3b3JrIDQuOCBBZHZhbmNlZCBTZXJ2aWNlcyArIgpXcml0ZS1Ib3N0ICItIFdDRiBTZXJ2aWNlcyArIgpXcml0ZS1Ib3N0ICItIFRDUCBQb3J0IFNoYXJpbmciCldyaXRlLUhvc3QgIi0gTWVkaWEgRmVhdHVyZXMgKyIKV3JpdGUtSG9zdCAiLSBXaW5kb3dzIE1lZGlhIFBsYXllciBMZWdhY3kgKEFwcCkiCldyaXRlLUhvc3QgIi0gTWljcm9zb2Z0IFByaW50IHRvIFBERiIKV3JpdGUtSG9zdCAiLSBQcmludCBhbmQgRG9jdW1lbnQgU2VydmljZXMgKyIKV3JpdGUtSG9zdCAiLSBJbnRlcm5ldCBQcmludGluZyBDbGllbnQiCldyaXRlLUhvc3QgIi0gUmVtb3RlIERpZmZlcmVudGlhbCBDb21wcmVzc2lvbiBBUEkgU3VwcG9ydCIKV3JpdGUtSG9zdCAiLSBTTUIgRGlyZWN0IgpXcml0ZS1Ib3N0ICItIFdpbmRvd3MgUG93ZXJTaGVsbCAyLjAgKyIKV3JpdGUtSG9zdCAiLSBXaW5kb3dzIFBvd2VyU2hlbGwgMi4wIEVuZ2luZSIKV3JpdGUtSG9zdCAiLSBXb3JrIEZvbGRlcnMgQ2xpZW50IgpXcml0ZS1Ib3N0ICIiCldyaXRlLUhvc3QgIi0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLSIKV3JpdGUtSG9zdCAiICAgICAgRGVmYXVsdCBXaW5kb3dzIEluc3RhbGwgTGlzdCBXMTAiCldyaXRlLUhvc3QgIi0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLSIKV3JpdGUtSG9zdCAiIgpXcml0ZS1Ib3N0ICItIC5OZXQgRnJhbWV3b3JrIDQuOCBBZHZhbmNlZCBTZXJ2aWNlcyArIgpXcml0ZS1Ib3N0ICItIFdDRiBTZXJ2aWNlcyArIgpXcml0ZS1Ib3N0ICItIFRDUCBQb3J0IFNoYXJpbmciCldyaXRlLUhvc3QgIi0gSW50ZXJuZXQgRXhwbG9yZXIgMTEiCldyaXRlLUhvc3QgIi0gTWVkaWEgRmVhdHVyZXMgKyIKV3JpdGUtSG9zdCAiLSBXaW5kb3dzIE1lZGlhIFBsYXllciIKV3JpdGUtSG9zdCAiLSBNaWNyb3NvZnQgUHJpbnQgdG8gUERGIgpXcml0ZS1Ib3N0ICItIE1pY3Jvc29mdCBYUFMgRG9jdW1lbnQgV3JpdGVyIgpXcml0ZS1Ib3N0ICItIFByaW50IGFuZCBEb2N1bWVudCBTZXJ2aWNlcyArIgpXcml0ZS1Ib3N0ICItIEludGVybmV0IFByaW50aW5nIENsaWVudCIKV3JpdGUtSG9zdCAiLSBSZW1vdGUgRGlmZmVyZW50aWFsIENvbXByZXNzaW9uIEFQSSBTdXBwb3J0IgpXcml0ZS1Ib3N0ICItIFNNQiAxLjAvQ0lGUyBGaWxlIFNoYXJpbmcgU3VwcG9ydCArIgpXcml0ZS1Ib3N0ICItIFNNQiAxLjAvQ0lGUyBBdXRvbWF0aWMgUmVtb3ZhbCIKV3JpdGUtSG9zdCAiLSBTTUIgMS4wL0NJRlMgQ2xpZW50IgpXcml0ZS1Ib3N0ICItIFNNQiBEaXJlY3QiCldyaXRlLUhvc3QgIi0gV2luZG93cyBQb3dlclNoZWxsIDIuMCArIgpXcml0ZS1Ib3N0ICItIFdpbmRvd3MgUG93ZXJTaGVsbCAyLjAgRW5naW5lIgpXcml0ZS1Ib3N0ICItIFdvcmsgRm9sZGVycyBDbGllbnQiCldyaXRlLUhvc3QgIiIKClBhdXNlCgpzaG93LW1lbnUKCiAgICAgICAgICB9CiAgICAgICAgNyB7CgpDbGVhci1Ib3N0CgpXcml0ZS1Ib3N0ICJJbnN0YWxsaW5nOiBPbmUgRHJpdmUuIFBsZWFzZSB3YWl0Li4uIgoKIyBpbnN0YWxsIG9uZWRyaXZlIHcxMApjbWQgL2MgIkM6XFdpbmRvd3NcU3lzV09XNjRcT25lRHJpdmVTZXR1cC5leGUgPm51bCAyPiYxIgoKIyBpbnN0YWxsIG9uZWRyaXZlIHcxMQpjbWQgL2MgIkM6XFdpbmRvd3NcU3lzdGVtMzJcT25lRHJpdmVTZXR1cC5leGUgPm51bCAyPiYxIgoKc2hvdy1tZW51CgogICAgICAgICAgfQogICAgICAgIDggewoKQ2xlYXItSG9zdAoKV3JpdGUtSG9zdCAiSW5zdGFsbGluZzogUmVtb3RlIERlc2t0b3AgQ29ubmVjdGlvbi4gUGxlYXNlIHdhaXQuLi4iCgojIGRvd25sb2FkIHJlbW90ZSBkZXNrdG9wIGNvbm5lY3Rpb24KSVdSICJodHRwczovL2dvLm1pY3Jvc29mdC5jb20vZndsaW5rLz9saW5raWQ9MjI0NzY1OSIgLU91dEZpbGUgIiRlbnY6U3lzdGVtUm9vdFxUZW1wXFJlbW90ZURlc2t0b3BDb25uZWN0aW9uLmV4ZSIKCiMgaW5zdGFsbCByZW1vdGUgZGVza3RvcCBjb25uZWN0aW9uIApjbWQgL2MgIiRlbnY6U3lzdGVtUm9vdFxUZW1wXFJlbW90ZURlc2t0b3BDb25uZWN0aW9uLmV4ZSA+bnVsIDI+JjEiCgpzaG93LW1lbnUKCiAgICAgICAgICB9CiAgICAgICAgOSB7CgpDbGVhci1Ib3N0CgpXcml0ZS1Ib3N0ICJJbnN0YWxsaW5nOiBTbmlwcGluZyBUb29sLiBQbGVhc2Ugd2FpdC4uLiIKV3JpdGUtSG9zdCAiIgpXcml0ZS1Ib3N0ICJJZ25vcmUgaW5zdGFsbGVyIGVycm9yIFcxMSIKV3JpdGUtSG9zdCAiSWYgaW5zdGFsbGVyIGZhaWxzIG9uIFcxMCwgcmVzdGFydCBQQyBhbmQgcmVydW4gc2NyaXB0IgpXcml0ZS1Ib3N0ICIiCgojIGRvd25sb2FkIHcxMCBzbmlwcGluZyB0b29sCklXUiAiaHR0cHM6Ly9kb3dubG9hZC5taWNyb3NvZnQuY29tL2Rvd25sb2FkL2YvNC9lL2Y0ZTAzNDY1LTM0ZDEtNDliNi1hZjFhLTI4MTZjYTRhMjQwMi9pbnN0YWxsZXJzX3NpZ25lZC9zbmlwcGluZ3Rvb2xfc2V0dXBfeDY0LmV4ZSIgLU91dEZpbGUgIiRlbnY6U3lzdGVtUm9vdFxUZW1wXFNuaXBwaW5nVG9vbC5leGUiCgojIGluc3RhbGwgdzEwIHNuaXBwaW5nIHRvb2wKY21kIC9jICIkZW52OlN5c3RlbVJvb3RcVGVtcFxTbmlwcGluZ1Rvb2wuZXhlID5udWwgMj4mMSIKCiMgaW5zdGFsbCB3MTEgc25pcHBpbmcgdG9vbApHZXQtQXBwWFBhY2thZ2UgLUFsbFVzZXJzICpNaWNyb3NvZnQuU2NyZWVuU2tldGNoKiB8IEZvcmVhY2gge0FkZC1BcHB4UGFja2FnZSAtRGlzYWJsZURldmVsb3BtZW50TW9kZSAtUmVnaXN0ZXIgLUVycm9yQWN0aW9uIFNpbGVudGx5Q29udGludWUgIiQoJF8uSW5zdGFsbExvY2F0aW9uKVxBcHBYTWFuaWZlc3QueG1sIn0KCnNob3ctbWVudQoKICAgICAgICAgIH0KICAgICAgICB9IH0gZWxzZSB7IFdyaXRlLUhvc3QgIkludmFsaWQgaW5wdXQuIFBsZWFzZSBzZWxlY3QgYSB2YWxpZCBvcHRpb24gKDEtOSkuIiB9IH0='
 $sync.assets.core1thread1 = 'ICAgICAgICAjIFNDUklQVCBSVU4gQVMgQURNSU4KICAgICAgICBJZiAoIShbU2VjdXJpdHkuUHJpbmNpcGFsLldpbmRvd3NQcmluY2lwYWxdW1NlY3VyaXR5LlByaW5jaXBhbC5XaW5kb3dzSWRlbnRpdHldOjpHZXRDdXJyZW50KCkpLklzSW5Sb2xlKFtTZWN1cml0eS5QcmluY2lwYWwuV2luZG93c0J1aWx0SW5Sb2xlXSJBZG1pbmlzdHJhdG9yIikpCiAgICAgICAge1N0YXJ0LVByb2Nlc3MgUG93ZXJTaGVsbC5leGUgLUFyZ3VtZW50TGlzdCAoIi1Ob1Byb2ZpbGUgLUV4ZWN1dGlvblBvbGljeSBCeXBhc3MgLUZpbGUgYCJ7MH1gIiIgLWYgJFBTQ29tbWFuZFBhdGgpIC1WZXJiIFJ1bkFzCiAgICAgICAgRXhpdH0KICAgICAgICAkSG9zdC5VSS5SYXdVSS5XaW5kb3dUaXRsZSA9ICRteUludm9jYXRpb24uTXlDb21tYW5kLkRlZmluaXRpb24gKyAiIChBZG1pbmlzdHJhdG9yKSIKICAgICAgICAkSG9zdC5VSS5SYXdVSS5CYWNrZ3JvdW5kQ29sb3IgPSAiQmxhY2siCiAgICAgICAgJEhvc3QuUHJpdmF0ZURhdGEuUHJvZ3Jlc3NCYWNrZ3JvdW5kQ29sb3IgPSAiQmxhY2siCiAgICAgICAgJEhvc3QuUHJpdmF0ZURhdGEuUHJvZ3Jlc3NGb3JlZ3JvdW5kQ29sb3IgPSAiV2hpdGUiCiAgICAgICAgQ2xlYXItSG9zdAoKCQlXcml0ZS1Ib3N0ICJURU1QT1JBUklMWSBESVNBQkxFIENQVSBDT1JFIDEgJiBUSFJFQUQgMSBGT1IgVEVTVElORyBQRVIgQVBQL0dBTUVgbiIKICAgICAgICBXcml0ZS1Ib3N0ICJDT1JFIDEgVEhSRUFEIDE6IgogICAgICAgIFdyaXRlLUhvc3QgIjEuIE9mZjogQWxyZWFkeSBSdW5uaW5nIgogICAgICAgIFdyaXRlLUhvc3QgIjIuIE9mZjogU3RhcnR1cGBuIgogICAgICAgIHdoaWxlICgkdHJ1ZSkgewogICAgICAgICRjaG9pY2UgPSBSZWFkLUhvc3QgIiAiCiAgICAgICAgaWYgKCRjaG9pY2UgLW1hdGNoICdeWzEtMl0kJykgewogICAgICAgIHN3aXRjaCAoJGNob2ljZSkgewogICAgICAgIDEgewoKQ2xlYXItSG9zdAoKIyBnZXQgbnVtYmVyIG9mIGxvZ2ljYWwgcHJvY2Vzc29ycwokTk9MUCA9IChHZXQtV21pT2JqZWN0IFdpbjMyX0NvbXB1dGVyU3lzdGVtKS5OdW1iZXJPZkxvZ2ljYWxQcm9jZXNzb3JzCgojIGNvbnZlcnQgaW5wdXQgdG8gaW50ZWdlcgokTk9MUCA9IFtpbnRdJE5PTFAKCiMgc2V0IGFmZmluaXR5IG1hc2sgd2l0aCBjb3JlIDEgYW5kIHRocmVhZCAxIGRpc2FibGVkIChleGNsdWRlIGJpdCAwIGFuZCBiaXQgMSkKJGhleGFkZWNpbWFsID0gW2ludF0oW21hdGhdOjpQb3coMiwgJE5PTFApIC0gMSkgLSAzCgojIGNvcHkgZ2FtZSBleGUgaWQKKEdldC1Qcm9jZXNzIHwgV2hlcmUtT2JqZWN0IHskXy5Xb3JraW5nU2V0NjQgLWd0IDUwME1CfSB8IFNlbGVjdC1PYmplY3QgTmFtZSwgSWQpIHwgRm9ybWF0LVRhYmxlIC1BdXRvU2l6ZQokZXhlaWQgPSBSZWFkLUhvc3QgLVByb21wdCAiRU5URVIgR0FNRSBFWEUgSUQiCgpDbGVhci1Ib3N0CgojIHNldCBnYW1lIGV4ZSBjb3JlMS90aHJlYWQxIG9mZgokc210aHRvZmYgPSBHZXQtUHJvY2VzcyAtSWQgJGV4ZWlkCiRzbXRodG9mZi5Qcm9jZXNzb3JBZmZpbml0eSA9ICRoZXhhZGVjaW1hbAoKIyBjaGVjayBuZXcgdmFsdWUKJHJlbG9hZGV4ZWlkID0gR2V0LVByb2Nlc3MgLUlkICRleGVpZAoKIyBzaG93IG5ldyB2YWx1ZQokc2hvd3ZhbHVlID0gW0NvbnZlcnRdOjpUb1N0cmluZyhbaW50XSRyZWxvYWRleGVpZC5Qcm9jZXNzb3JBZmZpbml0eSwgMikuUGFkTGVmdCgkTk9MUCwgJzAnKQpXcml0ZS1Ib3N0ICJJRCAtICRleGVpZCA9ICRzaG93dmFsdWVgbiIKClBhdXNlCgpleGl0CgogICAgICAgICAgfQogICAgICAgIDIgewoKQ2xlYXItSG9zdAoKIyBzdG9wIGdhbWUgbGF1bmNoZXJzIHJ1bm5pbmcKJHN0b3AgPSAiQmF0dGxlLm5ldCIsICJCc2dMYXVuY2hlciIsICJFQURlc2t0b3AiLCAiRXBpY0dhbWVzTGF1bmNoZXIiLCAiR2FsYXh5Q2xpZW50IiwgIlJvYmxveFBsYXllckJldGEiLCAiUmlvdENsaWVudFNlcnZpY2VzIiwgIkxhdW5jaGVyIiwgInN0ZWFtIiwgInVwYyIKJHN0b3AgfCBGb3JFYWNoLU9iamVjdCB7IFN0b3AtUHJvY2VzcyAtTmFtZSAkXyAtRm9yY2UgLUVycm9yQWN0aW9uIFNpbGVudGx5Q29udGludWUgfQoKIyBnZXQgbnVtYmVyIG9mIGxvZ2ljYWwgcHJvY2Vzc29ycwokTk9MUCA9IChHZXQtV21pT2JqZWN0IFdpbjMyX0NvbXB1dGVyU3lzdGVtKS5OdW1iZXJPZkxvZ2ljYWxQcm9jZXNzb3JzCgojIGNvbnZlcnQgaW5wdXQgdG8gaW50ZWdlcgokTk9MUCA9IFtpbnRdJE5PTFAKCiMgc2V0IGFmZmluaXR5IG1hc2sgd2l0aCBjb3JlIDEgYW5kIHRocmVhZCAxIGRpc2FibGVkIChleGNsdWRlIGJpdCAwIGFuZCBiaXQgMSkKJGFmZmluaXR5ID0gW2ludF0oW21hdGhdOjpQb3coMiwgJE5PTFApIC0gMSkgLSAzCiRoZXhhZGVjaW1hbCA9ICJ7MDpYfSIgLWYgJGFmZmluaXR5CgojIHNlbGVjdCBnYW1lIGxhdW5jaGVyIGxuayBvciBleGUKV3JpdGUtSG9zdCAiU0VMRUNUIExBVU5DSEVSL0dBTUUvU0hPUlRDVVQvRVhFOiIKQWRkLVR5cGUgLUFzc2VtYmx5TmFtZSBTeXN0ZW0uV2luZG93cy5Gb3JtcwokRGlhbG9nID0gTmV3LU9iamVjdCBTeXN0ZW0uV2luZG93cy5Gb3Jtcy5PcGVuRmlsZURpYWxvZwokRGlhbG9nLkZpbHRlciA9ICJBbGwgRmlsZXMgKCouKil8Ki4qIgokRGlhbG9nLlNob3dEaWFsb2coKSB8IE91dC1OdWxsCiRnYW1lbGF1bmNoZXIgPSAkRGlhbG9nLkZpbGVOYW1lCgpDbGVhci1Ib3N0CgojIHN0YXJ0IGdhbWUgbGF1bmNoZXIgbG5rIG9yIGV4ZSB3aXRoIGNvcmUxL3RocmVhZDEgb2ZmCmNtZCAvYyAic3RhcnQgYCJgIiAvYWZmaW5pdHkgJGhleGFkZWNpbWFsIGAiJGdhbWVsYXVuY2hlcmAiIgoKV3JpdGUtSG9zdCAiR0VUVElORyBWQUxVRS4uLiIKClN0YXJ0LVNsZWVwIC1TZWNvbmRzIDEwCgojIGNvbnZlcnQgZGlyZWN0b3J5IHRvIGZpbGUgbmFtZSB3aXRob3V0IGV4ZQokZ2FtZWxhdW5jaGVyID0gW1N5c3RlbS5JTy5QYXRoXTo6R2V0RmlsZU5hbWVXaXRob3V0RXh0ZW5zaW9uKCRnYW1lbGF1bmNoZXIpCgojIGNoZWNrIHZhbHVlCiRyZWxvYWRnYW1lbGF1bmNoZXIgPSAoR2V0LVByb2Nlc3MgLU5hbWUgIiRnYW1lbGF1bmNoZXIiKS5Qcm9jZXNzb3JBZmZpbml0eQoKIyBjb252ZXJ0IHZhbHVlCiRzaG93dmFsdWUgPSBbQ29udmVydF06OlRvU3RyaW5nKFtpbnRdJHJlbG9hZGdhbWVsYXVuY2hlciwgMikKCkNsZWFyLUhvc3QKCiMgc2hvdyBuZXcgdmFsdWUKJHNob3d2YWx1ZSA9ICRzaG93dmFsdWUuUGFkTGVmdCgkTk9MUCwgIjAiKQpXcml0ZS1Ib3N0ICJFWEUgLSAkZ2FtZWxhdW5jaGVyID0gJHNob3d2YWx1ZWBuIgoKUGF1c2UKCmV4aXQKCiAgICAgICAgICB9CiAgICAgICAgfSB9IGVsc2UgeyBXcml0ZS1Ib3N0ICJJbnZhbGlkIGlucHV0LiBQbGVhc2Ugc2VsZWN0IGEgdmFsaWQgb3B0aW9uICgxLTIpLiIgfSB9'
 $sync.assets.ddu = '77u/IyBTQ1JJUFQgUlVOIEFTIEFETUlOCiAgICAgICAgSWYgKCEoW1NlY3VyaXR5LlByaW5jaXBhbC5XaW5kb3dzUHJpbmNpcGFsXVtTZWN1cml0eS5QcmluY2lwYWwuV2luZG93c0lkZW50aXR5XTo6R2V0Q3VycmVudCgpKS5Jc0luUm9sZShbU2VjdXJpdHkuUHJpbmNpcGFsLldpbmRvd3NCdWlsdEluUm9sZV0iQWRtaW5pc3RyYXRvciIpKQogICAgICAgIHtTdGFydC1Qcm9jZXNzIFBvd2VyU2hlbGwuZXhlIC1Bcmd1bWVudExpc3QgKCItTm9Qcm9maWxlIC1FeGVjdXRpb25Qb2xpY3kgQnlwYXNzIC1GaWxlIGAiezB9YCIiIC1mICRQU0NvbW1hbmRQYXRoKSAtVmVyYiBSdW5BcwogICAgICAgIEV4aXR9CiAgICAgICAgJEhvc3QuVUkuUmF3VUkuV2luZG93VGl0bGUgPSAkbXlJbnZvY2F0aW9uLk15Q29tbWFuZC5EZWZpbml0aW9uICsgIiAoQWRtaW5pc3RyYXRvcikiCiAgICAgICAgJEhvc3QuVUkuUmF3VUkuQmFja2dyb3VuZENvbG9yID0gIkJsYWNrIgogICAgICAgICRIb3N0LlByaXZhdGVEYXRhLlByb2dyZXNzQmFja2dyb3VuZENvbG9yID0gIkJsYWNrIgogICAgICAgICRIb3N0LlByaXZhdGVEYXRhLlByb2dyZXNzRm9yZWdyb3VuZENvbG9yID0gIldoaXRlIgogICAgICAgIENsZWFyLUhvc3QKCiMgcmVtb3ZlIHNhZmUgbW9kZSBib290CmNtZCAvYyAiYmNkZWRpdCAvZGVsZXRldmFsdWUge2N1cnJlbnR9IHNhZmVib290ID5udWwgMj4mMSIKCldyaXRlLUhvc3QgIkREVSAmIFJFU1RBUlRJTkdgbiIgLUZvcmVncm91bmRDb2xvciBSZWQKCiMgdW5pbnN0YWxsIHNvdW5kYmxhc3RlciByZWFsdGVrIGludGVsIGFtZCBudmlkaWEgZHJpdmVycyAmIHJlc3RhcnQKU3RhcnQtUHJvY2VzcyAiJGVudjpTeXN0ZW1Ecml2ZVxQcm9ncmFtIEZpbGVzICh4ODYpXERpc3BsYXkgRHJpdmVyIFVuaW5zdGFsbGVyXERpc3BsYXkgRHJpdmVyIFVuaW5zdGFsbGVyLmV4ZSIgLUFyZ3VtZW50TGlzdCAiLUNsZWFuU291bmRCbGFzdGVyIC1DbGVhblJlYWx0ZWsgLUNsZWFuQWxsR3B1cyAtUmVzdGFydCIgLVdhaXQK'
 $sync.assets.ddumanual = '77u/IyBTQ1JJUFQgUlVOIEFTIEFETUlOCiAgICAgICAgSWYgKCEoW1NlY3VyaXR5LlByaW5jaXBhbC5XaW5kb3dzUHJpbmNpcGFsXVtTZWN1cml0eS5QcmluY2lwYWwuV2luZG93c0lkZW50aXR5XTo6R2V0Q3VycmVudCgpKS5Jc0luUm9sZShbU2VjdXJpdHkuUHJpbmNpcGFsLldpbmRvd3NCdWlsdEluUm9sZV0iQWRtaW5pc3RyYXRvciIpKQogICAgICAgIHtTdGFydC1Qcm9jZXNzIFBvd2VyU2hlbGwuZXhlIC1Bcmd1bWVudExpc3QgKCItTm9Qcm9maWxlIC1FeGVjdXRpb25Qb2xpY3kgQnlwYXNzIC1GaWxlIGAiezB9YCIiIC1mICRQU0NvbW1hbmRQYXRoKSAtVmVyYiBSdW5BcwogICAgICAgIEV4aXR9CiAgICAgICAgJEhvc3QuVUkuUmF3VUkuV2luZG93VGl0bGUgPSAkbXlJbnZvY2F0aW9uLk15Q29tbWFuZC5EZWZpbml0aW9uICsgIiAoQWRtaW5pc3RyYXRvcikiCiAgICAgICAgJEhvc3QuVUkuUmF3VUkuQmFja2dyb3VuZENvbG9yID0gIkJsYWNrIgogICAgICAgICRIb3N0LlByaXZhdGVEYXRhLlByb2dyZXNzQmFja2dyb3VuZENvbG9yID0gIkJsYWNrIgogICAgICAgICRIb3N0LlByaXZhdGVEYXRhLlByb2dyZXNzRm9yZWdyb3VuZENvbG9yID0gIldoaXRlIgogICAgICAgIENsZWFyLUhvc3QKCiMgcmVtb3ZlIHNhZmUgbW9kZSBib290CmNtZCAvYyAiYmNkZWRpdCAvZGVsZXRldmFsdWUge2N1cnJlbnR9IHNhZmVib290ID5udWwgMj4mMSIKCldyaXRlLUhvc3QgIkREVSBNQU5VQUxgbiIKCiMgb3BlbiBkZHUKU3RhcnQtUHJvY2VzcyAtV2FpdCAiJGVudjpTeXN0ZW1Ecml2ZVxQcm9ncmFtIEZpbGVzICh4ODYpXERpc3BsYXkgRHJpdmVyIFVuaW5zdGFsbGVyXERpc3BsYXkgRHJpdmVyIFVuaW5zdGFsbGVyLmV4ZSIK'
@@ -4273,6 +7832,46 @@ $inputXML = @'
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!-- ── Collapsible "Individual tweaks" expander (advanced disclosure) ──── -->
+        <Style x:Key="TweakExpander" TargetType="Expander">
+            <Setter Property="Margin" Value="0,2,0,10"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Expander">
+                        <StackPanel>
+                            <ToggleButton Focusable="False" Cursor="Hand"
+                                          IsChecked="{Binding IsExpanded, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Border x:Name="hb" Background="#14FFFFFF" BorderBrush="#18FFFFFF" BorderThickness="1" CornerRadius="8" Padding="16,11">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <TextBlock x:Name="chev" Grid.Column="0" Text="&#xE76C;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                           FontSize="11" Foreground="#AAAAAA" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding Header, RelativeSource={RelativeSource AncestorType=Expander}}"
+                                                           FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="13" FontWeight="SemiBold"
+                                                           Foreground="White" VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="hb" Property="Background" Value="#22FFFFFF"/></Trigger>
+                                            <Trigger Property="IsChecked" Value="True"><Setter TargetName="chev" Property="Text" Value="&#xE70D;"/></Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                            </ToggleButton>
+                            <ContentPresenter x:Name="cp" Visibility="Collapsed" Margin="0,10,0,0"/>
+                        </StackPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsExpanded" Value="True">
+                                <Setter TargetName="cp" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <!-- ═══════════════════════════════════════════════════════════════════════
@@ -4328,13 +7927,13 @@ $inputXML = @'
                                        Foreground="#8A8A90" HorizontalAlignment="Right" VerticalAlignment="Center"/>
                         </Grid>
                     </Border>
-                    <RadioButton Name="NavCheck"      Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE8B3;" Content="Check"      IsChecked="True"/>
-                    <RadioButton Name="NavRefresh"    Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE72C;" Content="Refresh"/>
-                    <RadioButton Name="NavSetup"      Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE713;" Content="Setup"/>
-                    <RadioButton Name="NavInstallers" Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE7B8;" Content="Installers"/>
+                    <RadioButton Name="NavHome"       Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE80F;" Content="Home"       IsChecked="True"/>
+                    <RadioButton Name="NavDebloat"    Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xEA99;" Content="Debloat"/>
+                    <RadioButton Name="NavTweaks"     Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE713;" Content="Tweaks"/>
+                    <RadioButton Name="NavAppearance" Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE771;" Content="Appearance"/>
                     <RadioButton Name="NavGraphics"   Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE7F4;" Content="Graphics"/>
-                    <RadioButton Name="NavWindows"    Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE770;" Content="Windows"/>
-                    <RadioButton Name="NavHardware"   Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xEBD2;" Content="Hardware"/>
+                    <RadioButton Name="NavApps"       Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE71D;" Content="Apps"/>
+                    <RadioButton Name="NavSystem"     Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE977;" Content="System"/>
                     <RadioButton Name="NavAdvanced"   Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE756;" Content="Advanced"/>
                 </StackPanel>
 
@@ -4349,121 +7948,283 @@ $inputXML = @'
             <Border Grid.Column="1" Background="#18FFFFFF" CornerRadius="14,0,0,0" ClipToBounds="True">
             <Grid Background="Transparent">
 
-                <!-- ── 1 · CHECK ─────────────────────────────────────────── -->
-                <ScrollViewer Name="PanelCheck" Padding="24,20,24,16">
+                <!-- HOME -->
+                <ScrollViewer Name="PanelHome" Padding="24,20,24,16">
                     <StackPanel>
-                        <TextBlock Text="Check" Style="{StaticResource H1}"/>
+                        <TextBlock Text="Home" Style="{StaticResource H1}"/>
 
-                        <!-- PC -->
-                        <Border Style="{StaticResource Card}">
+                        <!-- Hero -->
+                        <Border Style="{StaticResource Card}" Padding="20,18">
                             <StackPanel>
-                                <TextBlock Text="PC" Style="{StaticResource CardGroupHeader}"/>
+                                <TextBlock FontSize="20" FontWeight="SemiBold" Foreground="White"
+                                           FontFamily="Segoe UI Variable Display, Segoe UI">
+                                    <Run Text="Welcome to Akari "/><Run Text="Tool" Foreground="#E03535"/>
+                                </TextBlock>
+                                <TextBlock Style="{StaticResource CardDesc}" Margin="0,6,0,0"
+                                           Text="A clean front-end for the FR33THY Ultimate tweak set. Pick a section from the left, or start with the recommended path below. Every &#9733; button is the recommended option for that row."/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Safety -->
+                        <Border Style="{StaticResource CardDanger}">
+                            <StackPanel>
+                                <TextBlock Text="&#9888;  BEFORE YOU START" Style="{StaticResource CardGroupHeader}" Foreground="#FF6B6B"/>
                                 <Grid>
                                     <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0">
-                                        <TextBlock Text="PC Check (OCCT)" Style="{StaticResource CardTitle}"/>
-                                        <TextBlock Text="Install OCCT and run CPU, RAM &amp; GPU stability tests, with drive / RAM / GPU checklist guidance." Style="{StaticResource CardDesc}"/>
+                                        <TextBlock Text="Create a Restore Point" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="These tweaks change the registry, services and drivers. Create a system restore point so you can roll back." Style="{StaticResource CardDesc}"/>
                                     </StackPanel>
-                                    <Button Name="BtnCheckPC" Grid.Column="1" Content="Run" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnHomeRestorePoint" Grid.Column="1" Content="Create &#9733;" Style="{StaticResource BtnAccent}"/>
                                 </Grid>
                             </StackPanel>
                         </Border>
 
-                        <!-- BIOS -->
+                        <!-- System info -->
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
-                                <TextBlock Text="BIOS" Style="{StaticResource CardGroupHeader}"/>
+                                <TextBlock Text="THIS PC" Style="{StaticResource CardGroupHeader}"/>
                                 <Grid>
-                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="120"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Windows"   Style="{StaticResource CardDesc}" Margin="0,3"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="1" Name="SysOs"   Text="..." Style="{StaticResource CardTitle}" Margin="0,3"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="CPU"       Style="{StaticResource CardDesc}" Margin="0,3"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="1" Name="SysCpu"  Text="..." Style="{StaticResource CardTitle}" Margin="0,3"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="GPU"       Style="{StaticResource CardDesc}" Margin="0,3"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="1" Name="SysGpu"  Text="..." Style="{StaticResource CardTitle}" Margin="0,3"/>
+                                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Memory"    Style="{StaticResource CardDesc}" Margin="0,3"/>
+                                    <TextBlock Grid.Row="3" Grid.Column="1" Name="SysRam"  Text="..." Style="{StaticResource CardTitle}" Margin="0,3"/>
+                                    <TextBlock Grid.Row="4" Grid.Column="0" Text="Machine"   Style="{StaticResource CardDesc}" Margin="0,3"/>
+                                    <TextBlock Grid.Row="4" Grid.Column="1" Name="SysHost"  Text="..." Style="{StaticResource CardTitle}" Margin="0,3"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Recommended path -->
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="RECOMMENDED PATH" Style="{StaticResource CardGroupHeader}"/>
+                                <TextBlock Text="A good order for a fresh setup. Jump to any section:" Foreground="#888888" FontSize="12" Margin="0,0,0,12" TextWrapping="Wrap"/>
+                                <UniformGrid Columns="3">
+                                    <Button Name="BtnGoDebloat"    Content="1 &#183; Debloat"    Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnGoTweaks"     Content="2 &#183; Tweaks"     Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnGoGraphics"   Content="3 &#183; Graphics"   Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnGoApps"       Content="4 &#183; Apps"       Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnGoAppearance" Content="5 &#183; Appearance" Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnGoSystem"     Content="6 &#183; System"     Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                </UniformGrid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Shortcut -->
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="QUICK ACCESS" Style="{StaticResource CardGroupHeader}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0">
-                                        <TextBlock Text="BIOS Update &amp; Settings" Style="{StaticResource CardTitle}"/>
-                                        <TextBlock Text="Enable password sign-in, search your motherboard, review BIOS tips, then restart to BIOS." Style="{StaticResource CardDesc}"/>
+                                        <TextBlock Text="Desktop Shortcut" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Online: a Desktop icon that always runs the latest version from the web — nothing kept on disk.  Install: save a local copy under AppData and add a Desktop icon so you can tune offline. Both run as admin." Style="{StaticResource CardDesc}"/>
                                     </StackPanel>
-                                    <Button Name="BtnCheckBios" Grid.Column="1" Content="Run" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnHomeShortcutOnline"  Grid.Column="1" Content="Online"  Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnHomeShortcutOffline" Grid.Column="3" Content="Install ★" Style="{StaticResource BtnAccent}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Credits -->
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="ABOUT" Style="{StaticResource CardGroupHeader}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Akari Tool by isleap" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Tweaks &amp; research by FR33THY (Ultimate). Watch the guide for what each option does." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnHomeGuide"   Grid.Column="1" Content="Guide"   Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnHomeGithub"  Grid.Column="3" Content="GitHub"  Style="{StaticResource Btn}"/>
                                 </Grid>
                             </StackPanel>
                         </Border>
                     </StackPanel>
                 </ScrollViewer>
 
-                <!-- ── 2 · REFRESH ───────────────────────────────────────── -->
-                <ScrollViewer Name="PanelRefresh" Visibility="Collapsed" Padding="24,20,24,16">
+                <!-- DEBLOAT -->
+                <ScrollViewer Name="PanelDebloat" Visibility="Collapsed" Padding="24,20,24,16">
                     <StackPanel>
-                        <TextBlock Text="Refresh" Style="{StaticResource H1}"/>
+                        <TextBlock Text="Debloat" Style="{StaticResource H1}"/>
 
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
-                                <TextBlock Text="RESET &amp; REINSTALL" Style="{StaticResource CardGroupHeader}"/>
-                                <Grid>
-                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0">
-                                        <TextBlock Text="Factory Reset" Style="{StaticResource CardTitle}"/>
-                                        <TextBlock Text="Open Windows recovery settings." Style="{StaticResource CardDesc}"/>
+                                <TextBlock Text="DEBLOAT &amp; PRIVACY" Style="{StaticResource CardGroupHeader}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Bloatware" Style="{StaticResource CardTitle}"/><TextBlock Text="Uninstall UWP bloat apps, optional UWP/legacy features, OneDrive, RDC, old Snipping Tool and cruft. Runs in-app; curated exclusions keep Explorer, Store, Photos, Paint, Notepad and Defender." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnBloatwareRemove" Grid.Column="1" Content="Remove All ★" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnBloatwareCheck"  Grid.Column="3" Content="Check"         Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Grid Margin="0,10,0,0">
+                                    <StackPanel>
+                                        <TextBlock Text="Reinstall removed components" Style="{StaticResource CardDesc}" Margin="0,0,0,8"/>
+                                        <UniformGrid Columns="5">
+                                            <Button Name="BtnBloatwareStore"    Content="Store"        Style="{StaticResource Btn}" Margin="0,0,8,0"/>
+                                            <Button Name="BtnBloatwareUWP"      Content="UWP Apps"     Style="{StaticResource Btn}" Margin="0,0,8,0"/>
+                                            <Button Name="BtnBloatwareOneDrive" Content="OneDrive"     Style="{StaticResource Btn}" Margin="0,0,8,0"/>
+                                            <Button Name="BtnBloatwareSnip"     Content="Snipping Tool" Style="{StaticResource Btn}" Margin="0,0,8,0"/>
+                                            <Button Name="BtnBloatwareRDC"      Content="RDC"          Style="{StaticResource Btn}" Margin="0"/>
+                                        </UniformGrid>
                                     </StackPanel>
-                                    <Button Name="BtnFactoryReset" Grid.Column="1" Content="Open" Style="{StaticResource BtnAccent}"/>
                                 </Grid>
                                 <Separator Style="{StaticResource Sep}"/>
-                                <Grid>
-                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0">
-                                        <TextBlock Text="Reinstall Windows" Style="{StaticResource CardTitle}"/>
-                                        <TextBlock Text="Download W10 or W11 installation media." Style="{StaticResource CardDesc}"/>
-                                    </StackPanel>
-                                    <Button Name="BtnReinstallW10" Grid.Column="1" Content="W10" Style="{StaticResource Btn}"/>
-                                    <Button Name="BtnReinstallW11" Grid.Column="3" Content="W11" Style="{StaticResource Btn}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Widgets" Style="{StaticResource CardTitle}"/><TextBlock Text="Remove the Windows Widgets panel." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnWidgetsOff"     Grid.Column="1" Content="Off ★"  Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnWidgetsDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
                                 </Grid>
                                 <Separator Style="{StaticResource Sep}"/>
-                                <Grid>
-                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0">
-                                        <TextBlock Text="Autounattend" Style="{StaticResource CardTitle}"/>
-                                        <TextBlock Text="Generate an autounattend.xml for unattended installs." Style="{StaticResource CardDesc}"/>
-                                    </StackPanel>
-                                    <Button Name="BtnAutounattend" Grid.Column="1" Content="Open" Style="{StaticResource Btn}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Copilot" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable Windows Copilot." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnCopilotOff"     Grid.Column="1" Content="Off ★"  Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnCopilotDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Game Bar / Xbox DVR" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable Game Bar and Xbox Game DVR recording overlay." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnGamebarOff"     Grid.Column="1" Content="Off ★"  Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnGamebarDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Edge &amp; WebView" Style="{StaticResource CardTitle}"/><TextBlock Text="Uninstall Microsoft Edge and WebView2." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnEdgeUninstall" Grid.Column="1" Content="Uninstall ★" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnEdgeRestore"   Grid.Column="3" Content="Restore"     Style="{StaticResource Btn}"/>
                                 </Grid>
                             </StackPanel>
                         </Border>
 
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
-                                <TextBlock Text="ACCOUNT &amp; DRIVERS" Style="{StaticResource CardGroupHeader}"/>
+                                <TextBlock Text="BLOATWARE CHECKS" Style="{StaticResource CardGroupHeader}"/>
+                                <UniformGrid Columns="4">
+                                    <Button Name="BtnBloatwareLegacyCheck"       Content="Legacy Apps"     Style="{StaticResource Btn}" Margin="0,0,8,0"/>
+                                    <Button Name="BtnBloatwareLegacyFeatCheck"   Content="Legacy Features" Style="{StaticResource Btn}" Margin="0,0,8,0"/>
+                                    <Button Name="BtnBloatwareUWPFeatCheck"      Content="UWP Features"    Style="{StaticResource Btn}" Margin="0,0,8,0"/>
+                                    <Button Name="BtnBloatwareTaskmgr"           Content="Task Manager"    Style="{StaticResource Btn}" Margin="0"/>
+                                </UniformGrid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="WINDOWS &amp; APPS" Style="{StaticResource CardGroupHeader}"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Edge Settings" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Apply optimized Edge browser settings." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnEdgeOptimize" Grid.Column="1" Content="Optimize ★" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnEdgeDefault"  Grid.Column="3" Content="Default"    Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Store Settings" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Apply optimized Microsoft Store settings." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnStoreOptimize" Grid.Column="1" Content="Optimize ★" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnStoreDefault"  Grid.Column="3" Content="Default"    Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
                                 <Grid>
                                     <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0">
-                                        <TextBlock Text="Local Account" Style="{StaticResource CardTitle}"/>
-                                        <TextBlock Text="Switch to a local account without a Microsoft login." Style="{StaticResource CardDesc}"/>
+                                        <TextBlock Text="Pause Updates" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Open Windows Update settings to pause updates." Style="{StaticResource CardDesc}"/>
                                     </StackPanel>
-                                    <Button Name="BtnAccountLocal" Grid.Column="1" Content="Open" Style="{StaticResource Btn}"/>
-                                </Grid>
-                                <Separator Style="{StaticResource Sep}"/>
-                                <Grid>
-                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0">
-                                        <TextBlock Text="Block Update Drivers" Style="{StaticResource CardTitle}"/>
-                                        <TextBlock Text="Stop Windows Update from auto-installing drivers." Style="{StaticResource CardDesc}"/>
-                                    </StackPanel>
-                                    <Button Name="BtnBlockDrivers"   Grid.Column="1" Content="Block"   Style="{StaticResource BtnAccent}"/>
-                                    <Button Name="BtnUnblockDrivers" Grid.Column="3" Content="Unblock" Style="{StaticResource Btn}"/>
-                                </Grid>
-                                <Separator Style="{StaticResource Sep}"/>
-                                <Grid>
-                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0">
-                                        <TextBlock Text="Network Driver / To BIOS" Style="{StaticResource CardTitle}"/>
-                                        <TextBlock Text="Open Device Manager for network driver, or reboot to BIOS." Style="{StaticResource CardDesc}"/>
-                                    </StackPanel>
-                                    <Button Name="BtnNetworkDriver" Grid.Column="1" Content="Network" Style="{StaticResource Btn}"/>
-                                    <Button Name="BtnToBios"        Grid.Column="3" Content="To BIOS" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnUpdatesPause" Grid.Column="1" Content="Open" Style="{StaticResource Btn}"/>
                                 </Grid>
                             </StackPanel>
                         </Border>
                     </StackPanel>
                 </ScrollViewer>
 
-                <!-- ── 3 · SETUP ─────────────────────────────────────────── -->
-                <ScrollViewer Name="PanelSetup" Visibility="Collapsed" Padding="24,20,24,16">
+                <!-- TWEAKS -->
+                <ScrollViewer Name="PanelTweaks" Visibility="Collapsed" Padding="24,20,24,16">
                     <StackPanel>
-                        <TextBlock Text="Setup" Style="{StaticResource H1}"/>
+                        <TextBlock Text="Tweaks" Style="{StaticResource H1}"/>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="PERFORMANCE" Style="{StaticResource CardGroupHeader}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Power Plan" Style="{StaticResource CardTitle}"/><TextBlock Text="Apply a high-performance or custom Ultimate power plan." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnPowerPlanOn"      Grid.Column="1" Content="Apply ★" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnPowerPlanDefault" Grid.Column="3" Content="Default"  Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Timer Resolution" Style="{StaticResource CardTitle}"/><TextBlock Text="Enable high-resolution system timer (lower latency)." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnTimerOn"      Grid.Column="1" Content="On ★"   Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnTimerDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Write Cache Buffer Flushing" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable write cache buffer flushing for drives." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnWriteCacheOff"     Grid.Column="1" Content="Off ★"  Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnWriteCacheDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Device Manager Power Savings" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable power saving for devices in Device Manager." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnDevPowerOff"     Grid.Column="1" Content="Off ★"  Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnDevPowerDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Network Adapter Power Savings" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable power saving on the network adapter." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnNetPowerOff"     Grid.Column="1" Content="Off ★"  Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnNetPowerDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Network IPv4 Only" Style="{StaticResource CardTitle}"/><TextBlock Text="Prefer IPv4 over IPv6 to reduce latency on some networks." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnIPv4Only"    Grid.Column="1" Content="IPv4 ★" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnIPDefault"   Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="QUICK SETTINGS" Style="{StaticResource CardGroupHeader}"/>
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Game Mode  ·  Pointer Precision  ·  Scaling" Style="{StaticResource CardTitle}"/><TextBlock Text="Open Game Mode, Mouse settings, or Display scaling settings." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnGamemode"         Grid.Column="1" Content="Game Mode"        Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnPointerPrecision" Grid.Column="3" Content="Pointer Precision" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnScalingSettings"  Grid.Column="5" Content="Scaling"           Style="{StaticResource Btn}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
 
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
@@ -4506,122 +8267,173 @@ $inputXML = @'
 
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
-                                <TextBlock Text="WINDOWS &amp; APPS" Style="{StaticResource CardGroupHeader}"/>
+                                <TextBlock Text="PERFORMANCE TWEAKS" Style="{StaticResource CardGroupHeader}"/>
 
-                                <Grid>
-                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0">
-                                        <TextBlock Text="Edge Settings" Style="{StaticResource CardTitle}"/>
-                                        <TextBlock Text="Apply optimized Edge browser settings." Style="{StaticResource CardDesc}"/>
-                                    </StackPanel>
-                                    <Button Name="BtnEdgeOptimize" Grid.Column="1" Content="Optimize ★" Style="{StaticResource BtnAccent}"/>
-                                    <Button Name="BtnEdgeDefault"  Grid.Column="3" Content="Default"    Style="{StaticResource Btn}"/>
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Services" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable non-essential Windows background services." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnServicesOff"     Grid.Column="1" Content="Off ★"  Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnServicesDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
                                 </Grid>
                                 <Separator Style="{StaticResource Sep}"/>
 
-                                <Grid>
-                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0">
-                                        <TextBlock Text="Store Settings" Style="{StaticResource CardTitle}"/>
-                                        <TextBlock Text="Apply optimized Microsoft Store settings." Style="{StaticResource CardDesc}"/>
-                                    </StackPanel>
-                                    <Button Name="BtnStoreOptimize" Grid.Column="1" Content="Optimize ★" Style="{StaticResource BtnAccent}"/>
-                                    <Button Name="BtnStoreDefault"  Grid.Column="3" Content="Default"    Style="{StaticResource Btn}"/>
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="MMAgent Features" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable Memory Manager Agent features (prefetch, superfetch)." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnMMAgentOff"     Grid.Column="1" Content="Off ★"  Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnMMAgentDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
                                 </Grid>
                                 <Separator Style="{StaticResource Sep}"/>
 
-                                <Grid>
-                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0">
-                                        <TextBlock Text="Pause Updates" Style="{StaticResource CardTitle}"/>
-                                        <TextBlock Text="Open Windows Update settings to pause updates." Style="{StaticResource CardDesc}"/>
-                                    </StackPanel>
-                                    <Button Name="BtnUpdatesPause" Grid.Column="1" Content="Open" Style="{StaticResource Btn}"/>
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="NVME Faster Driver" Style="{StaticResource CardTitle}"/><TextBlock Text="Use the faster inbox NVMe StorNVMe driver." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnNvmeOn"      Grid.Column="1" Content="Apply ★" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnNvmeDefault" Grid.Column="3" Content="Default"  Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Start / Search / Shell / Mobsync" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable shell bloat for faster Start and Search." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnShellOff"     Grid.Column="1" Content="Off ★"  Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnShellDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
                                 </Grid>
                             </StackPanel>
                         </Border>
 
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
-                                <TextBlock Text="ACTIVATION &amp; LICENSING" Style="{StaticResource CardGroupHeader}"/>
-                                <Grid>
-                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0">
-                                        <TextBlock Text="Keys / Activation / Convert to Pro" Style="{StaticResource CardTitle}"/>
-                                        <TextBlock Text="Manage product keys, activate Windows, or upgrade Home to Pro." Style="{StaticResource CardDesc}"/>
-                                    </StackPanel>
-                                    <Button Name="BtnKeys"          Grid.Column="1" Content="Keys"       Style="{StaticResource Btn}"/>
-                                    <Button Name="BtnActivation"    Grid.Column="3" Content="Activate"   Style="{StaticResource Btn}"/>
-                                    <Button Name="BtnConvertToPro"  Grid.Column="5" Content="→ Pro"      Style="{StaticResource Btn}"/>
-                                </Grid>
-                                <Separator Style="{StaticResource Sep}"/>
+                                <TextBlock Text="SCHEDULING" Style="{StaticResource CardGroupHeader}"/>
+
                                 <Grid>
                                     <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0">
-                                        <TextBlock Text="Date / Language / Region / Time" Style="{StaticResource CardTitle}"/>
-                                        <TextBlock Text="Open system locale and date/time settings." Style="{StaticResource CardDesc}"/>
+                                        <TextBlock Text="SvcHost Split Threshold" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Higher values group services into fewer svchost processes (less overhead). Restart to apply." Style="{StaticResource CardDesc}"/>
                                     </StackPanel>
-                                    <Button Name="BtnDateLang"    Grid.Column="1" Content="Open"    Style="{StaticResource Btn}"/>
-                                    <Button Name="BtnStartupApps" Grid.Column="3" Content="Startup" Style="{StaticResource Btn}"/>
+                                    <ComboBox Name="CboSvcHost" Grid.Column="1" Width="150" VerticalAlignment="Center">
+                                        <ComboBoxItem Content="Default (380000 KB)" IsSelected="True"/>
+                                        <ComboBoxItem Content="4 GB"/>
+                                        <ComboBoxItem Content="8 GB"/>
+                                        <ComboBoxItem Content="16 GB"/>
+                                        <ComboBoxItem Content="32 GB"/>
+                                        <ComboBoxItem Content="64 GB"/>
+                                        <ComboBoxItem Content="128 GB"/>
+                                        <ComboBoxItem Content="256 GB"/>
+                                    </ComboBox>
+                                    <Button Name="BtnSvcHostApply" Grid.Column="3" Content="Apply" Style="{StaticResource BtnAccent}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Win32 Priority Separation" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Controls foreground/background CPU quantum. Fr33thy Ultimate recommends 26 (Hex). Restart to apply." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <ComboBox Name="CboPrioritySep" Grid.Column="1" Width="120" VerticalAlignment="Center">
+                                        <ComboBoxItem Content="26 (Hex) ★" IsSelected="True"/>
+                                        <ComboBoxItem Content="2A (Hex)"/>
+                                        <ComboBoxItem Content="28 (Hex)"/>
+                                        <ComboBoxItem Content="16 (Hex)"/>
+                                        <ComboBoxItem Content="06 (Hex)"/>
+                                    </ComboBox>
+                                    <Button Name="BtnPrioritySepApply" Grid.Column="3" Content="Apply" Style="{StaticResource BtnAccent}"/>
                                 </Grid>
                             </StackPanel>
                         </Border>
                     </StackPanel>
                 </ScrollViewer>
 
-                <!-- ── 4 · INSTALLERS ────────────────────────────────────── -->
-                <ScrollViewer Name="PanelInstallers" Visibility="Collapsed" Padding="24,20,24,16">
+                <!-- APPEARANCE -->
+                <ScrollViewer Name="PanelAppearance" Visibility="Collapsed" Padding="24,20,24,16">
                     <StackPanel>
-                        <TextBlock Text="Installers" Style="{StaticResource H1}"/>
+                        <TextBlock Text="Appearance" Style="{StaticResource H1}"/>
 
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
-                                <TextBlock Text="GAME LAUNCHERS &amp; BROWSERS" Style="{StaticResource CardGroupHeader}"/>
-                                <TextBlock Text="Tip: disable cloud sync, hardware acceleration, startup, and overlays in each app after installing." Foreground="#888888" FontSize="12" Margin="0,0,0,12" TextWrapping="Wrap"/>
-                                <UniformGrid Columns="3" Margin="0,4,0,0">
-                                    <Button Name="BtnInstSteam"    Content="Steam"            Style="{StaticResource Btn}" Margin="0,0,8,8"/>
-                                    <Button Name="BtnInstEpic"     Content="Epic Games"        Style="{StaticResource Btn}" Margin="0,0,8,8"/>
-                                    <Button Name="BtnInstBattlenet" Content="Battle.net"       Style="{StaticResource Btn}" Margin="0,0,8,8"/>
-                                    <Button Name="BtnInstEA"       Content="EA App"            Style="{StaticResource Btn}" Margin="0,0,8,8"/>
-                                    <Button Name="BtnInstUbisoft"  Content="Ubisoft Connect"   Style="{StaticResource Btn}" Margin="0,0,8,8"/>
-                                    <Button Name="BtnInstRockstar" Content="Rockstar Games"    Style="{StaticResource Btn}" Margin="0,0,8,8"/>
-                                    <Button Name="BtnInstLOL"      Content="League of Legends" Style="{StaticResource Btn}" Margin="0,0,8,8"/>
-                                    <Button Name="BtnInstValorant" Content="Valorant"          Style="{StaticResource Btn}" Margin="0,0,8,8"/>
-                                    <Button Name="BtnInstEFT"      Content="Escape from Tarkov" Style="{StaticResource Btn}" Margin="0,0,8,8"/>
-                                    <Button Name="BtnInstRoblox"   Content="Roblox"            Style="{StaticResource Btn}" Margin="0,0,8,8"/>
-                                    <Button Name="BtnInstChrome"   Content="Google Chrome"     Style="{StaticResource Btn}" Margin="0,0,8,8"/>
-                                    <Button Name="BtnInstBrave"    Content="Brave"             Style="{StaticResource Btn}" Margin="0,0,8,8"/>
-                                    <Button Name="BtnInstFirefox"  Content="Firefox"           Style="{StaticResource Btn}" Margin="0,0,8,8"/>
-                                    <Button Name="BtnInstDiscord"  Content="Discord"           Style="{StaticResource Btn}" Margin="0,0,8,8"/>
-                                    <Button Name="BtnInstSpotify"  Content="Spotify"           Style="{StaticResource Btn}" Margin="0,0,8,8"/>
-                                    <Button Name="BtnInstOBS"      Content="OBS Studio"        Style="{StaticResource Btn}" Margin="0,0,8,8"/>
-                                    <Button Name="BtnInstNotepad"  Content="Notepad++"         Style="{StaticResource Btn}" Margin="0,0,8,8"/>
-                                    <Button Name="BtnInst7Zip"     Content="7-Zip"             Style="{StaticResource Btn}" Margin="0,0,8,8"/>
-                                    <Button Name="BtnInstGOG"      Content="GOG"               Style="{StaticResource Btn}" Margin="0,0,8,8"/>
-                                    <Button Name="BtnInstPotPlayer" Content="PotPlayer"        Style="{StaticResource Btn}" Margin="0,0,8,8"/>
-                                    <Button Name="BtnInstOMM"      Content="Onboard Mem Mgr"   Style="{StaticResource Btn}" Margin="0,0,8,8"/>
-                                    <Button Name="BtnInstFrameView" Content="FrameView"        Style="{StaticResource Btn}" Margin="0,0,8,8"/>
-                                    <Button Name="BtnInstNvApp"    Content="Nvidia App"        Style="{StaticResource Btn}" Margin="0,0,8,8"/>
-                                    <Button Name="BtnInstHelium"   Content="Helium"            Style="{StaticResource Btn}" Margin="0,0,8,8"/>
-                                </UniformGrid>
+                                <TextBlock Text="APPEARANCE" Style="{StaticResource CardGroupHeader}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Start Menu / Taskbar" Style="{StaticResource CardTitle}"/><TextBlock Text="Clean taskbar — remove search, widgets, chat." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnTaskbarClean"   Grid.Column="1" Content="Clean ★"  Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnTaskbarDefault" Grid.Column="3" Content="Default"   Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Start Menu Layout" Style="{StaticResource CardTitle}"/><TextBlock Text="Set the recommended Start Menu layout for your Windows version." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnStartMenu25H2" Grid.Column="1" Content="25H2 ★" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnStartMenu24H2" Grid.Column="3" Content="24H2"    Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Context Menu" Style="{StaticResource CardTitle}"/><TextBlock Text="Restore the classic Windows 10-style right-click context menu." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnContextClean"   Grid.Column="1" Content="Clean ★"  Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnContextDefault" Grid.Column="3" Content="Default"   Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Black Theme + Wallpaper + Account Picture" Style="{StaticResource CardTitle}"/><TextBlock Text="Apply a full black theme across the OS." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnThemeBlack"     Grid.Column="1" Content="Theme ★"    Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnWallpaperBlack" Grid.Column="3" Content="Wallpaper ★" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnAccountBlack"   Grid.Column="5" Content="Picture ★"   Style="{StaticResource BtnAccent}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Start Menu Shortcuts" Style="{StaticResource CardTitle}"/><TextBlock Text="Open pinned shortcuts settings." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnStartShortcuts" Grid.Column="1" Content="Open" Style="{StaticResource Btn}"/>
+                                </Grid>
                             </StackPanel>
                         </Border>
 
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
-                                <TextBlock Text="GPU TOOLS" Style="{StaticResource CardGroupHeader}"/>
-                                <UniformGrid Columns="3">
-                                    <Button Name="BtnInstAfterburner" Content="MSI Afterburner"      Style="{StaticResource Btn}" Margin="0,0,8,8"/>
-                                    <Button Name="BtnInstNPI"         Content="Nvidia Profile Insp." Style="{StaticResource Btn}" Margin="0,0,8,8"/>
-                                    <Button Name="BtnInstMCT"         Content="More Clock Tool"      Style="{StaticResource Btn}" Margin="0,0,8,8"/>
-                                    <Button Name="BtnInstCRU"         Content="CRU / SRE"            Style="{StaticResource Btn}" Margin="0,0,8,8"/>
-                                </UniformGrid>
+                                <TextBlock Text="SYSTEM SETTINGS" Style="{StaticResource CardGroupHeader}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="UAC" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable User Account Control prompts." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnUacOff"     Grid.Column="1" Content="Off ★"  Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnUacDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Defender Optimize" Style="{StaticResource CardTitle}"/><TextBlock Text="Add game folders to Defender exclusions for better perf." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnDefenderOptimize" Grid.Column="1" Content="Optimize ★" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnDefenderDefault"  Grid.Column="3" Content="Default"     Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Control Panel Settings" Style="{StaticResource CardTitle}"/><TextBlock Text="Apply full optimized Control Panel + privacy + appearance settings." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnCPOptimize" Grid.Column="1" Content="Optimize ★" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnCPDefault"  Grid.Column="3" Content="Default"     Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Tools" Style="{StaticResource CardTitle}"/><TextBlock Text="Autoruns, Cleanup, Restore Point, Core Isolation." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnAutoruns"     Grid.Column="1" Content="Autoruns"      Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnCleanup"      Grid.Column="3" Content="Cleanup"       Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnRestorePoint" Grid.Column="5" Content="Restore Point" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnCoreIsolation" Grid.Column="7" Content="Core Isolation" Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Notepad / Control Panel / Sound / Loudness EQ" Style="{StaticResource CardTitle}"/><TextBlock Text="Optimize Notepad, open Control Panel, configure audio, enable Loudness EQ." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnNotepad"     Grid.Column="1" Content="Notepad"     Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnControlPanel" Grid.Column="3" Content="Control Panel" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnSound"        Grid.Column="5" Content="Sound"         Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnLoudnessEQ"   Grid.Column="7" Content="Loudness EQ"   Style="{StaticResource BtnAccent}"/>
+                                </Grid>
                             </StackPanel>
                         </Border>
                     </StackPanel>
                 </ScrollViewer>
 
-                <!-- ── 5 · GRAPHICS ──────────────────────────────────────── -->
+                <!-- GRAPHICS -->
                 <ScrollViewer Name="PanelGraphics" Visibility="Collapsed" Padding="24,20,24,16">
                     <StackPanel>
                         <TextBlock Text="Graphics" Style="{StaticResource H1}"/>
@@ -4760,221 +8572,228 @@ $inputXML = @'
                                 </Grid>
                             </StackPanel>
                         </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="RENDERING" Style="{StaticResource CardGroupHeader}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="MPO (Multiplane Overlay)" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable MPO to fix flickering and tearing in some setups." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnMpoOn"  Grid.Column="1" Content="On (Default)" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnMpoOff" Grid.Column="3" Content="Off"           Style="{StaticResource BtnAccent}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Hardware Flip Mode" Style="{StaticResource CardTitle}"/><TextBlock Text="FSO (default) vs FSE (Hardware Legacy Flip)." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnFlipFSO" Grid.Column="1" Content="FSO (Default)" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnFlipFSE" Grid.Column="3" Content="FSE ★"          Style="{StaticResource BtnAccent}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="HCIF (Hardware Composed Independent Flip)" Style="{StaticResource CardTitle}"/><TextBlock Text="Switch between HCIF and HIF flip modes." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnHcif"  Grid.Column="1" Content="HCIF ★"     Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnHif"   Grid.Column="3" Content="HIF (Default)" Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="ULPS (AMD Ultra Low Power State)" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable ULPS to prevent AMD GPU stutters on multi-GPU." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnUlpsOn"  Grid.Column="1" Content="On (Default)" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnUlpsOff" Grid.Column="3" Content="Off ★"         Style="{StaticResource BtnAccent}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="ReBar Force (NVIDIA)" Style="{StaticResource CardTitle}"/><TextBlock Text="Force Resizable BAR on/off via Inspector, or use driver default. Option 4 restarts to BIOS." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnReBarDefault" Grid.Column="1" Content="Default" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnReBarOn"      Grid.Column="3" Content="Force On" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnReBarOff"     Grid.Column="5" Content="Force Off" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnReBarToBios"  Grid.Column="7" Content="To BIOS"   Style="{StaticResource Btn}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                 </ScrollViewer>
 
-                <!-- ── 6 · WINDOWS ───────────────────────────────────────── -->
-                <ScrollViewer Name="PanelWindows" Visibility="Collapsed" Padding="24,20,24,16">
+                <!-- APPS -->
+                <ScrollViewer Name="PanelApps" Visibility="Collapsed" Padding="24,20,24,16">
                     <StackPanel>
-                        <TextBlock Text="Windows" Style="{StaticResource H1}"/>
+                        <TextBlock Text="Apps" Style="{StaticResource H1}"/>
 
-                        <!-- Appearance -->
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
-                                <TextBlock Text="APPEARANCE" Style="{StaticResource CardGroupHeader}"/>
-
-                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0"><TextBlock Text="Start Menu / Taskbar" Style="{StaticResource CardTitle}"/><TextBlock Text="Clean taskbar — remove search, widgets, chat." Style="{StaticResource CardDesc}"/></StackPanel>
-                                    <Button Name="BtnTaskbarClean"   Grid.Column="1" Content="Clean ★"  Style="{StaticResource BtnAccent}"/>
-                                    <Button Name="BtnTaskbarDefault" Grid.Column="3" Content="Default"   Style="{StaticResource Btn}"/>
-                                </Grid>
-                                <Separator Style="{StaticResource Sep}"/>
-
-                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0"><TextBlock Text="Start Menu Layout" Style="{StaticResource CardTitle}"/><TextBlock Text="Set the recommended Start Menu layout for your Windows version." Style="{StaticResource CardDesc}"/></StackPanel>
-                                    <Button Name="BtnStartMenu25H2" Grid.Column="1" Content="25H2 ★" Style="{StaticResource BtnAccent}"/>
-                                    <Button Name="BtnStartMenu24H2" Grid.Column="3" Content="24H2"    Style="{StaticResource Btn}"/>
-                                </Grid>
-                                <Separator Style="{StaticResource Sep}"/>
-
-                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0"><TextBlock Text="Context Menu" Style="{StaticResource CardTitle}"/><TextBlock Text="Restore the classic Windows 10-style right-click context menu." Style="{StaticResource CardDesc}"/></StackPanel>
-                                    <Button Name="BtnContextClean"   Grid.Column="1" Content="Clean ★"  Style="{StaticResource BtnAccent}"/>
-                                    <Button Name="BtnContextDefault" Grid.Column="3" Content="Default"   Style="{StaticResource Btn}"/>
-                                </Grid>
-                                <Separator Style="{StaticResource Sep}"/>
-
-                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0"><TextBlock Text="Black Theme + Wallpaper + Account Picture" Style="{StaticResource CardTitle}"/><TextBlock Text="Apply a full black theme across the OS." Style="{StaticResource CardDesc}"/></StackPanel>
-                                    <Button Name="BtnThemeBlack"     Grid.Column="1" Content="Theme ★"    Style="{StaticResource BtnAccent}"/>
-                                    <Button Name="BtnWallpaperBlack" Grid.Column="3" Content="Wallpaper ★" Style="{StaticResource BtnAccent}"/>
-                                    <Button Name="BtnAccountBlack"   Grid.Column="5" Content="Picture ★"   Style="{StaticResource BtnAccent}"/>
-                                </Grid>
-                                <Separator Style="{StaticResource Sep}"/>
-
-                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0"><TextBlock Text="Start Menu Shortcuts" Style="{StaticResource CardTitle}"/><TextBlock Text="Open pinned shortcuts settings." Style="{StaticResource CardDesc}"/></StackPanel>
-                                    <Button Name="BtnStartShortcuts" Grid.Column="1" Content="Open" Style="{StaticResource Btn}"/>
-                                </Grid>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Performance -->
-                        <Border Style="{StaticResource Card}">
-                            <StackPanel>
-                                <TextBlock Text="PERFORMANCE" Style="{StaticResource CardGroupHeader}"/>
-
-                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0"><TextBlock Text="Power Plan" Style="{StaticResource CardTitle}"/><TextBlock Text="Apply a high-performance or custom Ultimate power plan." Style="{StaticResource CardDesc}"/></StackPanel>
-                                    <Button Name="BtnPowerPlanOn"      Grid.Column="1" Content="Apply ★" Style="{StaticResource BtnAccent}"/>
-                                    <Button Name="BtnPowerPlanDefault" Grid.Column="3" Content="Default"  Style="{StaticResource Btn}"/>
-                                </Grid>
-                                <Separator Style="{StaticResource Sep}"/>
-
-                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0"><TextBlock Text="Timer Resolution" Style="{StaticResource CardTitle}"/><TextBlock Text="Enable high-resolution system timer (lower latency)." Style="{StaticResource CardDesc}"/></StackPanel>
-                                    <Button Name="BtnTimerOn"      Grid.Column="1" Content="On ★"   Style="{StaticResource BtnAccent}"/>
-                                    <Button Name="BtnTimerDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
-                                </Grid>
-                                <Separator Style="{StaticResource Sep}"/>
-
-                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0"><TextBlock Text="Write Cache Buffer Flushing" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable write cache buffer flushing for drives." Style="{StaticResource CardDesc}"/></StackPanel>
-                                    <Button Name="BtnWriteCacheOff"     Grid.Column="1" Content="Off ★"  Style="{StaticResource BtnAccent}"/>
-                                    <Button Name="BtnWriteCacheDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
-                                </Grid>
-                                <Separator Style="{StaticResource Sep}"/>
-
-                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0"><TextBlock Text="Device Manager Power Savings" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable power saving for devices in Device Manager." Style="{StaticResource CardDesc}"/></StackPanel>
-                                    <Button Name="BtnDevPowerOff"     Grid.Column="1" Content="Off ★"  Style="{StaticResource BtnAccent}"/>
-                                    <Button Name="BtnDevPowerDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
-                                </Grid>
-                                <Separator Style="{StaticResource Sep}"/>
-
-                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0"><TextBlock Text="Network Adapter Power Savings" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable power saving on the network adapter." Style="{StaticResource CardDesc}"/></StackPanel>
-                                    <Button Name="BtnNetPowerOff"     Grid.Column="1" Content="Off ★"  Style="{StaticResource BtnAccent}"/>
-                                    <Button Name="BtnNetPowerDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
-                                </Grid>
-                                <Separator Style="{StaticResource Sep}"/>
-
-                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0"><TextBlock Text="Network IPv4 Only" Style="{StaticResource CardTitle}"/><TextBlock Text="Prefer IPv4 over IPv6 to reduce latency on some networks." Style="{StaticResource CardDesc}"/></StackPanel>
-                                    <Button Name="BtnIPv4Only"    Grid.Column="1" Content="IPv4 ★" Style="{StaticResource BtnAccent}"/>
-                                    <Button Name="BtnIPDefault"   Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
-                                </Grid>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Debloat / Privacy -->
-                        <Border Style="{StaticResource Card}">
-                            <StackPanel>
-                                <TextBlock Text="DEBLOAT &amp; PRIVACY" Style="{StaticResource CardGroupHeader}"/>
-
-                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0"><TextBlock Text="Bloatware" Style="{StaticResource CardTitle}"/><TextBlock Text="Remove all pre-installed bloat apps from Windows." Style="{StaticResource CardDesc}"/></StackPanel>
-                                    <Button Name="BtnBloatwareRemove" Grid.Column="1" Content="Remove All ★" Style="{StaticResource BtnAccent}"/>
-                                    <Button Name="BtnBloatwareCheck"  Grid.Column="3" Content="Check"         Style="{StaticResource Btn}"/>
-                                </Grid>
-                                <Separator Style="{StaticResource Sep}"/>
-
-                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0"><TextBlock Text="Widgets" Style="{StaticResource CardTitle}"/><TextBlock Text="Remove the Windows Widgets panel." Style="{StaticResource CardDesc}"/></StackPanel>
-                                    <Button Name="BtnWidgetsOff"     Grid.Column="1" Content="Off ★"  Style="{StaticResource BtnAccent}"/>
-                                    <Button Name="BtnWidgetsDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
-                                </Grid>
-                                <Separator Style="{StaticResource Sep}"/>
-
-                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0"><TextBlock Text="Copilot" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable Windows Copilot." Style="{StaticResource CardDesc}"/></StackPanel>
-                                    <Button Name="BtnCopilotOff"     Grid.Column="1" Content="Off ★"  Style="{StaticResource BtnAccent}"/>
-                                    <Button Name="BtnCopilotDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
-                                </Grid>
-                                <Separator Style="{StaticResource Sep}"/>
-
-                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0"><TextBlock Text="Game Bar / Xbox DVR" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable Game Bar and Xbox Game DVR recording overlay." Style="{StaticResource CardDesc}"/></StackPanel>
-                                    <Button Name="BtnGamebarOff"     Grid.Column="1" Content="Off ★"  Style="{StaticResource BtnAccent}"/>
-                                    <Button Name="BtnGamebarDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
-                                </Grid>
-                                <Separator Style="{StaticResource Sep}"/>
-
-                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0"><TextBlock Text="Edge &amp; WebView" Style="{StaticResource CardTitle}"/><TextBlock Text="Uninstall Microsoft Edge and WebView2." Style="{StaticResource CardDesc}"/></StackPanel>
-                                    <Button Name="BtnEdgeUninstall" Grid.Column="1" Content="Uninstall ★" Style="{StaticResource BtnAccent}"/>
-                                    <Button Name="BtnEdgeRestore"   Grid.Column="3" Content="Restore"     Style="{StaticResource Btn}"/>
-                                </Grid>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Bloatware Checks -->
-                        <Border Style="{StaticResource Card}">
-                            <StackPanel>
-                                <TextBlock Text="BLOATWARE CHECKS" Style="{StaticResource CardGroupHeader}"/>
-                                <UniformGrid Columns="4">
-                                    <Button Name="BtnBloatwareLegacyCheck"       Content="Legacy Apps"     Style="{StaticResource Btn}" Margin="0,0,8,0"/>
-                                    <Button Name="BtnBloatwareLegacyFeatCheck"   Content="Legacy Features" Style="{StaticResource Btn}" Margin="0,0,8,0"/>
-                                    <Button Name="BtnBloatwareUWPFeatCheck"      Content="UWP Features"    Style="{StaticResource Btn}" Margin="0,0,8,0"/>
-                                    <Button Name="BtnBloatwareTaskmgr"           Content="Task Manager"    Style="{StaticResource Btn}" Margin="0"/>
+                                <TextBlock Text="GAME LAUNCHERS &amp; BROWSERS" Style="{StaticResource CardGroupHeader}"/>
+                                <TextBlock Text="Tip: disable cloud sync, hardware acceleration, startup, and overlays in each app after installing." Foreground="#888888" FontSize="12" Margin="0,0,0,12" TextWrapping="Wrap"/>
+                                <UniformGrid Columns="3" Margin="0,4,0,0">
+                                    <Button Name="BtnInstSteam"    Content="Steam"            Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstEpic"     Content="Epic Games"        Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstBattlenet" Content="Battle.net"       Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstEA"       Content="EA App"            Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstUbisoft"  Content="Ubisoft Connect"   Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstRockstar" Content="Rockstar Games"    Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstLOL"      Content="League of Legends" Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstValorant" Content="Valorant"          Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstEFT"      Content="Escape from Tarkov" Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstRoblox"   Content="Roblox"            Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstChrome"   Content="Google Chrome"     Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstBrave"    Content="Brave"             Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstFirefox"  Content="Firefox"           Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstDiscord"  Content="Discord"           Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstSpotify"  Content="Spotify"           Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstOBS"      Content="OBS Studio"        Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstNotepad"  Content="Notepad++"         Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInst7Zip"     Content="7-Zip"             Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstGOG"      Content="GOG"               Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstPotPlayer" Content="PotPlayer"        Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstOMM"      Content="Onboard Mem Mgr"   Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstFrameView" Content="FrameView"        Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstNvApp"    Content="Nvidia App"        Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstHelium"   Content="Helium"            Style="{StaticResource Btn}" Margin="0,0,8,8"/>
                                 </UniformGrid>
                             </StackPanel>
                         </Border>
 
-                        <!-- Quick Settings -->
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
-                                <TextBlock Text="QUICK SETTINGS" Style="{StaticResource CardGroupHeader}"/>
-                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0"><TextBlock Text="Game Mode  ·  Pointer Precision  ·  Scaling" Style="{StaticResource CardTitle}"/><TextBlock Text="Open Game Mode, Mouse settings, or Display scaling settings." Style="{StaticResource CardDesc}"/></StackPanel>
-                                    <Button Name="BtnGamemode"         Grid.Column="1" Content="Game Mode"        Style="{StaticResource Btn}"/>
-                                    <Button Name="BtnPointerPrecision" Grid.Column="3" Content="Pointer Precision" Style="{StaticResource Btn}"/>
-                                    <Button Name="BtnScalingSettings"  Grid.Column="5" Content="Scaling"           Style="{StaticResource Btn}"/>
-                                </Grid>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Misc Windows settings -->
-                        <Border Style="{StaticResource Card}">
-                            <StackPanel>
-                                <TextBlock Text="SYSTEM SETTINGS" Style="{StaticResource CardGroupHeader}"/>
-
-                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0"><TextBlock Text="UAC" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable User Account Control prompts." Style="{StaticResource CardDesc}"/></StackPanel>
-                                    <Button Name="BtnUacOff"     Grid.Column="1" Content="Off ★"  Style="{StaticResource BtnAccent}"/>
-                                    <Button Name="BtnUacDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
-                                </Grid>
-                                <Separator Style="{StaticResource Sep}"/>
-
-                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0"><TextBlock Text="Defender Optimize" Style="{StaticResource CardTitle}"/><TextBlock Text="Add game folders to Defender exclusions for better perf." Style="{StaticResource CardDesc}"/></StackPanel>
-                                    <Button Name="BtnDefenderOptimize" Grid.Column="1" Content="Optimize ★" Style="{StaticResource BtnAccent}"/>
-                                    <Button Name="BtnDefenderDefault"  Grid.Column="3" Content="Default"     Style="{StaticResource Btn}"/>
-                                </Grid>
-                                <Separator Style="{StaticResource Sep}"/>
-
-                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0"><TextBlock Text="Control Panel Settings" Style="{StaticResource CardTitle}"/><TextBlock Text="Apply full optimized Control Panel + privacy + appearance settings." Style="{StaticResource CardDesc}"/></StackPanel>
-                                    <Button Name="BtnCPOptimize" Grid.Column="1" Content="Optimize ★" Style="{StaticResource BtnAccent}"/>
-                                    <Button Name="BtnCPDefault"  Grid.Column="3" Content="Default"     Style="{StaticResource Btn}"/>
-                                </Grid>
-                                <Separator Style="{StaticResource Sep}"/>
-
-                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0"><TextBlock Text="Tools" Style="{StaticResource CardTitle}"/><TextBlock Text="Autoruns, Cleanup, Restore Point, Core Isolation." Style="{StaticResource CardDesc}"/></StackPanel>
-                                    <Button Name="BtnAutoruns"     Grid.Column="1" Content="Autoruns"      Style="{StaticResource Btn}"/>
-                                    <Button Name="BtnCleanup"      Grid.Column="3" Content="Cleanup"       Style="{StaticResource Btn}"/>
-                                    <Button Name="BtnRestorePoint" Grid.Column="5" Content="Restore Point" Style="{StaticResource Btn}"/>
-                                    <Button Name="BtnCoreIsolation" Grid.Column="7" Content="Core Isolation" Style="{StaticResource Btn}"/>
-                                </Grid>
-                                <Separator Style="{StaticResource Sep}"/>
-
-                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0"><TextBlock Text="Notepad / Control Panel / Sound / Loudness EQ" Style="{StaticResource CardTitle}"/><TextBlock Text="Optimize Notepad, open Control Panel, configure audio, enable Loudness EQ." Style="{StaticResource CardDesc}"/></StackPanel>
-                                    <Button Name="BtnNotepad"     Grid.Column="1" Content="Notepad"     Style="{StaticResource BtnAccent}"/>
-                                    <Button Name="BtnControlPanel" Grid.Column="3" Content="Control Panel" Style="{StaticResource Btn}"/>
-                                    <Button Name="BtnSound"        Grid.Column="5" Content="Sound"         Style="{StaticResource Btn}"/>
-                                    <Button Name="BtnLoudnessEQ"   Grid.Column="7" Content="Loudness EQ"   Style="{StaticResource BtnAccent}"/>
-                                </Grid>
+                                <TextBlock Text="GPU TOOLS" Style="{StaticResource CardGroupHeader}"/>
+                                <UniformGrid Columns="3">
+                                    <Button Name="BtnInstAfterburner" Content="MSI Afterburner"      Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstNPI"         Content="Nvidia Profile Insp." Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstMCT"         Content="More Clock Tool"      Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstCRU"         Content="CRU / SRE"            Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                </UniformGrid>
                             </StackPanel>
                         </Border>
                     </StackPanel>
                 </ScrollViewer>
 
-                <!-- ── 7 · HARDWARE ──────────────────────────────────────── -->
-                <ScrollViewer Name="PanelHardware" Visibility="Collapsed" Padding="24,20,24,16">
+                <!-- SYSTEM -->
+                <ScrollViewer Name="PanelSystem" Visibility="Collapsed" Padding="24,20,24,16">
                     <StackPanel>
-                        <TextBlock Text="Hardware" Style="{StaticResource H1}"/>
+                        <TextBlock Text="System" Style="{StaticResource H1}"/>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="PC" Style="{StaticResource CardGroupHeader}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="PC Check (OCCT)" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Install OCCT and run CPU, RAM &amp; GPU stability tests, with drive / RAM / GPU checklist guidance." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnCheckPC" Grid.Column="1" Content="Run" Style="{StaticResource Btn}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="BIOS" Style="{StaticResource CardGroupHeader}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="BIOS Update &amp; Settings" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Enable password sign-in, search your motherboard, review BIOS tips, then restart to BIOS." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnCheckBios" Grid.Column="1" Content="Run" Style="{StaticResource Btn}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="RESET &amp; REINSTALL" Style="{StaticResource CardGroupHeader}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Factory Reset" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Open Windows recovery settings." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnFactoryReset" Grid.Column="1" Content="Open" Style="{StaticResource BtnAccent}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Reinstall Windows" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Download W10 or W11 installation media." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnReinstallW10" Grid.Column="1" Content="W10" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnReinstallW11" Grid.Column="3" Content="W11" Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Autounattend" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Generate an autounattend.xml for unattended installs." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnAutounattend" Grid.Column="1" Content="Open" Style="{StaticResource Btn}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="ACCOUNT &amp; DRIVERS" Style="{StaticResource CardGroupHeader}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Local Account" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Switch to a local account without a Microsoft login." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnAccountLocal" Grid.Column="1" Content="Open" Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Block Update Drivers" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Stop Windows Update from auto-installing drivers." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnBlockDrivers"   Grid.Column="1" Content="Block"   Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnUnblockDrivers" Grid.Column="3" Content="Unblock" Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Network Driver / To BIOS" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Open Device Manager for network driver, or reboot to BIOS." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnNetworkDriver" Grid.Column="1" Content="Network" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnToBios"        Grid.Column="3" Content="To BIOS" Style="{StaticResource Btn}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="ACTIVATION &amp; LICENSING" Style="{StaticResource CardGroupHeader}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Keys / Activation / Convert to Pro" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Manage product keys, activate Windows, or upgrade Home to Pro." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnKeys"          Grid.Column="1" Content="Keys"       Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnActivation"    Grid.Column="3" Content="Activate"   Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnConvertToPro"  Grid.Column="5" Content="→ Pro"      Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Date / Language / Region / Time" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Open system locale and date/time settings." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnDateLang"    Grid.Column="1" Content="Open"    Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnStartupApps" Grid.Column="3" Content="Startup" Style="{StaticResource Btn}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
 
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
@@ -5046,12 +8865,11 @@ $inputXML = @'
                     </StackPanel>
                 </ScrollViewer>
 
-                <!-- ── 8 · ADVANCED ──────────────────────────────────────── -->
+                <!-- ADVANCED -->
                 <ScrollViewer Name="PanelAdvanced" Visibility="Collapsed" Padding="24,20,24,16">
                     <StackPanel>
                         <TextBlock Text="Advanced" Style="{StaticResource H1}"/>
 
-                        <!-- Security (danger card) -->
                         <Border Style="{StaticResource CardDanger}">
                             <StackPanel>
                                 <TextBlock Text="⚠  SECURITY — USE WITH CARE" Style="{StaticResource CardGroupHeader}" Foreground="#FF6B6B"/>
@@ -5092,81 +8910,9 @@ $inputXML = @'
                             </StackPanel>
                         </Border>
 
-                        <!-- Performance tweaks -->
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
-                                <TextBlock Text="PERFORMANCE TWEAKS" Style="{StaticResource CardGroupHeader}"/>
-
-                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0"><TextBlock Text="Services" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable non-essential Windows background services." Style="{StaticResource CardDesc}"/></StackPanel>
-                                    <Button Name="BtnServicesOff"     Grid.Column="1" Content="Off ★"  Style="{StaticResource BtnAccent}"/>
-                                    <Button Name="BtnServicesDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
-                                </Grid>
-                                <Separator Style="{StaticResource Sep}"/>
-
-                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0"><TextBlock Text="MMAgent Features" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable Memory Manager Agent features (prefetch, superfetch)." Style="{StaticResource CardDesc}"/></StackPanel>
-                                    <Button Name="BtnMMAgentOff"     Grid.Column="1" Content="Off ★"  Style="{StaticResource BtnAccent}"/>
-                                    <Button Name="BtnMMAgentDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
-                                </Grid>
-                                <Separator Style="{StaticResource Sep}"/>
-
-                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0"><TextBlock Text="NVME Faster Driver" Style="{StaticResource CardTitle}"/><TextBlock Text="Use the faster inbox NVMe StorNVMe driver." Style="{StaticResource CardDesc}"/></StackPanel>
-                                    <Button Name="BtnNvmeOn"      Grid.Column="1" Content="Apply ★" Style="{StaticResource BtnAccent}"/>
-                                    <Button Name="BtnNvmeDefault" Grid.Column="3" Content="Default"  Style="{StaticResource Btn}"/>
-                                </Grid>
-                                <Separator Style="{StaticResource Sep}"/>
-
-                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0"><TextBlock Text="Start / Search / Shell / Mobsync" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable shell bloat for faster Start and Search." Style="{StaticResource CardDesc}"/></StackPanel>
-                                    <Button Name="BtnShellOff"     Grid.Column="1" Content="Off ★"  Style="{StaticResource BtnAccent}"/>
-                                    <Button Name="BtnShellDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
-                                </Grid>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Rendering tweaks -->
-                        <Border Style="{StaticResource Card}">
-                            <StackPanel>
-                                <TextBlock Text="RENDERING &amp; CPU" Style="{StaticResource CardGroupHeader}"/>
-
-                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0"><TextBlock Text="MPO (Multiplane Overlay)" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable MPO to fix flickering and tearing in some setups." Style="{StaticResource CardDesc}"/></StackPanel>
-                                    <Button Name="BtnMpoOn"  Grid.Column="1" Content="On (Default)" Style="{StaticResource Btn}"/>
-                                    <Button Name="BtnMpoOff" Grid.Column="3" Content="Off"           Style="{StaticResource BtnAccent}"/>
-                                </Grid>
-                                <Separator Style="{StaticResource Sep}"/>
-
-                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0"><TextBlock Text="Hardware Flip Mode" Style="{StaticResource CardTitle}"/><TextBlock Text="FSO (default) vs FSE (Hardware Legacy Flip)." Style="{StaticResource CardDesc}"/></StackPanel>
-                                    <Button Name="BtnFlipFSO" Grid.Column="1" Content="FSO (Default)" Style="{StaticResource Btn}"/>
-                                    <Button Name="BtnFlipFSE" Grid.Column="3" Content="FSE ★"          Style="{StaticResource BtnAccent}"/>
-                                </Grid>
-                                <Separator Style="{StaticResource Sep}"/>
-
-                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0"><TextBlock Text="HCIF (Hardware Composed Independent Flip)" Style="{StaticResource CardTitle}"/><TextBlock Text="Switch between HCIF and HIF flip modes." Style="{StaticResource CardDesc}"/></StackPanel>
-                                    <Button Name="BtnHcif"  Grid.Column="1" Content="HCIF ★"     Style="{StaticResource BtnAccent}"/>
-                                    <Button Name="BtnHif"   Grid.Column="3" Content="HIF (Default)" Style="{StaticResource Btn}"/>
-                                </Grid>
-                                <Separator Style="{StaticResource Sep}"/>
-
-                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0"><TextBlock Text="ULPS (AMD Ultra Low Power State)" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable ULPS to prevent AMD GPU stutters on multi-GPU." Style="{StaticResource CardDesc}"/></StackPanel>
-                                    <Button Name="BtnUlpsOn"  Grid.Column="1" Content="On (Default)" Style="{StaticResource Btn}"/>
-                                    <Button Name="BtnUlpsOff" Grid.Column="3" Content="Off ★"         Style="{StaticResource BtnAccent}"/>
-                                </Grid>
-                                <Separator Style="{StaticResource Sep}"/>
-
-                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0"><TextBlock Text="ReBar Force (NVIDIA)" Style="{StaticResource CardTitle}"/><TextBlock Text="Force Resizable BAR on/off via Inspector, or use driver default. Option 4 restarts to BIOS." Style="{StaticResource CardDesc}"/></StackPanel>
-                                    <Button Name="BtnReBarDefault" Grid.Column="1" Content="Default" Style="{StaticResource Btn}"/>
-                                    <Button Name="BtnReBarOn"      Grid.Column="3" Content="Force On" Style="{StaticResource BtnAccent}"/>
-                                    <Button Name="BtnReBarOff"     Grid.Column="5" Content="Force Off" Style="{StaticResource Btn}"/>
-                                    <Button Name="BtnReBarToBios"  Grid.Column="7" Content="To BIOS"   Style="{StaticResource Btn}"/>
-                                </Grid>
-                                <Separator Style="{StaticResource Sep}"/>
+                                <TextBlock Text="CPU &amp; DRIVER SIGNING" Style="{StaticResource CardGroupHeader}"/>
 
                                 <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0"><TextBlock Text="Keyboard Shortcuts" Style="{StaticResource CardTitle}"/><TextBlock Text="Off disables Win key, media keys, hotkeys. ESC rebinds to =. Cut/copy/paste still work." Style="{StaticResource CardDesc}"/></StackPanel>
@@ -5240,7 +8986,20 @@ if ($sync.assets -and $sync.assets.logo) {
     try {
         $logoImg = ConvertFrom-Base64Image $sync.assets.logo
         if ($sync.TitleLogo) { $sync.TitleLogo.Source = $logoImg }
-        $sync.window.Icon = $logoImg
+        $sync.window.Icon = $logoImg   # fallback; replaced by the .ico below when present
+    } catch {}
+}
+# Prefer the multi-resolution .ico for the window / taskbar icon (crisper at all sizes)
+if ($sync.assets -and $sync.assets.icon) {
+    try {
+        $icoBytes  = [Convert]::FromBase64String($sync.assets.icon)
+        $icoStream = New-Object System.IO.MemoryStream(,$icoBytes)
+        $icoDec    = [System.Windows.Media.Imaging.BitmapDecoder]::Create(
+                        $icoStream,
+                        [System.Windows.Media.Imaging.BitmapCreateOptions]::None,
+                        [System.Windows.Media.Imaging.BitmapCacheOption]::OnLoad)
+        $icoFrame  = $icoDec.Frames | Sort-Object { $_.PixelWidth } -Descending | Select-Object -First 1
+        if ($icoFrame) { $sync.window.Icon = $icoFrame }
     } catch {}
 }
 
@@ -5272,19 +9031,19 @@ $sync.window.Add_Loaded({
 
 # ── Navigation switching ──────────────────────────────────────────────────────
 $panels = @(
-    "PanelCheck", "PanelRefresh", "PanelSetup", "PanelInstallers",
-    "PanelGraphics", "PanelWindows", "PanelHardware", "PanelAdvanced"
+    "PanelHome", "PanelDebloat", "PanelTweaks", "PanelAppearance",
+    "PanelGraphics", "PanelApps", "PanelSystem", "PanelAdvanced"
 )
 
 $navMap = @{
-    NavCheck     = "PanelCheck"
-    NavRefresh   = "PanelRefresh"
-    NavSetup     = "PanelSetup"
-    NavInstallers= "PanelInstallers"
-    NavGraphics  = "PanelGraphics"
-    NavWindows   = "PanelWindows"
-    NavHardware  = "PanelHardware"
-    NavAdvanced  = "PanelAdvanced"
+    NavHome       = "PanelHome"
+    NavDebloat    = "PanelDebloat"
+    NavTweaks     = "PanelTweaks"
+    NavAppearance = "PanelAppearance"
+    NavGraphics   = "PanelGraphics"
+    NavApps       = "PanelApps"
+    NavSystem     = "PanelSystem"
+    NavAdvanced   = "PanelAdvanced"
 }
 
 foreach ($navName in $navMap.Keys) {
@@ -5311,6 +9070,9 @@ $sync.Keys | Where-Object { $_ -like "Btn*" } | ForEach-Object {
         }.GetNewClosure())
     }
 }
+
+# ── Inject the granular Control Panel tweak rows into their tabs (data-driven) ──
+if (Get-Command Render-CpTweaks -ErrorAction SilentlyContinue) { Render-CpTweaks }
 
 # ── Build a searchable index of every card across all tabs (for global search) ─
 function Get-ElementText([System.Windows.DependencyObject]$el) {
@@ -5340,7 +9102,7 @@ foreach ($p in $panels) {
 
 # ── Hamburger: toggle compact / expanded sidebar ─────────────────────────────
 $sync.SidebarExpanded = $true
-$navNames = @("NavCheck","NavRefresh","NavSetup","NavInstallers","NavGraphics","NavWindows","NavHardware","NavAdvanced")
+$navNames = @("NavHome","NavDebloat","NavTweaks","NavAppearance","NavGraphics","NavApps","NavSystem","NavAdvanced")
 if ($sync.NavHamburger) {
     $sync.NavHamburger.Add_Click({
         $sync.SidebarExpanded = -not $sync.SidebarExpanded
@@ -5383,6 +9145,16 @@ if ($sync.SearchBox -and $sync.SearchPlaceholder) {
             $item.Card.Visibility = if ($match) { [System.Windows.Visibility]::Visible } else { [System.Windows.Visibility]::Collapsed }
             if ($match -and $ql -ne "") { [void]$matchPanels.Add($item.Panel) }
         }
+        # Granular "Individual tweaks" cards (inside collapsed expanders): filter + auto-reveal
+        if ($sync.CpCards) {
+            $expandersWithHits = New-Object System.Collections.Generic.HashSet[object]
+            foreach ($cp in $sync.CpCards) {
+                $match = ($ql -ne "") -and $cp.Text.Contains($ql)
+                $cp.Card.Visibility = if ($ql -eq "" -or $match) { [System.Windows.Visibility]::Visible } else { [System.Windows.Visibility]::Collapsed }
+                if ($match) { [void]$expandersWithHits.Add($cp.Expander); [void]$matchPanels.Add($cp.Panel) }
+            }
+            foreach ($exp in $sync.CpExpanders) { $exp.IsExpanded = ($ql -ne "" -and $expandersWithHits.Contains($exp)) }
+        }
         if ($ql -ne "") {
             $cur = $panels | Where-Object { $sync[$_].Visibility -eq [System.Windows.Visibility]::Visible } | Select-Object -First 1
             if (-not $matchPanels.Contains($cur)) {
@@ -5404,6 +9176,42 @@ function Set-Status {
         $sync.StatusText.Foreground = $Color
     }, "Normal")
 }
+
+# ── Home dashboard: populate "This PC" info on a background runspace ──────────
+Invoke-RunInBackground -StatusStart "Loading system info..." -StatusDone "Ready" -ScriptBlock {
+    function Set-Sys([string]$name, [string]$value) {
+        $sync.window.Dispatcher.Invoke([action]{
+            if ($sync[$name]) { $sync[$name].Text = $value }
+        }, "Normal")
+    }
+    try {
+        $os = Get-CimInstance Win32_OperatingSystem
+        Set-Sys "SysOs" ("{0} (build {1})" -f ($os.Caption -replace '^Microsoft ',''), $os.BuildNumber)
+    } catch { Set-Sys "SysOs" "Unknown" }
+    try { Set-Sys "SysCpu" ((Get-CimInstance Win32_Processor | Select-Object -First 1).Name.Trim()) } catch { Set-Sys "SysCpu" "Unknown" }
+    try { Set-Sys "SysGpu" (((Get-CimInstance Win32_VideoController | Where-Object { $_.Name } | Select-Object -Expand Name) -join ", ")) } catch { Set-Sys "SysGpu" "Unknown" }
+    try {
+        $ram = [math]::Round((Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory / 1GB)
+        Set-Sys "SysRam" ("{0} GB" -f $ram)
+    } catch { Set-Sys "SysRam" "Unknown" }
+    try { Set-Sys "SysHost" ("{0} \ {1}" -f $env:COMPUTERNAME, $env:USERNAME) } catch { Set-Sys "SysHost" "Unknown" }
+}
+
+# ── Scheduling combos: reflect the current registry values on launch ──────────
+try {
+    if ($sync.CboSvcHost) {
+        $svc = @(380000, 4194304, 8388608, 16777216, 33554432, 67108864, 134217728, 268435456)
+        $cur = (Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control" -Name "SvcHostSplitThresholdInKB" -ErrorAction SilentlyContinue).SvcHostSplitThresholdInKB
+        $idx = if ($null -ne $cur) { [array]::IndexOf($svc, [int]$cur) } else { -1 }
+        if ($idx -ge 0) { $sync.CboSvcHost.SelectedIndex = $idx }
+    }
+    if ($sync.CboPrioritySep) {
+        $pri = @(38, 42, 40, 22, 6)
+        $cur = (Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl" -Name "Win32PrioritySeparation" -ErrorAction SilentlyContinue).Win32PrioritySeparation
+        $idx = [array]::IndexOf($pri, [int]$cur)
+        if ($idx -ge 0) { $sync.CboPrioritySep.SelectedIndex = $idx }
+    }
+} catch {}
 
 # ── Show window ───────────────────────────────────────────────────────────────
 $sync.window.ShowDialog() | Out-Null

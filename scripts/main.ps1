@@ -27,7 +27,20 @@ if ($sync.assets -and $sync.assets.logo) {
     try {
         $logoImg = ConvertFrom-Base64Image $sync.assets.logo
         if ($sync.TitleLogo) { $sync.TitleLogo.Source = $logoImg }
-        $sync.window.Icon = $logoImg
+        $sync.window.Icon = $logoImg   # fallback; replaced by the .ico below when present
+    } catch {}
+}
+# Prefer the multi-resolution .ico for the window / taskbar icon (crisper at all sizes)
+if ($sync.assets -and $sync.assets.icon) {
+    try {
+        $icoBytes  = [Convert]::FromBase64String($sync.assets.icon)
+        $icoStream = New-Object System.IO.MemoryStream(,$icoBytes)
+        $icoDec    = [System.Windows.Media.Imaging.BitmapDecoder]::Create(
+                        $icoStream,
+                        [System.Windows.Media.Imaging.BitmapCreateOptions]::None,
+                        [System.Windows.Media.Imaging.BitmapCacheOption]::OnLoad)
+        $icoFrame  = $icoDec.Frames | Sort-Object { $_.PixelWidth } -Descending | Select-Object -First 1
+        if ($icoFrame) { $sync.window.Icon = $icoFrame }
     } catch {}
 }
 
@@ -59,19 +72,19 @@ $sync.window.Add_Loaded({
 
 # ── Navigation switching ──────────────────────────────────────────────────────
 $panels = @(
-    "PanelCheck", "PanelRefresh", "PanelSetup", "PanelInstallers",
-    "PanelGraphics", "PanelWindows", "PanelHardware", "PanelAdvanced"
+    "PanelHome", "PanelDebloat", "PanelTweaks", "PanelAppearance",
+    "PanelGraphics", "PanelApps", "PanelSystem", "PanelAdvanced"
 )
 
 $navMap = @{
-    NavCheck     = "PanelCheck"
-    NavRefresh   = "PanelRefresh"
-    NavSetup     = "PanelSetup"
-    NavInstallers= "PanelInstallers"
-    NavGraphics  = "PanelGraphics"
-    NavWindows   = "PanelWindows"
-    NavHardware  = "PanelHardware"
-    NavAdvanced  = "PanelAdvanced"
+    NavHome       = "PanelHome"
+    NavDebloat    = "PanelDebloat"
+    NavTweaks     = "PanelTweaks"
+    NavAppearance = "PanelAppearance"
+    NavGraphics   = "PanelGraphics"
+    NavApps       = "PanelApps"
+    NavSystem     = "PanelSystem"
+    NavAdvanced   = "PanelAdvanced"
 }
 
 foreach ($navName in $navMap.Keys) {
@@ -98,6 +111,9 @@ $sync.Keys | Where-Object { $_ -like "Btn*" } | ForEach-Object {
         }.GetNewClosure())
     }
 }
+
+# ── Inject the granular Control Panel tweak rows into their tabs (data-driven) ──
+if (Get-Command Render-CpTweaks -ErrorAction SilentlyContinue) { Render-CpTweaks }
 
 # ── Build a searchable index of every card across all tabs (for global search) ─
 function Get-ElementText([System.Windows.DependencyObject]$el) {
@@ -127,7 +143,7 @@ foreach ($p in $panels) {
 
 # ── Hamburger: toggle compact / expanded sidebar ─────────────────────────────
 $sync.SidebarExpanded = $true
-$navNames = @("NavCheck","NavRefresh","NavSetup","NavInstallers","NavGraphics","NavWindows","NavHardware","NavAdvanced")
+$navNames = @("NavHome","NavDebloat","NavTweaks","NavAppearance","NavGraphics","NavApps","NavSystem","NavAdvanced")
 if ($sync.NavHamburger) {
     $sync.NavHamburger.Add_Click({
         $sync.SidebarExpanded = -not $sync.SidebarExpanded
@@ -170,6 +186,16 @@ if ($sync.SearchBox -and $sync.SearchPlaceholder) {
             $item.Card.Visibility = if ($match) { [System.Windows.Visibility]::Visible } else { [System.Windows.Visibility]::Collapsed }
             if ($match -and $ql -ne "") { [void]$matchPanels.Add($item.Panel) }
         }
+        # Granular "Individual tweaks" cards (inside collapsed expanders): filter + auto-reveal
+        if ($sync.CpCards) {
+            $expandersWithHits = New-Object System.Collections.Generic.HashSet[object]
+            foreach ($cp in $sync.CpCards) {
+                $match = ($ql -ne "") -and $cp.Text.Contains($ql)
+                $cp.Card.Visibility = if ($ql -eq "" -or $match) { [System.Windows.Visibility]::Visible } else { [System.Windows.Visibility]::Collapsed }
+                if ($match) { [void]$expandersWithHits.Add($cp.Expander); [void]$matchPanels.Add($cp.Panel) }
+            }
+            foreach ($exp in $sync.CpExpanders) { $exp.IsExpanded = ($ql -ne "" -and $expandersWithHits.Contains($exp)) }
+        }
         if ($ql -ne "") {
             $cur = $panels | Where-Object { $sync[$_].Visibility -eq [System.Windows.Visibility]::Visible } | Select-Object -First 1
             if (-not $matchPanels.Contains($cur)) {
@@ -191,6 +217,42 @@ function Set-Status {
         $sync.StatusText.Foreground = $Color
     }, "Normal")
 }
+
+# ── Home dashboard: populate "This PC" info on a background runspace ──────────
+Invoke-RunInBackground -StatusStart "Loading system info..." -StatusDone "Ready" -ScriptBlock {
+    function Set-Sys([string]$name, [string]$value) {
+        $sync.window.Dispatcher.Invoke([action]{
+            if ($sync[$name]) { $sync[$name].Text = $value }
+        }, "Normal")
+    }
+    try {
+        $os = Get-CimInstance Win32_OperatingSystem
+        Set-Sys "SysOs" ("{0} (build {1})" -f ($os.Caption -replace '^Microsoft ',''), $os.BuildNumber)
+    } catch { Set-Sys "SysOs" "Unknown" }
+    try { Set-Sys "SysCpu" ((Get-CimInstance Win32_Processor | Select-Object -First 1).Name.Trim()) } catch { Set-Sys "SysCpu" "Unknown" }
+    try { Set-Sys "SysGpu" (((Get-CimInstance Win32_VideoController | Where-Object { $_.Name } | Select-Object -Expand Name) -join ", ")) } catch { Set-Sys "SysGpu" "Unknown" }
+    try {
+        $ram = [math]::Round((Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory / 1GB)
+        Set-Sys "SysRam" ("{0} GB" -f $ram)
+    } catch { Set-Sys "SysRam" "Unknown" }
+    try { Set-Sys "SysHost" ("{0} \ {1}" -f $env:COMPUTERNAME, $env:USERNAME) } catch { Set-Sys "SysHost" "Unknown" }
+}
+
+# ── Scheduling combos: reflect the current registry values on launch ──────────
+try {
+    if ($sync.CboSvcHost) {
+        $svc = @(380000, 4194304, 8388608, 16777216, 33554432, 67108864, 134217728, 268435456)
+        $cur = (Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control" -Name "SvcHostSplitThresholdInKB" -ErrorAction SilentlyContinue).SvcHostSplitThresholdInKB
+        $idx = if ($null -ne $cur) { [array]::IndexOf($svc, [int]$cur) } else { -1 }
+        if ($idx -ge 0) { $sync.CboSvcHost.SelectedIndex = $idx }
+    }
+    if ($sync.CboPrioritySep) {
+        $pri = @(38, 42, 40, 22, 6)
+        $cur = (Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl" -Name "Win32PrioritySeparation" -ErrorAction SilentlyContinue).Win32PrioritySeparation
+        $idx = [array]::IndexOf($pri, [int]$cur)
+        if ($idx -ge 0) { $sync.CboPrioritySep.SelectedIndex = $idx }
+    }
+} catch {}
 
 # ── Show window ───────────────────────────────────────────────────────────────
 $sync.window.ShowDialog() | Out-Null
