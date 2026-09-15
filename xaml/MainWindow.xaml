@@ -1,0 +1,1238 @@
+<Window Name="AkariWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Akari Tool"
+        Width="1120" Height="740"
+        MinWidth="900" MinHeight="580"
+        WindowStartupLocation="CenterScreen"
+        Background="#1C1C1C"
+        Foreground="White"
+        FontFamily="Segoe UI Variable Text, Segoe UI"
+        FontSize="13">
+
+    <!-- WindowChrome: custom title bar area, keep system resize + caption buttons -->
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="40"
+                      ResizeBorderThickness="5"
+                      UseAeroCaptionButtons="True"
+                      GlassFrameThickness="-1"/>
+    </WindowChrome.WindowChrome>
+
+    <Window.Resources>
+
+        <!-- ── Brushes ─────────────────────────────────────────────────────── -->
+        <SolidColorBrush x:Key="SidebarBg"        Color="#11000000"/>
+        <SolidColorBrush x:Key="TitleBarBg"       Color="#0D000000"/>
+        <SolidColorBrush x:Key="CardBg"           Color="#1AFFFFFF"/>
+        <SolidColorBrush x:Key="CardBorder"       Color="#18FFFFFF"/>
+        <SolidColorBrush x:Key="SeparatorBrush"   Color="#14FFFFFF"/>
+        <SolidColorBrush x:Key="AccentBrush"      Color="#CC2828"/>
+        <SolidColorBrush x:Key="AccentHover"      Color="#E03535"/>
+        <SolidColorBrush x:Key="AccentPress"      Color="#BB2020"/>
+        <SolidColorBrush x:Key="TextPrimary"      Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="TextSecondary"    Color="#999999"/>
+        <SolidColorBrush x:Key="BtnDefaultBg"     Color="#17FFFFFF"/>
+        <SolidColorBrush x:Key="BtnDefaultHover"  Color="#26FFFFFF"/>
+        <SolidColorBrush x:Key="BtnDefaultPress"  Color="#0DFFFFFF"/>
+        <SolidColorBrush x:Key="BtnDefaultBorder" Color="#20FFFFFF"/>
+        <SolidColorBrush x:Key="NavHover"         Color="#12FFFFFF"/>
+        <SolidColorBrush x:Key="NavSelected"      Color="#1AFFFFFF"/>
+        <SolidColorBrush x:Key="DangerBg"         Color="#1AFF3333"/>
+        <SolidColorBrush x:Key="DangerBorder"     Color="#25FF4444"/>
+
+        <!-- ── ScrollBar (thin, Win11-style) ──────────────────────────────── -->
+        <Style TargetType="ScrollBar">
+            <Setter Property="Width"  Value="6"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollBar">
+                        <Grid Background="Transparent">
+                            <Track Name="PART_Track" IsDirectionReversed="True">
+                                <Track.Thumb>
+                                    <Thumb>
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Border Background="#35FFFFFF" CornerRadius="3" Margin="1,4"/>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="ScrollViewer">
+            <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="HorizontalScrollBarVisibility" Value="Disabled"/>
+        </Style>
+
+        <!-- ── Default button ─────────────────────────────────────────────── -->
+        <Style x:Key="Btn" TargetType="Button">
+            <Setter Property="Background"       Value="{StaticResource BtnDefaultBg}"/>
+            <Setter Property="Foreground"       Value="{StaticResource TextPrimary}"/>
+            <Setter Property="BorderBrush"      Value="{StaticResource BtnDefaultBorder}"/>
+            <Setter Property="BorderThickness"  Value="1"/>
+            <Setter Property="Padding"          Value="16,7"/>
+            <Setter Property="MinWidth"         Value="112"/>
+            <Setter Property="FontFamily"       Value="Segoe UI Variable Text, Segoe UI"/>
+            <Setter Property="FontSize"         Value="13"/>
+            <Setter Property="Cursor"           Value="Hand"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Root"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="5"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="{StaticResource BtnDefaultHover}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="{StaticResource BtnDefaultPress}"/>
+                                <Setter TargetName="Root" Property="Opacity" Value="0.8"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Root" Property="Opacity" Value="0.35"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ── Accent (red) button ────────────────────────────────────────── -->
+        <Style x:Key="BtnAccent" TargetType="Button" BasedOn="{StaticResource Btn}">
+            <Setter Property="Background"  Value="{StaticResource AccentBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource AccentHover}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Root"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="1" CornerRadius="5"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="{StaticResource AccentHover}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="{StaticResource AccentPress}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Root" Property="Opacity" Value="0.35"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ── Nav radio button ───────────────────────────────────────────── -->
+        <Style x:Key="NavBtn" TargetType="RadioButton">
+            <Setter Property="Background"       Value="Transparent"/>
+            <Setter Property="Foreground"       Value="#AAAAAA"/>
+            <Setter Property="Margin"           Value="8,1"/>
+            <Setter Property="Height"           Value="40"/>
+            <Setter Property="Cursor"           Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="Root" Background="Transparent" CornerRadius="6" Padding="10,0">
+                            <Grid>
+                                <!-- Left accent pill (visible when selected) -->
+                                <Border x:Name="Pill" Width="3" Height="16"
+                                        Background="{StaticResource AccentBrush}"
+                                        CornerRadius="2" HorizontalAlignment="Left"
+                                        VerticalAlignment="Center" Margin="-2,0,0,0"
+                                        Visibility="Collapsed"/>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0,0,0">
+                                    <TextBlock x:Name="Icon"
+                                               FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                               FontSize="15"
+                                               Text="{TemplateBinding Tag}"
+                                               Foreground="#888888"
+                                               VerticalAlignment="Center"
+                                               Width="22"/>
+                                    <TextBlock Text="{TemplateBinding Content}"
+                                               FontFamily="Segoe UI Variable Text, Segoe UI"
+                                               FontSize="13"
+                                               Foreground="{TemplateBinding Foreground}"
+                                               VerticalAlignment="Center"
+                                               Margin="10,0,0,0"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="{StaticResource NavHover}"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter TargetName="Icon"     Property="Foreground" Value="#CCCCCC"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="{StaticResource NavSelected}"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter TargetName="Icon" Property="Foreground" Value="White"/>
+                                <Setter TargetName="Pill" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ── Card (section grouping box) ───────────────────────────────── -->
+        <Style x:Key="Card" TargetType="Border">
+            <Setter Property="Background"       Value="{StaticResource CardBg}"/>
+            <Setter Property="BorderBrush"      Value="{StaticResource CardBorder}"/>
+            <Setter Property="BorderThickness"  Value="1"/>
+            <Setter Property="CornerRadius"     Value="8"/>
+            <Setter Property="Padding"          Value="16,14"/>
+            <Setter Property="Margin"           Value="0,0,0,10"/>
+        </Style>
+
+        <!-- ── Danger card (for risky Advanced tweaks) ───────────────────── -->
+        <Style x:Key="CardDanger" TargetType="Border" BasedOn="{StaticResource Card}">
+            <Setter Property="Background"  Value="{StaticResource DangerBg}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource DangerBorder}"/>
+        </Style>
+
+        <!-- ── Text styles ────────────────────────────────────────────────── -->
+        <Style x:Key="H1" TargetType="TextBlock">
+            <Setter Property="FontFamily"  Value="Segoe UI Variable Display, Segoe UI"/>
+            <Setter Property="FontSize"    Value="22"/>
+            <Setter Property="FontWeight"  Value="SemiBold"/>
+            <Setter Property="Foreground"  Value="{StaticResource TextPrimary}"/>
+            <Setter Property="Margin"      Value="0,0,0,18"/>
+        </Style>
+        <Style x:Key="CardTitle" TargetType="TextBlock">
+            <Setter Property="FontFamily"  Value="Segoe UI Variable Text, Segoe UI"/>
+            <Setter Property="FontSize"    Value="13"/>
+            <Setter Property="FontWeight"  Value="SemiBold"/>
+            <Setter Property="Foreground"  Value="{StaticResource TextPrimary}"/>
+        </Style>
+        <Style x:Key="CardDesc" TargetType="TextBlock">
+            <Setter Property="FontFamily"   Value="Segoe UI Variable Text, Segoe UI"/>
+            <Setter Property="FontSize"     Value="12"/>
+            <Setter Property="Foreground"   Value="{StaticResource TextSecondary}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Margin"       Value="0,2,0,0"/>
+        </Style>
+        <Style x:Key="CardGroupHeader" TargetType="TextBlock">
+            <Setter Property="FontFamily"  Value="Segoe UI Variable Text, Segoe UI"/>
+            <Setter Property="FontSize"    Value="11"/>
+            <Setter Property="FontWeight"  Value="SemiBold"/>
+            <Setter Property="Foreground"  Value="{StaticResource TextSecondary}"/>
+            <Setter Property="Margin"      Value="0,4,0,8"/>
+        </Style>
+
+        <!-- ── Separator ──────────────────────────────────────────────────── -->
+        <Style x:Key="Sep" TargetType="Separator">
+            <Setter Property="Background" Value="{StaticResource SeparatorBrush}"/>
+            <Setter Property="Height"     Value="1"/>
+            <Setter Property="Margin"     Value="0,8"/>
+        </Style>
+
+        <!-- ── ComboBox (dark, Win11-style) — full template so it isn't white ── -->
+        <ControlTemplate x:Key="ComboToggle" TargetType="ToggleButton">
+            <Border x:Name="bd" Background="{StaticResource BtnDefaultBg}" BorderBrush="{StaticResource BtnDefaultBorder}"
+                    BorderThickness="1" CornerRadius="6">
+                <Path HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,10,0"
+                      Data="M0,0 L4,4 L8,0" Stroke="{StaticResource TextSecondary}" StrokeThickness="1.4"/>
+            </Border>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter TargetName="bd" Property="Background" Value="{StaticResource BtnDefaultHover}"/>
+                </Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+
+        <Style TargetType="ComboBox">
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI"/>
+            <Setter Property="FontSize"   Value="13"/>
+            <Setter Property="Height"     Value="32"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <ToggleButton Template="{StaticResource ComboToggle}" Focusable="False"
+                                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            <ContentPresenter Margin="12,0,28,0" VerticalAlignment="Center" HorizontalAlignment="Left"
+                                              Content="{TemplateBinding SelectionBoxItem}"
+                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                              IsHitTestVisible="False"/>
+                            <Popup IsOpen="{TemplateBinding IsDropDownOpen}" Placement="Bottom"
+                                   AllowsTransparency="True" Focusable="False" PopupAnimation="Slide">
+                                <Border Background="#26262A" BorderBrush="{StaticResource BtnDefaultBorder}"
+                                        BorderThickness="1" CornerRadius="6" Margin="0,4,0,0"
+                                        MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}">
+                                    <ScrollViewer MaxHeight="260">
+                                        <ItemsPresenter/>
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="ComboBoxItem">
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="Padding"    Value="10,7"/>
+            <Setter Property="FontSize"   Value="13"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBoxItem">
+                        <Border x:Name="ib" Background="Transparent" Padding="{TemplateBinding Padding}" CornerRadius="4" Margin="3,1">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ib" Property="Background" Value="{StaticResource NavHover}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="ib" Property="Background" Value="{StaticResource NavSelected}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+    </Window.Resources>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         ROOT GRID: title bar row + content row
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="40"/>    <!-- title bar -->
+            <RowDefinition Height="*"/>     <!-- body -->
+            <RowDefinition Height="28"/>    <!-- status bar -->
+        </Grid.RowDefinitions>
+
+        <!-- ── Title bar ───────────────────────────────────────────────────── -->
+        <Border Grid.Row="0" Background="{StaticResource TitleBarBg}">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
+                <!-- Brand logo (Source assigned in main.ps1 from embedded base64) -->
+                <Image Name="TitleLogo" Height="22" VerticalAlignment="Center" Margin="0,0,8,0"
+                       RenderOptions.BitmapScalingMode="HighQuality"/>
+                <TextBlock Text="Akari Tool"
+                           FontFamily="Segoe UI Variable Display, Segoe UI"
+                           FontSize="13" FontWeight="SemiBold"
+                           Foreground="White" VerticalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+
+        <!-- ── Body: sidebar + content ─────────────────────────────────────── -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="210"/>
+                <ColumnDefinition Width="1"/>     <!-- divider -->
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Sidebar -->
+            <Grid Grid.Column="0" Background="{StaticResource SidebarBg}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0" Margin="0,10,0,0">
+                    <RadioButton Name="NavCheck"      Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE8B3;" Content="Check"      IsChecked="True"/>
+                    <RadioButton Name="NavRefresh"    Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE72C;" Content="Refresh"/>
+                    <RadioButton Name="NavSetup"      Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE713;" Content="Setup"/>
+                    <RadioButton Name="NavInstallers" Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE7B8;" Content="Installers"/>
+                    <RadioButton Name="NavGraphics"   Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE7F4;" Content="Graphics"/>
+                    <RadioButton Name="NavWindows"    Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE770;" Content="Windows"/>
+                    <RadioButton Name="NavHardware"   Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xEBD2;" Content="Hardware"/>
+                    <RadioButton Name="NavAdvanced"   Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE756;" Content="Advanced"/>
+                </StackPanel>
+
+                <!-- Version footer -->
+                <StackPanel Grid.Row="1" Margin="16,12">
+                    <TextBlock Text="Akari Tool  v1.0" FontSize="11" Foreground="#444444"/>
+                    <TextBlock Text="by isleap · Fr33thy scripts" FontSize="11" Foreground="#444444"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- Sidebar divider -->
+            <Border Grid.Column="1" Background="{StaticResource SeparatorBrush}"/>
+
+            <!-- ══ CONTENT AREA ════════════════════════════════════════════ -->
+            <Grid Grid.Column="2" Background="Transparent">
+
+                <!-- ── 1 · CHECK ─────────────────────────────────────────── -->
+                <ScrollViewer Name="PanelCheck" Padding="24,20,24,16">
+                    <StackPanel>
+                        <TextBlock Text="Check" Style="{StaticResource H1}"/>
+
+                        <!-- PC -->
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="PC" Style="{StaticResource CardGroupHeader}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="PC Check (OCCT)" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Install OCCT and run CPU, RAM &amp; GPU stability tests, with drive / RAM / GPU checklist guidance." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnCheckPC" Grid.Column="1" Content="Run" Style="{StaticResource Btn}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- BIOS -->
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="BIOS" Style="{StaticResource CardGroupHeader}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="BIOS Update &amp; Settings" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Enable password sign-in, search your motherboard, review BIOS tips, then restart to BIOS." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnCheckBios" Grid.Column="1" Content="Run" Style="{StaticResource Btn}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- ── 2 · REFRESH ───────────────────────────────────────── -->
+                <ScrollViewer Name="PanelRefresh" Visibility="Collapsed" Padding="24,20,24,16">
+                    <StackPanel>
+                        <TextBlock Text="Refresh" Style="{StaticResource H1}"/>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="RESET &amp; REINSTALL" Style="{StaticResource CardGroupHeader}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Factory Reset" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Open Windows recovery settings." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnFactoryReset" Grid.Column="1" Content="Open" Style="{StaticResource BtnAccent}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Reinstall Windows" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Download W10 or W11 installation media." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnReinstallW10" Grid.Column="1" Content="W10" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnReinstallW11" Grid.Column="3" Content="W11" Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Autounattend" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Generate an autounattend.xml for unattended installs." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnAutounattend" Grid.Column="1" Content="Open" Style="{StaticResource Btn}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="ACCOUNT &amp; DRIVERS" Style="{StaticResource CardGroupHeader}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Local Account" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Switch to a local account without a Microsoft login." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnAccountLocal" Grid.Column="1" Content="Open" Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Block Update Drivers" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Stop Windows Update from auto-installing drivers." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnBlockDrivers"   Grid.Column="1" Content="Block"   Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnUnblockDrivers" Grid.Column="3" Content="Unblock" Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Network Driver / To BIOS" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Open Device Manager for network driver, or reboot to BIOS." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnNetworkDriver" Grid.Column="1" Content="Network" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnToBios"        Grid.Column="3" Content="To BIOS" Style="{StaticResource Btn}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- ── 3 · SETUP ─────────────────────────────────────────── -->
+                <ScrollViewer Name="PanelSetup" Visibility="Collapsed" Padding="24,20,24,16">
+                    <StackPanel>
+                        <TextBlock Text="Setup" Style="{StaticResource H1}"/>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="SYSTEM" Style="{StaticResource CardGroupHeader}"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="BitLocker" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Enable or disable BitLocker drive encryption." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnBitlockerOff" Grid.Column="1" Content="Off ★" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnBitlockerOn"  Grid.Column="3" Content="On"    Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Memory Compression" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Compresses RAM pages. Off reduces CPU overhead for gaming." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnMemCompOff"   Grid.Column="1" Content="Off ★" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnMemCompOn"    Grid.Column="3" Content="On"    Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnMemCompCheck" Grid.Column="5" Content="Check" Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Background Apps" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Prevent apps from running in the background." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnBgAppsOff"     Grid.Column="1" Content="Off ★"  Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnBgAppsDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="WINDOWS &amp; APPS" Style="{StaticResource CardGroupHeader}"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Edge Settings" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Apply optimized Edge browser settings." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnEdgeOptimize" Grid.Column="1" Content="Optimize ★" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnEdgeDefault"  Grid.Column="3" Content="Default"    Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Store Settings" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Apply optimized Microsoft Store settings." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnStoreOptimize" Grid.Column="1" Content="Optimize ★" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnStoreDefault"  Grid.Column="3" Content="Default"    Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Pause Updates" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Open Windows Update settings to pause updates." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnUpdatesPause" Grid.Column="1" Content="Open" Style="{StaticResource Btn}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="ACTIVATION &amp; LICENSING" Style="{StaticResource CardGroupHeader}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Keys / Activation / Convert to Pro" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Manage product keys, activate Windows, or upgrade Home to Pro." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnKeys"          Grid.Column="1" Content="Keys"       Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnActivation"    Grid.Column="3" Content="Activate"   Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnConvertToPro"  Grid.Column="5" Content="→ Pro"      Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Date / Language / Region / Time" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Open system locale and date/time settings." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnDateLang"    Grid.Column="1" Content="Open"    Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnStartupApps" Grid.Column="3" Content="Startup" Style="{StaticResource Btn}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- ── 4 · INSTALLERS ────────────────────────────────────── -->
+                <ScrollViewer Name="PanelInstallers" Visibility="Collapsed" Padding="24,20,24,16">
+                    <StackPanel>
+                        <TextBlock Text="Installers" Style="{StaticResource H1}"/>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="GAME LAUNCHERS &amp; BROWSERS" Style="{StaticResource CardGroupHeader}"/>
+                                <TextBlock Text="Tip: disable cloud sync, hardware acceleration, startup, and overlays in each app after installing." Foreground="#888888" FontSize="12" Margin="0,0,0,12" TextWrapping="Wrap"/>
+                                <UniformGrid Columns="3" Margin="0,4,0,0">
+                                    <Button Name="BtnInstSteam"    Content="Steam"            Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstEpic"     Content="Epic Games"        Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstBattlenet" Content="Battle.net"       Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstEA"       Content="EA App"            Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstUbisoft"  Content="Ubisoft Connect"   Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstRockstar" Content="Rockstar Games"    Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstLOL"      Content="League of Legends" Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstValorant" Content="Valorant"          Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstEFT"      Content="Escape from Tarkov" Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstRoblox"   Content="Roblox"            Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstChrome"   Content="Google Chrome"     Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstBrave"    Content="Brave"             Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstFirefox"  Content="Firefox"           Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstDiscord"  Content="Discord"           Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstSpotify"  Content="Spotify"           Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstOBS"      Content="OBS Studio"        Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstNotepad"  Content="Notepad++"         Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInst7Zip"     Content="7-Zip"             Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstGOG"      Content="GOG"               Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstPotPlayer" Content="PotPlayer"        Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstOMM"      Content="Onboard Mem Mgr"   Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstFrameView" Content="FrameView"        Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstNvApp"    Content="Nvidia App"        Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstHelium"   Content="Helium"            Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                </UniformGrid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="GPU TOOLS" Style="{StaticResource CardGroupHeader}"/>
+                                <UniformGrid Columns="3">
+                                    <Button Name="BtnInstAfterburner" Content="MSI Afterburner"      Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstNPI"         Content="Nvidia Profile Insp." Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstMCT"         Content="More Clock Tool"      Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstCRU"         Content="CRU / SRE"            Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                </UniformGrid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- ── 5 · GRAPHICS ──────────────────────────────────────── -->
+                <ScrollViewer Name="PanelGraphics" Visibility="Collapsed" Padding="24,20,24,16">
+                    <StackPanel>
+                        <TextBlock Text="Graphics" Style="{StaticResource H1}"/>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="DRIVER MANAGEMENT" Style="{StaticResource CardGroupHeader}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="DDU — Driver Clean" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Download DDU and wipe your current GPU driver cleanly." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnDduAuto"   Grid.Column="1" Content="Auto ★"  Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnDduManual" Grid.Column="3" Content="Manual"   Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Install Latest Driver" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Download and install the latest GPU driver for your brand." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnDriverNvidia" Grid.Column="1" Content="NVIDIA" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnDriverAmd"    Grid.Column="3" Content="AMD"    Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnDriverIntel"  Grid.Column="5" Content="Intel"  Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Debloat Driver + Apply Settings" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Install driver without bloat and apply optimized GPU settings." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnDriverDebloatNvidia" Grid.Column="1" Content="NVIDIA" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnDriverDebloatAmd"    Grid.Column="3" Content="AMD"    Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnDriverDebloatIntel"  Grid.Column="5" Content="Intel"  Style="{StaticResource BtnAccent}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="GPU SETTINGS" Style="{StaticResource CardGroupHeader}"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="NVIDIA Settings" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Apply optimized NVIDIA control panel settings." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnNvidiaOn"      Grid.Column="1" Content="Apply ★" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnNvidiaDefault" Grid.Column="3" Content="Default"  Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="AMD Settings" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Apply optimized AMD Radeon settings." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnAmdOn"      Grid.Column="1" Content="Apply ★" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnAmdDefault" Grid.Column="3" Content="Default"  Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Intel Settings" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Apply optimized Intel Arc / iGPU settings." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnIntelOn"      Grid.Column="1" Content="Apply ★" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnIntelDefault" Grid.Column="3" Content="Default"  Style="{StaticResource Btn}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="ADVANCED GPU TWEAKS" Style="{StaticResource CardGroupHeader}"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="HDCP" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Disable HDCP — reduces GPU overhead in some games." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnHdcpOff"     Grid.Column="1" Content="Off ★"  Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnHdcpDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="P0 State" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Force GPU to stay in highest performance state." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnP0On"      Grid.Column="1" Content="On ★"   Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnP0Default" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="MSI Mode" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Enable Message Signaled Interrupts for the GPU." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnMsiOn"  Grid.Column="1" Content="On ★" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnMsiOff" Grid.Column="3" Content="Off"   Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="DirectX / C++ Runtimes" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Install or update DirectX and Visual C++ redistributables." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnDirectX"   Grid.Column="1" Content="DirectX" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnCppRuntime" Grid.Column="3" Content="C++"    Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Resolution / Refresh Rate  ·  HAGS + Windowed Opt." Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Open display settings for resolution and HAGS controls." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnResolution" Grid.Column="1" Content="Resolution" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnHags"       Grid.Column="3" Content="HAGS"       Style="{StaticResource Btn}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- ── 6 · WINDOWS ───────────────────────────────────────── -->
+                <ScrollViewer Name="PanelWindows" Visibility="Collapsed" Padding="24,20,24,16">
+                    <StackPanel>
+                        <TextBlock Text="Windows" Style="{StaticResource H1}"/>
+
+                        <!-- Appearance -->
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="APPEARANCE" Style="{StaticResource CardGroupHeader}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Start Menu / Taskbar" Style="{StaticResource CardTitle}"/><TextBlock Text="Clean taskbar — remove search, widgets, chat." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnTaskbarClean"   Grid.Column="1" Content="Clean ★"  Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnTaskbarDefault" Grid.Column="3" Content="Default"   Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Start Menu Layout" Style="{StaticResource CardTitle}"/><TextBlock Text="Set the recommended Start Menu layout for your Windows version." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnStartMenu25H2" Grid.Column="1" Content="25H2 ★" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnStartMenu24H2" Grid.Column="3" Content="24H2"    Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Context Menu" Style="{StaticResource CardTitle}"/><TextBlock Text="Restore the classic Windows 10-style right-click context menu." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnContextClean"   Grid.Column="1" Content="Clean ★"  Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnContextDefault" Grid.Column="3" Content="Default"   Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Black Theme + Wallpaper + Account Picture" Style="{StaticResource CardTitle}"/><TextBlock Text="Apply a full black theme across the OS." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnThemeBlack"     Grid.Column="1" Content="Theme ★"    Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnWallpaperBlack" Grid.Column="3" Content="Wallpaper ★" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnAccountBlack"   Grid.Column="5" Content="Picture ★"   Style="{StaticResource BtnAccent}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Start Menu Shortcuts" Style="{StaticResource CardTitle}"/><TextBlock Text="Open pinned shortcuts settings." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnStartShortcuts" Grid.Column="1" Content="Open" Style="{StaticResource Btn}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Performance -->
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="PERFORMANCE" Style="{StaticResource CardGroupHeader}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Power Plan" Style="{StaticResource CardTitle}"/><TextBlock Text="Apply a high-performance or custom Ultimate power plan." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnPowerPlanOn"      Grid.Column="1" Content="Apply ★" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnPowerPlanDefault" Grid.Column="3" Content="Default"  Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Timer Resolution" Style="{StaticResource CardTitle}"/><TextBlock Text="Enable high-resolution system timer (lower latency)." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnTimerOn"      Grid.Column="1" Content="On ★"   Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnTimerDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Write Cache Buffer Flushing" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable write cache buffer flushing for drives." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnWriteCacheOff"     Grid.Column="1" Content="Off ★"  Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnWriteCacheDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Device Manager Power Savings" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable power saving for devices in Device Manager." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnDevPowerOff"     Grid.Column="1" Content="Off ★"  Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnDevPowerDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Network Adapter Power Savings" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable power saving on the network adapter." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnNetPowerOff"     Grid.Column="1" Content="Off ★"  Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnNetPowerDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Network IPv4 Only" Style="{StaticResource CardTitle}"/><TextBlock Text="Prefer IPv4 over IPv6 to reduce latency on some networks." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnIPv4Only"    Grid.Column="1" Content="IPv4 ★" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnIPDefault"   Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Debloat / Privacy -->
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="DEBLOAT &amp; PRIVACY" Style="{StaticResource CardGroupHeader}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Bloatware" Style="{StaticResource CardTitle}"/><TextBlock Text="Remove all pre-installed bloat apps from Windows." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnBloatwareRemove" Grid.Column="1" Content="Remove All ★" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnBloatwareCheck"  Grid.Column="3" Content="Check"         Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Widgets" Style="{StaticResource CardTitle}"/><TextBlock Text="Remove the Windows Widgets panel." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnWidgetsOff"     Grid.Column="1" Content="Off ★"  Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnWidgetsDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Copilot" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable Windows Copilot." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnCopilotOff"     Grid.Column="1" Content="Off ★"  Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnCopilotDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Game Bar / Xbox DVR" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable Game Bar and Xbox Game DVR recording overlay." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnGamebarOff"     Grid.Column="1" Content="Off ★"  Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnGamebarDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Edge &amp; WebView" Style="{StaticResource CardTitle}"/><TextBlock Text="Uninstall Microsoft Edge and WebView2." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnEdgeUninstall" Grid.Column="1" Content="Uninstall ★" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnEdgeRestore"   Grid.Column="3" Content="Restore"     Style="{StaticResource Btn}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Bloatware Checks -->
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="BLOATWARE CHECKS" Style="{StaticResource CardGroupHeader}"/>
+                                <UniformGrid Columns="4">
+                                    <Button Name="BtnBloatwareLegacyCheck"       Content="Legacy Apps"     Style="{StaticResource Btn}" Margin="0,0,8,0"/>
+                                    <Button Name="BtnBloatwareLegacyFeatCheck"   Content="Legacy Features" Style="{StaticResource Btn}" Margin="0,0,8,0"/>
+                                    <Button Name="BtnBloatwareUWPFeatCheck"      Content="UWP Features"    Style="{StaticResource Btn}" Margin="0,0,8,0"/>
+                                    <Button Name="BtnBloatwareTaskmgr"           Content="Task Manager"    Style="{StaticResource Btn}" Margin="0"/>
+                                </UniformGrid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Quick Settings -->
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="QUICK SETTINGS" Style="{StaticResource CardGroupHeader}"/>
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Game Mode  ·  Pointer Precision  ·  Scaling" Style="{StaticResource CardTitle}"/><TextBlock Text="Open Game Mode, Mouse settings, or Display scaling settings." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnGamemode"         Grid.Column="1" Content="Game Mode"        Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnPointerPrecision" Grid.Column="3" Content="Pointer Precision" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnScalingSettings"  Grid.Column="5" Content="Scaling"           Style="{StaticResource Btn}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Misc Windows settings -->
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="SYSTEM SETTINGS" Style="{StaticResource CardGroupHeader}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="UAC" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable User Account Control prompts." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnUacOff"     Grid.Column="1" Content="Off ★"  Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnUacDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Defender Optimize" Style="{StaticResource CardTitle}"/><TextBlock Text="Add game folders to Defender exclusions for better perf." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnDefenderOptimize" Grid.Column="1" Content="Optimize ★" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnDefenderDefault"  Grid.Column="3" Content="Default"     Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Control Panel Settings" Style="{StaticResource CardTitle}"/><TextBlock Text="Apply full optimized Control Panel + privacy + appearance settings." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnCPOptimize" Grid.Column="1" Content="Optimize ★" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnCPDefault"  Grid.Column="3" Content="Default"     Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Tools" Style="{StaticResource CardTitle}"/><TextBlock Text="Autoruns, Cleanup, Restore Point, Core Isolation." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnAutoruns"     Grid.Column="1" Content="Autoruns"      Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnCleanup"      Grid.Column="3" Content="Cleanup"       Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnRestorePoint" Grid.Column="5" Content="Restore Point" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnCoreIsolation" Grid.Column="7" Content="Core Isolation" Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Notepad / Control Panel / Sound / Loudness EQ" Style="{StaticResource CardTitle}"/><TextBlock Text="Optimize Notepad, open Control Panel, configure audio, enable Loudness EQ." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnNotepad"     Grid.Column="1" Content="Notepad"     Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnControlPanel" Grid.Column="3" Content="Control Panel" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnSound"        Grid.Column="5" Content="Sound"         Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnLoudnessEQ"   Grid.Column="7" Content="Loudness EQ"   Style="{StaticResource BtnAccent}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- ── 7 · HARDWARE ──────────────────────────────────────── -->
+                <ScrollViewer Name="PanelHardware" Visibility="Collapsed" Padding="24,20,24,16">
+                    <StackPanel>
+                        <TextBlock Text="Hardware" Style="{StaticResource H1}"/>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="DISPLAY" Style="{StaticResource CardGroupHeader}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Higher Scaling (No Acceleration)" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Set DPI scaling without blurry GPU scaling." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <ComboBox Name="CboScaling" Grid.Column="1" Width="100" VerticalAlignment="Center">
+                                        <ComboBoxItem Content="100%" IsSelected="True"/>
+                                        <ComboBoxItem Content="125%"/>
+                                        <ComboBoxItem Content="150%"/>
+                                        <ComboBoxItem Content="175%"/>
+                                        <ComboBoxItem Content="200%"/>
+                                        <ComboBoxItem Content="225%"/>
+                                        <ComboBoxItem Content="250%"/>
+                                        <ComboBoxItem Content="300%"/>
+                                        <ComboBoxItem Content="350%"/>
+                                    </ComboBox>
+                                    <Button Name="BtnScalingApply" Grid.Column="3" Content="Apply" Style="{StaticResource BtnAccent}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Monitor Optimization" Style="{StaticResource CardTitle}"/><TextBlock Text="Tips and steps for monitor overdrive and overclock mode." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnMonitorOpt" Grid.Column="1" Content="Open" Style="{StaticResource Btn}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="MOUSE &amp; CONTROLLER" Style="{StaticResource CardGroupHeader}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Background Polling Rate Cap" Style="{StaticResource CardTitle}"/><TextBlock Text="Prevent background apps from capping mouse polling rate." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnPollingOff"     Grid.Column="1" Content="Off ★"  Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnPollingDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Mouse / Controller Polling Rate Test" Style="{StaticResource CardTitle}"/><TextBlock Text="Run polling rate measurement tools." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnMouseTest"      Grid.Column="1" Content="Mouse Test"      Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnControllerTest" Grid.Column="3" Content="Controller Test"  Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Controller Overclock" Style="{StaticResource CardTitle}"/><TextBlock Text="Install hidusbf to overclock controller polling rate." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnControllerOC" Grid.Column="1" Content="Run" Style="{StaticResource Btn}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="NETWORK &amp; GUIDES" Style="{StaticResource CardGroupHeader}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Network Bufferbloat Test  ·  PC Build Guide" Style="{StaticResource CardTitle}"/><TextBlock Text="Open bufferbloat test or the recommended PC build guide." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnBufferbloat"  Grid.Column="1" Content="Bufferbloat" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnPcBuildGuide" Grid.Column="3" Content="Build Guide" Style="{StaticResource Btn}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- ── 8 · ADVANCED ──────────────────────────────────────── -->
+                <ScrollViewer Name="PanelAdvanced" Visibility="Collapsed" Padding="24,20,24,16">
+                    <StackPanel>
+                        <TextBlock Text="Advanced" Style="{StaticResource H1}"/>
+
+                        <!-- Security (danger card) -->
+                        <Border Style="{StaticResource CardDanger}">
+                            <StackPanel>
+                                <TextBlock Text="⚠  SECURITY — USE WITH CARE" Style="{StaticResource CardGroupHeader}" Foreground="#FF6B6B"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Windows Defender" Style="{StaticResource CardTitle}"/><TextBlock Text="Fully disable or re-enable Windows Defender AV." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnDefenderDisable" Grid.Column="1" Content="Disable" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnDefenderEnable"  Grid.Column="3" Content="Enable"   Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Firewall" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable or re-enable the Windows Firewall." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnFirewallDisable" Grid.Column="1" Content="Disable" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnFirewallEnable"  Grid.Column="3" Content="Enable"   Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Spectre / Meltdown Mitigations" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable CPU vulnerability mitigations for a performance boost." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnSpectreDisable" Grid.Column="1" Content="Disable" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnSpectreEnable"  Grid.Column="3" Content="Enable"   Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Data Execution Prevention (DEP)" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable or re-enable DEP memory protection." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnDepDisable" Grid.Column="1" Content="Disable" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnDepEnable"  Grid.Column="3" Content="Enable"   Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="File Download Security Warning" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable the 'this file may be harmful' warning on downloaded files." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnDlWarnDisable" Grid.Column="1" Content="Disable" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnDlWarnEnable"  Grid.Column="3" Content="Enable"   Style="{StaticResource Btn}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Performance tweaks -->
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="PERFORMANCE TWEAKS" Style="{StaticResource CardGroupHeader}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Services" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable non-essential Windows background services." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnServicesOff"     Grid.Column="1" Content="Off ★"  Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnServicesDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="MMAgent Features" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable Memory Manager Agent features (prefetch, superfetch)." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnMMAgentOff"     Grid.Column="1" Content="Off ★"  Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnMMAgentDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="NVME Faster Driver" Style="{StaticResource CardTitle}"/><TextBlock Text="Use the faster inbox NVMe StorNVMe driver." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnNvmeOn"      Grid.Column="1" Content="Apply ★" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnNvmeDefault" Grid.Column="3" Content="Default"  Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Start / Search / Shell / Mobsync" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable shell bloat for faster Start and Search." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnShellOff"     Grid.Column="1" Content="Off ★"  Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnShellDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Rendering tweaks -->
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="RENDERING &amp; CPU" Style="{StaticResource CardGroupHeader}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="MPO (Multiplane Overlay)" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable MPO to fix flickering and tearing in some setups." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnMpoOn"  Grid.Column="1" Content="On (Default)" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnMpoOff" Grid.Column="3" Content="Off"           Style="{StaticResource BtnAccent}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Hardware Flip Mode" Style="{StaticResource CardTitle}"/><TextBlock Text="FSO (default) vs FSE (Hardware Legacy Flip)." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnFlipFSO" Grid.Column="1" Content="FSO (Default)" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnFlipFSE" Grid.Column="3" Content="FSE ★"          Style="{StaticResource BtnAccent}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="HCIF (Hardware Composed Independent Flip)" Style="{StaticResource CardTitle}"/><TextBlock Text="Switch between HCIF and HIF flip modes." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnHcif"  Grid.Column="1" Content="HCIF ★"     Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnHif"   Grid.Column="3" Content="HIF (Default)" Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="ULPS (AMD Ultra Low Power State)" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable ULPS to prevent AMD GPU stutters on multi-GPU." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnUlpsOn"  Grid.Column="1" Content="On (Default)" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnUlpsOff" Grid.Column="3" Content="Off ★"         Style="{StaticResource BtnAccent}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="ReBar Force (NVIDIA)" Style="{StaticResource CardTitle}"/><TextBlock Text="Force Resizable BAR on/off via Inspector, or use driver default. Option 4 restarts to BIOS." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnReBarDefault" Grid.Column="1" Content="Default" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnReBarOn"      Grid.Column="3" Content="Force On" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnReBarOff"     Grid.Column="5" Content="Force Off" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnReBarToBios"  Grid.Column="7" Content="To BIOS"   Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Keyboard Shortcuts" Style="{StaticResource CardTitle}"/><TextBlock Text="Off disables Win key, media keys, hotkeys. ESC rebinds to =. Cut/copy/paste still work." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnKbDefault" Grid.Column="1" Content="Default" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnKbOff"     Grid.Column="3" Content="Off ★"   Style="{StaticResource BtnAccent}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="SMT/HT  ·  Core 1 Thread 1  ·  Priority  ·  WHQL Bypass" Style="{StaticResource CardTitle}"/><TextBlock Text="Interactive tools for per-game CPU affinity, priority, and driver signing." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnSmtOff"         Grid.Column="1" Content="SMT/HT Off"      Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnCore1Thread1"   Grid.Column="3" Content="Core 1 Thread 1" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnPriority"       Grid.Column="5" Content="Priority"         Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Driver WHQL / Secure Boot Bypass" Style="{StaticResource CardTitle}"/><TextBlock Text="Bypass WHQL driver signing check (requires Secure Boot off)." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnWhqlDefault" Grid.Column="1" Content="Default (Off)" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnWhqlBypass"  Grid.Column="3" Content="Bypass On ★"   Style="{StaticResource BtnAccent}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+
+            </Grid><!-- end content area -->
+        </Grid><!-- end body -->
+
+        <!-- ── Status bar ───────────────────────────────────────────────────── -->
+        <Border Grid.Row="2" Background="{StaticResource TitleBarBg}"
+                BorderBrush="{StaticResource SeparatorBrush}" BorderThickness="0,1,0,0">
+            <Grid Margin="16,0">
+                <TextBlock Name="StatusText" Text="Ready"
+                           FontSize="11" Foreground="#666666"
+                           VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+
+    </Grid>
+</Window>
