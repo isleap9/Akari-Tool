@@ -10,7 +10,7 @@
         FontFamily="Segoe UI Variable Text, Segoe UI"
         FontSize="13">
 
-    <!-- WindowChrome: custom title bar area, keep system resize + caption buttons -->
+    <!-- WindowChrome: custom title bar area, keep native caption buttons -->
     <WindowChrome.WindowChrome>
         <WindowChrome CaptionHeight="40"
                       ResizeBorderThickness="5"
@@ -158,15 +158,16 @@
                                         CornerRadius="2" HorizontalAlignment="Left"
                                         VerticalAlignment="Center" Margin="-2,0,0,0"
                                         Visibility="Collapsed"/>
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0,0,0">
+                                <StackPanel x:Name="NavContent" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0,0,0">
                                     <TextBlock x:Name="Icon"
                                                FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                                FontSize="15"
                                                Text="{TemplateBinding Tag}"
                                                Foreground="#888888"
                                                VerticalAlignment="Center"
+                                               TextAlignment="Center"
                                                Width="22"/>
-                                    <TextBlock Text="{TemplateBinding Content}"
+                                    <TextBlock x:Name="NavText" Text="{TemplateBinding Content}"
                                                FontFamily="Segoe UI Variable Text, Segoe UI"
                                                FontSize="13"
                                                Foreground="{TemplateBinding Foreground}"
@@ -313,6 +314,67 @@
             </Setter>
         </Style>
 
+        <!-- ── Caption button (minimize / maximize) ─────────────────────────── -->
+        <Style x:Key="CaptionBtn" TargetType="Button">
+            <Setter Property="Width" Value="46"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Foreground" Value="#C6C6CA"/>
+            <Setter Property="WindowChrome.IsHitTestVisibleInChrome" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="cb" Background="Transparent">
+                            <TextBlock Text="{TemplateBinding Content}" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                       FontSize="10" Foreground="{TemplateBinding Foreground}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="cb" Property="Background" Value="#20FFFFFF"/></Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <!-- ── Caption close button (red hover) ─────────────────────────────── -->
+        <Style x:Key="CaptionCloseBtn" TargetType="Button" BasedOn="{StaticResource CaptionBtn}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="cb" Background="Transparent">
+                            <TextBlock x:Name="ct" Text="{TemplateBinding Content}" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                       FontSize="10" Foreground="{TemplateBinding Foreground}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="cb" Property="Background" Value="#E0142A"/>
+                                <Setter TargetName="ct" Property="Foreground" Value="White"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <!-- ── Hamburger button ─────────────────────────────────────────────── -->
+        <Style x:Key="HamburgerBtn" TargetType="Button">
+            <Setter Property="Width" Value="40"/>
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="hb" Background="Transparent" CornerRadius="6">
+                            <TextBlock Text="&#xE700;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                       FontSize="15" Foreground="#C6C6CA" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="hb" Property="Background" Value="#12FFFFFF"/></Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <!-- ═══════════════════════════════════════════════════════════════════════
@@ -327,22 +389,24 @@
 
         <!-- ── Title bar ───────────────────────────────────────────────────── -->
         <Border Grid.Row="0" Background="{StaticResource TitleBarBg}">
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
-                <!-- Brand logo (Source assigned in main.ps1 from embedded base64) -->
-                <Image Name="TitleLogo" Height="22" VerticalAlignment="Center" Margin="0,0,8,0"
-                       RenderOptions.BitmapScalingMode="HighQuality"/>
-                <TextBlock Text="Akari Tool"
-                           FontFamily="Segoe UI Variable Display, Segoe UI"
-                           FontSize="13" FontWeight="SemiBold"
-                           Foreground="White" VerticalAlignment="Center"/>
-            </StackPanel>
+            <Grid>
+                <!-- Brand: logo + accent dot + AKARI TOOL wordmark -->
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
+                    <Image Name="TitleLogo" Height="24" VerticalAlignment="Center" Margin="0,0,8,0"
+                           RenderOptions.BitmapScalingMode="HighQuality"/>
+                    <Ellipse Width="5" Height="5" VerticalAlignment="Center" Margin="0,0,10,0" Fill="#E0142A"/>
+                    <TextBlock FontSize="11" FontWeight="Bold" VerticalAlignment="Center"
+                               FontFamily="Segoe UI Variable Display, Segoe UI">
+                        <Run Text="AKARI " Foreground="White"/><Run Text="TOOL" Foreground="#E03535"/>
+                    </TextBlock>
+                </StackPanel>
+            </Grid>
         </Border>
 
         <!-- ── Body: sidebar + content ─────────────────────────────────────── -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="210"/>
-                <ColumnDefinition Width="1"/>     <!-- divider -->
+                <ColumnDefinition x:Name="SidebarCol" Width="210"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
@@ -353,7 +417,19 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <StackPanel Grid.Row="0" Margin="0,10,0,0">
+                <StackPanel Grid.Row="0" Margin="0,8,0,0">
+                    <!-- Hamburger + search -->
+                    <Button Name="NavHamburger" Style="{StaticResource HamburgerBtn}" Margin="10,0,0,6"/>
+                    <Border Name="SidebarSearch" Background="#18FFFFFF" BorderBrush="#1FFFFFFF" BorderThickness="1" CornerRadius="5" Height="32" Margin="10,0,10,10">
+                        <Grid Margin="10,0,8,0">
+                            <TextBox Name="SearchBox" Background="Transparent" BorderThickness="0" Foreground="White" CaretBrush="White"
+                                     VerticalContentAlignment="Center" FontSize="12.5" VerticalAlignment="Center" Padding="0"/>
+                            <TextBlock Name="SearchPlaceholder" Text="Search all settings..." FontSize="12.5" Foreground="#8A8A90"
+                                       VerticalAlignment="Center" IsHitTestVisible="False"/>
+                            <TextBlock Text="&#xE721;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="13"
+                                       Foreground="#8A8A90" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
                     <RadioButton Name="NavCheck"      Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE8B3;" Content="Check"      IsChecked="True"/>
                     <RadioButton Name="NavRefresh"    Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE72C;" Content="Refresh"/>
                     <RadioButton Name="NavSetup"      Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE713;" Content="Setup"/>
@@ -365,17 +441,15 @@
                 </StackPanel>
 
                 <!-- Version footer -->
-                <StackPanel Grid.Row="1" Margin="16,12">
+                <StackPanel Name="SidebarFooter" Grid.Row="1" Margin="16,12">
                     <TextBlock Text="Akari Tool  v1.0" FontSize="11" Foreground="#444444"/>
                     <TextBlock Text="by isleap · Fr33thy scripts" FontSize="11" Foreground="#444444"/>
                 </StackPanel>
             </Grid>
 
-            <!-- Sidebar divider -->
-            <Border Grid.Column="1" Background="{StaticResource SeparatorBrush}"/>
-
-            <!-- ══ CONTENT AREA ════════════════════════════════════════════ -->
-            <Grid Grid.Column="2" Background="Transparent">
+            <!-- ══ CONTENT AREA (rounded panel — curved divide from the sidebar) ══ -->
+            <Border Grid.Column="1" Background="#18FFFFFF" CornerRadius="14,0,0,0" ClipToBounds="True">
+            <Grid Background="Transparent">
 
                 <!-- ── 1 · CHECK ─────────────────────────────────────────── -->
                 <ScrollViewer Name="PanelCheck" Padding="24,20,24,16">
@@ -1221,7 +1295,8 @@
                     </StackPanel>
                 </ScrollViewer>
 
-            </Grid><!-- end content area -->
+            </Grid>
+            </Border><!-- end content area -->
         </Grid><!-- end body -->
 
         <!-- ── Status bar ───────────────────────────────────────────────────── -->

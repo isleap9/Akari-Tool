@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-16"?>
+<ArrayOfProfile>
+  <Profile>
+    <ProfileName>Base Profile</ProfileName>
+    <Executables/>
+    <Settings>
+	  <ProfileSetting>
+        <SettingNameInfo>rBAR - Enable</SettingNameInfo>
+        <SettingID>983226</SettingID>
+        <SettingValue>0</SettingValue>
+        <ValueType>Dword</ValueType>
+      </ProfileSetting>  
+    </Settings>
+  </Profile>
+</ArrayOfProfile>

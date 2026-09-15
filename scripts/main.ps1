@@ -1,4 +1,4 @@
-# ── Parse XAML ───────────────────────────────────────────────────────────────
+﻿# ── Parse XAML ───────────────────────────────────────────────────────────────
 try {
     $sync.window = [Windows.Markup.XamlReader]::Parse($inputXML)
 } catch {
@@ -97,6 +97,90 @@ $sync.Keys | Where-Object { $_ -like "Btn*" } | ForEach-Object {
             }
         }.GetNewClosure())
     }
+}
+
+# ── Build a searchable index of every card across all tabs (for global search) ─
+function Get-ElementText([System.Windows.DependencyObject]$el) {
+    $sb = New-Object System.Text.StringBuilder
+    $stack = New-Object System.Collections.Stack
+    $stack.Push($el)
+    while ($stack.Count -gt 0) {
+        $n = $stack.Pop()
+        if ($n -is [System.Windows.Controls.TextBlock]) { [void]$sb.Append($n.Text); [void]$sb.Append(" ") }
+        foreach ($c in [System.Windows.LogicalTreeHelper]::GetChildren($n)) {
+            if ($c -is [System.Windows.DependencyObject]) { $stack.Push($c) }
+        }
+    }
+    $sb.ToString()
+}
+$sync.CardIndex = New-Object System.Collections.ArrayList
+foreach ($p in $panels) {
+    $pl = $sync[$p]
+    if ($pl -and $pl.Content -and $pl.Content.Children) {
+        foreach ($child in $pl.Content.Children) {
+            if ($child -is [System.Windows.Controls.Border]) {
+                [void]$sync.CardIndex.Add([pscustomobject]@{ Panel = $p; Card = $child; Text = (Get-ElementText $child).ToLowerInvariant() })
+            }
+        }
+    }
+}
+
+# ── Hamburger: toggle compact / expanded sidebar ─────────────────────────────
+$sync.SidebarExpanded = $true
+$navNames = @("NavCheck","NavRefresh","NavSetup","NavInstallers","NavGraphics","NavWindows","NavHardware","NavAdvanced")
+if ($sync.NavHamburger) {
+    $sync.NavHamburger.Add_Click({
+        $sync.SidebarExpanded = -not $sync.SidebarExpanded
+        $expanded = $sync.SidebarExpanded
+        $col = $sync.window.FindName("SidebarCol")
+        if ($col) { $col.Width = if ($expanded) { New-Object System.Windows.GridLength 210 } else { New-Object System.Windows.GridLength 56 } }
+        $vis = if ($expanded) { [System.Windows.Visibility]::Visible } else { [System.Windows.Visibility]::Collapsed }
+        if ($sync.SidebarSearch) { $sync.SidebarSearch.Visibility = $vis }
+        if ($sync.SidebarFooter) { $sync.SidebarFooter.Visibility = $vis }
+        foreach ($n in $navNames) {
+            $rb = $sync[$n]
+            if ($rb -and $rb.Template) {
+                $t = $rb.Template.FindName("NavText", $rb)
+                $c = $rb.Template.FindName("NavContent", $rb)
+                if ($t) { $t.Visibility = $vis }
+                if ($c) {
+                    if ($expanded) {
+                        $c.HorizontalAlignment = [System.Windows.HorizontalAlignment]::Left
+                        $c.Margin = New-Object System.Windows.Thickness(10,0,0,0)
+                    } else {
+                        $c.HorizontalAlignment = [System.Windows.HorizontalAlignment]::Center
+                        $c.Margin = New-Object System.Windows.Thickness(0)
+                    }
+                }
+            }
+        }
+    }.GetNewClosure())
+}
+
+# ── Search: GLOBAL filter across every tab; jumps to the first tab with hits ──
+if ($sync.SearchBox -and $sync.SearchPlaceholder) {
+    $sync.SearchBox.Add_TextChanged({
+        $q = $sync.SearchBox.Text
+        $sync.SearchPlaceholder.Visibility =
+            if ([string]::IsNullOrEmpty($q)) { [System.Windows.Visibility]::Visible } else { [System.Windows.Visibility]::Collapsed }
+        $ql = $q.ToLowerInvariant()
+        $matchPanels = New-Object System.Collections.Generic.HashSet[string]
+        foreach ($item in $sync.CardIndex) {
+            $match = ($ql -eq "") -or $item.Text.Contains($ql)
+            $item.Card.Visibility = if ($match) { [System.Windows.Visibility]::Visible } else { [System.Windows.Visibility]::Collapsed }
+            if ($match -and $ql -ne "") { [void]$matchPanels.Add($item.Panel) }
+        }
+        if ($ql -ne "") {
+            $cur = $panels | Where-Object { $sync[$_].Visibility -eq [System.Windows.Visibility]::Visible } | Select-Object -First 1
+            if (-not $matchPanels.Contains($cur)) {
+                $target = $panels | Where-Object { $matchPanels.Contains($_) } | Select-Object -First 1
+                if ($target) {
+                    $navKey = ($navMap.GetEnumerator() | Where-Object { $_.Value -eq $target } | Select-Object -First 1).Key
+                    if ($navKey -and $sync[$navKey]) { $sync[$navKey].IsChecked = $true }
+                }
+            }
+        }
+    }.GetNewClosure())
 }
 
 # ── Status bar helper (call from runspaces via Dispatcher) ───────────────────

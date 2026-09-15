@@ -1,4 +1,4 @@
-function Invoke-RunInBackground {
+﻿function Invoke-RunInBackground {
     <#
     .SYNOPSIS
         Runs a scriptblock on a background runspace so the WPF UI stays responsive.

@@ -1,4 +1,4 @@
-function Start-Elevated {
+﻿function Start-Elevated {
     param(
         [Parameter(Mandatory)][string]$FilePath,
         [string]$ArgumentList,

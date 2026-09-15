@@ -34,6 +34,10 @@ $logoPng = "$PSScriptRoot\assets\AkariLogo.png"
 if (Test-Path $logoPng) {
     $script += "`$sync.assets.logo = '" + [Convert]::ToBase64String([IO.File]::ReadAllBytes($logoPng)) + "'" + $nl
 }
+# Text assets (assets/text/*) — ~/.reg/.ps1 blobs decoded at runtime into $sync.assets.<filename>
+Get-ChildItem "$PSScriptRoot\assets\text" -File -ErrorAction SilentlyContinue | ForEach-Object {
+    $script += "`$sync.assets." + $_.BaseName + " = '" + [Convert]::ToBase64String([IO.File]::ReadAllBytes($_.FullName)) + "'" + $nl
+}
 $script += $nl
 
 # --- Embed XAML ---

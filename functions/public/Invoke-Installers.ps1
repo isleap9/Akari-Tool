@@ -1,4 +1,4 @@
-# Per-app installers — 1:1 with Ultimate "4 Installers/1 Installers.ps1"
+﻿# Per-app installers — 1:1 with Ultimate "4 Installers/1 Installers.ps1"
 # (winget install + debloat config + shortcut cleanup), wrapped in Akari's GUI runner.
 
 # ── Steam ─────────────────────────────────────────────────────────────────────

@@ -128,20 +128,25 @@ the status bar.
 
 To stay **1:1 with Ultimate** while remaining **easy to maintain**, handlers come in two flavours:
 
-- **Delegated** — heavy, interactive, or frequently-changing tweaks call
-  `Invoke-UltimateScript -Path "<folder>/<file>.ps1"`, which launches the **live upstream script**
-  from FR33THY's GitHub in an elevated console. These are Ultimate's exact logic *by construction*
-  and **update themselves** whenever Ultimate changes — nothing to re-port.
+- **Embedded console scripts** — a few interactive, menu-driven tweaks (SMT/HT, Core 1 Thread 1,
+  Priority, Bloatware) aren't worth rebuilding as native WPF flows. Their `.ps1` files live in
+  `assets/text/` and are **baked into `akari.ps1`** at compile time; the handler calls
+  `Invoke-ConsoleScript -Asset "<name>"`, which decodes the embedded script to a temp file and
+  launches it in an elevated console. Nothing is downloaded and there is no external folder to carry
+  — the app is fully self-contained and entirely under your control. This is also where you add your
+  **own** menu scripts.
 
 - **Inline** — simple, stable registry toggles and the per-app installers are implemented directly
-  in the `Invoke-*.ps1` files as one-click actions (no console menu). These are the only parts you
-  ever hand-edit.
+  in the `Invoke-*.ps1` files as one-click actions (no console menu). These are hand-edited too.
 
 ## Updating the tweaks
 
-Most of the app tracks upstream automatically. You only touch the inline handlers.
+Everything lives in this repo — nothing tracks upstream automatically, so you decide when and what
+to change.
 
-1. **Delegated handlers** — nothing to do; they fetch the current Ultimate script at click-time.
+1. **Embedded console scripts** — when FR33THY updates one (or you write your own), drop the `.ps1`
+   into `assets/text/<name>.ps1` and, for a new one, add a handler that calls
+   `Invoke-ConsoleScript -Asset "<name>"`. Recompile and it's baked in.
 2. **Inline handlers** — when an upstream tweak changes, open the matching Ultimate script and copy
    **only its core commands** (skip the admin-elevation header, the `Write-Host` menu, the
    `while/switch` loop, `Pause`, and `exit`) into the corresponding `Invoke-Btn*` function.
@@ -176,7 +181,7 @@ akari-tool/
 ├─ functions/
 │  ├─ private/
 │  │  ├─ Invoke-RunInBackground.ps1   # non-blocking runspace runner
-│  │  └─ Invoke-UltimateScript.ps1    # launches a live upstream Ultimate script
+│  │  └─ Invoke-ConsoleScript.ps1     # runs an embedded menu-driven script (elevated console)
 │  └─ public/
 │     ├─ Invoke-Check.ps1
 │     ├─ Invoke-Refresh.ps1

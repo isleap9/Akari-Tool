@@ -1,4 +1,4 @@
-# Scaling Higher No Accel — 1:1 with Ultimate "7 Hardware/1 Scaling Higher No Accel.ps1"
+﻿# Scaling Higher No Accel — 1:1 with Ultimate "7 Hardware/1 Scaling Higher No Accel.ps1"
 # (per-scaling DPI + SmoothMouse compensation curves), driven by the CboScaling dropdown.
 function Invoke-BtnScalingApply {
     # dpi, MouseSpeed, Threshold1/2, EnablePerProcessSystemDPI, SmoothMouseXCurve, SmoothMouseYCurve per level
@@ -29,7 +29,13 @@ function Invoke-BtnScalingApply {
     }.GetNewClosure()
 }
 
-function Invoke-BtnMonitorOpt { Invoke-UltimateScript -Path "7 Hardware/6 Monitor Optimization.ps1" -Status "Monitor Optimization opened." }
+# Monitor Optimization — opens the UFO frame-rate test then lists the checklist
+function Invoke-BtnMonitorOpt {
+    Invoke-RunInBackground -StatusStart "Opening monitor test..." -StatusDone "Monitor test opened." -ScriptBlock {
+        Start-Process "https://www.testufo.com/framerates#count=6&background=none&pps=1920"
+    }
+    [System.Windows.MessageBox]::Show("Monitor optimizations:`n- Enable overclock mode`n- Run highest refresh rate`n- Disable adaptive brightness and variable back light`n- Turn off variable refresh rate, adaptive sync and g-sync`n- Adjust color, brightness and sharpening to your preference`n- Max overdrive without causing overshoot or reducing motion clarity", "Monitor Optimizations", "OK", "Information") | Out-Null
+}
 
 # Polling Rate
 function Invoke-BtnPollingOff {
@@ -43,9 +49,44 @@ function Invoke-BtnPollingDefault {
     }
 }
 
-function Invoke-BtnMouseTest       { Invoke-UltimateScript -Path "7 Hardware/3 Mouse Polling Rate Test.ps1" -Status "Mouse Polling Rate Test opened." }
-function Invoke-BtnControllerOC     { Invoke-UltimateScript -Path "7 Hardware/4 Controller Overclock.ps1" -Status "Controller Overclock (hidusbf) opened." }
-function Invoke-BtnControllerTest   { Invoke-UltimateScript -Path "7 Hardware/5 Controller Polling Rate Test.ps1" -Status "Controller Polling Rate Test opened." }
+# Mouse Polling Rate Test — opens the polling test then shows the checklist
+function Invoke-BtnMouseTest {
+    Invoke-RunInBackground -StatusStart "Opening mouse polling test..." -StatusDone "Mouse test opened." -ScriptBlock {
+        if (!(Test-Connection -ComputerName "8.8.8.8" -Count 1 -Quiet -ErrorAction SilentlyContinue)) { return }
+        Start-Process "https://cpstest.org/polling-rate-test"
+    }
+    [System.Windows.MessageBox]::Show("Mouse optimizations:`n- Turn off motion sync`n- Keep dongle close to mouse`n- Disable angle snapping`n- Set lowest debounce time`n- Use maximum polling rate`n- USB port closest to the CPU`n`nExtreme polling may affect lower end CPU's & certain game engine framerates`n`nSet a comfortable DPI - increased DPI reduces pixel skipping & latency`nSuggested minimal DPI:`n- 400dpi for 1080p`n- 800dpi for 1440p`n- 1600dpi for 4k`n`nTo prevent mouse acceleration when gaming:`n- Use 100% scaling`n- Set 6/11 & pointer precision off`n- Enable raw input in games when possible`n`nFor higher scaling with no acceleration see the Scaling section.", "Mouse Optimizations", "OK", "Information") | Out-Null
+}
+
+# Controller Overclock — installs hidusbf (driver + Setup) and shortcuts
+function Invoke-BtnControllerOC {
+    Invoke-RunInBackground -StatusStart "Installing hidusbf..." -StatusDone "hidusbf installed. Run Setup.exe from the desktop/Start menu." -ScriptBlock {
+        $progresspreference = 'silentlycontinue'
+        if (!(Test-Connection -ComputerName "8.8.8.8" -Count 1 -Quiet -ErrorAction SilentlyContinue)) { return }
+        IWR "https://github.com/LordOfMice/hidusbf/raw/refs/heads/master/hidusbf.zip" -OutFile "$env:SystemRoot\Temp\hidusbf.zip"
+        Expand-Archive -Path "$env:SystemRoot\Temp\hidusbf.zip" -DestinationPath "$env:SystemDrive\Program Files (x86)\hidusbf" -Force
+        Start-Process -FilePath "rundll32.exe" -ArgumentList "setupapi.dll,InstallHinfSection DefaultInstall 132 $env:SystemDrive\Program Files (x86)\hidusbf\DRIVER\HIDUSBF_AS.INF" -Wait
+        $sh = New-Object -ComObject WScript.Shell
+        $Desktop = (New-Object -ComObject Shell.Application).Namespace('shell:Desktop').Self.Path
+        $sc = $sh.CreateShortcut("$Desktop\Setup.lnk"); $sc.TargetPath = "$env:SystemDrive\Program Files (x86)\hidusbf\DRIVER\Setup.exe"; $sc.WorkingDirectory = "$env:SystemDrive\Program Files (x86)\hidusbf\DRIVER"; $sc.Save()
+        $sc2 = $sh.CreateShortcut("$env:ProgramData\Microsoft\Windows\Start Menu\Programs\Setup.lnk"); $sc2.TargetPath = "$env:SystemDrive\Program Files (x86)\hidusbf\DRIVER\Setup.exe"; $sc2.WorkingDirectory = "$env:SystemDrive\Program Files (x86)\hidusbf\DRIVER"; $sc2.Save()
+    }
+}
+
+# Controller Polling Rate Test — installs Polling app and opens it
+function Invoke-BtnControllerTest {
+    Invoke-RunInBackground -StatusStart "Installing Polling..." -StatusDone "Polling installed & opened." -ScriptBlock {
+        $progresspreference = 'silentlycontinue'
+        if (!(Test-Connection -ComputerName "8.8.8.8" -Count 1 -Quiet -ErrorAction SilentlyContinue)) { return }
+        New-Item -Path "$env:SystemDrive\Program Files (x86)\Polling" -ItemType Directory -Force -ErrorAction SilentlyContinue | Out-Null
+        IWR "https://github.com/cakama3a/Polling/releases/download/1.3.1.4/Polling.exe" -OutFile "$env:SystemDrive\Program Files (x86)\Polling\Polling.exe"
+        $sh = New-Object -ComObject WScript.Shell
+        $Desktop = (New-Object -ComObject Shell.Application).Namespace('shell:Desktop').Self.Path
+        $sc = $sh.CreateShortcut("$Desktop\Polling.lnk"); $sc.TargetPath = "$env:SystemDrive\Program Files (x86)\Polling\Polling.exe"; $sc.WorkingDirectory = "$env:SystemDrive\Program Files (x86)\Polling"; $sc.Save()
+        $sc2 = $sh.CreateShortcut("$env:ProgramData\Microsoft\Windows\Start Menu\Programs\Polling.lnk"); $sc2.TargetPath = "$env:SystemDrive\Program Files (x86)\Polling\Polling.exe"; $sc2.WorkingDirectory = "$env:SystemDrive\Program Files (x86)\Polling"; $sc2.Save()
+        Start-Process "$env:SystemDrive\Program Files (x86)\Polling\Polling.exe"
+    }
+}
 
 function Invoke-BtnBufferbloat  { Start-Process "https://www.waveform.com/tools/bufferbloat" }
 function Invoke-BtnPcBuildGuide { Start-Process "https://pcpartpicker.com/user/fr33thy/saved" }

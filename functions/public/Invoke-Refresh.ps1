@@ -1,4 +1,4 @@
-function Invoke-BtnFactoryReset { Start-Process "ms-settings:recovery" }
+﻿function Invoke-BtnFactoryReset { Start-Process "ms-settings:recovery" }
 function Invoke-BtnAccountLocal { Start-Process "netplwiz" }
 function Invoke-BtnReinstallW10 {
     Invoke-RunInBackground -StatusStart "Downloading W10 Media Creation Tool..." -StatusDone "W10 MCT launched." -ScriptBlock {
