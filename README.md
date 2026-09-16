@@ -73,7 +73,19 @@ Buttons marked **★** are the recommended option for that row.
 
 ## Running it
 
-### Option A — run the prebuilt file
+### Option A — one-line install (recommended)
+
+Paste this into an **elevated** PowerShell / Terminal (Run as administrator):
+
+```powershell
+iwr https://github.com/isleap9/Akari-Tool/raw/refs/heads/main/IWR.ps1 -useb | iex
+```
+
+This downloads the repo, drops an **`Akari-Tool`** folder on your Desktop, unblocks the files, and
+opens it — the same bootstrap flow as FR33THY's Ultimate. Then run `akari.ps1` from that folder.
+`IWR.ps1` self-elevates, so it re-prompts for admin if you didn't start elevated.
+
+### Option B — run the prebuilt file
 
 Download `akari.ps1`, then in an **elevated** PowerShell / Terminal:
 
@@ -83,7 +95,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\path\to\akari.ps1"
 
 (The app will prompt for admin if you didn't start elevated.)
 
-### Option B — build & run from source
+### Option C — build & run from source
 
 ```powershell
 # from the repo root
@@ -171,6 +183,7 @@ to change.
 akari-tool/
 ├─ akari.ps1              # COMPILED output — do not edit by hand
 ├─ Compile.ps1           # builds akari.ps1 from the sources below (-Run to launch)
+├─ IWR.ps1               # one-line installer: downloads the repo to the Desktop
 ├─ README.md
 ├─ assets/               # logo (.png/.ico) and images, embedded at compile time
 ├─ config/               # optional JSON configs, embedded into $sync.configs
