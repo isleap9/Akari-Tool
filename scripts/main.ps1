@@ -58,6 +58,11 @@ $sync.window.Add_Loaded({
 })
 
 # ── Navigation switching ──────────────────────────────────────────────────────
+# $panels : every ScrollViewer page name in the UI. Only one is visible at a time;
+#           the rest are collapsed. The names must match x:Name in xaml/panels/*.xaml.
+# $navMap : sidebar RadioButton (NavXyz in MainWindow.xaml) -> the panel it shows.
+# When you add a tab: add its PanelXyz here, its NavXyz->PanelXyz below, and NavXyz to
+# $navNames further down (that list drives the hamburger collapse + search behaviour).
 $panels = @(
     "PanelHome", "PanelCheck", "PanelRefresh", "PanelSetup", "PanelInstallers",
     "PanelGraphics", "PanelWindows", "PanelHardware", "PanelAdvanced", "PanelTweaks", "PanelAbout"

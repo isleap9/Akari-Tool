@@ -8011,6 +8011,14 @@ $inputXML = @'
                                        Foreground="#8A8A90" HorizontalAlignment="Right" VerticalAlignment="Center"/>
                         </Grid>
                     </Border>
+                    <!--
+                        SIDEBAR NAV. Each RadioButton (NavXyz) shows the panel it maps to in
+                        scripts/main.ps1 ($navMap: NavXyz -> PanelXyz). Order here = sidebar order;
+                        the actual tab pages live in xaml/panels/*.xaml. Tag = Segoe Fluent icon glyph.
+                        To add a tab: add a NavXyz here + a xaml/panels/NN-Xyz.xaml fragment +
+                        register NavXyz/PanelXyz in main.ps1 ($panels, $navMap, $navNames).
+                        Use &#183; (middle dot) as an entity, not a pasted character.
+                    -->
                     <RadioButton Name="NavHome"       Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE80F;" Content="Home"          IsChecked="True"/>
                     <RadioButton Name="NavCheck"      Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE9D9;" Content="1 &#183; Check"/>
                     <RadioButton Name="NavRefresh"    Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE895;" Content="2 &#183; Refresh"/>
@@ -8035,6 +8043,28 @@ $inputXML = @'
             <!-- ══ CONTENT AREA (rounded panel — curved divide from the sidebar) ══ -->
             <Border Grid.Column="1" Background="#18FFFFFF" CornerRadius="14" Margin="0,0,16,10" ClipToBounds="True">
             <Grid Background="Transparent">
+                <!--
+                    @PANELS@  -  DO NOT put tab pages here directly.
+                    Compile.ps1 replaces this marker with every xaml/panels/*.xaml fragment,
+                    concatenated in NN- filename order, before embedding the UI as $inputXML.
+                    Edit a tab by editing its file in xaml/panels/, then run Compile.ps1.
+                -->
+<!--
+  ==========================================================================
+  Home  -  landing page (no FR33THY section). Welcome, Create Restore Point, This PC info, RECOMMENDED PATH jump buttons (BtnGo* switch tabs), Desktop shortcut, About links.
+
+  Buttons auto-wire by Name: a Button named Btn&lt;Something&gt; is handled by the
+  function Invoke-Btn&lt;Something&gt; in functions/public/*.ps1, matched at startup
+  by scripts/main.ps1. (So keep button Name and function name in sync.)
+
+  This file is a FRAGMENT injected into xaml/MainWindow.xaml at the @PANELS@ marker.
+  Tab order = the NN- number in this file name. The matching sidebar item (NavXyz)
+  and the Nav -> Panel map live in MainWindow.xaml and scripts/main.ps1.
+
+  Symbols must be XML entities, never pasted raw (raw bytes corrupt on compile):
+  &#183; = middle dot,  &#9733; = star.
+  ==========================================================================
+-->
 <ScrollViewer Name="PanelHome" Padding="24,20,24,16">
                     <StackPanel>
                         <TextBlock Text="Home" Style="{StaticResource H1}"/>
@@ -8137,6 +8167,22 @@ $inputXML = @'
                     </StackPanel>
                 </ScrollViewer>
 
+<!--
+  ==========================================================================
+  FR33THY 1 Check  -  BIOS update/settings (BtnCheckBios) and PC stability test via OCCT (BtnCheckPC).
+
+  Buttons auto-wire by Name: a Button named Btn&lt;Something&gt; is handled by the
+  function Invoke-Btn&lt;Something&gt; in functions/public/*.ps1, matched at startup
+  by scripts/main.ps1. (So keep button Name and function name in sync.)
+
+  This file is a FRAGMENT injected into xaml/MainWindow.xaml at the @PANELS@ marker.
+  Tab order = the NN- number in this file name. The matching sidebar item (NavXyz)
+  and the Nav -> Panel map live in MainWindow.xaml and scripts/main.ps1.
+
+  Symbols must be XML entities, never pasted raw (raw bytes corrupt on compile):
+  &#183; = middle dot,  &#9733; = star.
+  ==========================================================================
+-->
 <ScrollViewer Name="PanelCheck" Visibility="Collapsed" Padding="24,20,24,16">
                     <StackPanel>
                         <TextBlock Text="1 &#183; Check" Style="{StaticResource H1}"/>
@@ -8171,6 +8217,22 @@ $inputXML = @'
                     </StackPanel>
                 </ScrollViewer>
 
+<!--
+  ==========================================================================
+  FR33THY 2 Refresh  -  factory reset, W10/W11 reinstall, autounattend, local account, block/unblock update drivers, network driver / To BIOS.
+
+  Buttons auto-wire by Name: a Button named Btn&lt;Something&gt; is handled by the
+  function Invoke-Btn&lt;Something&gt; in functions/public/*.ps1, matched at startup
+  by scripts/main.ps1. (So keep button Name and function name in sync.)
+
+  This file is a FRAGMENT injected into xaml/MainWindow.xaml at the @PANELS@ marker.
+  Tab order = the NN- number in this file name. The matching sidebar item (NavXyz)
+  and the Nav -> Panel map live in MainWindow.xaml and scripts/main.ps1.
+
+  Symbols must be XML entities, never pasted raw (raw bytes corrupt on compile):
+  &#183; = middle dot,  &#9733; = star.
+  ==========================================================================
+-->
 <ScrollViewer Name="PanelRefresh" Visibility="Collapsed" Padding="24,20,24,16">
                     <StackPanel>
                         <TextBlock Text="2 &#183; Refresh" Style="{StaticResource H1}"/>
@@ -8244,6 +8306,22 @@ $inputXML = @'
                     </StackPanel>
                 </ScrollViewer>
 
+<!--
+  ==========================================================================
+  FR33THY 3 Setup  -  BitLocker, memory compression, background apps, keys/activation/convert-to-Pro, date/language/region, Edge and Store settings, pause updates.
+
+  Buttons auto-wire by Name: a Button named Btn&lt;Something&gt; is handled by the
+  function Invoke-Btn&lt;Something&gt; in functions/public/*.ps1, matched at startup
+  by scripts/main.ps1. (So keep button Name and function name in sync.)
+
+  This file is a FRAGMENT injected into xaml/MainWindow.xaml at the @PANELS@ marker.
+  Tab order = the NN- number in this file name. The matching sidebar item (NavXyz)
+  and the Nav -> Panel map live in MainWindow.xaml and scripts/main.ps1.
+
+  Symbols must be XML entities, never pasted raw (raw bytes corrupt on compile):
+  &#183; = middle dot,  &#9733; = star.
+  ==========================================================================
+-->
 <ScrollViewer Name="PanelSetup" Visibility="Collapsed" Padding="24,20,24,16">
                     <StackPanel>
                         <TextBlock Text="3 &#183; Setup" Style="{StaticResource H1}"/>
@@ -8352,6 +8430,22 @@ $inputXML = @'
                     </StackPanel>
                 </ScrollViewer>
 
+<!--
+  ==========================================================================
+  FR33THY 4 Installers  -  winget app installs (BtnInst*) and GPU tools (Afterburner, NPI, MCT, CRU).
+
+  Buttons auto-wire by Name: a Button named Btn&lt;Something&gt; is handled by the
+  function Invoke-Btn&lt;Something&gt; in functions/public/*.ps1, matched at startup
+  by scripts/main.ps1. (So keep button Name and function name in sync.)
+
+  This file is a FRAGMENT injected into xaml/MainWindow.xaml at the @PANELS@ marker.
+  Tab order = the NN- number in this file name. The matching sidebar item (NavXyz)
+  and the Nav -> Panel map live in MainWindow.xaml and scripts/main.ps1.
+
+  Symbols must be XML entities, never pasted raw (raw bytes corrupt on compile):
+  &#183; = middle dot,  &#9733; = star.
+  ==========================================================================
+-->
 <ScrollViewer Name="PanelInstallers" Visibility="Collapsed" Padding="24,20,24,16">
                     <StackPanel>
                         <TextBlock Text="4 &#183; Installers" Style="{StaticResource H1}"/>
@@ -8403,6 +8497,22 @@ $inputXML = @'
                     </StackPanel>
                 </ScrollViewer>
 
+<!--
+  ==========================================================================
+  FR33THY 5 Graphics  -  DDU driver clean, driver install/debloat (NVIDIA/AMD/Intel), GPU settings, HDCP, P0, MSI mode, DirectX/C++, resolution and HAGS.
+
+  Buttons auto-wire by Name: a Button named Btn&lt;Something&gt; is handled by the
+  function Invoke-Btn&lt;Something&gt; in functions/public/*.ps1, matched at startup
+  by scripts/main.ps1. (So keep button Name and function name in sync.)
+
+  This file is a FRAGMENT injected into xaml/MainWindow.xaml at the @PANELS@ marker.
+  Tab order = the NN- number in this file name. The matching sidebar item (NavXyz)
+  and the Nav -> Panel map live in MainWindow.xaml and scripts/main.ps1.
+
+  Symbols must be XML entities, never pasted raw (raw bytes corrupt on compile):
+  &#183; = middle dot,  &#9733; = star.
+  ==========================================================================
+-->
 <ScrollViewer Name="PanelGraphics" Visibility="Collapsed" Padding="24,20,24,16">
                     <StackPanel>
                         <TextBlock Text="5 &#183; Graphics" Style="{StaticResource H1}"/>
@@ -8544,6 +8654,22 @@ $inputXML = @'
                     </StackPanel>
                 </ScrollViewer>
 
+<!--
+  ==========================================================================
+  FR33THY 6 Windows  -  appearance (taskbar/start/theme), debloat and privacy (bloatware + reinstall row incl. winget, widgets/copilot/gamebar/edge), bloatware checks, settings and sound, performance, quick settings, and security and maintenance (UAC, Defender Optimize, autoruns/cleanup/restore/core isolation).
+
+  Buttons auto-wire by Name: a Button named Btn&lt;Something&gt; is handled by the
+  function Invoke-Btn&lt;Something&gt; in functions/public/*.ps1, matched at startup
+  by scripts/main.ps1. (So keep button Name and function name in sync.)
+
+  This file is a FRAGMENT injected into xaml/MainWindow.xaml at the @PANELS@ marker.
+  Tab order = the NN- number in this file name. The matching sidebar item (NavXyz)
+  and the Nav -> Panel map live in MainWindow.xaml and scripts/main.ps1.
+
+  Symbols must be XML entities, never pasted raw (raw bytes corrupt on compile):
+  &#183; = middle dot,  &#9733; = star.
+  ==========================================================================
+-->
 <ScrollViewer Name="PanelWindows" Visibility="Collapsed" Padding="24,20,24,16">
                     <StackPanel>
                         <TextBlock Text="6 &#183; Windows" Style="{StaticResource H1}"/>
@@ -8763,6 +8889,22 @@ $inputXML = @'
                     </StackPanel>
                 </ScrollViewer>
 
+<!--
+  ==========================================================================
+  FR33THY 7 Hardware  -  display (higher scaling no-accel, monitor optimization), mouse and controller (polling cap/tests, overclock), network bufferbloat test and PC build guide.
+
+  Buttons auto-wire by Name: a Button named Btn&lt;Something&gt; is handled by the
+  function Invoke-Btn&lt;Something&gt; in functions/public/*.ps1, matched at startup
+  by scripts/main.ps1. (So keep button Name and function name in sync.)
+
+  This file is a FRAGMENT injected into xaml/MainWindow.xaml at the @PANELS@ marker.
+  Tab order = the NN- number in this file name. The matching sidebar item (NavXyz)
+  and the Nav -> Panel map live in MainWindow.xaml and scripts/main.ps1.
+
+  Symbols must be XML entities, never pasted raw (raw bytes corrupt on compile):
+  &#183; = middle dot,  &#9733; = star.
+  ==========================================================================
+-->
 <ScrollViewer Name="PanelHardware" Visibility="Collapsed" Padding="24,20,24,16">
                     <StackPanel>
                         <TextBlock Text="7 &#183; Hardware" Style="{StaticResource H1}"/>
@@ -8837,6 +8979,22 @@ $inputXML = @'
                     </StackPanel>
                 </ScrollViewer>
 
+<!--
+  ==========================================================================
+  FR33THY 8 Advanced  -  USE WITH CARE. Security (Defender disable, firewall, Spectre/Meltdown, DEP, download warning), services and memory (services, MMAgent, NVMe, shell/mobsync), rendering and CPU (MPO, flip, ULPS, ReBar, keyboard, SMT/Core1Thread1/Priority, WHQL bypass).
+
+  Buttons auto-wire by Name: a Button named Btn&lt;Something&gt; is handled by the
+  function Invoke-Btn&lt;Something&gt; in functions/public/*.ps1, matched at startup
+  by scripts/main.ps1. (So keep button Name and function name in sync.)
+
+  This file is a FRAGMENT injected into xaml/MainWindow.xaml at the @PANELS@ marker.
+  Tab order = the NN- number in this file name. The matching sidebar item (NavXyz)
+  and the Nav -> Panel map live in MainWindow.xaml and scripts/main.ps1.
+
+  Symbols must be XML entities, never pasted raw (raw bytes corrupt on compile):
+  &#183; = middle dot,  &#9733; = star.
+  ==========================================================================
+-->
 <ScrollViewer Name="PanelAdvanced" Visibility="Collapsed" Padding="24,20,24,16">
                     <StackPanel>
                         <TextBlock Text="8 &#183; Advanced" Style="{StaticResource H1}"/>
@@ -8980,6 +9138,22 @@ $inputXML = @'
                     </StackPanel>
                 </ScrollViewer>
 
+<!--
+  ==========================================================================
+  Individual Tweaks  -  scheduling (SvcHost Split Threshold, Win32 Priority Separation). The 169 granular Control Panel tweak rows are injected at runtime by Render-CpTweaks (see scripts/main.ps1) after the SCHEDULING card.
+
+  Buttons auto-wire by Name: a Button named Btn&lt;Something&gt; is handled by the
+  function Invoke-Btn&lt;Something&gt; in functions/public/*.ps1, matched at startup
+  by scripts/main.ps1. (So keep button Name and function name in sync.)
+
+  This file is a FRAGMENT injected into xaml/MainWindow.xaml at the @PANELS@ marker.
+  Tab order = the NN- number in this file name. The matching sidebar item (NavXyz)
+  and the Nav -> Panel map live in MainWindow.xaml and scripts/main.ps1.
+
+  Symbols must be XML entities, never pasted raw (raw bytes corrupt on compile):
+  &#183; = middle dot,  &#9733; = star.
+  ==========================================================================
+-->
 <ScrollViewer Name="PanelTweaks" Visibility="Collapsed" Padding="24,20,24,16">
                     <StackPanel>
                         <TextBlock Text="Individual Tweaks" Style="{StaticResource H1}"/>
@@ -9038,6 +9212,22 @@ $inputXML = @'
                     </StackPanel>
                 </ScrollViewer>
 
+<!--
+  ==========================================================================
+  About  -  app info and links: Akari Tool repo (BtnAboutAkari) and FR33THY Ultimate (BtnAboutFr33thy).
+
+  Buttons auto-wire by Name: a Button named Btn&lt;Something&gt; is handled by the
+  function Invoke-Btn&lt;Something&gt; in functions/public/*.ps1, matched at startup
+  by scripts/main.ps1. (So keep button Name and function name in sync.)
+
+  This file is a FRAGMENT injected into xaml/MainWindow.xaml at the @PANELS@ marker.
+  Tab order = the NN- number in this file name. The matching sidebar item (NavXyz)
+  and the Nav -> Panel map live in MainWindow.xaml and scripts/main.ps1.
+
+  Symbols must be XML entities, never pasted raw (raw bytes corrupt on compile):
+  &#183; = middle dot,  &#9733; = star.
+  ==========================================================================
+-->
 <ScrollViewer Name="PanelAbout" Visibility="Collapsed" Padding="24,20,24,16">
                     <StackPanel>
                         <TextBlock Text="About" Style="{StaticResource H1}"/>
@@ -9154,6 +9344,11 @@ $sync.window.Add_Loaded({
 })
 
 # ── Navigation switching ──────────────────────────────────────────────────────
+# $panels : every ScrollViewer page name in the UI. Only one is visible at a time;
+#           the rest are collapsed. The names must match x:Name in xaml/panels/*.xaml.
+# $navMap : sidebar RadioButton (NavXyz in MainWindow.xaml) -> the panel it shows.
+# When you add a tab: add its PanelXyz here, its NavXyz->PanelXyz below, and NavXyz to
+# $navNames further down (that list drives the hamburger collapse + search behaviour).
 $panels = @(
     "PanelHome", "PanelCheck", "PanelRefresh", "PanelSetup", "PanelInstallers",
     "PanelGraphics", "PanelWindows", "PanelHardware", "PanelAdvanced", "PanelTweaks", "PanelAbout"

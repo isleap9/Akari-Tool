@@ -1,4 +1,20 @@
-﻿<ScrollViewer Name="PanelSetup" Visibility="Collapsed" Padding="24,20,24,16">
+﻿<!--
+  ==========================================================================
+  FR33THY 3 Setup  -  BitLocker, memory compression, background apps, keys/activation/convert-to-Pro, date/language/region, Edge and Store settings, pause updates.
+
+  Buttons auto-wire by Name: a Button named Btn&lt;Something&gt; is handled by the
+  function Invoke-Btn&lt;Something&gt; in functions/public/*.ps1, matched at startup
+  by scripts/main.ps1. (So keep button Name and function name in sync.)
+
+  This file is a FRAGMENT injected into xaml/MainWindow.xaml at the @PANELS@ marker.
+  Tab order = the NN- number in this file name. The matching sidebar item (NavXyz)
+  and the Nav -> Panel map live in MainWindow.xaml and scripts/main.ps1.
+
+  Symbols must be XML entities, never pasted raw (raw bytes corrupt on compile):
+  &#183; = middle dot,  &#9733; = star.
+  ==========================================================================
+-->
+<ScrollViewer Name="PanelSetup" Visibility="Collapsed" Padding="24,20,24,16">
                     <StackPanel>
                         <TextBlock Text="3 &#183; Setup" Style="{StaticResource H1}"/>
 
