@@ -54,15 +54,12 @@ Eight tabs, mirroring Ultimate's structure:
 | Tab | What's inside |
 |-----|---------------|
 | **Home** | Welcome + safety, one-click restore point, live "This PC" info, recommended-path shortcuts, Desktop shortcut (online/offline), credits |
-| **Check** | PC stress test (OCCT) + drive/RAM/GPU checklist, and BIOS update/settings helper |
-| **Refresh** | Factory reset, W10/W11 reinstall (Media Creation Tool), autounattend, driver/update blocking |
-| **Setup** | BitLocker, memory compression, background apps, Edge & Store settings, pause updates, activation |
-| **Installers** | One-click winget installs for launchers, browsers & apps (Steam, Discord, Chrome, …) each pre-debloated, plus GPU tools (Afterburner, NPI, CRU/SRE) |
-| **Graphics** | DDU driver clean, driver install (updated / debloat), NVIDIA/AMD/Intel settings, HDCP, P0 state, MSI mode, DirectX & C++ runtimes |
-| **Windows** | Taskbar/Start clean, context menu, black theme, debloat & privacy, power plan, timer resolution, write cache, device/network power, and more |
-| **Hardware** | High-scaling-no-acceleration, monitor optimization, mouse/controller polling & overclock tests |
-| **Advanced** | Defender, firewall, Spectre/Meltdown, DEP, services, MMAgent, NVMe driver, MPO, flip modes, ULPS, ReBar, keyboard shortcuts, SMT/affinity, WHQL bypass |
-| **Individual Tweaks** | Scheduling (SvcHost Split Threshold, Win32 Priority Separation) plus 169 granular Control Panel tweaks from Ultimate — grouped, collapsed by default, Optimize/Default per row |
+| **Software** | Winget installs for launchers, browsers & apps (each pre-debloated) + GPU tools, bloatware removal/checks, native reinstall (Store, UWP apps, OneDrive, Snipping, RDC), and Edge/Store settings |
+| **Optimize** | GPU (DDU, driver install/debloat, NVIDIA/AMD/Intel settings, HDCP, P0, MSI mode, DirectX/C++), performance (power plan, timer, write cache, device/network power), privacy debloat, and all Advanced tweaks (Defender, firewall, Spectre/Meltdown, DEP, services, MPO/flip/ULPS/ReBar, SMT/affinity, WHQL bypass) |
+| **Customize** | Taskbar/Start clean, Start layout & shortcuts, context menu, black theme, UAC, Control Panel/Notepad/Sound settings, display scaling & monitor optimization |
+| **System** | Factory reset, W10/W11 reinstall, autounattend, local account, driver/update blocking, BitLocker, memory compression, convert to Pro, keys/activation, region, pause updates |
+| **Tools** | PC stress test (OCCT), BIOS update/settings, mouse/controller polling & overclock tests, network bufferbloat test, PC build guide |
+| **Tweaks** | Scheduling (SvcHost Split Threshold, Win32 Priority Separation) plus 169 granular Control Panel tweaks from Ultimate — grouped, collapsed by default, Optimize/Default per row |
 
 Buttons marked **★** are the recommended option for that row.
 
