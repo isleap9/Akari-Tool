@@ -24,7 +24,7 @@
                                 <Grid>
                                     <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0">
-                                        <TextBlock Text="DDU â€” Driver Clean" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="DD Driver Clean" Style="{StaticResource CardTitle}"/>
                                         <TextBlock Text="Download DDU and wipe your current GPU driver cleanly." Style="{StaticResource CardDesc}"/>
                                     </StackPanel>
                                     <Button Name="BtnDduAuto"   Grid.Column="1" Content="Auto &#9733;"  Style="{StaticResource BtnAccent}"/>
