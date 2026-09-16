@@ -13,7 +13,7 @@ function Invoke-ConsoleScript {
         To add or update one: drop a file at assets/text/<name>.ps1, recompile,
         and call `Invoke-ConsoleScript -Asset "<name>"` from a button handler.
     .PARAMETER Asset
-        Embedded asset key (the assets/text file's base name), e.g. "bloatware".
+        Embedded asset key (the assets/text file's base name), e.g. "smtht".
     .PARAMETER Confirm
         Optional prompt text. When set, a Yes/No warning dialog is shown first and
         the script only runs on Yes.

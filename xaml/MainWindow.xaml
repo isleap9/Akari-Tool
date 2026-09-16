@@ -1116,9 +1116,21 @@
                                 <TextBlock Text="DEBLOAT &amp; PRIVACY" Style="{StaticResource CardGroupHeader}"/>
 
                                 <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0"><TextBlock Text="Bloatware" Style="{StaticResource CardTitle}"/><TextBlock Text="Remove all pre-installed bloat apps from Windows." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Bloatware" Style="{StaticResource CardTitle}"/><TextBlock Text="Uninstall UWP bloat apps, optional UWP/legacy features, OneDrive, RDC, old Snipping Tool and cruft. Runs in-app; curated exclusions keep Explorer, Store, Photos, Paint, Notepad and Defender." Style="{StaticResource CardDesc}"/></StackPanel>
                                     <Button Name="BtnBloatwareRemove" Grid.Column="1" Content="Remove All ★" Style="{StaticResource BtnAccent}"/>
                                     <Button Name="BtnBloatwareCheck"  Grid.Column="3" Content="Check"         Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Grid Margin="0,10,0,0">
+                                    <StackPanel>
+                                        <TextBlock Text="Reinstall removed components" Style="{StaticResource CardDesc}" Margin="0,0,0,8"/>
+                                        <UniformGrid Columns="5">
+                                            <Button Name="BtnBloatwareStore"    Content="Store"         Style="{StaticResource Btn}" Margin="0,0,8,0"/>
+                                            <Button Name="BtnBloatwareUWP"      Content="UWP Apps"      Style="{StaticResource Btn}" Margin="0,0,8,0"/>
+                                            <Button Name="BtnBloatwareOneDrive" Content="OneDrive"      Style="{StaticResource Btn}" Margin="0,0,8,0"/>
+                                            <Button Name="BtnBloatwareSnip"     Content="Snipping Tool" Style="{StaticResource Btn}" Margin="0,0,8,0"/>
+                                            <Button Name="BtnBloatwareRDC"      Content="RDC"           Style="{StaticResource Btn}" Margin="0"/>
+                                        </UniformGrid>
+                                    </StackPanel>
                                 </Grid>
                                 <Separator Style="{StaticResource Sep}"/>
 
