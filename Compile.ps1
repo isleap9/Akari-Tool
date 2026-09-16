@@ -45,8 +45,18 @@ Get-ChildItem "$PSScriptRoot\assets\text" -File -ErrorAction SilentlyContinue | 
 }
 $script += $nl
 
-# --- Embed XAML ---
+# --- Embed XAML (shell + per-tab panels injected at the @PANELS@ marker) ---
 $xaml = Get-Content -Path "$PSScriptRoot\xaml\MainWindow.xaml" -Raw -Encoding UTF8
+
+# Stitch each xaml/panels/*.xaml (sorted by NN- prefix) into the shell where the marker sits
+$panelsDir = "$PSScriptRoot\xaml\panels"
+if (Test-Path $panelsDir) {
+    $panels = Get-ChildItem -Path $panelsDir -File -Filter "*.xaml" | Sort-Object Name |
+        ForEach-Object { (Get-Content -Path $_.FullName -Raw -Encoding UTF8).TrimEnd() }
+    $panelsXaml = ($panels -join ($nl + $nl))
+    $xaml = [regex]::Replace($xaml, '[^\r\n]*<!-- @PANELS@[^\r\n]*-->', [System.Text.RegularExpressions.MatchEvaluator]{ param($m) $panelsXaml })
+}
+
 $script += "`$inputXML = @'" + $nl + $xaml.TrimEnd() + $nl + "'@" + $nl + $nl
 
 # --- Main script ---

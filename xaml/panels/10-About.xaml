@@ -1,0 +1,38 @@
+﻿<ScrollViewer Name="PanelAbout" Visibility="Collapsed" Padding="24,20,24,16">
+                    <StackPanel>
+                        <TextBlock Text="About" Style="{StaticResource H1}"/>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="Akari Tool by isleap" Style="{StaticResource CardTitle}"/>
+                                <TextBlock Style="{StaticResource CardDesc}" Margin="0,4,0,0"
+                                           Text="A clean WPF front-end for the FR33THY Ultimate Windows tweak scripts. Tweaks &amp; research are by FR33THY; this GUI is an independent project and is not affiliated with or endorsed by FR33THY."/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="LINKS" Style="{StaticResource CardGroupHeader}"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Akari Tool" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="This tool's source on GitHub." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnAboutAkari" Grid.Column="1" Content="Open" Style="{StaticResource BtnAccent}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Fr33thy Ultimate" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="The upstream tweak scripts and guide by FR33THY." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnAboutFr33thy" Grid.Column="1" Content="Open" Style="{StaticResource Btn}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>

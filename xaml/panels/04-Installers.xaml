@@ -1,0 +1,50 @@
+﻿<ScrollViewer Name="PanelInstallers" Visibility="Collapsed" Padding="24,20,24,16">
+                    <StackPanel>
+                        <TextBlock Text="4 &#183; Installers" Style="{StaticResource H1}"/>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="GAME LAUNCHERS &amp; BROWSERS" Style="{StaticResource CardGroupHeader}"/>
+                                <TextBlock Text="Tip: disable cloud sync, hardware acceleration, startup, and overlays in each app after installing." Foreground="#888888" FontSize="12" Margin="0,0,0,12" TextWrapping="Wrap"/>
+                                <UniformGrid Columns="3" Margin="0,4,0,0">
+                                    <Button Name="BtnInstSteam"    Content="Steam"            Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstEpic"     Content="Epic Games"        Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstBattlenet" Content="Battle.net"       Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstEA"       Content="EA App"            Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstUbisoft"  Content="Ubisoft Connect"   Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstRockstar" Content="Rockstar Games"    Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstLOL"      Content="League of Legends" Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstValorant" Content="Valorant"          Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstEFT"      Content="Escape from Tarkov" Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstRoblox"   Content="Roblox"            Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstChrome"   Content="Google Chrome"     Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstBrave"    Content="Brave"             Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstFirefox"  Content="Firefox"           Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstDiscord"  Content="Discord"           Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstSpotify"  Content="Spotify"           Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstOBS"      Content="OBS Studio"        Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstNotepad"  Content="Notepad++"         Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInst7Zip"     Content="7-Zip"             Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstGOG"      Content="GOG"               Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstPotPlayer" Content="PotPlayer"        Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstOMM"      Content="Onboard Mem Mgr"   Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstFrameView" Content="FrameView"        Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstNvApp"    Content="Nvidia App"        Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstHelium"   Content="Helium"            Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                </UniformGrid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="GPU TOOLS" Style="{StaticResource CardGroupHeader}"/>
+                                <UniformGrid Columns="3">
+                                    <Button Name="BtnInstAfterburner" Content="MSI Afterburner"      Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstNPI"         Content="Nvidia Profile Insp." Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstMCT"         Content="More Clock Tool"      Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnInstCRU"         Content="CRU / SRE"            Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                </UniformGrid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>

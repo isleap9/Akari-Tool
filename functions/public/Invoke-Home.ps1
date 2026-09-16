@@ -31,8 +31,9 @@ function Invoke-BtnGoHardware   { if ($sync.NavHardware)   { $sync.NavHardware.I
 function Invoke-BtnGoAdvanced   { if ($sync.NavAdvanced)   { $sync.NavAdvanced.IsChecked   = $true } }
 function Invoke-BtnGoTweaks     { if ($sync.NavTweaks)     { $sync.NavTweaks.IsChecked     = $true } }
 
-# Sidebar GitHub link
-function Invoke-BtnGithub { Start-Process "https://github.com/FR33THYFR33THY/Ultimate" }
+# Sidebar About links
+function Invoke-BtnAboutAkari   { Start-Process "https://github.com/isleap9/Akari-Tool" }
+function Invoke-BtnAboutFr33thy { Start-Process "https://github.com/FR33THYFR33THY/Ultimate" }
 
 # About links
 function Invoke-BtnHomeGuide  { Start-Process "https://youtu.be/zwPEDXteJYQ" }

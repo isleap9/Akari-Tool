@@ -1,0 +1,57 @@
+﻿<ScrollViewer Name="PanelTweaks" Visibility="Collapsed" Padding="24,20,24,16">
+                    <StackPanel>
+                        <TextBlock Text="Individual Tweaks" Style="{StaticResource H1}"/>
+
+                        <Border Style="{StaticResource Card}" Padding="20,16">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardDesc}"
+                                           Text="Granular, one-at-a-time control over the same Control Panel tweaks the Ultimate scripts apply in bulk. Each group below is collapsed by default â€” expand it, then Optimize or revert to Default per row. Use the search box to jump to a specific setting."/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Scheduling: SvcHost split threshold + Win32 priority separation -->
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="SCHEDULING" Style="{StaticResource CardGroupHeader}"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="SvcHost Split Threshold" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Higher values group services into fewer svchost processes (less overhead). Restart to apply." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <ComboBox Name="CboSvcHost" Grid.Column="1" Width="150" VerticalAlignment="Center">
+                                        <ComboBoxItem Content="Default (380000 KB)" IsSelected="True"/>
+                                        <ComboBoxItem Content="4 GB"/>
+                                        <ComboBoxItem Content="8 GB"/>
+                                        <ComboBoxItem Content="16 GB"/>
+                                        <ComboBoxItem Content="32 GB"/>
+                                        <ComboBoxItem Content="64 GB"/>
+                                        <ComboBoxItem Content="128 GB"/>
+                                        <ComboBoxItem Content="256 GB"/>
+                                    </ComboBox>
+                                    <Button Name="BtnSvcHostApply" Grid.Column="3" Content="Apply" Style="{StaticResource BtnAccent}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Win32 Priority Separation" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Controls foreground/background CPU quantum. Fr33thy Ultimate recommends 26 (Hex). Restart to apply." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <ComboBox Name="CboPrioritySep" Grid.Column="1" Width="120" VerticalAlignment="Center">
+                                        <ComboBoxItem Content="26 (Hex) &#9733;" IsSelected="True"/>
+                                        <ComboBoxItem Content="2A (Hex)"/>
+                                        <ComboBoxItem Content="28 (Hex)"/>
+                                        <ComboBoxItem Content="16 (Hex)"/>
+                                        <ComboBoxItem Content="06 (Hex)"/>
+                                    </ComboBox>
+                                    <Button Name="BtnPrioritySepApply" Grid.Column="3" Content="Apply" Style="{StaticResource BtnAccent}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Granular Control Panel tweak groups are injected here at startup by Render-CpTweaks -->
+                    </StackPanel>
+                </ScrollViewer>

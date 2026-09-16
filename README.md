@@ -120,14 +120,20 @@ functions/private/*.ps1  → helpers (background runner, upstream-script launche
 functions/public/*.ps1   → one file per tab, holding the button handlers
 config/*.json            → embedded as $sync.configs.<name>  (optional)
 assets/AkariLogo.png     → embedded as base64 (title-bar logo + window icon)
-xaml/MainWindow.xaml     → embedded as the $inputXML here-string (the whole UI)
+xaml/MainWindow.xaml     → the shell (styles, titlebar, sidebar nav, status bar)
+xaml/panels/*.xaml       → one file per tab, injected into the shell at the @PANELS@ marker
+                           (combined result embedded as the $inputXML here-string — the whole UI)
 scripts/main.ps1         → parses the XAML, wires buttons, shows the window
 ```
 
 ### The UI is XAML, the logic is functions
 
-`xaml/MainWindow.xaml` defines the entire window (styles, tabs, cards, buttons). Every named
-button auto-wires to a matching function by convention:
+`xaml/MainWindow.xaml` is the **shell** — window chrome, styles, the sidebar nav, and the status
+bar — with a single `<!-- @PANELS@ -->` marker inside the content area. Each tab's page lives in its
+own `xaml/panels/NN-Name.xaml` fragment (e.g. `06-Windows.xaml`); at build time `Compile.ps1` sorts
+them by their `NN-` prefix and splices them in where the marker sits, so the shell rules the overall
+layout while each tab is maintained on its own. Every named button auto-wires to a matching function
+by convention:
 
 ```
 <Button Name="BtnFirewallDisable" .../>   →   function Invoke-BtnFirewallDisable { ... }
@@ -208,7 +214,19 @@ akari-tool/
 │     ├─ Invoke-Advanced.ps1
 │     └─ Invoke-Missing.ps1           # extra Windows/Advanced/Installer handlers
 └─ xaml/
-   └─ MainWindow.xaml   # the entire UI (styles, tabs, buttons)
+   ├─ MainWindow.xaml   # shell: styles, titlebar, sidebar nav, status bar, @PANELS@ marker
+   └─ panels/           # one fragment per tab, injected into the shell at build time
+      ├─ 00-Home.xaml
+      ├─ 01-Check.xaml
+      ├─ 02-Refresh.xaml
+      ├─ 03-Setup.xaml
+      ├─ 04-Installers.xaml
+      ├─ 05-Graphics.xaml
+      ├─ 06-Windows.xaml
+      ├─ 07-Hardware.xaml
+      ├─ 08-Advanced.xaml
+      ├─ 09-Tweaks.xaml
+      └─ 10-About.xaml
 ```
 
 ## FAQ

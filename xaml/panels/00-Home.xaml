@@ -1,0 +1,101 @@
+﻿<ScrollViewer Name="PanelHome" Padding="24,20,24,16">
+                    <StackPanel>
+                        <TextBlock Text="Home" Style="{StaticResource H1}"/>
+
+                        <Border Style="{StaticResource Card}" Padding="20,18">
+                            <StackPanel>
+                                <TextBlock FontSize="20" FontWeight="SemiBold" Foreground="White"
+                                           FontFamily="Segoe UI Variable Display, Segoe UI">
+                                    <Run Text="Welcome to Akari "/><Run Text="Tool" Foreground="#E03535"/>
+                                </TextBlock>
+                                <TextBlock Style="{StaticResource CardDesc}" Margin="0,6,0,0"
+                                           Text="A clean front-end for the FR33THY Ultimate tweak set. Work top-to-bottom through the sections on the left, or jump straight in below. Every &#9733; button is the recommended option for that row."/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource CardDanger}">
+                            <StackPanel>
+                                <TextBlock Text="&#9888;  BEFORE YOU START" Style="{StaticResource CardGroupHeader}" Foreground="#FF6B6B"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Create a Restore Point" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="These tweaks change the registry, services and drivers. Create a system restore point so you can roll back." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnHomeRestorePoint" Grid.Column="1" Content="Create &#9733;" Style="{StaticResource BtnAccent}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="THIS PC" Style="{StaticResource CardGroupHeader}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="120"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Windows"   Style="{StaticResource CardDesc}" Margin="0,3"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="1" Name="SysOs"   Text="..." Style="{StaticResource CardTitle}" Margin="0,3"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="CPU"       Style="{StaticResource CardDesc}" Margin="0,3"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="1" Name="SysCpu"  Text="..." Style="{StaticResource CardTitle}" Margin="0,3"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="GPU"       Style="{StaticResource CardDesc}" Margin="0,3"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="1" Name="SysGpu"  Text="..." Style="{StaticResource CardTitle}" Margin="0,3"/>
+                                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Memory"    Style="{StaticResource CardDesc}" Margin="0,3"/>
+                                    <TextBlock Grid.Row="3" Grid.Column="1" Name="SysRam"  Text="..." Style="{StaticResource CardTitle}" Margin="0,3"/>
+                                    <TextBlock Grid.Row="4" Grid.Column="0" Text="Machine"   Style="{StaticResource CardDesc}" Margin="0,3"/>
+                                    <TextBlock Grid.Row="4" Grid.Column="1" Name="SysHost"  Text="..." Style="{StaticResource CardTitle}" Margin="0,3"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="RECOMMENDED PATH" Style="{StaticResource CardGroupHeader}"/>
+                                <TextBlock Text="The FR33THY Ultimate order. Jump to any section:" Foreground="#888888" FontSize="12" Margin="0,0,0,12" TextWrapping="Wrap"/>
+                                <UniformGrid Columns="3">
+                                    <Button Name="BtnGoCheck"      Content="1 &#183; Check"      Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnGoRefresh"    Content="2 &#183; Refresh"    Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnGoSetup"      Content="3 &#183; Setup"      Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnGoInstallers" Content="4 &#183; Installers" Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnGoGraphics"   Content="5 &#183; Graphics"   Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnGoWindows"    Content="6 &#183; Windows"    Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnGoHardware"   Content="7 &#183; Hardware"   Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnGoAdvanced"   Content="8 &#183; Advanced"   Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                    <Button Name="BtnGoTweaks"     Content="Individual Tweaks"   Style="{StaticResource Btn}" Margin="0,0,8,8"/>
+                                </UniformGrid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="QUICK ACCESS" Style="{StaticResource CardGroupHeader}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Desktop Shortcut" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Online: a Desktop icon that always runs the latest version from the web â€” nothing kept on disk.  Install: save a local copy under AppData and add a Desktop icon so you can tune offline. Both run as admin." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnHomeShortcutOnline"  Grid.Column="1" Content="Online"  Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnHomeShortcutOffline" Grid.Column="3" Content="Install &#9733;" Style="{StaticResource BtnAccent}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="ABOUT" Style="{StaticResource CardGroupHeader}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Akari Tool by isleap" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Tweaks &amp; research by FR33THY (Ultimate). Watch the guide for what each option does." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnHomeGuide"   Grid.Column="1" Content="Guide"   Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnHomeGithub"  Grid.Column="3" Content="GitHub"  Style="{StaticResource Btn}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>

@@ -1,0 +1,142 @@
+﻿<ScrollViewer Name="PanelAdvanced" Visibility="Collapsed" Padding="24,20,24,16">
+                    <StackPanel>
+                        <TextBlock Text="8 &#183; Advanced" Style="{StaticResource H1}"/>
+
+                        <Border Style="{StaticResource CardDanger}">
+                            <StackPanel>
+                                <TextBlock Text="âš   SECURITY â€” USE WITH CARE" Style="{StaticResource CardGroupHeader}" Foreground="#FF6B6B"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Windows Defender" Style="{StaticResource CardTitle}"/><TextBlock Text="Fully disable or re-enable Windows Defender AV." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnDefenderDisable" Grid.Column="1" Content="Disable" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnDefenderEnable"  Grid.Column="3" Content="Enable"   Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Firewall" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable or re-enable the Windows Firewall." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnFirewallDisable" Grid.Column="1" Content="Disable" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnFirewallEnable"  Grid.Column="3" Content="Enable"   Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Spectre / Meltdown Mitigations" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable CPU vulnerability mitigations for a performance boost." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnSpectreDisable" Grid.Column="1" Content="Disable" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnSpectreEnable"  Grid.Column="3" Content="Enable"   Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Data Execution Prevention (DEP)" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable or re-enable DEP memory protection." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnDepDisable" Grid.Column="1" Content="Disable" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnDepEnable"  Grid.Column="3" Content="Enable"   Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="File Download Security Warning" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable the 'this file may be harmful' warning on downloaded files." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnDlWarnDisable" Grid.Column="1" Content="Disable" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnDlWarnEnable"  Grid.Column="3" Content="Enable"   Style="{StaticResource Btn}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="SERVICES &amp; MEMORY" Style="{StaticResource CardGroupHeader}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Services" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable non-essential Windows background services." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnServicesOff"     Grid.Column="1" Content="Off &#9733;"  Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnServicesDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="MMAgent Features" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable Memory Manager Agent features (prefetch, superfetch)." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnMMAgentOff"     Grid.Column="1" Content="Off &#9733;"  Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnMMAgentDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="NVME Faster Driver" Style="{StaticResource CardTitle}"/><TextBlock Text="Use the faster inbox NVMe StorNVMe driver." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnNvmeOn"      Grid.Column="1" Content="Apply &#9733;" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnNvmeDefault" Grid.Column="3" Content="Default"  Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Start / Search / Shell / Mobsync" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable shell bloat for faster Start and Search." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnShellOff"     Grid.Column="1" Content="Off &#9733;"  Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnShellDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="RENDERING &amp; CPU" Style="{StaticResource CardGroupHeader}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="MPO (Multiplane Overlay)" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable MPO to fix flickering and tearing in some setups." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnMpoOn"  Grid.Column="1" Content="On (Default)" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnMpoOff" Grid.Column="3" Content="Off"           Style="{StaticResource BtnAccent}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Hardware Flip Mode" Style="{StaticResource CardTitle}"/><TextBlock Text="FSO (default) vs FSE (Hardware Legacy Flip)." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnFlipFSO" Grid.Column="1" Content="FSO (Default)" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnFlipFSE" Grid.Column="3" Content="FSE &#9733;"          Style="{StaticResource BtnAccent}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="HCIF (Hardware Composed Independent Flip)" Style="{StaticResource CardTitle}"/><TextBlock Text="Switch between HCIF and HIF flip modes." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnHcif"  Grid.Column="1" Content="HCIF &#9733;"     Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnHif"   Grid.Column="3" Content="HIF (Default)" Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="ULPS (AMD Ultra Low Power State)" Style="{StaticResource CardTitle}"/><TextBlock Text="Disable ULPS to prevent AMD GPU stutters on multi-GPU." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnUlpsOn"  Grid.Column="1" Content="On (Default)" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnUlpsOff" Grid.Column="3" Content="Off &#9733;"         Style="{StaticResource BtnAccent}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="ReBar Force (NVIDIA)" Style="{StaticResource CardTitle}"/><TextBlock Text="Force Resizable BAR on/off via Inspector, or use driver default. Option 4 restarts to BIOS." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnReBarDefault" Grid.Column="1" Content="Default" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnReBarOn"      Grid.Column="3" Content="Force On" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnReBarOff"     Grid.Column="5" Content="Force Off" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnReBarToBios"  Grid.Column="7" Content="To BIOS"   Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Keyboard Shortcuts" Style="{StaticResource CardTitle}"/><TextBlock Text="Off disables Win key, media keys, hotkeys. ESC rebinds to =. Cut/copy/paste still work." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnKbDefault" Grid.Column="1" Content="Default" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnKbOff"     Grid.Column="3" Content="Off &#9733;"   Style="{StaticResource BtnAccent}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="SMT/HT  &#183;  Core 1 Thread 1  &#183;  Priority" Style="{StaticResource CardTitle}"/><TextBlock Text="Interactive tools for per-game CPU affinity and priority." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnSmtOff"         Grid.Column="1" Content="SMT/HT Off"      Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnCore1Thread1"   Grid.Column="3" Content="Core 1 Thread 1" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnPriority"       Grid.Column="5" Content="Priority"         Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Driver WHQL / Secure Boot Bypass" Style="{StaticResource CardTitle}"/><TextBlock Text="Bypass WHQL driver signing check (requires Secure Boot off)." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnWhqlDefault" Grid.Column="1" Content="Default (Off)" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnWhqlBypass"  Grid.Column="3" Content="Bypass On &#9733;"   Style="{StaticResource BtnAccent}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>

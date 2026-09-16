@@ -1,0 +1,72 @@
+﻿<ScrollViewer Name="PanelRefresh" Visibility="Collapsed" Padding="24,20,24,16">
+                    <StackPanel>
+                        <TextBlock Text="2 &#183; Refresh" Style="{StaticResource H1}"/>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="RESET &amp; REINSTALL" Style="{StaticResource CardGroupHeader}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Factory Reset" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Open Windows recovery settings." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnFactoryReset" Grid.Column="1" Content="Open" Style="{StaticResource BtnAccent}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Reinstall Windows" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Download W10 or W11 installation media." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnReinstallW10" Grid.Column="1" Content="W10" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnReinstallW11" Grid.Column="3" Content="W11" Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Autounattend" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Generate an autounattend.xml for unattended installs." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnAutounattend" Grid.Column="1" Content="Open" Style="{StaticResource Btn}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="ACCOUNT &amp; DRIVERS" Style="{StaticResource CardGroupHeader}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Local Account" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Switch to a local account without a Microsoft login." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnAccountLocal" Grid.Column="1" Content="Open" Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Block Update Drivers" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Stop Windows Update from auto-installing drivers." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnBlockDrivers"   Grid.Column="1" Content="Block"   Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnUnblockDrivers" Grid.Column="3" Content="Unblock" Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Network Driver / To BIOS" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Open Device Manager for network driver, or reboot to BIOS." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnNetworkDriver" Grid.Column="1" Content="Network" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnToBios"        Grid.Column="3" Content="To BIOS" Style="{StaticResource Btn}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>

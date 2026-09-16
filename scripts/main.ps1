@@ -60,7 +60,7 @@ $sync.window.Add_Loaded({
 # ── Navigation switching ──────────────────────────────────────────────────────
 $panels = @(
     "PanelHome", "PanelCheck", "PanelRefresh", "PanelSetup", "PanelInstallers",
-    "PanelGraphics", "PanelWindows", "PanelHardware", "PanelAdvanced", "PanelTweaks"
+    "PanelGraphics", "PanelWindows", "PanelHardware", "PanelAdvanced", "PanelTweaks", "PanelAbout"
 )
 
 $navMap = @{
@@ -74,6 +74,7 @@ $navMap = @{
     NavHardware   = "PanelHardware"
     NavAdvanced   = "PanelAdvanced"
     NavTweaks     = "PanelTweaks"
+    NavAbout      = "PanelAbout"
 }
 
 foreach ($navName in $navMap.Keys) {
@@ -132,7 +133,7 @@ foreach ($p in $panels) {
 
 # ── Hamburger: toggle compact / expanded sidebar ─────────────────────────────
 $sync.SidebarExpanded = $true
-$navNames = @("NavHome","NavCheck","NavRefresh","NavSetup","NavInstallers","NavGraphics","NavWindows","NavHardware","NavAdvanced","NavTweaks")
+$navNames = @("NavHome","NavCheck","NavRefresh","NavSetup","NavInstallers","NavGraphics","NavWindows","NavHardware","NavAdvanced","NavTweaks","NavAbout")
 if ($sync.NavHamburger) {
     $sync.NavHamburger.Add_Click({
         $sync.SidebarExpanded = -not $sync.SidebarExpanded

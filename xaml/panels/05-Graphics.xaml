@@ -1,0 +1,140 @@
+﻿<ScrollViewer Name="PanelGraphics" Visibility="Collapsed" Padding="24,20,24,16">
+                    <StackPanel>
+                        <TextBlock Text="5 &#183; Graphics" Style="{StaticResource H1}"/>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="DRIVER MANAGEMENT" Style="{StaticResource CardGroupHeader}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="DDU â€” Driver Clean" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Download DDU and wipe your current GPU driver cleanly." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnDduAuto"   Grid.Column="1" Content="Auto &#9733;"  Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnDduManual" Grid.Column="3" Content="Manual"   Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Install Latest Driver" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Download and install the latest GPU driver for your brand." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnDriverNvidia" Grid.Column="1" Content="NVIDIA" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnDriverAmd"    Grid.Column="3" Content="AMD"    Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnDriverIntel"  Grid.Column="5" Content="Intel"  Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Debloat Driver + Apply Settings" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Install driver without bloat and apply optimized GPU settings." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnDriverDebloatNvidia" Grid.Column="1" Content="NVIDIA" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnDriverDebloatAmd"    Grid.Column="3" Content="AMD"    Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnDriverDebloatIntel"  Grid.Column="5" Content="Intel"  Style="{StaticResource BtnAccent}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="GPU SETTINGS" Style="{StaticResource CardGroupHeader}"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="NVIDIA Settings" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Apply optimized NVIDIA control panel settings." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnNvidiaOn"      Grid.Column="1" Content="Apply &#9733;" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnNvidiaDefault" Grid.Column="3" Content="Default"  Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="AMD Settings" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Apply optimized AMD Radeon settings." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnAmdOn"      Grid.Column="1" Content="Apply &#9733;" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnAmdDefault" Grid.Column="3" Content="Default"  Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Intel Settings" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Apply optimized Intel Arc / iGPU settings." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnIntelOn"      Grid.Column="1" Content="Apply &#9733;" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnIntelDefault" Grid.Column="3" Content="Default"  Style="{StaticResource Btn}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="ADVANCED GPU TWEAKS" Style="{StaticResource CardGroupHeader}"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="HDCP" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Disable HDCP â€” reduces GPU overhead in some games." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnHdcpOff"     Grid.Column="1" Content="Off &#9733;"  Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnHdcpDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="P0 State" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Force GPU to stay in highest performance state." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnP0On"      Grid.Column="1" Content="On &#9733;"   Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnP0Default" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="MSI Mode" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Enable Message Signaled Interrupts for the GPU." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnMsiOn"  Grid.Column="1" Content="On &#9733;" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnMsiOff" Grid.Column="3" Content="Off"   Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="DirectX / C++ Runtimes" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Install or update DirectX and Visual C++ redistributables." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnDirectX"   Grid.Column="1" Content="DirectX" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnCppRuntime" Grid.Column="3" Content="C++"    Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Resolution / Refresh Rate  &#183;  HAGS + Windowed Opt." Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Open display settings for resolution and HAGS controls." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnResolution" Grid.Column="1" Content="Resolution" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnHags"       Grid.Column="3" Content="HAGS"       Style="{StaticResource Btn}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>

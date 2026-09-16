@@ -4467,8 +4467,9 @@ function Invoke-BtnGoHardware   { if ($sync.NavHardware)   { $sync.NavHardware.I
 function Invoke-BtnGoAdvanced   { if ($sync.NavAdvanced)   { $sync.NavAdvanced.IsChecked   = $true } }
 function Invoke-BtnGoTweaks     { if ($sync.NavTweaks)     { $sync.NavTweaks.IsChecked     = $true } }
 
-# Sidebar GitHub link
-function Invoke-BtnGithub { Start-Process "https://github.com/FR33THYFR33THY/Ultimate" }
+# Sidebar About links
+function Invoke-BtnAboutAkari   { Start-Process "https://github.com/isleap9/Akari-Tool" }
+function Invoke-BtnAboutFr33thy { Start-Process "https://github.com/FR33THYFR33THY/Ultimate" }
 
 # About links
 function Invoke-BtnHomeGuide  { Start-Process "https://youtu.be/zwPEDXteJYQ" }
@@ -7551,6 +7552,7 @@ $inputXML = @'
         <!-- ── ScrollBar (thin, Win11-style) ──────────────────────────────── -->
         <Style TargetType="ScrollBar">
             <Setter Property="Width"  Value="6"/>
+            <Setter Property="Margin" Value="0,12,4,12"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -8010,29 +8012,28 @@ $inputXML = @'
                         </Grid>
                     </Border>
                     <RadioButton Name="NavHome"       Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE80F;" Content="Home"          IsChecked="True"/>
-                    <RadioButton Name="NavCheck"      Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE9D9;" Content="1 · Check"/>
-                    <RadioButton Name="NavRefresh"    Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE895;" Content="2 · Refresh"/>
-                    <RadioButton Name="NavSetup"      Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE977;" Content="3 · Setup"/>
-                    <RadioButton Name="NavInstallers" Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE896;" Content="4 · Installers"/>
-                    <RadioButton Name="NavGraphics"   Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE7F4;" Content="5 · Graphics"/>
-                    <RadioButton Name="NavWindows"    Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE770;" Content="6 · Windows"/>
-                    <RadioButton Name="NavHardware"   Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE90F;" Content="7 · Hardware"/>
-                    <RadioButton Name="NavAdvanced"   Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE945;" Content="8 · Advanced"/>
+                    <RadioButton Name="NavCheck"      Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE9D9;" Content="1 &#183; Check"/>
+                    <RadioButton Name="NavRefresh"    Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE895;" Content="2 &#183; Refresh"/>
+                    <RadioButton Name="NavSetup"      Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE977;" Content="3 &#183; Setup"/>
+                    <RadioButton Name="NavInstallers" Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE896;" Content="4 &#183; Installers"/>
+                    <RadioButton Name="NavGraphics"   Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE7F4;" Content="5 &#183; Graphics"/>
+                    <RadioButton Name="NavWindows"    Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE770;" Content="6 &#183; Windows"/>
+                    <RadioButton Name="NavHardware"   Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE90F;" Content="7 &#183; Hardware"/>
+                    <RadioButton Name="NavAdvanced"   Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE945;" Content="8 &#183; Advanced"/>
                     <RadioButton Name="NavTweaks"     Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE9E9;" Content="Individual Tweaks"/>
-
-                    <Separator Name="NavDivider" Background="#1AFFFFFF" Margin="16,8"/>
-                    <Button Name="BtnGithub" Style="{StaticResource NavLinkBtn}" Tag="&#xE943;" Content="GitHub"/>
+                    <RadioButton Name="NavAbout"      Style="{StaticResource NavBtn}" GroupName="Nav" Tag="&#xE946;" Content="About"/>
                 </StackPanel>
 
                 <!-- Version footer -->
                 <StackPanel Name="SidebarFooter" Grid.Row="1" Margin="16,12">
                     <TextBlock Text="Akari Tool  v1.0" FontSize="11" Foreground="#444444"/>
-                    <TextBlock Text="by isleap · Fr33thy scripts" FontSize="11" Foreground="#444444"/>
+                    <TextBlock Text="by isleap &#183; Fr33thy scripts" FontSize="11" Foreground="#444444"/>
                 </StackPanel>
+
             </Grid>
 
             <!-- ══ CONTENT AREA (rounded panel — curved divide from the sidebar) ══ -->
-            <Border Grid.Column="1" Background="#18FFFFFF" CornerRadius="14,0,0,0" ClipToBounds="True">
+            <Border Grid.Column="1" Background="#18FFFFFF" CornerRadius="14" Margin="0,0,16,10" ClipToBounds="True">
             <Grid Background="Transparent">
 <ScrollViewer Name="PanelHome" Padding="24,20,24,16">
                     <StackPanel>
@@ -8136,9 +8137,9 @@ $inputXML = @'
                     </StackPanel>
                 </ScrollViewer>
 
-                <ScrollViewer Name="PanelCheck" Visibility="Collapsed" Padding="24,20,24,16">
+<ScrollViewer Name="PanelCheck" Visibility="Collapsed" Padding="24,20,24,16">
                     <StackPanel>
-                        <TextBlock Text="1 Â· Check" Style="{StaticResource H1}"/>
+                        <TextBlock Text="1 &#183; Check" Style="{StaticResource H1}"/>
 
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
@@ -8170,9 +8171,9 @@ $inputXML = @'
                     </StackPanel>
                 </ScrollViewer>
 
-                <ScrollViewer Name="PanelRefresh" Visibility="Collapsed" Padding="24,20,24,16">
+<ScrollViewer Name="PanelRefresh" Visibility="Collapsed" Padding="24,20,24,16">
                     <StackPanel>
-                        <TextBlock Text="2 Â· Refresh" Style="{StaticResource H1}"/>
+                        <TextBlock Text="2 &#183; Refresh" Style="{StaticResource H1}"/>
 
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
@@ -8243,9 +8244,9 @@ $inputXML = @'
                     </StackPanel>
                 </ScrollViewer>
 
-                <ScrollViewer Name="PanelSetup" Visibility="Collapsed" Padding="24,20,24,16">
+<ScrollViewer Name="PanelSetup" Visibility="Collapsed" Padding="24,20,24,16">
                     <StackPanel>
-                        <TextBlock Text="3 Â· Setup" Style="{StaticResource H1}"/>
+                        <TextBlock Text="3 &#183; Setup" Style="{StaticResource H1}"/>
 
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
@@ -8351,9 +8352,9 @@ $inputXML = @'
                     </StackPanel>
                 </ScrollViewer>
 
-                <ScrollViewer Name="PanelInstallers" Visibility="Collapsed" Padding="24,20,24,16">
+<ScrollViewer Name="PanelInstallers" Visibility="Collapsed" Padding="24,20,24,16">
                     <StackPanel>
-                        <TextBlock Text="4 Â· Installers" Style="{StaticResource H1}"/>
+                        <TextBlock Text="4 &#183; Installers" Style="{StaticResource H1}"/>
 
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
@@ -8402,9 +8403,9 @@ $inputXML = @'
                     </StackPanel>
                 </ScrollViewer>
 
-                <ScrollViewer Name="PanelGraphics" Visibility="Collapsed" Padding="24,20,24,16">
+<ScrollViewer Name="PanelGraphics" Visibility="Collapsed" Padding="24,20,24,16">
                     <StackPanel>
-                        <TextBlock Text="5 Â· Graphics" Style="{StaticResource H1}"/>
+                        <TextBlock Text="5 &#183; Graphics" Style="{StaticResource H1}"/>
 
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
@@ -8532,7 +8533,7 @@ $inputXML = @'
                                 <Grid>
                                     <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0">
-                                        <TextBlock Text="Resolution / Refresh Rate  Â·  HAGS + Windowed Opt." Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Resolution / Refresh Rate  &#183;  HAGS + Windowed Opt." Style="{StaticResource CardTitle}"/>
                                         <TextBlock Text="Open display settings for resolution and HAGS controls." Style="{StaticResource CardDesc}"/>
                                     </StackPanel>
                                     <Button Name="BtnResolution" Grid.Column="1" Content="Resolution" Style="{StaticResource Btn}"/>
@@ -8543,9 +8544,9 @@ $inputXML = @'
                     </StackPanel>
                 </ScrollViewer>
 
-                <ScrollViewer Name="PanelWindows" Visibility="Collapsed" Padding="24,20,24,16">
+<ScrollViewer Name="PanelWindows" Visibility="Collapsed" Padding="24,20,24,16">
                     <StackPanel>
-                        <TextBlock Text="6 Â· Windows" Style="{StaticResource H1}"/>
+                        <TextBlock Text="6 &#183; Windows" Style="{StaticResource H1}"/>
 
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
@@ -8724,7 +8725,7 @@ $inputXML = @'
                             <StackPanel>
                                 <TextBlock Text="QUICK SETTINGS" Style="{StaticResource CardGroupHeader}"/>
                                 <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0"><TextBlock Text="Game Mode  Â·  Pointer Precision  Â·  Scaling" Style="{StaticResource CardTitle}"/><TextBlock Text="Open Game Mode, Mouse settings, or Display scaling settings." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Game Mode  &#183;  Pointer Precision  &#183;  Scaling" Style="{StaticResource CardTitle}"/><TextBlock Text="Open Game Mode, Mouse settings, or Display scaling settings." Style="{StaticResource CardDesc}"/></StackPanel>
                                     <Button Name="BtnGamemode"         Grid.Column="1" Content="Game Mode"        Style="{StaticResource Btn}"/>
                                     <Button Name="BtnPointerPrecision" Grid.Column="3" Content="Pointer Precision" Style="{StaticResource Btn}"/>
                                     <Button Name="BtnScalingSettings"  Grid.Column="5" Content="Scaling"           Style="{StaticResource Btn}"/>
@@ -8762,9 +8763,9 @@ $inputXML = @'
                     </StackPanel>
                 </ScrollViewer>
 
-                <ScrollViewer Name="PanelHardware" Visibility="Collapsed" Padding="24,20,24,16">
+<ScrollViewer Name="PanelHardware" Visibility="Collapsed" Padding="24,20,24,16">
                     <StackPanel>
-                        <TextBlock Text="7 Â· Hardware" Style="{StaticResource H1}"/>
+                        <TextBlock Text="7 &#183; Hardware" Style="{StaticResource H1}"/>
 
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
@@ -8827,7 +8828,7 @@ $inputXML = @'
                                 <TextBlock Text="NETWORK &amp; GUIDES" Style="{StaticResource CardGroupHeader}"/>
                                 <Grid>
                                     <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0"><TextBlock Text="Network Bufferbloat Test  Â·  PC Build Guide" Style="{StaticResource CardTitle}"/><TextBlock Text="Open bufferbloat test or the recommended PC build guide." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Network Bufferbloat Test  &#183;  PC Build Guide" Style="{StaticResource CardTitle}"/><TextBlock Text="Open bufferbloat test or the recommended PC build guide." Style="{StaticResource CardDesc}"/></StackPanel>
                                     <Button Name="BtnBufferbloat"  Grid.Column="1" Content="Bufferbloat" Style="{StaticResource Btn}"/>
                                     <Button Name="BtnPcBuildGuide" Grid.Column="3" Content="Build Guide" Style="{StaticResource Btn}"/>
                                 </Grid>
@@ -8836,9 +8837,9 @@ $inputXML = @'
                     </StackPanel>
                 </ScrollViewer>
 
-                <ScrollViewer Name="PanelAdvanced" Visibility="Collapsed" Padding="24,20,24,16">
+<ScrollViewer Name="PanelAdvanced" Visibility="Collapsed" Padding="24,20,24,16">
                     <StackPanel>
-                        <TextBlock Text="8 Â· Advanced" Style="{StaticResource H1}"/>
+                        <TextBlock Text="8 &#183; Advanced" Style="{StaticResource H1}"/>
 
                         <Border Style="{StaticResource CardDanger}">
                             <StackPanel>
@@ -8962,7 +8963,7 @@ $inputXML = @'
                                 <Separator Style="{StaticResource Sep}"/>
 
                                 <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0"><TextBlock Text="SMT/HT  Â·  Core 1 Thread 1  Â·  Priority" Style="{StaticResource CardTitle}"/><TextBlock Text="Interactive tools for per-game CPU affinity and priority." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="SMT/HT  &#183;  Core 1 Thread 1  &#183;  Priority" Style="{StaticResource CardTitle}"/><TextBlock Text="Interactive tools for per-game CPU affinity and priority." Style="{StaticResource CardDesc}"/></StackPanel>
                                     <Button Name="BtnSmtOff"         Grid.Column="1" Content="SMT/HT Off"      Style="{StaticResource BtnAccent}"/>
                                     <Button Name="BtnCore1Thread1"   Grid.Column="3" Content="Core 1 Thread 1" Style="{StaticResource BtnAccent}"/>
                                     <Button Name="BtnPriority"       Grid.Column="5" Content="Priority"         Style="{StaticResource Btn}"/>
@@ -8979,7 +8980,7 @@ $inputXML = @'
                     </StackPanel>
                 </ScrollViewer>
 
-                <ScrollViewer Name="PanelTweaks" Visibility="Collapsed" Padding="24,20,24,16">
+<ScrollViewer Name="PanelTweaks" Visibility="Collapsed" Padding="24,20,24,16">
                     <StackPanel>
                         <TextBlock Text="Individual Tweaks" Style="{StaticResource H1}"/>
 
@@ -9037,14 +9038,51 @@ $inputXML = @'
                     </StackPanel>
                 </ScrollViewer>
 
+<ScrollViewer Name="PanelAbout" Visibility="Collapsed" Padding="24,20,24,16">
+                    <StackPanel>
+                        <TextBlock Text="About" Style="{StaticResource H1}"/>
 
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="Akari Tool by isleap" Style="{StaticResource CardTitle}"/>
+                                <TextBlock Style="{StaticResource CardDesc}" Margin="0,4,0,0"
+                                           Text="A clean WPF front-end for the FR33THY Ultimate Windows tweak scripts. Tweaks &amp; research are by FR33THY; this GUI is an independent project and is not affiliated with or endorsed by FR33THY."/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="LINKS" Style="{StaticResource CardGroupHeader}"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Akari Tool" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="This tool's source on GitHub." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnAboutAkari" Grid.Column="1" Content="Open" Style="{StaticResource BtnAccent}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Fr33thy Ultimate" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="The upstream tweak scripts and guide by FR33THY." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnAboutFr33thy" Grid.Column="1" Content="Open" Style="{StaticResource Btn}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
             </Grid>
             </Border><!-- end content area -->
         </Grid><!-- end body -->
 
         <!-- ── Status bar ───────────────────────────────────────────────────── -->
-        <Border Grid.Row="2" Background="{StaticResource TitleBarBg}"
-                BorderBrush="{StaticResource SeparatorBrush}" BorderThickness="0,1,0,0">
+        <Border Grid.Row="2" Background="{StaticResource SidebarBg}"
+                BorderThickness="0">
             <Grid Margin="16,0">
                 <TextBlock Name="StatusText" Text="Ready"
                            FontSize="11" Foreground="#666666"
@@ -9118,7 +9156,7 @@ $sync.window.Add_Loaded({
 # ── Navigation switching ──────────────────────────────────────────────────────
 $panels = @(
     "PanelHome", "PanelCheck", "PanelRefresh", "PanelSetup", "PanelInstallers",
-    "PanelGraphics", "PanelWindows", "PanelHardware", "PanelAdvanced", "PanelTweaks"
+    "PanelGraphics", "PanelWindows", "PanelHardware", "PanelAdvanced", "PanelTweaks", "PanelAbout"
 )
 
 $navMap = @{
@@ -9132,6 +9170,7 @@ $navMap = @{
     NavHardware   = "PanelHardware"
     NavAdvanced   = "PanelAdvanced"
     NavTweaks     = "PanelTweaks"
+    NavAbout      = "PanelAbout"
 }
 
 foreach ($navName in $navMap.Keys) {
@@ -9190,7 +9229,7 @@ foreach ($p in $panels) {
 
 # ── Hamburger: toggle compact / expanded sidebar ─────────────────────────────
 $sync.SidebarExpanded = $true
-$navNames = @("NavHome","NavCheck","NavRefresh","NavSetup","NavInstallers","NavGraphics","NavWindows","NavHardware","NavAdvanced","NavTweaks")
+$navNames = @("NavHome","NavCheck","NavRefresh","NavSetup","NavInstallers","NavGraphics","NavWindows","NavHardware","NavAdvanced","NavTweaks","NavAbout")
 if ($sync.NavHamburger) {
     $sync.NavHamburger.Add_Click({
         $sync.SidebarExpanded = -not $sync.SidebarExpanded

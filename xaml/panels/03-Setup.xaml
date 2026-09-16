@@ -1,0 +1,107 @@
+﻿<ScrollViewer Name="PanelSetup" Visibility="Collapsed" Padding="24,20,24,16">
+                    <StackPanel>
+                        <TextBlock Text="3 &#183; Setup" Style="{StaticResource H1}"/>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="SYSTEM" Style="{StaticResource CardGroupHeader}"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="BitLocker" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Enable or disable BitLocker drive encryption." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnBitlockerOff" Grid.Column="1" Content="Off &#9733;" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnBitlockerOn"  Grid.Column="3" Content="On"    Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Memory Compression" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Compresses RAM pages. Off reduces CPU overhead for gaming." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnMemCompOff"   Grid.Column="1" Content="Off &#9733;" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnMemCompOn"    Grid.Column="3" Content="On"    Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnMemCompCheck" Grid.Column="5" Content="Check" Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Background Apps" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Prevent apps from running in the background." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnBgAppsOff"     Grid.Column="1" Content="Off &#9733;"  Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnBgAppsDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="ACTIVATION &amp; LICENSING" Style="{StaticResource CardGroupHeader}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Keys / Activation / Convert to Pro" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Manage product keys, activate Windows, or upgrade Home to Pro." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnKeys"          Grid.Column="1" Content="Keys"       Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnActivation"    Grid.Column="3" Content="Activate"   Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnConvertToPro"  Grid.Column="5" Content="â†’ Pro"      Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Date / Language / Region / Time" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Open system locale and date/time settings." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnDateLang"    Grid.Column="1" Content="Open"    Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnStartupApps" Grid.Column="3" Content="Startup" Style="{StaticResource Btn}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="APPS &amp; UPDATES" Style="{StaticResource CardGroupHeader}"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Edge Settings" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Apply optimized Edge browser settings." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnEdgeOptimize" Grid.Column="1" Content="Optimize &#9733;" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnEdgeDefault"  Grid.Column="3" Content="Default"    Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Store Settings" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Apply optimized Microsoft Store settings." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnStoreOptimize" Grid.Column="1" Content="Optimize &#9733;" Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnStoreDefault"  Grid.Column="3" Content="Default"    Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Pause Updates" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Open Windows Update settings to pause updates." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <Button Name="BtnUpdatesPause" Grid.Column="1" Content="Open" Style="{StaticResource Btn}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>

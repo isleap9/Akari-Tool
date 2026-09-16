@@ -1,0 +1,73 @@
+﻿<ScrollViewer Name="PanelHardware" Visibility="Collapsed" Padding="24,20,24,16">
+                    <StackPanel>
+                        <TextBlock Text="7 &#183; Hardware" Style="{StaticResource H1}"/>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="DISPLAY" Style="{StaticResource CardGroupHeader}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Higher Scaling (No Acceleration)" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="Set DPI scaling without blurry GPU scaling." Style="{StaticResource CardDesc}"/>
+                                    </StackPanel>
+                                    <ComboBox Name="CboScaling" Grid.Column="1" Width="100" VerticalAlignment="Center">
+                                        <ComboBoxItem Content="100%" IsSelected="True"/>
+                                        <ComboBoxItem Content="125%"/>
+                                        <ComboBoxItem Content="150%"/>
+                                        <ComboBoxItem Content="175%"/>
+                                        <ComboBoxItem Content="200%"/>
+                                        <ComboBoxItem Content="225%"/>
+                                        <ComboBoxItem Content="250%"/>
+                                        <ComboBoxItem Content="300%"/>
+                                        <ComboBoxItem Content="350%"/>
+                                    </ComboBox>
+                                    <Button Name="BtnScalingApply" Grid.Column="3" Content="Apply" Style="{StaticResource BtnAccent}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Monitor Optimization" Style="{StaticResource CardTitle}"/><TextBlock Text="Tips and steps for monitor overdrive and overclock mode." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnMonitorOpt" Grid.Column="1" Content="Open" Style="{StaticResource Btn}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="MOUSE &amp; CONTROLLER" Style="{StaticResource CardGroupHeader}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Background Polling Rate Cap" Style="{StaticResource CardTitle}"/><TextBlock Text="Prevent background apps from capping mouse polling rate." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnPollingOff"     Grid.Column="1" Content="Off &#9733;"  Style="{StaticResource BtnAccent}"/>
+                                    <Button Name="BtnPollingDefault" Grid.Column="3" Content="Default" Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Mouse / Controller Polling Rate Test" Style="{StaticResource CardTitle}"/><TextBlock Text="Run polling rate measurement tools." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnMouseTest"      Grid.Column="1" Content="Mouse Test"      Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnControllerTest" Grid.Column="3" Content="Controller Test"  Style="{StaticResource Btn}"/>
+                                </Grid>
+                                <Separator Style="{StaticResource Sep}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Controller Overclock" Style="{StaticResource CardTitle}"/><TextBlock Text="Install hidusbf to overclock controller polling rate." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnControllerOC" Grid.Column="1" Content="Run" Style="{StaticResource Btn}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="NETWORK &amp; GUIDES" Style="{StaticResource CardGroupHeader}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="Network Bufferbloat Test  &#183;  PC Build Guide" Style="{StaticResource CardTitle}"/><TextBlock Text="Open bufferbloat test or the recommended PC build guide." Style="{StaticResource CardDesc}"/></StackPanel>
+                                    <Button Name="BtnBufferbloat"  Grid.Column="1" Content="Bufferbloat" Style="{StaticResource Btn}"/>
+                                    <Button Name="BtnPcBuildGuide" Grid.Column="3" Content="Build Guide" Style="{StaticResource Btn}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
