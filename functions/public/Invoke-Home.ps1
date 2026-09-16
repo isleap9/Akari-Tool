@@ -21,12 +21,15 @@ function Invoke-BtnHomeRestorePoint {
 }
 
 # Recommended-path shortcut buttons — jump to the matching tab
-function Invoke-BtnGoSoftware  { if ($sync.NavSoftware)  { $sync.NavSoftware.IsChecked  = $true } }
-function Invoke-BtnGoOptimize  { if ($sync.NavOptimize)  { $sync.NavOptimize.IsChecked  = $true } }
-function Invoke-BtnGoCustomize { if ($sync.NavCustomize) { $sync.NavCustomize.IsChecked = $true } }
-function Invoke-BtnGoSystem    { if ($sync.NavSystem)    { $sync.NavSystem.IsChecked    = $true } }
-function Invoke-BtnGoTools     { if ($sync.NavTools)     { $sync.NavTools.IsChecked     = $true } }
-function Invoke-BtnGoTweaks    { if ($sync.NavTweaks)    { $sync.NavTweaks.IsChecked    = $true } }
+function Invoke-BtnGoCheck      { if ($sync.NavCheck)      { $sync.NavCheck.IsChecked      = $true } }
+function Invoke-BtnGoRefresh    { if ($sync.NavRefresh)    { $sync.NavRefresh.IsChecked    = $true } }
+function Invoke-BtnGoSetup      { if ($sync.NavSetup)      { $sync.NavSetup.IsChecked      = $true } }
+function Invoke-BtnGoInstallers { if ($sync.NavInstallers) { $sync.NavInstallers.IsChecked = $true } }
+function Invoke-BtnGoGraphics   { if ($sync.NavGraphics)   { $sync.NavGraphics.IsChecked   = $true } }
+function Invoke-BtnGoWindows    { if ($sync.NavWindows)    { $sync.NavWindows.IsChecked    = $true } }
+function Invoke-BtnGoHardware   { if ($sync.NavHardware)   { $sync.NavHardware.IsChecked   = $true } }
+function Invoke-BtnGoAdvanced   { if ($sync.NavAdvanced)   { $sync.NavAdvanced.IsChecked   = $true } }
+function Invoke-BtnGoTweaks     { if ($sync.NavTweaks)     { $sync.NavTweaks.IsChecked     = $true } }
 
 # Sidebar GitHub link
 function Invoke-BtnGithub { Start-Process "https://github.com/FR33THYFR33THY/Ultimate" }

@@ -871,6 +871,47 @@ function Invoke-BtnBloatwareSnip {
     }
 }
 
+# Reinstall: winget (App Installer) — LTSC/N editions ship without it.
+# Opens the Microsoft Store product page for App Installer so it can be installed
+# with one click. Falls back to launching the App Runtime + winget MSIX bundles
+# directly if the Store isn't available.
+function Invoke-BtnBloatwareWinget {
+    # Fast path: if the Store is present, just open the App Installer product page.
+    if (Get-AppxPackage -Name Microsoft.WindowsStore) {
+        Start-Process "ms-windows-store://pdp?&productid=9nblggh4nns1"
+        return
+    }
+    # No Store (typical on LTSC without the Store restored): install winget directly.
+    Invoke-RunInBackground -StatusStart "Installing winget..." -StatusDone "winget install finished." -ScriptBlock {
+        function Notice($m, $t) { $sync.window.Dispatcher.Invoke([action]{ [System.Windows.MessageBox]::Show($m, $t, "OK", "Information") | Out-Null }, "Normal") }
+        $progresspreference = 'silentlycontinue'
+        if (Get-Command winget -ErrorAction SilentlyContinue) { Notice "winget is already installed." "Reinstall winget"; return }
+
+        # Windows App Runtime (dependency for the winget package)
+        $rt = "$env:TEMP\WindowsAppRuntimeInstall-x64.exe"
+        try {
+            Invoke-WebRequest -Uri "https://aka.ms/windowsappsdk/1.8/1.8.260804001/windowsappruntimeinstall-x64.exe" -OutFile $rt -UseBasicParsing -ErrorAction Stop
+            Start-Process $rt -Wait -ErrorAction Stop
+        } catch {}
+
+        # winget itself (App Installer MSIX bundle from the latest GitHub release)
+        $ok = $false
+        $pkg = "$env:TEMP\DesktopAppInstaller.msixbundle"
+        try {
+            Invoke-WebRequest -Uri "https://aka.ms/getwinget" -OutFile $pkg -UseBasicParsing -ErrorAction Stop
+            Add-AppxPackage -Path $pkg -ForceApplicationShutdown -ErrorAction Stop
+            $ok = $true
+        } catch {}
+
+        Start-Sleep -Seconds 2
+        if ($ok -or (Get-Command winget -ErrorAction SilentlyContinue)) {
+            Notice "winget installed. Open a new terminal, then run: winget --version" "Reinstall winget"
+        } else {
+            Notice "Automatic install failed. Open the Store manually and get 'App Installer', or run:`n`nms-windows-store://pdp?&productid=9nblggh4nns1" "Reinstall winget"
+        }
+    }
+}
+
 # Game Bar
 function Invoke-BtnGamebarOff {
     Invoke-RunInBackground -StatusStart "Disabling Game Bar / Xbox..." -StatusDone "Game Bar disabled." -ScriptBlock {
