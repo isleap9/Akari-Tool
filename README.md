@@ -49,25 +49,22 @@ logic are all embedded.
 
 ## Features
 
-Eight tabs, organized by task (the tweaks themselves are still Ultimate's recommendations):
+Eight tabs, mirroring Ultimate's structure:
 
 | Tab | What's inside |
 |-----|---------------|
-| **Home** | Welcome, one-click restore point, live "This PC" system info, recommended-path shortcuts, credits |
-| **Debloat** | Remove bloatware, Widgets, Copilot, Game Bar/Xbox DVR, Edge & WebView; Edge/Store settings, pause updates; bloatware checks |
-| **Tweaks** | Power plan, timer resolution, write cache, device/network power, IPv4, memory compression, background apps, game mode, services, MMAgent, NVMe, shell |
-| **Appearance** | Taskbar/Start clean, Start layout, classic context menu, black theme/wallpaper, shortcuts; UAC, Defender optimize, Control Panel, tools |
-| **Graphics** | DDU driver clean, driver install (updated / debloat), NVIDIA/AMD/Intel settings, HDCP, P0, MSI mode, DirectX & C++, resolution/HAGS; MPO, flip modes, ULPS, ReBar |
-| **Apps** | One-click winget installs for launchers, browsers & apps (Steam, Discord, Chrome, …) each pre-debloated, plus GPU tools (Afterburner, NPI, CRU/SRE) |
-| **System** | PC stress test (OCCT) + BIOS helper, factory reset, W10/W11 reinstall, local account, driver blocking, activation/licensing, display scaling, mouse/controller |
-| **Advanced** | Defender, firewall, Spectre/Meltdown, DEP, download warning; keyboard shortcuts, SMT/affinity, Core 1 Thread 1, priority, WHQL bypass |
+| **Home** | Welcome + safety, one-click restore point, live "This PC" info, recommended-path shortcuts, Desktop shortcut (online/offline), credits |
+| **Check** | PC stress test (OCCT) + drive/RAM/GPU checklist, and BIOS update/settings helper |
+| **Refresh** | Factory reset, W10/W11 reinstall (Media Creation Tool), autounattend, driver/update blocking |
+| **Setup** | BitLocker, memory compression, background apps, Edge & Store settings, pause updates, activation |
+| **Installers** | One-click winget installs for launchers, browsers & apps (Steam, Discord, Chrome, …) each pre-debloated, plus GPU tools (Afterburner, NPI, CRU/SRE) |
+| **Graphics** | DDU driver clean, driver install (updated / debloat), NVIDIA/AMD/Intel settings, HDCP, P0 state, MSI mode, DirectX & C++ runtimes |
+| **Windows** | Taskbar/Start clean, context menu, black theme, debloat & privacy, power plan, timer resolution, write cache, device/network power, and more |
+| **Hardware** | High-scaling-no-acceleration, monitor optimization, mouse/controller polling & overclock tests |
+| **Advanced** | Defender, firewall, Spectre/Meltdown, DEP, services, MMAgent, NVMe driver, MPO, flip modes, ULPS, ReBar, keyboard shortcuts, SMT/affinity, WHQL bypass |
+| **Individual Tweaks** | Scheduling (SvcHost Split Threshold, Win32 Priority Separation) plus 169 granular Control Panel tweaks from Ultimate — grouped, collapsed by default, Optimize/Default per row |
 
 Buttons marked **★** are the recommended option for that row.
-
-> The tab layout is Akari's own; the underlying handlers still live in files named after Ultimate's
-> original folders (`Invoke-Check.ps1`, `Invoke-Windows.ps1`, …). When editing a tweak, use the
-> "Updating the tweaks" table below to find the right source file by its Ultimate origin — a button's
-> tab in the UI no longer matches its source file, and that's fine.
 
 ## Requirements
 
@@ -79,18 +76,7 @@ Buttons marked **★** are the recommended option for that row.
 
 ## Running it
 
-### Option A — one-line web launch (recommended)
-
-In any **PowerShell / Windows Terminal** window:
-
-```powershell
-irm https://raw.githubusercontent.com/isleap9/Akari-Tool/main/akari.ps1 | iex
-```
-
-This downloads and runs the self-contained script; it re-fetches itself elevated (UAC prompt),
-then opens the window with its own taskbar icon — no files to keep on disk.
-
-### Option B — run the prebuilt file
+### Option A — run the prebuilt file
 
 Download `akari.ps1`, then in an **elevated** PowerShell / Terminal:
 
@@ -100,7 +86,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\path\to\akari.ps1"
 
 (The app will prompt for admin if you didn't start elevated.)
 
-### Option C — build & run from source
+### Option B — build & run from source
 
 ```powershell
 # from the repo root
@@ -145,7 +131,7 @@ the status bar.
 To stay **1:1 with Ultimate** while remaining **easy to maintain**, handlers come in two flavours:
 
 - **Embedded console scripts** — a few interactive, menu-driven tweaks (SMT/HT, Core 1 Thread 1,
-  Priority) aren't worth rebuilding as native WPF flows. Their `.ps1` files live in
+  Priority, Bloatware) aren't worth rebuilding as native WPF flows. Their `.ps1` files live in
   `assets/text/` and are **baked into `akari.ps1`** at compile time; the handler calls
   `Invoke-ConsoleScript -Asset "<name>"`, which decodes the embedded script to a temp file and
   launches it in an elevated console. Nothing is downloaded and there is no external folder to carry

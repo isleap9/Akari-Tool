@@ -3003,18 +3003,22 @@ function Render-CpTweaks {
     $sync.CpExpanders = New-Object System.Collections.ArrayList
     $sync.CpCards     = New-Object System.Collections.ArrayList
 
-    $panelMap = @{ Debloat = $sync.PanelDebloat; Appearance = $sync.PanelAppearance; Tweaks = $sync.PanelTweaks; System = $sync.PanelSystem }
-    foreach ($tab in $panelMap.Keys) {
-        $panel = $panelMap[$tab]
-        if (-not $panel) { continue }
-        $container = $panel.Content   # the StackPanel that already holds the curated cards
+    # Everything renders into the single Individual Tweaks tab, one collapsed
+    # expander per category (in FR33THY's own grouping), each grouped by section.
+    $container = $sync.PanelTweaks.Content   # StackPanel already holding the intro + scheduling cards
+    if (-not $container) { return }
+    $categoryOrder = @('Debloat','Appearance','Tweaks','System')
+    $seen = @($sync.CpTweaks | ForEach-Object { $_.Tab } | Select-Object -Unique)
+    $categories = @($categoryOrder | Where-Object { $seen -contains $_ }) + @($seen | Where-Object { $categoryOrder -notcontains $_ })
+
+    foreach ($tab in $categories) {
         $tweaks = @($sync.CpTweaks | Where-Object { $_.Tab -eq $tab })
         if ($tweaks.Count -eq 0) { continue }
 
-        # collapsed "Individual tweaks" expander holds all this tab's sections
+        # collapsed expander holds all this category's sections
         $exp = New-Object System.Windows.Controls.Expander
         $exp.Style = $expStyle
-        $exp.Header = "Individual tweaks  ($($tweaks.Count) settings)"
+        $exp.Header = "$tab  ($($tweaks.Count) settings)"
         $exp.IsExpanded = $false
         $inner = New-Object System.Windows.Controls.StackPanel
         [void]$sync.CpExpanders.Add($exp)
@@ -3070,7 +3074,7 @@ function Render-CpTweaks {
             }
             $card.Child = $sp
             [void]$inner.Children.Add($card)
-            [void]$sync.CpCards.Add([pscustomobject]@{ Card = $card; Text = $cardText.ToLowerInvariant(); Expander = $exp; Panel = "Panel$tab" })
+            [void]$sync.CpCards.Add([pscustomobject]@{ Card = $card; Text = $cardText.ToLowerInvariant(); Expander = $exp; Panel = "PanelTweaks" })
         }
         $exp.Content = $inner
         [void]$container.Children.Add($exp)

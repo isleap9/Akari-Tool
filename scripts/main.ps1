@@ -27,20 +27,7 @@ if ($sync.assets -and $sync.assets.logo) {
     try {
         $logoImg = ConvertFrom-Base64Image $sync.assets.logo
         if ($sync.TitleLogo) { $sync.TitleLogo.Source = $logoImg }
-        $sync.window.Icon = $logoImg   # fallback; replaced by the .ico below when present
-    } catch {}
-}
-# Prefer the multi-resolution .ico for the window / taskbar icon (crisper at all sizes)
-if ($sync.assets -and $sync.assets.icon) {
-    try {
-        $icoBytes  = [Convert]::FromBase64String($sync.assets.icon)
-        $icoStream = New-Object System.IO.MemoryStream(,$icoBytes)
-        $icoDec    = [System.Windows.Media.Imaging.BitmapDecoder]::Create(
-                        $icoStream,
-                        [System.Windows.Media.Imaging.BitmapCreateOptions]::None,
-                        [System.Windows.Media.Imaging.BitmapCacheOption]::OnLoad)
-        $icoFrame  = $icoDec.Frames | Sort-Object { $_.PixelWidth } -Descending | Select-Object -First 1
-        if ($icoFrame) { $sync.window.Icon = $icoFrame }
+        $sync.window.Icon = $logoImg
     } catch {}
 }
 
@@ -72,19 +59,21 @@ $sync.window.Add_Loaded({
 
 # ── Navigation switching ──────────────────────────────────────────────────────
 $panels = @(
-    "PanelHome", "PanelDebloat", "PanelTweaks", "PanelAppearance",
-    "PanelGraphics", "PanelApps", "PanelSystem", "PanelAdvanced"
+    "PanelHome", "PanelCheck", "PanelRefresh", "PanelSetup", "PanelInstallers",
+    "PanelGraphics", "PanelWindows", "PanelHardware", "PanelAdvanced", "PanelTweaks"
 )
 
 $navMap = @{
-    NavHome       = "PanelHome"
-    NavDebloat    = "PanelDebloat"
-    NavTweaks     = "PanelTweaks"
-    NavAppearance = "PanelAppearance"
-    NavGraphics   = "PanelGraphics"
-    NavApps       = "PanelApps"
-    NavSystem     = "PanelSystem"
-    NavAdvanced   = "PanelAdvanced"
+    NavHome      = "PanelHome"
+    NavCheck     = "PanelCheck"
+    NavRefresh   = "PanelRefresh"
+    NavSetup     = "PanelSetup"
+    NavInstallers= "PanelInstallers"
+    NavGraphics  = "PanelGraphics"
+    NavWindows   = "PanelWindows"
+    NavHardware  = "PanelHardware"
+    NavAdvanced  = "PanelAdvanced"
+    NavTweaks    = "PanelTweaks"
 }
 
 foreach ($navName in $navMap.Keys) {
@@ -112,7 +101,7 @@ $sync.Keys | Where-Object { $_ -like "Btn*" } | ForEach-Object {
     }
 }
 
-# ── Inject the granular Control Panel tweak rows into their tabs (data-driven) ──
+# ── Inject the granular Control Panel tweak rows into the Individual Tweaks tab ─
 if (Get-Command Render-CpTweaks -ErrorAction SilentlyContinue) { Render-CpTweaks }
 
 # ── Build a searchable index of every card across all tabs (for global search) ─
@@ -143,7 +132,7 @@ foreach ($p in $panels) {
 
 # ── Hamburger: toggle compact / expanded sidebar ─────────────────────────────
 $sync.SidebarExpanded = $true
-$navNames = @("NavHome","NavDebloat","NavTweaks","NavAppearance","NavGraphics","NavApps","NavSystem","NavAdvanced")
+$navNames = @("NavHome","NavCheck","NavRefresh","NavSetup","NavInstallers","NavGraphics","NavWindows","NavHardware","NavAdvanced","NavTweaks")
 if ($sync.NavHamburger) {
     $sync.NavHamburger.Add_Click({
         $sync.SidebarExpanded = -not $sync.SidebarExpanded
