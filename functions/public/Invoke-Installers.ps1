@@ -115,6 +115,11 @@ function Invoke-BtnInstRoblox {
     Invoke-RunInBackground -StatusStart "Installing Roblox..." -StatusDone "Roblox installed." -ScriptBlock {
         $progresspreference = 'silentlycontinue'
         try { Start-Process "winget" -ArgumentList "install `"Roblox.Roblox`" --silent --accept-package-agreements --accept-source-agreements --disable-interactivity --no-upgrade" -Wait -WindowStyle Hidden } catch {}
+        Start-Sleep -Seconds 5
+        $stop = "MicrosoftEdgeUpdate", "msedge", "msedgewebview2"
+        $stop | ForEach-Object { Stop-Process -Name $_ -Force -ErrorAction SilentlyContinue }
+        Get-Process | Where-Object { $_.ProcessName -like "*edge*" } | Stop-Process -Force -ErrorAction SilentlyContinue
+        Start-Sleep -Seconds 5
         $sh = New-Object -ComObject WScript.Shell
         $sc = $sh.CreateShortcut("$env:ProgramData\Microsoft\Windows\Start Menu\Programs\Roblox.url"); $sc.TargetPath = "roblox://placeId=0"; $sc.Save()
         $Desktop = (New-Object -ComObject Shell.Application).Namespace('shell:Desktop').Self.Path
