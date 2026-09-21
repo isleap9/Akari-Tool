@@ -20,7 +20,7 @@
 
                         <Border Style="{StaticResource CardDanger}">
                             <StackPanel>
-                                <TextBlock Text="âš   SECURITY â€” USE WITH CARE" Style="{StaticResource CardGroupHeader}" Foreground="#FF6B6B"/>
+                                <TextBlock Text="SECURITY USE WITH CARE" Style="{StaticResource CardGroupHeader}" Foreground="#FF6B6B"/>
 
                                 <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="8"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0"><TextBlock Text="Windows Defender" Style="{StaticResource CardTitle}"/><TextBlock Text="Fully disable or re-enable Windows Defender AV." Style="{StaticResource CardDesc}"/></StackPanel>
