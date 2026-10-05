@@ -148,13 +148,27 @@ function Resolve-RepoPath {
 
 # ── Get-MsbuildErrorList ──────────────────────────────────────────────────
 # Parses an MSBuild-shaped log into structured error records. MSBuild error text
-# arrives in two shapes and both must be recognised:
-#   <file>(<line>,<col>): error <CODE>: <message>   [<proj>::<Target>]
-#   <Target> : error : <CODE>: <message>            (task-raised, no file)
+# arrives in two shapes, and they are MUTUALLY EXCLUSIVE because the punctuation
+# after the word "error" differs:
+#
+#   canonical  <file>(<l>,<c>): error <CODE>: <message>   [<proj>::<Target>]
+#              -> "error" is followed by the CODE directly
+#   task-raised  ... <Target> : error : <CODE>: <message> [<proj>::<Target>]
+#              -> "error" is followed by a COLON, then the CODE
+#
+# ORDER MATTERS: the task-raised pattern is tried first because it requires a
+# colon after "error" and therefore cannot match a canonical line. Anchoring the
+# task-raised pattern at the start of the line (as an earlier version of this
+# function did) is WRONG: MSBuild prefixes the raising project's path, so the
+# target token is preceded by that path, not at position zero. Anchoring it there
+# silently dropped every task-raised line - which is the shape the PRI errors
+# actually take. The committed fixture tools/fixtures/allowlist-self-test.txt
+# exists to keep that honest.
+#
 # The target is taken from the trailing "[<proj>::<Target>]" canonical suffix when
-# present, and otherwise from the leading token of the task-raised shape. A line
-# with a code but NO discoverable target is reported with Target = '' and is
-# therefore never allowlisted - which is the correct, conservative answer.
+# present (it wins over any other reading), and otherwise from the token before
+# " : error : ". A line with a code but NO discoverable target is reported with
+# Target = '' and is therefore never allowlisted - the correct, conservative answer.
 function Get-MsbuildErrorList {
     param([string]$LogPath)
 
@@ -166,17 +180,17 @@ function Get-MsbuildErrorList {
         $code = $null
         $target = ''
 
-        if ($line -match ':\s*error\s+(?<c>[A-Za-z]+[0-9]+)\s*:') {
-            $code = $matches['c']
-        }
-        elseif ($line -match '^\s*(?<t>[A-Za-z0-9_.\-]+)\s*:\s*error\s*:\s*(?<c2>[A-Za-z]+[0-9]+)\s*:') {
+        if ($line -match '(?<t>[A-Za-z0-9_.\-]+)\s*:\s*error\s*:\s*(?<c2>[A-Za-z]+[0-9]+)\s*:') {
             $target = $matches['t']
             $code = $matches['c2']
+        }
+        elseif ($line -match ':\s*error\s+(?<c>[A-Za-z]+[0-9]+)\s*:') {
+            $code = $matches['c']
         }
 
         if (-not $code) { continue }
 
-        # The canonical trailing suffix wins over any leading token: MSBuild puts the
+        # The canonical trailing suffix wins over any other reading: MSBuild puts the
         # raising target there even for lines that begin with a file path.
         if ($line -match '\[(?<proj>.*?)::(?<t2>[^\[\]]+)\]\s*$') {
             $target = $matches['t2'].Trim()
@@ -604,44 +618,56 @@ function Read-TrxCounters {
 }
 
 # ── Get-TrxPerAssembly ────────────────────────────────────────────────────
-# The per-assembly test split, from the join documented below. RECORDED, never
-# gated (D-14 forbids per-project gating; recording it costs nothing and makes a
-# later regression legible).
+# The per-assembly test split. RECORDED, never gated (D-14 forbids per-project
+# gating; recording it costs nothing and makes a later regression legible).
 #
-# The join, and why the obvious substitutes are wrong:
+# THE JOIN, AND A CORRECTION TO AN EARLIER COMMENT IN THIS FILE:
 #     TestRun/Results/UnitTestResult/@testId
-#   + TestRun/TestDefinitions/UnitTest[@id]/@className   -> declaring class
-# The declaring assembly is the className's namespace root. Filtering
-# UnitTestResult by @testName or by console output is NOT equivalent and must not be
-# substituted: the same test class name can appear in more than one assembly.
+#   + TestRun/TestDefinitions/UnitTest[@id]/@storage
+#     -> the PATH OF THE ASSEMBLY THAT DECLARED THE TEST
 #
-# A result whose className matches no known test namespace lands in the explicit
-# '<unclassified>' bucket rather than being silently attributed - a test that
+# An earlier version of this comment claimed the second half of the join was
+# UnitTest/@className. Measured against the TRX vstest.console.exe 18.10 actually
+# writes: there is NO className attribute anywhere - neither on UnitTestResult nor
+# on UnitTest. What UnitTest/@storage carries is the declaring assembly's output
+# path, and the element's own tag name is the fully-qualified test name. Joining on
+# @className silently matched nothing, which put all 243 results into the
+# unclassified bucket while still looking like a working split.
+#
+# Attributing by the assembly FILE NAME is deliberate and is not a shortcut around
+# the same test class appearing in two assemblies: two assemblies with the same
+# simple file name cannot coexist in one run, and the full path is compared
+# case-insensitively. Filtering UnitTestResult by @testName is NOT equivalent and
+# must not be substituted - the same test class name can appear in more than one
+# assembly.
+#
+# A result whose storage matches no declared assembly lands in an explicit
+# '<unclassified>' bucket rather than being silently attributed, so a test that
 # escapes the split is visible instead of missing.
 function Get-TrxPerAssembly {
-    param([string]$TrxPath, [string[]]$KnownNamespaces)
+    param([string]$TrxPath, $AssemblyLabelsByFileName)
 
     [xml]$trx = Get-Content -LiteralPath $TrxPath -Raw
 
-    $idToClass = @{}
-    foreach ($u in @($trx.TestRun.TestDefinitions.UnitTest)) {
-        if ($u.id) { $idToClass[[string]$u.id] = [string]$u.className }
+    $idToStorage = @{}
+    foreach ($u in @($trx.TestRun.TestDefinitions.ChildNodes)) {
+        $id = [string]$u.GetAttribute('id')
+        if ($id) { $idToStorage[$id] = [string]$u.GetAttribute('storage') }
     }
 
     $counts = [ordered]@{}
-    foreach ($ns in $KnownNamespaces) { $counts[$ns] = 0 }
+    foreach ($label in $AssemblyLabelsByFileName.Values) { $counts[$label] = 0 }
     $unclassified = '<unclassified>'
     $counts[$unclassified] = 0
 
-    foreach ($r in @($trx.TestRun.Results.UnitTestResult)) {
-        $className = ''
-        if ($r.testId -and $idToClass.ContainsKey([string]$r.testId)) {
-            $className = $idToClass[[string]$r.testId]
-        }
-
+    foreach ($r in @($trx.TestRun.Results.ChildNodes)) {
         $bucket = $unclassified
-        foreach ($ns in $KnownNamespaces) {
-            if ($className -like "$ns.*") { $bucket = $ns; break }
+        $id = [string]$r.GetAttribute('testId')
+        if ($id -and $idToStorage.ContainsKey($id)) {
+            $leaf = [System.IO.Path]::GetFileName($idToStorage[$id]).ToLowerInvariant()
+            if ($AssemblyLabelsByFileName.Contains($leaf)) {
+                $bucket = $AssemblyLabelsByFileName[$leaf]
+            }
         }
         $counts[$bucket] = [int]$counts[$bucket] + 1
     }
@@ -1065,12 +1091,11 @@ Invoke-Vstest -VstPath $toolchain.Vstest `
     -TrxFileName $trxName
 
 $counters = Read-TrxCounters -TrxPath $trxPath
-$testNamespaces = @(
-    'AkariTool.Core.Tests',
-    'AkariTool.Infrastructure.Tests',
-    'AkariTool.App.Tests'
-)
-$perAssembly = Get-TrxPerAssembly -TrxPath $trxPath -KnownNamespaces $testNamespaces
+# Lowercased test-assembly file name -> the label recorded in the baseline. Built
+# from the inventory itself so a new test project cannot be forgotten here.
+$perAssemblyLabels = [ordered]@{}
+foreach ($a in $testAssemblies) { $perAssemblyLabels[[System.IO.Path]::GetFileName($a).ToLowerInvariant()] = [System.IO.Path]::GetFileNameWithoutExtension($a) }
+$perAssembly = Get-TrxPerAssembly -TrxPath $trxPath -AssemblyLabelsByFileName $perAssemblyLabels
 
 $measurement = [pscustomobject]@{
     Warnings              = $warningCount
@@ -1143,9 +1168,18 @@ if ($Mode -eq 'Record') {
 
     # Record still refuses to write a green record of a broken run: a baseline
     # captured over a failing build would make the gate fail on its first
-    # comparison for a reason that has nothing to do with a later regression.
-    if ($notAllowlisted.Count -gt 0 -or $counters.Failed -gt 0 -or $counters.NotRunnable -gt 0) {
-        Write-Host 'errors/test failures present - the run above is NOT a usable baseline.' -ForegroundColor Red
+    # comparison for a reason that has nothing to do with a later regression. An
+    # incomplete assembly inventory counts as broken for the same reason - the
+    # inventory IS one of the four recorded metrics, so recording it while entries
+    # are missing would record a regression as the new normal.
+    if ($notAllowlisted.Count -gt 0 -or $counters.Failed -gt 0 -or $counters.NotRunnable -gt 0 -or
+        $missingAssemblies.Count -gt 0) {
+        if ($missingAssemblies.Count -gt 0) {
+            Write-Host ''
+            Write-Host "assemblies $($missingAssemblies.Count) missing:" -ForegroundColor Red
+            $missingAssemblies | ForEach-Object { Write-Host "  $_" -ForegroundColor Red }
+        }
+        Write-Host 'errors/test/assembly failures present - the run above is NOT a usable baseline.' -ForegroundColor Red
         exit 1
     }
     exit 0

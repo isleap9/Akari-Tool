@@ -130,13 +130,50 @@ is not a Phase 1 requirement.
 > records `errors.allowlistedCount` for provenance and the comparison **never reads it**. The only
 > error signal the gate acts on is `errors.notAllowlistedCount`, which must be **0**.
 
-Verbatim text of the tolerated pair, as observed on a cold build and re-captured during the gate
-self-verification (see §7):
+Verbatim text of the tolerated pair, captured from a real build on this machine by deleting
+`vendor\WinUI.Framework\bin\**\WinUI.Framework.pri` and rebuilding (see §8, drill 5):
 
 ```
-AkariTool : error : PRI175: Resource reference not resolved: … […\AkariTool.csproj::WINAPPSDKGENERATEPROJECTPRIFILE]
-AkariTool : error : PRI252: Could not find file …             […\AkariTool.csproj::WINAPPSDKGENERATEPROJECTPRIFILE]
+WINAPPSDKGENERATEPROJECTPRIFILE : error : PRI175: 0x80070002 - Processing Resources failed with error: The system cannot find the file specified. [C:\Users\isleap\Documents\GitHub\Akari-Tool\src\AkariTool.App\AkariTool.App.csproj]
+WINAPPSDKGENERATEPROJECTPRIFILE : error : PRI252: 0xdef00071 - File C:\Users\isleap\Documents\GitHub\Akari-Tool\vendor\WinUI.Framework\bin\x64\Debug\net10.0-windows10.0.26100.0\WinUI.Framework.pri not found. [C:\Users\isleap\Documents\GitHub\Akari-Tool\src\AkariTool.App\AkariTool.App.csproj]
 ```
+
+Note the shape: the target sits at the **start** of the line, `error` is followed by a **colon**,
+and the trailing `[...]` names the **project only** — there is no `::target` suffix. Both PRI lines
+were **tolerated**, and the run still exited 0.
+
+> 🔍 **On a genuinely cold tree these two errors are not cosmetic — they CASCADE into a real compile
+> error.** Reproduced deliberately (§8, drill 5). `PRI252` reports the vendor PRI missing, which
+> makes `WINAPPSDKGENERATEPROJECTPRIFILE` fail, which means **`AkariTool.pri` is never emitted**,
+> which means MSBuild does not deliver the App's output to its `ProjectReference` consumers, which
+> makes `AkariTool.App.Tests` fail to compile:
+>
+> ```
+> tests\AkariTool.App.Tests\ViewModels\Tweaks\SettingBadgeCalculatorTests.cs(5,17): error CS0234:
+> The type or namespace name 'ViewModels' does not exist in the namespace 'AkariTool'
+> ```
+>
+> `CS0234` is **not** on the allowlist, so a cold-tree run goes **RED** — correctly. This is the
+> single most important thing to understand about this baseline: **the allowlist tolerates the PRI
+> pair, it does not tolerate what the PRI pair causes.** The pair is not "fine"; it is "these two
+> specific codes, and everything downstream of them still fails the gate".
+>
+> ⚠ **Why this tree measures zero errors, and what that means for a fresh clone.** A plain
+> `/t:Rebuild` of `AkariTool.sln` builds `vendor\WinUI.Framework` as **Any CPU** into
+> `vendor\WinUI.Framework\bin\Debug\…\WinUI.Framework.pri`. The App's PRI step reads the **x64**
+> path — `vendor\WinUI.Framework\bin\x64\Debug\…\WinUI.Framework.pri` — which a solution rebuild does
+> **not** produce. That file exists on this machine only because plan 01-01's diagnostics built the
+> csproj directly with `/p:Platform=x64`. **On a freshly cloned tree it will not exist, and
+> `-Mode Baseline` will go red with the cascade above on its very first run.** That red is correct and
+> must not be silenced by widening the allowlist. Restoring it is one command:
+>
+> ```powershell
+> & $msb 'vendor\WinUI.Framework\WinUIFramework.csproj' /t:Rebuild /p:Configuration=Debug /p:Platform=x64
+> ```
+>
+> Fixing the underlying PRI fragility is **Out of Scope** for this milestone (DEFERRED in STATE.md as
+> "WinUI 3 PRI175/PRI252 build failure"). Recorded here so no later phase mistakes it for a
+> regression it introduced.
 
 If **any other error code** ever appears from that target, or from any other target, it is a
 **finding to escalate**, not a tolerance to add: record it verbatim here and stop. D-16 forbids
@@ -296,6 +333,64 @@ baseline; results are recorded here rather than only in a commit message so a la
 the gate without re-deriving that it can be trusted.
 
 <!-- GATE-SELF-VERIFICATION -->
+
+Five drills, run against the committed `tools/baseline.json`. The first four are the plan's own
+proof obligations; the fifth was added because §3.1's claim about the PRI pair's behaviour needed
+real evidence rather than an assumption.
+
+| # | Drill | Command | Exit | Verdict printed |
+|---|-------|---------|------|-----------------|
+| 1 | Allowlist has teeth | `tools\run-tests.ps1 -Mode Allowlist` | **1** | `ALLOWLIST SELF-TEST: 1 of 3 error line(s) correctly REJECTED.` |
+| 2 | Warning increase fails | `tools\run-tests.ps1 -Mode Baseline -BaselinePath <scratch: warnings 15>` | **1** | `FAIL (warnings 15->16, errors 0 allowlisted, tests 243>=243)` |
+| 3 | Test-count decrease fails | `tools\run-tests.ps1 -Mode Baseline -BaselinePath <scratch: tests.total 244>` | **1** | `FAIL (warnings 16<=16, errors 0 allowlisted, tests 243->244)` |
+| 4 | Green against the committed baseline | `tools\run-tests.ps1 -Mode Baseline` | **0** | `PASS (warnings 16<=16, errors 0 allowlisted, tests 243>=243)` |
+| 5 | Tolerated when **present** | `tools\run-tests.ps1 -Mode Build` (cold: vendor `WinUI.Framework.pri` deleted) | **0** | `tests 243 total, …; errors 2 [PRI175=1 PRI252=1]; warnings 12 distinct` |
+
+**Drill 1 — the allowlist rejects a real compile error.** `-Mode Allowlist` applies the gate's *own*
+`Test-ErrorAllowlisted` predicate to `tools/fixtures/allowlist-self-test.txt` instead of a build log.
+Read the exit code carefully: it is **non-zero because the fixture deliberately contains one
+non-allowlisted line**. A *rejected* line is the desired outcome. The dangerous direction — a
+non-allowlisted line being *tolerated* — would be reported as a separately-labelled
+`ALLOWLIST BREACH` row, and a third allowlist entry or an entry missing its code half would be
+reported by the same tripwire. Neither fired.
+
+| ln | Code | Target | Verdict |
+|----|------|--------|---------|
+| 1 | `PRI175` | `WINAPPSDKGENERATEPROJECTPRIFILE` | **TOLERATED** (allowlisted) |
+| 2 | `PRI252` | `WINAPPSDKGENERATEPROJECTPRIFILE` | **TOLERATED** (allowlisted) |
+| 3 | `CS1002` | `CoreCompile` | **REJECTED** (not allowlisted) |
+
+> 🔍 **This fixture found a live bug on its first run, which is the whole reason it exists.**
+> Committed with three lines, it parsed only **two**: line 2 — the real task-raised shape — was
+> silently dropped, because `Get-MsbuildErrorList` anchored the task-raised pattern with `^\s*` and
+> MSBuild prefixes the raising project's path ahead of the target. A real `CS0234` in that shape
+> would have been **invisible**: not reported, not tolerated, simply never parsed. The anchor was
+> removed. The three fixture lines deliberately cover both parser branches (lines 1 and 3 canonical
+> `<file>(<l>,<c>): error CODE:`, line 2 task-raised `… <Target> : error : CODE:`) and both PRI
+> codes, so neither branch can regress unnoticed again.
+
+**Drills 2 and 3 — a regression fails in both directions, naming both values.** Both used a scratch
+copy of `tools/baseline.json` under `%TEMP%` with exactly **one** field edited. The committed file was
+never touched: after drill 4, `git diff --exit-code -- tools/baseline.json` is **empty** — the
+committed baseline is byte-identical to what `-Mode Record` wrote. Note the shape difference in the
+verdict line: the metric that **failed** renders `recorded->measured` (`warnings 15->16`,
+`tests 243->244`) while metrics that passed keep their documented shape (`warnings 16<=16`,
+`tests 243>=243`). That is what puts the failing metric **and both of its values** on one line.
+
+Drill 3 also proves the **decrease** direction is gated, which the plan required specifically: a
+test count that drops means tests went missing, and that must not pass silently.
+
+**Drill 5 — the PRI pair is tolerated when present, and cascades when it is not resolved.** Deleting
+`vendor\WinUI.Framework\bin\**\WinUI.Framework.pri` and running the reporting mode reproduced both
+real PRI errors (§3.1). Both were **tolerated**, the run still exited **0**, and the tests still ran
+— proving the gate is not asserting "errors == 0 is required" and is not asserting "errors == 2 is
+required" either.
+
+The **same** deletion followed by a `/t:Rebuild` — i.e. the genuine cold-tree state — went **RED**,
+because `AkariTool.pri` is then never emitted and `AkariTool.App.Tests` fails `CS0234`. That red is
+**correct**: `CS0234` is not allowlisted. The tree was restored with the direct-csproj build quoted in
+§3.1, after which drill 4 returned green. This drill is the reason the gate's allowlist is trusted to
+be a *filter* rather than a *suppressor*.
 
 ---
 

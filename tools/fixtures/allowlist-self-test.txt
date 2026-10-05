@@ -1,0 +1,3 @@
+C:\src\AkariTool\MainPage.xaml(12,4): error PRI175: Resource reference not resolved [C:\src\AkariTool\AkariTool.csproj::WINAPPSDKGENERATEPROJECTPRIFILE]
+C:\src\AkariTool\AkariTool.csproj : error : PRI252: Could not find file 'C:\src\AkariTool\AppPRI\resources.pri' [C:\src\AkariTool\AkariTool.csproj::WINAPPSDKGENERATEPROJECTPRIFILE]
+C:\src\AkariTool\Program.cs(88,13): error CS1002: ; expected [C:\src\AkariTool\AkariTool.csproj::CoreCompile]
