@@ -1,341 +1,455 @@
 # Codebase Structure
 
-**Analysis Date:** 2026-08-27
+**Analysis Date:** 2026-10-05
 
 ## Directory Layout
 
-```
-Akari-Tool/
-├── AkariTool.sln                  # Solution file (3 main projects + 2 tests + 2 vendor)
-├── CLAUDE.md                      # Project context & rules
-├── CHANGELOG.md                   # Release history
-├── README.md                      # Landing documentation
-│
-├── src/
-│   ├── AkariTool.Core/            # Pure C# models, zero OS dependencies
-│   │   ├── AkariTool.Core.csproj
-│   │   ├── Competitive/           # CompetitiveOptions, CompetitiveSession records
-│   │   ├── Features/              # Feature-organized catalogs & models
-│   │   │   ├── Common/            # Shared SettingDefinition stack, interfaces, enums
-│   │   │   │   ├── Models/        # SettingDefinition, SettingGroup, badges, dependencies
-│   │   │   │   ├── Enums/         # InputType, DetectionType, SettingBadgeKind, etc.
-│   │   │   │   ├── Interfaces/    # ISettingOperationExecutor, ISettingStateReader
-│   │   │   │   ├── Constants/
-│   │   │   │   ├── Native/        # P/Invoke bindings (PowerProf.cs)
-│   │   │   │   ├── Validation/    # SettingCatalogValidator
-│   │   │   │   ├── Services/      # Core-only services (GlobalSettingsRegistry)
-│   │   │   │   └── Helpers/       # BuildVersionGate helpers
-│   │   │   ├── Gaming/            # Gaming & Performance feature
-│   │   │   │   └── Catalogs/      # GamingOptimizations.cs (SettingGroup[] definitions)
-│   │   │   ├── Privacy/           # Privacy feature
-│   │   │   │   └── Catalogs/      # PrivacyOptimizations.cs
-│   │   │   ├── Sound/             # Sound & Audio feature
-│   │   │   │   └── Catalogs/      # SoundOptimizations.cs
-│   │   │   ├── Notifications/     # Notifications feature
-│   │   │   │   └── Catalogs/      # NotificationsOptimizations.cs
-│   │   │   ├── Update/            # Windows Update feature
-│   │   │   │   └── Catalogs/      # UpdateOptimizations.cs
-│   │   │   ├── Power/             # Power Plans feature
-│   │   │   │   └── Catalogs/      # PowerOptimizations.cs, PowerTemplates.cs
-│   │   │   ├── Customize/         # Customize sub-features
-│   │   │   │   └── Catalogs/      # Taskbar, Explorer, Appearance, StartMenu, Desktop
-│   │   │   ├── AkariOS/           # AkariOS-specific models (BcdOperation, etc.)
-│   │   │   └── Apps/              # Software/WinGet models
-│   │   ├── Interfaces/            # Core-level service contracts
-│   │   ├── Models/                # Common value objects (SystemInfo, UpdateCheckResult, etc.)
-│   │   └── Tweaks/                # Legacy TweakDefinition (retained for Backup/Verify)
-│   │
-│   ├── AkariTool.Infrastructure/  # OS-touching implementations
-│   │   ├── AkariTool.Infrastructure.csproj
-│   │   ├── DI/                    # InfrastructureServiceExtensions.cs
-│   │   ├── Features/              # Feature-organized services & executors
-│   │   │   ├── Common/            # SettingOperationExecutor, SettingStateReader
-│   │   │   │   ├── Services/      # Registry, PowerShell, tasks, files, processes
-│   │   │   │   ├── Interfaces/    # Service contracts (IWindowsRegistryService, etc.)
-│   │   │   │   ├── Events/        # EventBus
-│   │   │   │   ├── Utilities/     # Value comparison, binary conversion
-│   │   │   │   └── Models/        # ProcessResult, internal helpers
-│   │   │   ├── Optimize/          # Windows Update policy + special handlers
-│   │   │   │   └── Services/      # WindowsUpdatePolicyHandler
-│   │   │   └── Apps/              # WinGet COM stack (detection, installation)
-│   │   └── Services/              # Static OS services (legacy namespace)
-│   │
-│   └── AkariTool.App/             # WinUI 3 shell, ViewModels, XAML pages
-│       ├── AkariTool.App.csproj
-│       ├── App.xaml(.cs)          # Application entry point, DI setup
-│       ├── MainWindow.xaml(.cs)   # Shell window, navigation routing
-│       ├── DI/                    # UIServiceExtensions.cs (all VM + service registrations)
-│       ├── ViewModels/            # MVVM ViewModels
-│       │   ├── Tweaks/            # SettingPageViewModel, SettingItemViewModel, SettingSectionViewModel
-│       │   ├── GamingViewModel.cs # Concrete SettingPageViewModel (Gaming feature)
-│       │   ├── SoundViewModel.cs  # Concrete SettingPageViewModel (Sound feature)
-│       │   ├── NotificationsViewModel.cs
-│       │   ├── UpdateViewModel.cs
-│       │   ├── PrivacyViewModel.cs
-│       │   ├── PowerViewModel.cs  # Power Plans tab (Session C)
-│       │   ├── TaskbarViewModel.cs, ExplorerViewModel.cs, etc. # Customize sub-pages
-│       │   ├── GameViewModel.cs   # Bespoke DefenderToggleViewModel
-│       │   ├── Software/          # SoftwareVM (Apps management)
-│       │   ├── AkariOS/           # AkariOSViewModel (bespoke, non-declarative)
-│       │   ├── Backup/            # BackupViewModel
-│       │   ├── Verify/            # VerifyViewModel
-│       │   ├── AdvancedTools/     # AdvancedToolsViewModel
-│       │   └── Common/            # Shared ViewModel utilities
-│       ├── Views/                 # XAML pages & controls
-│       │   ├── HomePage.xaml      # Landing page
-│       │   ├── GamingPage.xaml    # Gaming page (DataContext = GamingViewModel)
-│       │   ├── SoundPage.xaml, NotificationsPage.xaml, etc. # Feature pages
-│       │   ├── PowerPage.xaml     # Power Plans page (with dynamic plan dropdown)
-│       │   ├── OptimizeHubPage.xaml # Hub for Optimize section (nav to detail pages)
-│       │   ├── CustomizePage.xaml # Hub for Customize categories
-│       │   ├── SoftwareAppsPage.xaml # Hub for Software section
-│       │   ├── AdvancedHubPage.xaml # Hub for Advanced section
-│       │   ├── BackupPage.xaml, VerifyPage.xaml, AdvancedToolsPage.xaml, etc.
-│       │   ├── AkariOSPage.xaml   # AkariOS page (bespoke)
-│       │   ├── SettingsPage.xaml  # App settings (theme, etc.)
-│       │   ├── PlaceholderPage.xaml # Fallback for unmapped nav tags
-│       │   ├── Controls/          # Reusable XAML controls
-│       │   │   ├── NavButton.xaml # Navigation rail buttons
-│       │   │   ├── NavSidebar.xaml # Sidebar component
-│       │   │   ├── TaskProgressControl.xaml # Bulk task progress UI
-│       │   │   ├── PowerPlanComboBox.xaml # Dynamic power plan selector
-│       │   │   └── HubView.xaml   # Hub content area
-│       │   ├── Templates/         # Data templates & selectors
-│       │   │   ├── TweakTemplates.xaml # Row templates (Toggle, Selection, etc.)
-│       │   │   ├── TweakRowTemplateSelector.cs # Selector logic
-│       │   │   ├── SoftwareViewTemplates.xaml
-│       │   │   └── TechnicalDetailsStyles.xaml
-│       │   ├── Converters/        # Value converters (BoolToDim, Icon, etc.)
-│       │   └── Selectors/         # XAML value converters
-│       ├── Services/              # App-layer services
-│       │   ├── ToolService.cs     # App-wide logger (entry point for all logging)
-│       │   ├── TweakDialogs.cs    # ContentDialog serializer (confirmations)
-│       │   ├── AkariFileService.cs # Win32 file picker (override framework default)
-│       │   ├── AkariUiLogService.cs # UI-layer log sink
-│       │   ├── DefenderService.cs # Windows Defender toggle (MUST stay App-side)
-│       │   ├── DefenderPhase2Scheduler.cs # Defender post-reboot handler
-│       │   ├── SettingBackupService.cs # Export/import settings + global search
-│       │   ├── SettingPageWarmUp.cs # Startup warm-up for all SettingPageVMs
-│       │   ├── NavBadgeService.cs # Navigation badge counts
-│       │   ├── NewBadgeService.cs # New setting tracking
-│       │   ├── TaskProgressService.cs # Bulk operation progress
-│       │   ├── StartupNotificationService.cs # First-launch restore point offer
-│       │   ├── AutounattendService.cs # AkariOS autounattend.xml generation
-│       │   ├── StartupOrchestrator.cs # Compatibility filtering + warm-up orchestration
-│       │   └── SettingStatusBannerManager.cs # Technical details banner
-│       ├── Features/              # Feature-specific UI helpers
-│       │   ├── Common/            # Shared feature code
-│       │   │   ├── Converters/    # IconConverter (Material.Icons + FluentIcons)
-│       │   │   ├── Models/        # TechnicalDetailRow, TechnicalDetailSection
-│       │   │   └── Services/      # DispatcherService (UI thread marshaling)
-│       │   ├── Shared/            # Cross-feature utilities (UiPreferences)
-│       │   └── Software/          # Software page helpers (AppIconService, etc.)
-│       ├── Assets/                # Images, fonts, resources
-│       ├── Scripts/               # Embedded PowerShell scripts
-│       │   └── Network/           # Network-related scripts
-│       ├── Resource/              # Resource files (icons, etc.)
-│       ├── Defender/              # Windows Defender resources (embedded CAB, scripts)
-│       ├── Nvidia/                # NVIDIA GPU tweaks
-│       └── XAML-related root files (App.xaml, MainWindow.xaml)
-│
-├── tests/
-│   ├── AkariTool.Core.Tests/      # Core model & logic tests
-│   │   ├── AkariTool.Core.Tests.csproj
-│   │   ├── Features/              # SettingDefinition, badges, validators
-│   │   │   └── *.cs               # SettingDefinitionToggleStateTests, etc.
-│   │   ├── Helpers/               # BuildVersionGateTests
-│   │   └── Models/                # UpdateModelsTests
-│   │
-│   └── AkariTool.Infrastructure.Tests/ # Infrastructure service & state reader tests
-│       ├── AkariTool.Infrastructure.Tests.csproj
-│       ├── Features/              # Reader, executor, resolver, filters
-│       │   ├── SettingStateReaderTests.cs
-│       │   ├── SettingOperationExecutorTests.cs
-│       │   ├── SettingDependencyResolverTests.cs
-│       │   ├── PowerPlanComboBoxServiceTests.cs
-│       │   ├── PowerPlanHelperTests.cs
-│       │   ├── ComboBoxResolverTests.cs
-│       │   ├── WindowsCompatibilityFilterTests.cs
-│       │   ├── HardwareCompatibilityFilterTests.cs
-│       │   ├── Optimize/WindowsUpdatePolicyHandlerTests.cs
-│       │   └── SystemBackupServiceParsingTests.cs
-│       └── Services/
-│           └── UpdateServiceTests.cs
-│
+```text
+Akari-Tool-OLD/
+├── AkariTool.sln                 # 5 projects + 2 solution folders
+├── build-installer.ps1           # passes /p:AkariPublish=true
+├── build-deelevated.ps1          # passes /p:DeElevatedTest=true
+├── AKARI_ARCHITECTURE_PLAN.md    # net8 → 3-layer migration plan (Session 0-6)
+├── AKARI_NEXT_PHASE.md
+├── docs/                         # static HTML site (404/index/features/changelog/…)
+├── installer/                    # installer payload
 ├── vendor/
-│   ├── WinUI.Framework/           # Local vendored WinUI 3 MVVM framework (ProjectReference)
-│   │   └── WinUI.Framework.csproj # Provides: ViewModelBase, INavigationService, IDispatcherService, etc.
-│   ├── WinGet.Interop/            # WinGet COM interop bindings
-│   └── (legacy) WPF+WinUI hybrid build at Akari-Tool-MVVM/ — fallback only, not in active development
-│
-├── installer/                     # MSI installer project
-├── docs/                          # Documentation
-└── build-*.ps1 scripts            # Build automation
+│   ├── WinUI.Framework/          # vendored WinUI 3 framework (source ProjectReference)
+│   └── WinGet.Interop/           # WinGet COM interop
+├── src/
+│   ├── AkariTool.Core/           # 0 project refs; ~155 .cs
+│   ├── AkariTool.Infrastructure/ # → Core; ~85 .cs
+│   └── AkariTool.App/            # → Core, → Infrastructure; ~164 .cs + 37 .xaml
+└── tests/
+    ├── AkariTool.Core.Tests/           # 8 test files
+    └── AkariTool.Infrastructure.Tests/ # 12 test files
+```
 
+Full `src/` tree (excluding `bin/`, `obj/`, `vendor/`):
+
+```text
+src/AkariTool.Core/
+├── Competitive/                        CompetitiveOptions.cs, CompetitiveSession.cs
+├── Interfaces/                         IShaderCacheService, ISystemInfoService,
+│                                       IToolFetchService, IToolService, IUpdateService
+├── Models/
+│   ├── Actions/RunActions.cs
+│   ├── ShaderCache/                    ShaderCacheTarget, ShaderCacheScanResult,
+│   │                                   ShaderCacheCleanResult
+│   ├── Update/                         ReleaseInfo, UpdateCheckResult, UpdateStatus
+│   └── SystemInfo.cs
+├── Tweaks/                             TweakDefinition.cs, TweakTargets.cs
+└── Features/
+    ├── Common/                         ← the shared kernel
+    │   ├── Constants/                  AkariPaths, ComboBoxConstants, FeatureIds,
+    │   │                               UserPreferenceKeys
+    │   ├── Enums/                      InputType, DetectionType, LogLevel, RunContext,
+    │   │                               ScriptOption, SettingBadgeKind, SettingBadgeMode
+    │   ├── Events/
+    │   │   ├── Settings/               SettingAppliedEvent
+    │   │   ├── UI/                    FilterStateChangedEvent, SettingsRefreshedEvent,
+    │   │   │                           TooltipUpdatedEvent
+    │   │   ├── IDomainEvent, IEventBus, ISubscriptionToken,
+    │   │   ├── BuilderModeExitedEvent, ReviewModeExitedEvent, PowerPlanChangedEvent
+    │   ├── Helpers/BuildVersionGate.cs
+    │   ├── Interfaces/                 32 files: ISettingItem, ISettingStateReader,
+    │   │                               ISettingOperationExecutor, ISettingDependencyResolver,
+    │   │                               IChangeHistoryService, ITooltipDataService,
+    │   │                               IGlobalSettingsRegistry, IPowerService, …
+    │   ├── Models/                     27 files: SettingDefinition, BaseDefinition,
+    │   │                               SettingGroup, RegistrySetting, ComboBoxOption,
+    │   │                               SettingStateResult, OperationResult, …
+    │   ├── Native/                     PowerProf.cs (P/Invoke), SrClientApi.cs (P/Invoke)
+    │   ├── Services/GlobalSettingsRegistry.cs
+    │   └── Validation/SettingCatalogValidator.cs
+    ├── AkariOS/Models/                 BcdOperation, PlaybookTweakAction, ServicePresetKind
+    ├── Apps/
+    │   ├── Interfaces/IWingetServices.cs
+    │   └── Models/WingetModels.cs
+    ├── Customize/Catalogs/             5 files  ← 5 backing pages
+    ├── Gaming/Catalogs/                1 file   ← 1 backing page
+    ├── Notifications/Catalogs/         1 file   ← 1 backing page
+    ├── Power/Catalogs/                 2 files  ← 1 backing page
+    ├── Privacy/Catalogs/               1 file   ← 1 backing page
+    ├── Software/Catalogs/              24 files ← no declarative page
+    ├── Sound/Catalogs/                 1 file   ← 1 backing page
+    └── Update/Catalogs/                2 files  ← 1 backing page
+
+src/AkariTool.Infrastructure/
+├── DI/InfrastructureServiceExtensions.cs
+├── Features/
+│   ├── Apps/Services/                  WinGetComSession, WingetBootstrapper,
+│   │                                   WingetDetectionService, WingetPackageInstaller
+│   ├── Common/
+│   │   ├── Events/EventBus.cs
+│   │   ├── Interfaces/                 8 files: IWindowsRegistryService, IProcessExecutor,
+│   │   │                               IPowerShellRunner, IFileSystemService, IAkariLogService,
+│   │   │                               IPowerCfgApplier, IScheduledTaskService,
+│   │   │                               IComboBoxResolver, IProcessRestartManager
+│   │   ├── Models/ProcessResult.cs
+│   │   ├── Services/                   33 files: SettingOperationExecutor, SettingStateReader,
+│   │   │                               SystemSettingsDiscoveryService, SettingDependencyResolver,
+│   │   │                               WindowsRegistryService, PowerService, PowerCfgApplier,
+│   │   │                               SystemBackupService, SystemRestoreService,
+│   │   │                               WindowsCompatibilityFilter, HardwareCompatibilityFilter,
+│   │   │                               CompatibleSettingsRegistry, GlobalSettingsPreloader,
+│   │   │                               TooltipDataService, DispatcherService, …
+│   │   └── Utilities/                  ValueComparer, PowerPlanHelper,
+│   │                                   RegistryValueFormatter, NumericConversionHelper
+│   └── Optimize/Services/WindowsUpdatePolicyHandler.cs
+└── Services/                           ← 40 flat legacy files, NOT under Features/
+
+src/AkariTool.App/
+├── App.xaml(.cs)                       bootstrap + ConfigureServices
+├── MainWindow.xaml(.cs)                shell, PageMap, rail routing
+├── app.manifest
+├── AkariTool.App.csproj
+├── Views/                              ← 36 .xaml
+│   ├── Controls/                       HubView, NavButton, NavSidebar,
+│   │                                   PowerPlanComboBox, TaskProgressControl
+│   ├── Converters/InverseBoolToVisibilityConverter.cs
+│   ├── Selectors/                      ChangelogLineTemplateSelector,
+│   │                                   TweakRowTemplateSelector
+│   ├── Templates/                      TweakTemplates.xaml (80 KB),
+│   │                                   SoftwareViewTemplates.xaml, TechnicalDetailsStyles.xaml
+│   └── <28 top-level pages>            see page table below
+├── ViewModels/                         ← 13 flat files + 6 subdirs
+│   ├── <11 SettingPageViewModel pages> SoundViewModel, UpdateViewModel, …
+│   ├── HomeViewModel, SettingsViewModel, PlaceholderViewModel
+│   ├── AdvancedTools/ Verify/ Backup/ Software/ AkariOS/ Common/ Tweaks/ Gaming/
+├── Features/                           ← only 3 domains
+│   ├── Common/{Converters,Models,Services,Utilities}
+│   ├── Shared/UiPreferences.cs
+│   └── Software/{AppIconService.cs, SoftwareAppService.cs}
+├── Services/                           ← 20 flat files
+├── Defender/                           DisableDefender.ps1, NoDefender.cab
+├── Nvidia/Settings.nip
+├── Scripts/                            47 .ps1 + Network/{network-apply,network-revert}.bat
+├── DI/UIServiceExtensions.cs
+├── Resource/                           NavIcons/ (19 .png), logos
+└── Assets/                             AkariLogo.*, AkariOSWallpaper.jpg
 ```
 
 ## Directory Purposes
 
-**src/AkariTool.Core/**
-- Purpose: Immutable models, catalogs, and contracts; zero OS dependencies
-- Contains: SettingDefinition records, SettingGroup, feature catalogs (GamingOptimizations, etc.), enums (InputType, DetectionType, SettingBadgeKind), service interfaces
-- Key files:
-  - `Features/Common/Models/SettingDefinition.cs` — Core row model
-  - `Features/Gaming/Catalogs/GamingOptimizations.cs` — Gaming settings catalog
-  - `Features/Common/Enums/` — All enum definitions
+### `src/AkariTool.Core/Features/Common/`
+The shared kernel every domain uses. `Models/` holds the declarative tuning
+vocabulary (`SettingDefinition`, `BaseDefinition`, `SettingGroup`,
+`RegistrySetting`, `ComboBoxOption`, `NumericRangeMetadata`, `PowerPlan`);
+`Interfaces/` holds all 32 service contracts; `Enums/` the 7 enum types;
+`Constants/` the string-key tables (`FeatureIds`, `ComboBoxConstants`,
+`AkariPaths`, `UserPreferenceKeys`); `Events/` the hand-rolled pub/sub
+contracts; `Native/` P/Invoke; `Validation/` the catalog linter; `Services/`
+one concrete implementation (`GlobalSettingsRegistry`).
 
-**src/AkariTool.Infrastructure/**
-- Purpose: OS interactions (registry, PowerShell, tasks, files, power settings, WinGet)
-- Contains: SettingOperationExecutor, SettingStateReader, service implementations, compatibility filters
-- Key files:
-  - `Features/Common/Services/SettingOperationExecutor.cs` — Apply settings to OS
-  - `Features/Common/Services/SettingStateReader.cs` — Read OS state
-  - `Features/Common/Services/WindowsRegistryService.cs` — Registry I/O
-  - `DI/InfrastructureServiceExtensions.cs` — DI registration
+### `src/AkariTool.Core/Features/<Domain>/Catalogs/`
+The declarative tuning data. `Build()` returns `IReadOnlyList<SettingGroup>`.
+Two distinct catalog families live here:
+- **Tuning catalogs** (7 files with a `Build()`): declarative `SettingDefinition`
+  rows consumed by a `SettingPageViewModel`.
+- **Software catalogs** (24 files): app cards, capability lists, and
+  PowerShell *script text generators* (`BloatRemovalScriptGenerator.cs`,
+  `EdgeRemovalScript.cs`, `OneDriveRemovalScript.cs`). No `SettingDefinition`
+  involved.
 
-**src/AkariTool.App/**
-- Purpose: WinUI 3 shell, pages, ViewModels, dialogs, and presentation logic
-- Contains: App.xaml(.cs), MainWindow, Pages (XAML), ViewModels (SettingPageViewModel + concrete impls), DI setup, services
-- Key files:
-  - `App.xaml.cs` — Entry point, DI container, OnLaunched
-  - `MainWindow.xaml(.cs)` — Shell window, nav rail, page Frame
-  - `ViewModels/Tweaks/SettingPageViewModel.cs` — Base VM for all tweak pages
-  - `ViewModels/GamingViewModel.cs` — Gaming page implementation
-  - `DI/UIServiceExtensions.cs` — ViewModel & App service registration
+### `src/AkariTool.Infrastructure/Features/`
+The migrated OS-service slice. `Common/Services/` is where every
+`ISetting*`/`IPower*`/`IWindows*` implementation lives. `Apps/Services/` is
+the WinGet COM stack. `Optimize/Services/` holds the single
+`WindowsUpdatePolicyHandler` special handler.
 
-**tests/**
-- Purpose: Unit tests for models, services, and logic (NO WinUI, NO real registry)
-- Core.Tests: SettingDefinition model tests, badge computation, catalog validation, version gates
-- Infrastructure.Tests: State reader, executor, resolver, power plans, compatibility filters, WinGet, update service
+### `src/AkariTool.Infrastructure/Services/` (legacy flat dir)
+40 files, two namespace families, and **not** under `Features/`:
+- `namespace AkariTool.Tabs` (18 files) — `TweakRegistry`, `DriftScanner`,
+  `DriftBaseline`, `ExplorerRestart`, `PlaybookTweaks.*` (6 partials),
+  `ServicesPreset.*` (4 partials), `SystemStateReader.*` (7 partials),
+  `PostInstallService`, `RestorePointHelper`, `TweakHelpers.*` (2 partials).
+- `namespace AkariTool.Services` (19 files) — `ElevationService`,
+  `DefenderService`, `CompetitiveService`, `CompetitivePrefs`, `GameDetection`,
+  `GpuTweaks`, `NvidiaProfileService`, `WimUtilService`, `AccountService`,
+  `SteamLibrary`, `ProcessSuspender`, `ProcessTuning`, `ToolService`,
+  `UpdateService`, `ToolFetchService`, `ShaderCacheService`,
+  `SystemInfoService`.
+- `namespace AkariTool.Infrastructure.Services` (4 files) — the `*Wrapper.cs`
+  adapters.
 
-**vendor/WinUI.Framework/**
-- Purpose: Local MVVM framework (ProjectReference, not NuGet)
-- Provides: ViewModelBase, INavigationService, IDispatcherService, FileLogService, LocalizationService, ServiceLocator
+### `src/AkariTool.App/Views/`
+28 top-level pages plus `Controls/`, `Templates/`, `Selectors/`,
+`Converters/`. All 28 are `namespace AkariTool.Views`. `TweakTemplates.xaml`
+(80 KB) is the shared row-rendering layer every declarative page binds to.
+
+### `src/AkariTool.App/ViewModels/`
+11 flat `SettingPageViewModel` subclasses (one per tuning page) plus
+`HomeViewModel`, `SettingsViewModel`, `PlaceholderViewModel`, and six
+subdirectories for the non-declarative pages (`Tweaks/` holds the shared base
+and row machinery; `Software/`, `Backup/`, `Verify/`, `AdvancedTools/`,
+`AkariOS/`, `Common/`, `Gaming/`).
+
+### `src/AkariTool.App/Features/`
+Only 3 domains — the incomplete part of the vertical slice.
+- `Common/` — `Converters/` (IconConverter, BoolToDimOpacityConverter),
+  `Models/` (TechnicalDetailRow/Section), `Services/DispatcherService.cs`,
+  `Utilities/RegeditIconProvider.cs`.
+- `Shared/UiPreferences.cs` — registry-backed section-collapse store.
+- `Software/` — `SoftwareAppService.cs` (646 lines, the entire Software-tab
+  service) and `AppIconService.cs`.
+
+### `src/AkariTool.App/Scripts/`, `Defender/`, `Nvidia/`
+Embedded payloads, not source. Declared as `EmbeddedResource` in
+`src/AkariTool.App/AkariTool.App.csproj:90-96` and loaded at runtime via
+`GetManifestResourceStream`. 47 `.ps1` + 2 `.bat`, a Defender CAB, and an
+NVIDIA profile `.nip`. These are data files with executable content — editing
+them changes app behaviour without a recompile.
 
 ## Key File Locations
 
 **Entry Points:**
-- `src/AkariTool.App/App.xaml.cs` — Application startup, DI configuration, OnLaunched lifecycle
-- `src/AkariTool.App/MainWindow.xaml.cs` — Shell window, nav routing, frame hosting
-- `src/AkariTool.App/App.xaml` — WinUI 3 resource dictionaries (theme colors, etc.)
+- `src/AkariTool.App/App.xaml.cs` — DI container build, startup orchestration, argv.
+- `src/AkariTool.App/MainWindow.xaml.cs` — `PageMap` at `:34`, detail-tag sets at `:80-93`, `SelectRailTag` at `:355`, `TagForPage` at `:320-348`.
+- `src/AkariTool.App/Services/StartupOrchestrator.cs` — the 3-phase startup seam.
 
 **Configuration:**
-- `AkariTool.sln` — Solution definition (3 main projects + 2 tests + 2 vendor)
-- `src/AkariTool.App/DI/UIServiceExtensions.cs` — ViewModel + service registration
-- `src/AkariTool.Infrastructure/DI/InfrastructureServiceExtensions.cs` — Infrastructure service registration
-- `.claude/settings.json` — Claude Code preferences (if present)
+- `AkariTool.sln` — project list. Note `vendor/WinUI.Framework` is **not** in the solution even though `AkariTool.App.csproj:75` ProjectReferences it (verified: zero `WinUI` matches in the sln).
+- `src/AkariTool.App/AkariTool.App.csproj` — WinUI settings, `AkariPublish`/`DeElevatedTest` conditionals, EmbeddedResource list.
+- `src/AkariTool.Core/AkariTool.Core.csproj` — `InternalsVisibleTo AkariTool.Core.Tests`.
+- `src/AkariTool.Infrastructure/AkariTool.Infrastructure.csproj` — OS packages, `InternalsVisibleTo AkariTool.Infrastructure.Tests`.
+- No `.editorconfig`, no `Directory.Build.props`, no `global.json`, no analyzers.
 
 **Core Logic:**
-- `src/AkariTool.Core/Features/Common/Models/SettingDefinition.cs` — Core row model
-- `src/AkariTool.App/ViewModels/Tweaks/SettingPageViewModel.cs` — Base SettingPageViewModel
-- `src/AkariTool.App/ViewModels/Tweaks/SettingItemViewModel.cs` — Per-row ViewModel
-- `src/AkariTool.Infrastructure/Features/Common/Services/SettingOperationExecutor.cs` — Apply operations to OS
-- `src/AkariTool.Infrastructure/Features/Common/Services/SettingStateReader.cs` — Read OS state for badges
-
-**Catalogs (Feature Definitions):**
-- `src/AkariTool.Core/Features/Gaming/Catalogs/GamingOptimizations.cs` — Gaming settings
-- `src/AkariTool.Core/Features/Privacy/Catalogs/PrivacyOptimizations.cs` — Privacy settings
-- `src/AkariTool.Core/Features/Power/Catalogs/PowerOptimizations.cs` — Power settings
-- `src/AkariTool.Core/Features/Customize/Catalogs/*.cs` — Taskbar, Explorer, Appearance, StartMenu, Desktop
-
-**Pages (XAML + CodeBehind):**
-- `src/AkariTool.App/Views/GamingPage.xaml(.cs)` — Gaming page UI
-- `src/AkariTool.App/Views/HomePage.xaml(.cs)` — Landing page
-- `src/AkariTool.App/Views/Templates/TweakTemplates.xaml` — Row data templates (Toggle, Selection, etc.)
+- `src/AkariTool.Core/Features/Common/Models/SettingDefinition.cs` — the tuning data model.
+- `src/AkariTool.Core/Features/Common/Validation/SettingCatalogValidator.cs` — catalog invariants.
+- `src/AkariTool.Infrastructure/Features/Common/Services/SettingOperationExecutor.cs` — the write path (11 injected deps).
+- `src/AkariTool.Infrastructure/Features/Common/Services/SystemSettingsDiscoveryService.cs` — the batched read path.
+- `src/AkariTool.App/ViewModels/Tweaks/SettingPageViewModel.cs` — section build + gates + quick actions.
+- `src/AkariTool.App/ViewModels/Tweaks/SettingItemViewModel.cs` — the row (979 lines, the largest App file).
 
 **Testing:**
-- `tests/AkariTool.Core.Tests/` — Model & logic tests (no OS calls)
-- `tests/AkariTool.Infrastructure.Tests/Features/SettingStateReaderTests.cs` — State reader tests
-- `tests/AkariTool.Infrastructure.Tests/Features/SettingOperationExecutorTests.cs` — Executor tests (mocked)
+- `tests/AkariTool.Core.Tests/` — model, validator, `BuildVersionGate` tests.
+- `tests/AkariTool.Infrastructure.Tests/` — the filtering, reading, writing, and
+  power-plan services. `Features/Optimize/WindowsUpdatePolicyHandlerTests.cs` is
+  the only subdirectory.
+- No test project for `AkariTool.App` (nothing references it — the ViewModels are
+  not unit-testable as written, largely because of the `ServiceLocator` usage).
 
-**Build Scripts:**
-- `build-installer.ps1` — MSI package automation
-- `build-deelevated.ps1` — Deelevated process runner
+## The 7 Tuning Catalogs and the Page Each Backs
+
+Each catalog is a `public static class` with a single `Build()` returning
+`IReadOnlyList<SettingGroup>`. Every one is in `AkariTool.Core/Features/<Domain>/Catalogs/`
+but declares a **`AkariTool.Tabs*`** namespace, not a `AkariTool.Core.*` one.
+
+| # | Catalog file | Lines | `SettingGroup`s | Namespace | Page (`Views/`) | ViewModel | NavTag / NavLabel |
+|---|--------------|-------|----------------|-----------|----------------|-----------|-------------------|
+| 1 | `Customize/Catalogs/TaskbarOptimizations.cs` | 942 | 3 | `AkariTool.Tabs.Customize` | `TaskbarPage` | `ViewModels/TaskbarViewModel` | `Taskbar` / Taskbar |
+| 2 | `Customize/Catalogs/ExplorerOptimizations.cs` | 2026 | 6 | `AkariTool.Tabs.Customize` | `ExplorerPage` | `ViewModels/ExplorerViewModel` | `Explorer` / Explorer |
+| 3 | `Customize/Catalogs/AppearanceOptimizations.cs` | 315 | 4 | `AkariTool.Tabs.Customize` | `AppearancePage` | `ViewModels/AppearanceViewModel` | `Appearance` / Appearance |
+| 4 | `Customize/Catalogs/StartMenuOptimizations.cs` | 420 | 2 | `AkariTool.Tabs.Customize` | `StartMenuPage` | `ViewModels/StartMenuViewModel` | `StartMenu` / Start Menu |
+| 5 | `Customize/Catalogs/DesktopOptimizations.cs` | 456 | 6 | `AkariTool.Tabs.Customize` | `DesktopPage` | `ViewModels/DesktopViewModel` | `Desktop` / Desktop |
+| 6 | `Gaming/Catalogs/GamingOptimizations.cs` | 3427 | 12 | `AkariTool.Tabs.Gaming` | `GamingPage` | `ViewModels/GamingViewModel` | `Gaming` / Gaming & Performance |
+| 7 | `Notifications/Catalogs/NotificationsOptimizations.cs` | 515 | 5 | `AkariTool.Tabs.Notifications` | `NotificationsPage` | `ViewModels/NotificationsViewModel` | `Notifications` / Notifications |
+| 8 | `Power/Catalogs/PowerOptimizations.cs` | 1624 | 18 | `AkariTool.Tabs.Power` | `PowerPage` | `ViewModels/PowerViewModel` | `Power` / Power |
+| 9 | `Privacy/Catalogs/PrivacyOptimizations.cs` | 2934 | 13 | `AkariTool.Tabs.Privacy` | `PrivacyPage` | `ViewModels/PrivacyViewModel` | `Privacy` / Privacy & Security |
+| 10 | `Sound/Catalogs/SoundOptimizations.cs` | 244 | 1 | `AkariTool.Tabs.Sound` | `SoundPage` | `ViewModels/SoundViewModel` | `Sound` / Sound |
+| 11 | `Update/Catalogs/UpdateOptimizations.cs` | 415 | 3 | `AkariTool.Tabs.Update` | `UpdatePage` | `ViewModels/UpdateViewModel` | `Update` / Windows Updates |
+
+**11 tuning catalogs, not 7** — `Customize` contributes 5 (one per sub-page) and
+`Gaming`, `Notifications`, `Power`, `Privacy`, `Sound`, `Update` contribute 6.
+The "7" reading that does hold is at the *nav-hub* level: the **Optimize hub**
+owns 6 detail pages (Gaming, Privacy, Power, Update, Notifications, Sound) and the
+**Customize hub** owns 5 (Taskbar, Explorer, Appearance, StartMenu, Desktop);
+`AkariOSPage` is a 7th Optimize-hub card with no catalog and no settings VM.
+
+**Two more catalog files, neither with a `Build()`:**
+- `Power/Catalogs/PowerTemplates.cs` (620 lines) — a shared library of
+  `ComboBoxMetadata` / `NumericRangeMetadata` factories (`TimeIntervals`,
+  `LidActions`, `ProcessorBoostMode`, `CreateNumericRange(...)`, …). Heavily used
+  by `PowerOptimizations.cs` (≈35 references). **Live.**
+- `Update/Catalogs/UpdateTweaks.cs` (329 lines) — a `public static partial class`
+  of legacy `TweakDefinition` factories with inline `Registry.SetValue` lambdas.
+  Verified: **zero call sites** anywhere in `src/` or `tests/`; the only mentions
+  are four comments in `UpdateOptimizations.cs` and one in `UpdateViewModel.cs`.
+  **Dead code** (see CONCERNS).
+
+**Cross-catalog dependency:** `PowerViewModel.AdditionalResolutionCatalogs()`
+(`src/AkariTool.App/ViewModels/PowerViewModel.cs:85`) returns
+`PrivacyOptimizations.Build()…` so the dependency resolver can auto-enable
+Privacy's `privacy-lock-screen` when Power's `start-power-lock-option` is applied.
+This is the **only** intentional cross-domain catalog reference in the codebase,
+and it is declared through the base class's extension point rather than by a
+shared registry.
+
+## The 24 Software Catalogs
+
+`src/AkariTool.Core/Features/Software/Catalogs/` — all `namespace AkariTool.Tabs`.
+None back a `SettingPageViewModel`.
+
+| File | Kind | Backing UI |
+|------|------|-----------|
+| `WindowsAppCatalog.cs` (653 lines) | App card list | `WindowsAppsPage` / `ViewModels/Software/WindowsAppsViewModel.cs` |
+| `ExternalAppCatalog.cs` + 16 `ExternalAppCatalog.<Category>.cs` partials | App card lists (Browsers, Compression, CustomizationUtilities, DevelopmentApps, DocumentViewers, FileDiskManagement, Gaming, Imaging, MessagingEmailCalendar, Multimedia, OnlineStorageBackup, OpticalDiscTools, OtherUtilities, PrivacySecurity, RemoteAccess, RuntimesAndDependencies) | `ExternalAppsPage` / `ViewModels/Software/ExternalAppsViewModel.cs` |
+| `AppModels.cs` | Shared app-card record | both |
+| `CapabilityCatalog.cs` | DISM capability ids | `WindowsAppsViewModel` |
+| `OptionalFeatureCatalog.cs` | Windows optional-feature ids | `WindowsAppsViewModel` |
+| `BloatRemovalScriptGenerator.cs` | PowerShell text generator | `DebloatPage` / `ViewModels/Software/DebloatViewModel.cs` |
+| `EdgeRemovalScript.cs` (685 lines) | PowerShell text generator | `DebloatPage` |
+| `OneDriveRemovalScript.cs` | PowerShell text generator | `DebloatPage` |
+
+## The Legacy App Top-Level Dirs and What Still Lives in Them
+
+`src/AkariTool.App/Features/` has only `Common`, `Shared`, `Software` — while these
+eight top-level directories sit beside it, outside any `Features/` boundary.
+
+### `Views/` — 28 pages, all UI still lives here
+Every page is `namespace AkariTool.Views` with a code-behind. Sub-dirs:
+`Controls/` (5 reusable controls incl. the 20 KB `HubView.xaml` used by all four
+hubs), `Templates/` (3 shared template dictionaries, `TweakTemplates.xaml` is
+80 KB), `Selectors/` (2 `DataTemplateSelector`s), `Converters/` (1 file).
+
+**Four hub pages** own the rail and host detail pages in an inner frame:
+`OptimizeHubPage`, `CustomizePage`, `AdvancedHubPage`, `SoftwareAppsPage`. All four
+configure a shared `HubView` and add `HubCardViewModel` cards in code
+(`Views/OptimizeHubPage.xaml.cs:32`, `Views/CustomizePage.xaml.cs:28`).
+
+**One page is 7 partials totaling 2631 lines:** `AkariOSPage` —
+`AkariOSPage.xaml.cs` (141), `.Tools` (123), `.PostInstall` (142),
+`.Utilities` (178), `.GpuTools` (285), `.GamingTweaks` (327), `.ShaderCache` (349),
+`.ServicePresets` (506), `.Competitive` (680). `AdvancedToolsPage` is 4 partials
+(1,222 lines incl. `.Wizard.cs` at 22 KB). `SettingsPage` is a single
+10.6 KB code-behind.
+
+**A converter lives in the wrong place:** `Views/Converters/InverseBoolToVisibilityConverter.cs`
+is the only converter outside `Features/Common/Converters/`, and it is the one
+consumed by the shared `TweakTemplates.xaml` (registered as `InvBoolToVis` at
+`Views/Templates/TweakTemplates.xaml:27`).
+
+### `ViewModels/` — 13 flat files + 6 sub-dirs
+The 11 declarative page VMs are **flat at the top level** (`TaskbarViewModel.cs`
+sits beside `HomeViewModel.cs`), while every non-declarative page VM is in a
+sub-directory (`ViewModels/Software/`, `Backup/`, `Verify/`, `AdvancedTools/`,
+`AkariOS/`). `ViewModels/Tweaks/` holds the shared machinery:
+`SettingPageViewModel` (465), `SettingItemViewModel` (979),
+`TechnicalDetailsManager` (523), `SettingBadgeCalculator` (21 KB),
+`SettingPowerPlanController`, `SettingStatusBannerManager`,
+`SettingSectionViewModel`, `ISettingRowViewModel`.
+
+### `Services/` — 20 flat files, UI-layer services not under `Features/`
+- Declarative-stack support: `SettingBackupService.cs` (658 lines — export/import/
+  search engine), `TweakDialogs.cs` (serialized `ContentDialog` helper),
+  `TaskProgressService.cs`, `SettingPageWarmUp.cs`, `StartupOrchestrator.cs`.
+- Preferences/badges: `NewBadgeService.cs`, `NavBadgeService.cs`,
+  `StartupNotificationService.cs`.
+- OS-touching despite being in `App`: `DefenderService.cs` (329 lines, 19 registry
+  calls), `DefenderPhase2Scheduler.cs`, `SystemUtilities.cs` (194 lines, 7 registry
+  calls), `AkariFileService.cs` (335 lines, an `IFileService` override).
+- Payload writers: `AutounattendService` + 4 partials (`.Xml`, `.ScriptPreamble`,
+  `.ScriptSystem`, `.ScriptUser`, `.Tweaks`) — 860 lines total.
+- `AkariUiLogService.cs` — the `ILogService` decorator.
+
+### `Defender/`, `Nvidia/`, `Scripts/`
+Embedded binary/script payloads (see `Special Directories` below). No C# in any
+of them; they are declared as `EmbeddedResource` and read at runtime.
+
+### `DI/UIServiceExtensions.cs`
+The only file in `DI/`. 134 lines. Registers 5 non-VM services, 3 decorators,
+`MainWindow`, 3 transient VMs, 19 singleton VMs, and the 11-entry
+`SettingPageViewModel` marker enumeration that drives warm-up order.
+
+### `Resource/` vs `Assets/` — duplicated brand assets
+`Resource/NavIcons/` (19 `.png`) plus `Resource/AkariLogo.png`, `.ico`,
+`AkariLogoLight.png`, `Akari.png`. `Assets/` holds a **second** copy of
+`AkariLogo.png` / `.ico` / `AkariLogoLight.png` (identical byte sizes for the `.ico`
+at 64,199) plus `AkariOSWallpaper.jpg` (98 KB). Only the `Assets/` copies are
+declared as `Content` (`AkariTool.App.csproj:81-85`); the `Resource/` copies are
+unreferenced by the csproj. `Resource/NavIcons/` is not declared in the csproj
+either — verified no `NavIcons` reference outside the directory itself.
 
 ## Naming Conventions
 
 **Files:**
-- `[FeatureName]ViewModel.cs` — Concrete SettingPageViewModel (e.g., GamingViewModel.cs)
-- `[FeatureName]Page.xaml` — XAML page for a feature (e.g., GamingPage.xaml)
-- `[FeatureName]Optimizations.cs` — Catalog method in Core (e.g., GamingOptimizations.cs)
-- `[Service]Tests.cs` — Test file for a service (e.g., SettingStateReaderTests.cs)
-- Interfaces: `I[ServiceName].cs` (e.g., ISettingOperationExecutor.cs)
+- One public type per file, filename == type name. Partial classes split by concern
+  with a `.` suffix: `PlaybookTweaks.Registry.cs`, `SystemStateReader.Desktop.cs`,
+  `AkariOSPage.GpuTools.cs`, `ExternalAppCatalog.Browsers.cs`.
+- `*Page.xaml` + `*Page.xaml.cs` for pages; `*ViewModel.cs` for VMs;
+  `*Service.cs`, `*Registry.cs`, `*Helper.cs`, `*Filters`/`*Resolver` for behaviour.
+- `I*` prefix for every interface. `*Wrapper` for a static→interface adapter.
+- `*Optimizations.cs` for tuning catalogs; `*Optimizations` reads as
+  "optimizations we apply", not "optimizations of the catalog".
 
 **Directories:**
-- `Features/[FeatureName]/Catalogs/` — Catalog files for a feature
-- `Features/Common/` — Shared models, enums, interfaces (every project has this)
-- `ViewModels/[FeatureName]/` — Feature-specific ViewModels
-- `Views/` → Top-level pages; `Views/Controls/` → Reusable components; `Views/Templates/` → Data templates
-- `Services/` → App-layer services (Context-dependent, WinUI, etc.); Infrastructure/Features/*/Services/ → OS services
+- Domain-first: `Features/<Domain>/{Models,Interfaces,Services,Catalogs,Constants,Enums,Events,Utilities,Validation,Native,Helpers}`.
+- Layer-first in `Core`/`Infrastructure`, but `AkariTool.App` is the outlier —
+  it is `Views/`, `ViewModels/`, `Services/` with `Features/` as a newcomer.
 
-**Naming Patterns:**
-- **Catalog classes:** PascalCase method `static Build()` returning `IReadOnlyList<SettingGroup>`
-- **ViewModel properties:** `ObservableProperty` attributes via MVVM Toolkit (auto-generates OnXChanged)
-- **View bindings:** `{x:Bind ViewModel.PropertyName}` (compile-time safe)
-- **DI registration:** SingletonVM instances; services wired by type
-- **Record models:** All immutable; init-only properties
+**Namespaces:** three incompatible schemes coexist (see CONCERNS).
+Folder path does **not** reliably predict namespace.
 
 ## Where to Add New Code
 
-**New Feature (Full Stack):**
-1. **Core Catalog:** `src/AkariTool.Core/Features/[FeatureName]/Catalogs/[FeatureName]Optimizations.cs` — Define SettingGroup[] + SettingDefinitions
-2. **Concrete ViewModel:** `src/AkariTool.App/ViewModels/[FeatureName]ViewModel.cs` — Extend SettingPageViewModel, implement BuildSettingGroups()
-3. **XAML Page:** `src/AkariTool.App/Views/[FeatureName]Page.xaml` — Bind to ViewModel, use row templates from TweakTemplates.xaml
-4. **DI Registration:** `src/AkariTool.App/DI/UIServiceExtensions.cs` — AddSingleton([FeatureName]ViewModel) + register as SettingPageViewModel marker
-5. **NavTag Routing:** `src/AkariTool.App/MainWindow.xaml.cs` — Add [FeatureName] to PageMap
+**A new declarative setting on an existing page:**
+- Primary code: the matching `src/AkariTool.Core/Features/<Domain>/Catalogs/<Domain>Optimizations.cs`, inside the relevant `Build()` `new SettingGroup(...)` (or a new `SettingGroup`).
+- No ViewModel change, no XAML change, no DI change. The row, its template, badges, and Quick Actions all derive from the `SettingDefinition`.
+- If the setting needs a composite read/write the generic executor cannot express: add a handler in `src/AkariTool.Infrastructure/Features/<Domain>/Services/`, register it in `ISpecialSettingHandlerRegistry` **and** `ISpecialDiscoveryRegistry` in `src/AkariTool.Infrastructure/DI/InfrastructureServiceExtensions.cs` (mirror `updates-policy-mode` at `:38`).
+- Validate against `SettingCatalogValidator` — but note it does not run in the build, so run `tests/AkariTool.Core.Tests/Features/SettingCatalogValidatorTests.cs`-style assertions yourself.
 
-**New SettingDefinition Row:**
-1. Open the corresponding catalog file in `src/AkariTool.Core/Features/[FeatureName]/Catalogs/`
-2. Add a new SettingDefinition record to the appropriate SettingGroup array
-3. Specify: Id, Name, Description, InputType, RegistrySettings (or Tasks/Scripts/PowerCfg), RecommendedValue, DefaultValue
-4. Tests automatically pick up the row; validate at startup via SettingCatalogValidator
+**A new tuning page (new domain):**
+- Catalog: `src/AkariTool.Core/Features/<NewDomain>/Catalogs/<NewDomain>Optimizations.cs` with `public static IReadOnlyList<SettingGroup> Build()`.
+- ViewModel: `src/AkariTool.App/ViewModels/<NewDomain>ViewModel.cs` — `sealed partial class X : SettingPageViewModel`, override `NavTag`, `NavLabel`, `BuildSettingGroups()`; set `Title`/`Subtitle` in the ctor. Copy `src/AkariTool.App/ViewModels/SoundViewModel.cs` (45 lines) as the minimal template, or `TaskbarViewModel.cs` for the full 9-optional-parameter ctor.
+- Page: `src/AkariTool.App/Views/<NewDomain>Page.xaml(.cs)` — ~28 lines of code-behind, resolve the VM from `ServiceLocator`, set `DataContext`, call `Build()`.
+- DI: `src/AkariTool.App/DI/UIServiceExtensions.cs` — two registrations required, in matching positions: `AddSingleton<XViewModel>()` and `AddSingleton<SettingPageViewModel>(sp => sp.GetRequiredService<XViewModel>())`. **Order in that file is the warm-up order and the `TweakRegistry` range order** (see the comment at `:85-89`).
+- Navigation: `src/AkariTool.App/MainWindow.xaml.cs` — a `PageMap` entry (`:34`) and, if it is a hub detail, membership in one of the four `*DetailTags` sets (`:80-93`) plus a `HubCardViewModel` in the hub's `.xaml.cs`.
+- Templates: the row renders from `src/AkariTool.App/Views/Templates/TweakTemplates.xaml` via `TweakRowTemplateSelector` — no per-page template work.
 
-**New Infrastructure Service:**
-1. **Interface:** Define in `src/AkariTool.Infrastructure/Features/[Scope]/Interfaces/I[ServiceName].cs`
-2. **Implementation:** `src/AkariTool.Infrastructure/Features/[Scope]/Services/[ServiceName].cs`
-3. **Registration:** Add to `src/AkariTool.Infrastructure/DI/InfrastructureServiceExtensions.cs`
-4. **Usage:** Inject via constructor into SettingPageViewModel or SettingItemViewModel
+**A new non-declarative feature:** there is no pattern. Decide explicitly
+between adding it as a bespoke page (follow `AkariOSPage` / `WindowsAppsPage`)
+or, preferably, as a new `SettingDefinition` catalog so it inherits the whole
+declarative pipeline.
 
-**New Page (Non-Declarative):**
-1. **ViewModel:** `src/AkariTool.App/ViewModels/[PageName]/[PageName]ViewModel.cs` — Extend ViewModelBase
-2. **XAML Page:** `src/AkariTool.App/Views/[PageName]Page.xaml`
-3. **DI Registration:** `src/AkariTool.App/DI/UIServiceExtensions.cs` — AddSingleton (if stateful) or AddTransient
-4. **Navigation:** `MainWindow.xaml.cs` PageMap + rail item in MainWindow.xaml
+**A new OS service:**
+- Interface in `src/AkariTool.Core/Features/Common/Interfaces/`.
+- Implementation in `src/AkariTool.Infrastructure/Features/Common/Services/`.
+- Registration in `src/AkariTool.Infrastructure/DI/InfrastructureServiceExtensions.cs`.
+- Do **not** create a `*Wrapper` over a new static class — that pattern is
+  legacy and only 4 instances of it exist.
 
-**Tests:**
-- **Core logic tests:** `tests/AkariTool.Core.Tests/Features/` — No OS calls, no WinUI
-- **Infrastructure tests:** `tests/AkariTool.Infrastructure.Tests/Features/` — Mock all OS services via NSubstitute
-- **Run with:** `dotnet test` (not MSBuild; tests are pure .NET)
+**Shared helpers:**
+- Cross-layer pure logic → `src/AkariTool.Core/Features/Common/Helpers/`.
+- Infrastructure-only helper → `src/AkariTool.Infrastructure/Features/Common/Utilities/` (declare `internal static` — all 4 existing files do).
+- App-only helper → `src/AkariTool.App/Features/Common/Utilities/`.
 
 ## Special Directories
 
-**vendor/WinUI.Framework/**
-- Purpose: Local vendored MVVM framework (ProjectReference, not NuGet package)
-- Generated: No
-- Committed: Yes (part of repo)
-- Why: Framework source is controlled in-tree; easier to patch/tweak without waiting for releases
+**`src/AkariTool.App/Scripts/`:**
+- Purpose: 47 PowerShell scripts + 2 batch files, embedded and executed at runtime by `ToolService` and `AdvancedToolsPage`.
+- Generated: No — hand-authored, but functionally code.
+- Committed: Yes.
+- Caveat: declared as `EmbeddedResource Include="Scripts\*.ps1"` (`AkariTool.App.csproj:91`). Changes ship without a recompile of the ported logic.
 
-**vendor/WinGet.Interop/**
-- Purpose: COM interop bindings for Windows Package Manager (WinGet)
-- Generated: No (hand-written, but tied to WinGet SDK)
-- Committed: Yes
+**`src/AkariTool.App/Defender/` and `src/AkariTool.App/Nvidia/`:**
+- Purpose: `NoDefender.cab` (43 KB) + `DisableDefender.ps1`, and `Settings.nip` (22 KB, NVIDIA profile).
+- Generated: No.
+- Committed: Yes.
+- Caveat: `Nvidia\Settings.nip` is guarded by `Condition="Exists(...)"` (`csproj:95`) — deleting it silently drops the resource rather than failing the build.
 
-**(Legacy) Akari-Tool-MVVM/**
-- Purpose: Fallback WPF+WinUI 3 hybrid build (kept as shipping fallback)
-- Generated: No
-- Committed: Yes
-- Status: Not in active development; maintained only for backward compatibility on older test VMs
+**`src/AkariTool.App/Resource/`:**
+- Purpose: nav icons and brand images.
+- Generated: Partly (the 2 MB `AkariLogoLight.png`).
+- Committed: Yes.
+- Caveat: **duplicates `Assets/`** and is not declared in the csproj. `NavIcons/` is likewise unreferenced by the project file.
 
-**.claude/** directory
-- Purpose: Local Claude Code configuration (not committed to repo)
-- Generated: Yes (by Claude Code harness)
-- Committed: No (.gitignore)
+**`vendor/WinUI.Framework/`:**
+- Purpose: the WinUI 3 framework consumed as a source `ProjectReference` (`AkariTool.App.csproj:75`).
+- Generated: No.
+- Committed: Yes.
+- Caveat: **not registered in `AkariTool.sln`** (verified zero `WinUI` matches) — so `dotnet build AkariTool.sln` will still pull it transitively via MSBuild, but it is invisible in the IDE solution explorer. A comment at `csproj:70-74` flags this as temporary ("Switch to a local NuGet feed before releasing").
 
-**scripts/ folder (if present)**
-- Embedded PowerShell + batch scripts for system operations
-- Located: `src/AkariTool.App/Scripts/`
-- Usage: Embedded in the executable; extracted by ToolService at runtime
+**`vendor/WinGet.Interop/`:**
+- Purpose: WinGet COM interop, referenced by `AkariTool.Infrastructure.csproj:19`.
+- Generated: No. Committed: Yes. In the sln.
+
+**`bin/` and `obj/`:**
+- Purpose: build output.
+- Generated: Yes. Committed: No (`.gitignore`).
+- Caveat: `AkariTool.App.csproj:50-52` deliberately redirects `IntermediateOutputPath` to `obj/DeElevated/` under `/p:DeElevatedTest=true` so the `asInvoker` manifest intermediate cannot overwrite the normal `requireAdministrator` one. The comment explains `BaseIntermediateOutputPath` is left alone on purpose, because redirecting it un-excludes stale `obj` files from the default compile globs.
 
 ---
 
-*Structure analysis: 2026-08-27*
+*Structure analysis: 2026-10-05*
