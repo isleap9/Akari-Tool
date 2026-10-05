@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    SPIKE-02 throwaway render page (deleted in Task 3 per D-05).
+
+    This page is an INSTRUMENT, not a screen. It is the thinnest layout that puts
+    SettingsCard, DataGrid and WrapPanel on screen simultaneously and nothing else.
+    No theming, no styling, no padding tuning beyond what keeps the controls from
+    being clipped — anything more would be decoration on an instrument whose only
+    output is "does this render, and is it themed like WinUI".
+
+    NAMESPACE RESOLUTION IS PART OF THE FINDING (D-07: record, do not diagnose).
+    Every prefix below was read out of the ASSEMBLY METADATA of the pinned package
+    (its own XML doc file, which lists T: members), never guessed. NONE of the three
+    matched the plan's expectation, and reaching the correct set took three build
+    attempts. The FINAL, BUILDING mapping is:
+
+      - SettingsCard  -> CommunityToolkit.WinUI.Controls
+      - WrapPanel     -> CommunityToolkit.WinUI.Controls
+      - DataGrid      -> CommunityToolkit.WinUI.UI.Controls
+
+    The plan (and 01-RESEARCH.md) predicted per-package namespaces for the 8.2 train
+    (Controls.SettingsControls, Controls.Primitives). The 8.2 assemblies declare BOTH
+    types directly in the flattened namespace CommunityToolkit.WinUI.Controls; the
+    per-package names appear in the assemblies only as ASSEMBLY names, which is the
+    trap. DataGrid, frozen at 7.1.2, sits in a different namespace again -
+    CommunityToolkit.WinUI.UI.Controls - and NOT in the legacy
+    Microsoft.Toolkit.Uwp.UI.Controls.DataGrid the plan predicted.
+
+    Each superseded prefix produced a verbatim compiler error, all recorded in the
+    verdict's Configuration findings section. They are NAMESPACE-RESOLUTION findings
+    about where a type is declared - they say nothing about whether a control renders,
+    and they are NOT rendering verdicts.
+-->
+<Window
+    x:Class="AkariTool.Spike.WinUiControlCompat.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:toolkitControls="using:CommunityToolkit.WinUI.Controls"
+    xmlns:dataGridControls="using:CommunityToolkit.WinUI.UI.Controls"
+    Title="SPIKE-02 — WinUI control compatibility probe">
+
+    <Grid Margin="16" RowSpacing="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- 1. SettingsCard — CommunityToolkit.WinUI.Controls.SettingsControls 8.2.251219,
+                type CommunityToolkit.WinUI.Controls.SettingsCard -->
+        <StackPanel Grid.Row="0" Spacing="8">
+            <TextBlock Text="SettingsCard (SettingsControls 8.2.251219)"
+                       FontWeight="SemiBold" />
+            <toolkitControls:SettingsCard Header="SPIKE-02 SettingsCard"
+                                          Description="CommunityToolkit.WinUI.Controls.SettingsControls"
+                                          Width="420">
+                <TextBlock Text="SettingsCard body content" />
+            </toolkitControls:SettingsCard>
+        </StackPanel>
+
+        <!-- 2. WrapPanel — CommunityToolkit.WinUI.Controls.Primitives 8.2.251219,
+                type CommunityToolkit.WinUI.Controls.WrapPanel. Eight children so that
+                wrapping is visually unambiguous: if these eight boxes all sit on ONE
+                line, the control did not lay out. -->
+        <StackPanel Grid.Row="1" Spacing="8">
+            <TextBlock Text="WrapPanel (Primitives 8.2.251219)"
+                       FontWeight="SemiBold" />
+            <toolkitControls:WrapPanel HorizontalSpacing="8" VerticalSpacing="8" Width="420">
+                <Border Width="88" Height="40" Background="#3F7FD1">
+                    <TextBlock Text="1" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+                <Border Width="88" Height="40" Background="#5BA85F">
+                    <TextBlock Text="2" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+                <Border Width="88" Height="40" Background="#C97A3D">
+                    <TextBlock Text="3" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+                <Border Width="88" Height="40" Background="#9B59B6">
+                    <TextBlock Text="4" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+                <Border Width="88" Height="40" Background="#34495E">
+                    <TextBlock Text="5" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+                <Border Width="88" Height="40" Background="#16A085">
+                    <TextBlock Text="6" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+                <Border Width="88" Height="40" Background="#D35454">
+                    <TextBlock Text="7" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+                <Border Width="88" Height="40" Background="#7F8C8D">
+                    <TextBlock Text="8" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+            </toolkitControls:WrapPanel>
+        </StackPanel>
+
+        <!-- 3. DataGrid — CommunityToolkit.WinUI.UI.Controls.DataGrid 7.1.2 (type and
+                namespace share the CommunityToolkit.WinUI.UI.Controls prefix; see the
+                header note). AutoGenerateColumns plus two DataGridTextColumns over a
+                real ItemsSource, so ROWS are painted rather than just headers: a grid
+                that renders only its column headers is a distinct symptom from one that
+                renders nothing at all. -->
+        <StackPanel Grid.Row="2" Spacing="8">
+            <TextBlock Text="DataGrid (DataGrid 7.1.2 — frozen, last published 2021-11-18)"
+                       FontWeight="SemiBold" />
+            <dataGridControls:DataGrid x:Name="ProbeDataGrid"
+                                       AutoGenerateColumns="True"
+                                       Width="560"
+                                       Height="200"
+                                       ItemsSource="{x:Bind ProbeRows, Mode=OneTime}">
+                <dataGridControls:DataGrid.Columns>
+                    <dataGridControls:DataGridTextColumn Header="Name" Binding="{Binding Name}" />
+                    <dataGridControls:DataGridTextColumn Header="Value" Binding="{Binding Value}" />
+                </dataGridControls:DataGrid.Columns>
+            </dataGridControls:DataGrid>
+        </StackPanel>
+    </Grid>
+</Window>

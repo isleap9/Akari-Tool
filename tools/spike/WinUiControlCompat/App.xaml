@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Application
+    x:Class="AkariTool.Spike.WinUiControlCompat.App"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Application.Resources>
+        <ResourceDictionary>
+            <!--
+              SPIKE-02 throwaway (D-05). Nothing but XamlControlsResources: the probe is
+              an instrument, not a screen. No theme override, no style dictionary, no
+              merged Akari resource — anything added here could change how the three
+              controls under test resolve their own theme resources and contaminate the
+              finding.
+            -->
+            <ResourceDictionary.MergedDictionaries>
+                <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>
