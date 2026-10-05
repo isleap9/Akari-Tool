@@ -1,5 +1,6 @@
 # Requirements: Akari Tool — System Tools Rework
 
+**Milestone:** v1.0 System Tools Rework
 **Defined:** 2026-08-27
 **Core Value:** Every optimization the app performs must be safe, reversible, and legible to the
 user before and after it happens — no silent all-or-nothing scripts, no orphaned leftovers, no
@@ -129,4 +130,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-08-27*
-*Last updated: 2026-08-27 after initial definition*
+*Last updated: 2026-10-05 after formalizing as milestone v1.0 (scope carried forward unchanged)*
