@@ -14,8 +14,11 @@ Requirements for this milestone. Each maps to exactly one roadmap phase.
 
 Established before any restructure, so the restructure can prove it regressed nothing.
 
-- [ ] **SPIKE-01**: A recorded build baseline exists (assemblies produced, warning and error
+- [x] **SPIKE-01**: A recorded build baseline exists (assemblies produced, warning and error
       counts) so later phases can demonstrate the restructure introduced no regressions
+      — *Recorded 2026-10-05 by `-Mode Record`: 16 distinct warnings, 0 errors, 243 tests,
+      12 emitted assemblies. `tools/baseline.json` + `01-BASELINE.md`; verified by
+      `-Mode Baseline`, observed red three ways and green once.*
 - [ ] **SPIKE-02**: A spike confirms Winhance's `SettingsCard`, `DataGrid`, and `WrapPanel` render
       correctly under WindowsAppSDK 2.3.1 with `CommunityToolkit.WinUI`, or names the substitutes
       to use instead
@@ -189,7 +192,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SPIKE-01 | Phase 1 | Pending |
+| SPIKE-01 | Phase 1 | Complete |
 | SPIKE-02 | Phase 1 | Pending |
 | SPIKE-03 | Phase 1 | Pending |
 | ARCH-01 | Phase 4 | Pending |
