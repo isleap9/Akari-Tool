@@ -1,0 +1,61 @@
+{
+    "schemaVersion":  1,
+    "recordedOn":  "2026-10-05T20:09:45Z",
+    "toolchain":  {
+                      "msbuildVersion":  "18.10.1-1.26427.6+3cd27c13eb422ceea9de6fb84d12684e3bcf3188",
+                      "vstestVersion":  "18.0.11915.232",
+                      "visualStudioInstallPath":  "C:\\Program Files (x86)\\Microsoft Visual Studio\\18\\BuildTools",
+                      "sdkBuildToolsVersion":  "10.0.26100.4654"
+                  },
+    "configuration":  "Debug",
+    "platform":  "x64",
+    "buildTarget":  "/t:Rebuild",
+    "assemblies":  [
+                       "src\\AkariTool.App\\bin\\x64\\Debug\\net10.0-windows10.0.26100.0\\win-x64\\AkariTool.dll",
+                       "src\\AkariTool.App\\bin\\x64\\Debug\\net10.0-windows10.0.26100.0\\win-x64\\AkariTool.exe",
+                       "src\\AkariTool.App\\bin\\x64\\Debug\\net10.0-windows10.0.26100.0\\win-x64\\AkariTool.Core.dll",
+                       "src\\AkariTool.App\\bin\\x64\\Debug\\net10.0-windows10.0.26100.0\\win-x64\\AkariTool.Infrastructure.dll",
+                       "src\\AkariTool.App\\bin\\x64\\Debug\\net10.0-windows10.0.26100.0\\win-x64\\WinGet.Interop.dll",
+                       "src\\AkariTool.App\\bin\\x64\\Debug\\net10.0-windows10.0.26100.0\\win-x64\\WinUI.Framework.dll",
+                       "src\\AkariTool.App\\bin\\x64\\Debug\\net10.0-windows10.0.26100.0\\win-x64\\AkariTool.pri",
+                       "src\\AkariTool.Core\\bin\\Debug\\net10.0-windows10.0.26100.0\\AkariTool.Core.dll",
+                       "src\\AkariTool.Infrastructure\\bin\\Debug\\net10.0-windows10.0.26100.0\\AkariTool.Infrastructure.dll",
+                       "tests\\AkariTool.Core.Tests\\bin\\Debug\\net10.0-windows10.0.26100.0\\AkariTool.Core.Tests.dll",
+                       "tests\\AkariTool.Infrastructure.Tests\\bin\\Debug\\net10.0-windows10.0.26100.0\\AkariTool.Infrastructure.Tests.dll",
+                       "tests\\AkariTool.App.Tests\\bin\\x64\\Debug\\net10.0-windows10.0.26100.0\\AkariTool.App.Tests.dll"
+                   ],
+    "errors":  {
+                   "total":  0,
+                   "allowlistedCodes":  [
+                                            "PRI175",
+                                            "PRI252"
+                                        ],
+                   "allowlistedCount":  0,
+                   "notAllowlistedCount":  0,
+                   "notAllowlisted":  [
+
+                                      ]
+               },
+    "warnings":  16,
+    "warningsByCode":  {
+                           "CS9113":  3,
+                           "CA2024":  1,
+                           "CS0436":  9,
+                           "CS8604":  3
+                       },
+    "tests":  {
+                  "total":  243,
+                  "executed":  242,
+                  "passed":  242,
+                  "failed":  0,
+                  "notRunnable":  0,
+                  "notExecuted":  0,
+                  "notRun":  1,
+                  "perAssembly":  {
+                                      "AkariTool.Core.Tests":  93,
+                                      "AkariTool.Infrastructure.Tests":  137,
+                                      "AkariTool.App.Tests":  13,
+                                      "\u003cunclassified\u003e":  0
+                                  }
+              }
+}
