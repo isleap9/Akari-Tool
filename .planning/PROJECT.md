@@ -16,6 +16,23 @@ Every optimization the app performs must be safe, reversible, and legible to the
 after it happens — no silent all-or-nothing scripts, no orphaned leftovers, no changes the user
 can't see or undo.
 
+## Current Milestone: v1.0 System Tools Rework
+
+**Goal:** Turn Advanced Tools ▸ System Tools — the last major page still built as imperative
+WinUI code-behind — into a structured hub of purpose-built, scan-then-review tools, where every
+destructive action is user-visible before and after and reversible.
+
+**Target features:**
+- System Tools hub mirroring `AdvancedHubPage`'s card pattern; `ToolsPage.xaml(.cs)` deleted
+  outright and nav-tag mapping repointed
+- Repair & Health and Quick Shortcuts rewritten fresh (same actions, no code carried over)
+- Deep-clean uninstaller leftover scanner (registry keys, folders, scheduled tasks) with explicit
+  per-item selection
+- System Cleaner: junk/temp scan-and-review, large-file finder, duplicate-file finder
+  (content-hash), Recycle Bin by default
+- Granular per-value/per-adapter NIC tweak UI replacing `network-apply.bat`'s all-or-nothing
+  writes, with real per-value revert
+
 ## Requirements
 
 ### Validated
@@ -125,4 +142,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-08-27 after initialization*
+*Last updated: 2026-10-05 after starting milestone v1.0 System Tools Rework*
