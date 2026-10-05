@@ -17,7 +17,7 @@ affects: [04-domain-file-moves, 05-shared-row-primitives, 09-software-apps-table
 actuals:
   tokens: 8700
   tasks: 2
-  commits: 2
+  commits: 5
 
 tech-stack:
   added:
@@ -102,9 +102,9 @@ coverage:
 duration: 32min
 completed: 2026-10-05
 status: halted
-commits: 2
+commits: 5
 plan_head_before: f493c9c2b75c5fc63a8bdd3ed08caa0ced6c1d40
-plan_head_after: 5fe614770a6e71704f41474d1c9b5a39cc37aaf0
+plan_head_after: "PENDING-SELF — the terminal 01-03 commit is the one carrying this file's ledger correction, and a commit cannot contain its own hash. Measured span is f493c9c2..HEAD = 5 commits; the terminal hash is reported in the executor's completion block."
 ---
 
 # Phase 01 Plan 03: SPIKE-02 control-compatibility spike Summary
@@ -125,7 +125,7 @@ plan_head_after: 5fe614770a6e71704f41474d1c9b5a39cc37aaf0
 - **Completed:** 2026-10-05T23:52:00Z
 - **Tasks:** 2 of 3 complete (Task 3 halted at its human gate)
 - **Files created:** 6
-- **Commits:** 2
+- **Commits:** 5 (2 task + 1 summary + 1 STATE/ROADMAP metadata + 1 ledger correction)
 
 ## Accomplishments
 
