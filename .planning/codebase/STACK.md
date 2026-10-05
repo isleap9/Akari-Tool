@@ -43,7 +43,11 @@
 - Microsoft.NET.Test.Sdk 17.14.1 - Test discovery and execution
 
 **Build/Dev:**
-- MSBuild (Visual Studio 2022 Community via hardcoded path `C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\MSBuild.exe`)
+- MSBuild — **Visual Studio Build Tools 18** (not Community/Enterprise), verified working path:
+  `C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\MSBuild\Current\Bin\MSBuild.exe`
+  (confirmed via `vswhere -requires Microsoft.Component.MSBuild` on 2026-10-05; note the
+  `Program Files (x86)` prefix and the `BuildTools` product name — a `Program Files\...\Community`
+  path does not exist on this machine)
 - CsWinRT 2.0.4 - C# projection generator for WinRT APIs (WinGet.Interop COM projection)
 - CsWin32 0.3.49-beta - P/Invoke stub generator for Win32 APIs
 
@@ -94,7 +98,7 @@
 
 **Development:**
 - Windows 10 or later (10.0.17763.0+ for app, 10.0.22621.0+ for WinGet features)
-- Visual Studio 2022 Community or later (for MSBuild, XAML designer, WinUI workload)
+- Visual Studio Build Tools 18 or later (for MSBuild, XAML designer, WinUI workload)
 - .NET 10 SDK (installed automatically with VS workload)
 - Administrator privileges (to run tests and debug app)
 
