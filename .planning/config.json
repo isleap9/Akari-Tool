@@ -88,5 +88,5 @@
   },
   "resolve_model_ids": "omit",
   "mode": "interactive",
-  "granularity": "standard"
+  "granularity": "fine"
 }
