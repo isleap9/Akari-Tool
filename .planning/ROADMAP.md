@@ -88,7 +88,7 @@ warning/error counts recorded as the Phase 1 reference.
 **Plans**: 4 plans
 - [x] 01-01-PLAN.md – **Tracer (TEST-01 + D-03).** `tools/run-tests.ps1` proves the loop end to end (vswhere discovery → MSBuild → vstest → a measured count); `AkariTool.App.Tests` joins `AkariTool.sln` with D-01's `UseWinUI` buildability probed and any deviation recorded; `SettingBadgeCalculatorTests` characterises `Compute` as Phase 5's CORE-04 baseline. Wave 1. Carries the `checkpoint:decision` that fixes the runner's path and name.
 - [x] 01-02-PLAN.md – **SPIKE-01.** `-Mode Record | Baseline | Allowlist` turns the runner into the machine-checked gate: forced `/t:Rebuild`, error-list-matched PRI175/PRI252 allowlist, no-increase solution-wide tolerance. Records `tools/baseline.json` and `01-BASELINE.md`, then proves the gate red three ways before recording it green. Wave 2. **Recorded: 16 distinct warnings, 0 errors, 243 tests (93/137/13), 12 emitted assemblies.**
-- [ ] 01-03-PLAN.md — **SPIKE-02.** A throwaway spike outside the solution renders `SettingsCard`, `DataGrid` and `WrapPanel` under WindowsAppSDK 2.3.1 with the registry-verified pinned package set; the human render check produces the verdict (any substitute proved on the same page), then the spike is deleted. Wave 2. Hard gate for Phases 4, 5 and 9.
+- [ ] 01-03-PLAN.md — **SPIKE-02 — HALTED at the render gate.** A throwaway spike outside the solution renders `SettingsCard`, `DataGrid` and `WrapPanel` under WindowsAppSDK 2.3.1 with the registry-verified pinned package set; the human render check produces the verdict (any substitute proved on the same page), then the spike is deleted. Wave 2. Hard gate for Phases 4, 5 and 9. **Tasks 1–2 done (3 commits): the probe builds clean against the five exact pins and launches with a visible, responding window — both automated gates green and both explicitly NOT sufficient. `01-SPIKE-02-VERDICT.md` opened with all eight sections and Verdict `PENDING`. Task 3 cannot close by machine: the window is OPEN on screen (PID 10320) and `tools/spike/` is intentionally not deleted until a human looks. All three XAML namespaces resolved differently from the predicted set — the 8.2 train declares `SettingsCard` and `WrapPanel` directly in `CommunityToolkit.WinUI.Controls`, and `DataGrid 7.1.2` in `CommunityToolkit.WinUI.UI.Controls`; recorded as configuration findings C-1..C-3, explicitly not rendering verdicts.**
 - [ ] 01-04-PLAN.md — **SPIKE-03.** A reflection-based enumerator over the **15** static catalog factories plus a committed read-only Winhance snapshot feed a generator emitting a raw **and** normalised divergence report — the D6 config-format fork evidence base. Wave 3.
 **Rationale**: Nothing here is referenced by production code, so the app is byte-for-byte unaffected
 and keeps working; every artifact produced is a document or a test that only *observes*. This is the
@@ -96,6 +96,11 @@ only phase that can change the definition of "did it build" without consequence,
 The SPIKE-02 finding is a hard gate: if `SettingsCard`/`DataGrid`/`WrapPanel` do not resolve under
 2.3.1, the Phase 5 row primitives and the Phase 9 table view are planned against substitutes instead,
 and finding that out after planning those phases wastes the planning.
+**⚠ As of 2026-10-06 this gate is OPEN.** The compile and launch halves of SPIKE-02 are green and the
+verdict still reads `PENDING`. **Phases 4, 5 and 9 must not be planned against those two gates** — D-06
+requires compile *plus* launch *plus* visual render, and the third is a human obligation with no
+automated proxy. Phases 5 and 9 are hard-blocked; Phase 4 should not assume any of the three controls is
+available. Phase 2 is unaffected, and 01-04 (SPIKE-03) does not depend on this verdict.
 
 ### Phase 2: Dead Subsystems & Defect Repairs
 
@@ -457,7 +462,7 @@ after 6 and may interleave with 7 and 8.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Baseline, Spikes & Test Harness | 2/4 | In Progress | - |
+| 1. Baseline, Spikes & Test Harness | 2/4 (+1 halted) | In Progress — 01-03 HALTED at the SPIKE-02 render gate; window open, verdict `PENDING` | - |
 | 2. Dead Subsystems & Defect Repairs | 0/TBD | Not started | - |
 | 3. Namespace Alignment & Composition Root | 0/TBD | Not started | - |
 | 4. Vertical Slices Across All Three Layers | 0/TBD | Not started | - |
