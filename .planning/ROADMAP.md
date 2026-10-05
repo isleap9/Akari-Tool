@@ -85,7 +85,11 @@ every later UI phase, and create the test project that makes a restructure verif
      test against App-layer logic.
 **Build Gate**: all solution assemblies emit; the new test project runs green; test count and
 warning/error counts recorded as the Phase 1 reference.
-**Plans**: TBD
+**Plans**: 4 plans
+- [ ] 01-01-PLAN.md — **Tracer (TEST-01 + D-03).** `tools/run-tests.ps1` proves the loop end to end (vswhere discovery → MSBuild → vstest → a measured count); `AkariTool.App.Tests` joins `AkariTool.sln` with D-01's `UseWinUI` buildability probed and any deviation recorded; `SettingBadgeCalculatorTests` characterises `Compute` as Phase 5's CORE-04 baseline. Wave 1. Carries the `checkpoint:decision` that fixes the runner's path and name.
+- [ ] 01-02-PLAN.md — **SPIKE-01.** `-Mode Record | Baseline | Allowlist` turns the runner into the machine-checked gate: forced `/t:Rebuild`, error-list-matched PRI175/PRI252 allowlist, no-increase solution-wide tolerance. Records `tools/baseline.json` and `01-BASELINE.md`, then proves the gate red three ways before recording it green. Wave 2.
+- [ ] 01-03-PLAN.md — **SPIKE-02.** A throwaway spike outside the solution renders `SettingsCard`, `DataGrid` and `WrapPanel` under WindowsAppSDK 2.3.1 with the registry-verified pinned package set; the human render check produces the verdict (any substitute proved on the same page), then the spike is deleted. Wave 2. Hard gate for Phases 4, 5 and 9.
+- [ ] 01-04-PLAN.md — **SPIKE-03.** A reflection-based enumerator over the **15** static catalog factories plus a committed read-only Winhance snapshot feed a generator emitting a raw **and** normalised divergence report — the D6 config-format fork evidence base. Wave 3.
 **Rationale**: Nothing here is referenced by production code, so the app is byte-for-byte unaffected
 and keeps working; every artifact produced is a document or a test that only *observes*. This is the
 only phase that can change the definition of "did it build" without consequence, so it goes first.
@@ -453,7 +457,7 @@ after 6 and may interleave with 7 and 8.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Baseline, Spikes & Test Harness | 0/TBD | Not started | - |
+| 1. Baseline, Spikes & Test Harness | 0/4 | Planned | - |
 | 2. Dead Subsystems & Defect Repairs | 0/TBD | Not started | - |
 | 3. Namespace Alignment & Composition Root | 0/TBD | Not started | - |
 | 4. Vertical Slices Across All Three Layers | 0/TBD | Not started | - |
