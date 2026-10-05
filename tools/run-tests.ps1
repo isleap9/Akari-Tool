@@ -266,6 +266,19 @@ function Read-TrxCounters {
     }
 }
 
+# ── Per-assembly test split (how to re-derive it, for plan 01-02) ──────────
+# The TRX this runner produces carries the per-assembly split in two places that
+# join on @testId:
+#     TestRun/Results/UnitTestResult/@testId
+#   + TestRun/TestDefinitions/UnitTest[@id]/@className   -> declaring class
+# The declaring assembly is the className's namespace root ("AkariTool.Core.Tests.*",
+# "AkariTool.Infrastructure.Tests.*", "AkariTool.App.Tests.*"). Filtering
+# UnitTestResult by @testName or by console output is NOT equivalent and must not be
+# substituted: the same test class name can appear in more than one assembly.
+#
+# Recorded here so plan 01-02 can write the per-assembly breakdown into
+# tools/baseline.json without re-deriving the join.
+#
 # ═════════════════════════════════════════════════════════════════════════
 # MAIN
 # ═════════════════════════════════════════════════════════════════════════
@@ -298,26 +311,46 @@ $trxPath     = Join-Path $ResultsDirectory $trxName
 #    assembly (build-deelevated.ps1), so a glob would run a manifest the runner did
 #    not intend. Test-Path each and name the missing one (build-installer.ps1:86-91).
 function Get-ExpectedAssemblyPaths {
-    param([string]$RepoRoot, [string]$Config)
+    param([string]$RepoRoot, [string]$Config, [string]$Plat)
 
     $testProjects = @(
-        @{ Project = 'AkariTool.Core.Tests'           ; Csp = 'tests\AkariTool.Core.Tests\AkariTool.Core.Tests.csproj' },
-        @{ Project = 'AkariTool.Infrastructure.Tests'; Csp = 'tests\AkariTool.Infrastructure.Tests\AkariTool.Infrastructure.Tests.csproj' }
+        @{ Project = 'AkariTool.Core.Tests'           ; Csp = 'tests\AkariTool.Core.Tests\AkariTool.Core.Tests.csproj'                    ; PlatformSegment = 'none' },
+        @{ Project = 'AkariTool.Infrastructure.Tests'; Csp = 'tests\AkariTool.Infrastructure.Tests\AkariTool.Infrastructure.Tests.csproj'; PlatformSegment = 'none' },
+        @{ Project = 'AkariTool.App.Tests'            ; Csp = 'tests\AkariTool.App.Tests\AkariTool.App.Tests.csproj'                      ; PlatformSegment = 'platform' }
     )
 
+    # Each entry declares its OWN output-path shape, because the three test projects
+    # do not share one:
+    #
+    #   PlatformSegment 'none' -> bin\<Config>\<tfm>\        (Core.Tests, Infrastructure.Tests)
+    #   PlatformSegment 'platform' -> bin\<Platform>\<Config>\<tfm>\   (App.Tests)
+    #
+    # Why App.Tests differs: it ProjectReferences AkariTool.App, which is an x64-only
+    # assembly (Platforms=x64, RuntimeIdentifier=win-x64). A platform-agnostic (MSIL)
+    # test assembly referencing an AMD64 one is rejected by the compiler with
+    # "error MSB3270: There was a mismatch between the processor architecture of the
+    # project being built MSIL and the reference AMD64" - so App.Tests is mapped to
+    # the real x64 platform in AkariTool.sln, which puts an x64 segment in its output
+    # path. Core.Tests and Infrastructure.Tests reference AnyCPU libraries and stay
+    # platform-agnostic.
+    #
+    # The TFM is read from each project rather than hardcoded, so a TFM bump does not
+    # silently break the runner. Building a test csproj DIRECTLY with /p:Platform=x64
+    # also emits the x64-shaped path, so these are the same paths either way.
     $paths = foreach ($entry in $testProjects) {
         $cspPath = Join-Path $RepoRoot $entry.Csp
-        # The TFM folder is read from the project rather than hardcoded, so a TFM
-        # bump does not silently break the runner.
         $tfm = ([xml](Get-Content -LiteralPath $cspPath -Raw)).Project.PropertyGroup.TargetFramework
         if (-not $tfm) { throw "No <TargetFramework> in '$cspPath'." }
-        Join-Path $RepoRoot "tests\$($entry.Project)\bin\$Config\$tfm\$($entry.Project).dll"
+
+        $base = "tests\$($entry.Project)\bin"
+        if ($entry.PlatformSegment -eq 'platform') { $base = Join-Path $base $Platform }
+        Join-Path $RepoRoot (Join-Path $base "$Config\$tfm\$($entry.Project).dll")
     }
 
     return @($paths)
 }
 
-$expectedAssemblies = Get-ExpectedAssemblyPaths -RepoRoot $root -Config $Configuration
+$expectedAssemblies = Get-ExpectedAssemblyPaths -RepoRoot $root -Config $Configuration -Plat $Platform
 foreach ($dll in $expectedAssemblies) {
     if (-not (Test-Path $dll)) {
         Write-Host ''

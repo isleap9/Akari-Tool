@@ -1,0 +1,69 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    AkariTool.App.Tests - the App-layer test project (TEST-01, plan 01-01).
+
+    Shape: mirrors tests/AkariTool.Infrastructure.Tests/AkariTool.Infrastructure.Tests.csproj
+    exactly - same 5-property PropertyGroup, same five PackageReference versions, all of
+    which are already in the local NuGet cache. The one difference is the single
+    ProjectReference below (pointing at AkariTool.App rather than Core+Infrastructure).
+
+    SCOPE FENCE (D-04): this project's Phase 1 remit is SettingBadgeCalculatorTests ONLY.
+    The real-catalog validity test is Phase 2 / BUG-02; the container-resolution test is
+    Phase 3 / TEST-02; the Core-references test is Phase 3 / TEST-03. Adding any of them
+    here would move another phase's requirement AND destabilise the recorded baseline test
+    count that nine later phases compare against.
+
+    UseWinUI was TRIED AND REMOVED - measured, not assumed (D-01's letter is therefore not
+    honoured; D-01's stated rationale is preserved). Setting UseWinUI=true here compiles and
+    copies the App reference fine, but it breaks the TEST RUN itself: with UseWinUI=true the
+    five Microsoft.TestPlatform.* assemblies that vstest's testhost loads at run time are NOT
+    copied to this project's output, so every test run aborts with
+      "Unhandled exception. System.IO.FileNotFoundException: Could not load file or assembly
+       'Microsoft.TestPlatform.CoreUtilities, Version=15.0.0.0'"
+    and vstest reports "Test Run Aborted" with no tests at all. With UseWinUI absent the
+    same clean rebuild copies all five and the smoke test runs and passes.
+
+    This is the documented fallback, and it costs nothing here: SettingBadgeCalculator needs
+    no XAML, no visual tree and no live DispatcherQueue, so D-01's actual constraint -
+    "tests only App logic that needs no live DispatcherQueue and no XAML visual tree" - is
+    fully preserved. What is given up is the letter of UseWinUI=true, which existed only to
+    support XAML that this project never uses. <EnableMsixTooling> and <WindowsPackageType>
+    were NOT added: the markup targets never demanded them once UseWinUI was gone.
+
+    NOTE the separate solution-file consequence, which is NOT caused by UseWinUI: this
+    project references an x64-only assembly (AkariTool.App has Platforms=x64 and
+    RuntimeIdentifier=win-x64), so it must be mapped to the real x64 platform in
+    AkariTool.sln. Built as AnyCPU it fails with "error MSB3270: There was a mismatch
+    between the processor architecture of the project being built MSIL and the reference
+    AMD64". That is why this project's output path carries an x64 segment while the other
+    two test projects' does not.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />
+    <PackageReference Include="FluentAssertions" Version="8.7.1" />
+    <PackageReference Include="NSubstitute" Version="5.3.0" />
+  </ItemGroup>
+
+  <!--
+    ONE reference, to AkariTool.App. Do NOT also reference Core or Infrastructure:
+    AkariTool.App already references both, and SettingBadgeCalculator reaches
+    NumericConversionHelper transitively through the App reference. Explicitly no
+    InternalsVisibleTo anywhere - SettingBadgeCalculator is already public, so the
+    attribute would be an unused widening of the shipping assembly's surface.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="../../src/AkariTool.App/AkariTool.App.csproj" />
+  </ItemGroup>
+
+</Project>
