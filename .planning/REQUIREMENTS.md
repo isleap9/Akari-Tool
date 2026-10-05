@@ -189,69 +189,69 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SPIKE-01 | TBD | Pending |
-| SPIKE-02 | TBD | Pending |
-| SPIKE-03 | TBD | Pending |
-| ARCH-01 | TBD | Pending |
-| ARCH-02 | TBD | Pending |
-| ARCH-03 | TBD | Pending |
-| ARCH-04 | TBD | Pending |
-| ARCH-05 | TBD | Pending |
-| ARCH-06 | TBD | Pending |
-| ARCH-07 | TBD | Pending |
-| ARCH-08 | TBD | Pending |
-| ARCH-09 | TBD | Pending |
-| ARCH-10 | TBD | Pending |
-| ARCH-11 | TBD | Pending |
-| ARCH-12 | TBD | Pending |
-| BUG-01 | TBD | Pending |
-| BUG-02 | TBD | Pending |
-| BUG-03 | TBD | Pending |
-| BUG-04 | TBD | Pending |
-| BUG-05 | TBD | Pending |
-| BUG-06 | TBD | Pending |
-| CORE-01 | TBD | Pending |
-| CORE-02 | TBD | Pending |
-| CORE-03 | TBD | Pending |
-| CORE-04 | TBD | Pending |
-| CORE-05 | TBD | Pending |
-| CORE-06 | TBD | Pending |
-| ADV-01 | TBD | Pending |
-| ADV-02 | TBD | Pending |
-| ADV-03 | TBD | Pending |
-| SOFT-01 | TBD | Pending |
-| SOFT-02 | TBD | Pending |
-| SOFT-03 | TBD | Pending |
-| SOFT-04 | TBD | Pending |
-| SOFT-05 | TBD | Pending |
-| SOFT-06 | TBD | Pending |
-| SOFT-07 | TBD | Pending |
-| SOFT-08 | TBD | Pending |
-| CUST-01 | TBD | Pending |
-| CUST-02 | TBD | Pending |
-| CUST-03 | TBD | Pending |
-| I18N-01 | TBD | Pending |
-| I18N-02 | TBD | Pending |
-| I18N-03 | TBD | Pending |
-| I18N-04 | TBD | Pending |
-| I18N-05 | TBD | Pending |
-| MODE-01 | TBD | Pending |
-| MODE-02 | TBD | Pending |
-| MODE-03 | TBD | Pending |
-| MODE-04 | TBD | Pending |
-| MODE-05 | TBD | Pending |
-| PREF-01 | TBD | Pending |
-| PREF-02 | TBD | Pending |
-| SCR-01 | TBD | Pending |
-| TEST-01 | TBD | Pending |
-| TEST-02 | TBD | Pending |
-| TEST-03 | TBD | Pending |
-| TEST-04 | TBD | Pending |
+| SPIKE-01 | Phase 1 | Pending |
+| SPIKE-02 | Phase 1 | Pending |
+| SPIKE-03 | Phase 1 | Pending |
+| ARCH-01 | Phase 4 | Pending |
+| ARCH-02 | Phase 4 | Pending |
+| ARCH-03 | Phase 10 | Pending |
+| ARCH-04 | Phase 7 | Pending |
+| ARCH-05 | Phase 9 | Pending |
+| ARCH-06 | Phase 4 | Pending |
+| ARCH-07 | Phase 4 | Pending |
+| ARCH-08 | Phase 3 | Pending |
+| ARCH-09 | Phase 3 | Pending |
+| ARCH-10 | Phase 4 | Pending |
+| ARCH-11 | Phase 3 | Pending |
+| ARCH-12 | Phase 4 | Pending |
+| BUG-01 | Phase 2 | Pending |
+| BUG-02 | Phase 2 | Pending |
+| BUG-03 | Phase 2 | Pending |
+| BUG-04 | Phase 2 | Pending |
+| BUG-05 | Phase 2 | Pending |
+| BUG-06 | Phase 2 | Pending |
+| CORE-01 | Phase 5 | Pending |
+| CORE-02 | Phase 5 | Pending |
+| CORE-03 | Phase 5 | Pending |
+| CORE-04 | Phase 5 | Pending |
+| CORE-05 | Phase 5 | Pending |
+| CORE-06 | Phase 5 | Pending |
+| ADV-01 | Phase 7 | Pending |
+| ADV-02 | Phase 7 | Pending |
+| ADV-03 | Phase 7 | Pending |
+| SOFT-01 | Phase 9 | Pending |
+| SOFT-02 | Phase 9 | Pending |
+| SOFT-03 | Phase 9 | Pending |
+| SOFT-04 | Phase 9 | Pending |
+| SOFT-05 | Phase 9 | Pending |
+| SOFT-06 | Phase 9 | Pending |
+| SOFT-07 | Phase 9 | Pending |
+| SOFT-08 | Phase 9 | Pending |
+| CUST-01 | Phase 10 | Pending |
+| CUST-02 | Phase 10 | Pending |
+| CUST-03 | Phase 10 | Pending |
+| I18N-01 | Phase 6 | Pending |
+| I18N-02 | Phase 6 | Pending |
+| I18N-03 | Phase 6 | Pending |
+| I18N-04 | Phase 6 | Pending |
+| I18N-05 | Phase 6 | Pending |
+| MODE-01 | Phase 8 | Pending |
+| MODE-02 | Phase 8 | Pending |
+| MODE-03 | Phase 8 | Pending |
+| MODE-04 | Phase 8 | Pending |
+| MODE-05 | Phase 8 | Pending |
+| PREF-01 | Phase 6 | Pending |
+| PREF-02 | Phase 6 | Pending |
+| SCR-01 | Phase 7 | Pending |
+| TEST-01 | Phase 1 | Pending |
+| TEST-02 | Phase 3 | Pending |
+| TEST-03 | Phase 3 | Pending |
+| TEST-04 | Phase 8 | Pending |
 
 **Coverage:**
 - v1 requirements: 58 total
-- Mapped to phases: 0
-- Unmapped: 58 ⚠️ (roadmap creation fills this in next)
+- Mapped to phases: 58
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-10-05*
