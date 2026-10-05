@@ -457,7 +457,7 @@ after 6 and may interleave with 7 and 8.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Baseline, Spikes & Test Harness | 0/4 | Planned | - |
+| 1. Baseline, Spikes & Test Harness | 1/4 | In Progress | - |
 | 2. Dead Subsystems & Defect Repairs | 0/TBD | Not started | - |
 | 3. Namespace Alignment & Composition Root | 0/TBD | Not started | - |
 | 4. Vertical Slices Across All Three Layers | 0/TBD | Not started | - |

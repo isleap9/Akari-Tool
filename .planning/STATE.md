@@ -1,19 +1,19 @@
 ---
 gsd_state_version: "1.0"
 milestone: v1.0
-current_phase: 1
+current_phase: 01
 current_phase_name: Baseline, Spikes & Test Harness
-status: planning
-stopped_at: Phase 1 context gathered
-last_updated: "2026-10-05T16:06:23.511Z"
+status: executing
+stopped_at: Completed 01-01-PLAN.md - the build+test loop, the App test project, and the badge characterization suite. Next: 01-02.
+last_updated: "2026-10-05T21:52:00.000Z"
 last_activity: 2026-10-05
-last_activity_desc: Roadmap created; all 58 v1 requirements mapped across 10 phases
-state_head: 1182f469dbc3f47ed56ba0782ff70cf61c16635a
+last_activity_desc: Plan 01-01 complete (3 commits, 4 files)
+state_head: e9e5aae8f0a88f53f5798f19b589557a88e027bb
 progress:
   total_phases: 10
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 4
+  completed_plans: 1
 milestone_name: Winhance Parity
 ---
 
@@ -26,38 +26,52 @@ See: .planning/PROJECT.md (updated 2026-10-05)
 **Core value:** Every new capability must be addable as one self-contained vertical slice — a Core
 contract, an Infrastructure service, and a UI page — without touching code outside its own feature
 folder.
-**Current focus:** Phase 1 — Baseline, Spikes & Test Harness
+
+**Current focus:** Phase 01 — Baseline, Spikes & Test Harness
 
 ## Current Position
 
-Phase: 1 of 10 (Baseline, Spikes & Test Harness)
-Plan: 0 of TBD in current phase
-Status: Planning
-Last activity: 2026-10-05 — Roadmap created; all 58 v1 requirements mapped across 10 phases
+Phase: 01 (Baseline, Spikes & Test Harness) — EXECUTING
+Plan: 2 of 4
+Status: Executing Phase 01
+Last activity: 2026-10-05 — Plan 01-01 complete (runner + App test project + badge characterization)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [███░░░░░░░] 25%
+
+**The committed build gate:** `powershell -ExecutionPolicy Bypass -File tools\run-tests.ps1`
+discovers MSBuild and `vstest.console.exe` through `vswhere` (never a hardcoded path — the VS
+Community path named in AGENTS.md does not exist on this machine; the only install is Build Tools
+2026 under `Program Files (x86)`), restores then builds as two separate MSBuild invocations, and
+prints a measured test count from the TRX `Counters`. Exit 0 green / 1 real failure / 2
+precondition. Build verdict comes from the error list, never `$LASTEXITCODE`.
+
+**Measured test state (2026-10-05): 243 tests, 242 passed, 1 notExecuted** (Core 93,
+Infrastructure 137, App.Tests 13). AGENTS.md's "53 + 136" is stale — never copy those numbers.
 
 **Build definition:** VS MSBuild only —
 `AkariTool.sln /t:Build /p:Configuration=Debug /p:Platform=x64` — must emit every solution
 assembly with zero compile errors and no new warnings beyond the Phase 1 baseline. The
 `WINAPPSDKGENERATEPROJECTPRIFILE` PRI175/PRI252 error is pre-existing and Out of Scope; it is
-tolerated but must never excuse a real compile error hiding behind it.
+tolerated but must never excuse a real compile error hiding behind it. **Note:** that error pair
+is not reproducible run-to-run — it appears on a cold build and disappears once
+`WinUI.Framework.pri` exists on disk, so the gate must *tolerate* these codes when present rather
+than *require* them.
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
-- Average duration: —
-- Total execution time: —
+- Total plans completed: 1
+- Average duration: 47 min
+- Total execution time: 47 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 01 | 1 | 47 min | 47 min |
 
 **Recent Trend:**
-- Last 5 plans: —
+- Last 5 plans: 01-01 (47 min)
 - Trend: —
 
 *Updated after each plan completion*
@@ -68,6 +82,17 @@ tolerated but must never excuse a real compile error hiding behind it.
 
 Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecting current work:
 
+- **Runner path is locked: `tools/run-tests.ps1`**, one script, `-Mode Build | Record | Baseline |
+  Allowlist`. Chosen because 100+ existing references across nine planning documents already name
+  this exact path — renaming would invalidate every later Build Gate line. Do not rename or split
+  it.
+- **`UseWinUI` is NOT usable on a test project** (measured): it stops the five
+  `Microsoft.TestPlatform.*` assemblies from being copied, so every vstest run aborts with
+  `FileNotFoundException` and zero tests. D-01's letter is deliberately not honoured; its rationale
+  is preserved. Recorded in the csproj so the property is not re-added.
+- **`AkariTool.App.Tests` is mapped to x64 in the solution, not AnyCPU**, because `AkariTool.App`
+  is x64-only and an MSIL reference to it fails with MSB3270. Its output path therefore carries an
+  `x64` segment while the other two test projects' does not.
 - Localization sequenced at Phase 6 — at the **top** of the feature stage, above every phase that
   adds a page or setting (Phases 7-10).
 - Configuration stays forked (D6); no `.winhance` import or shared config format in any phase.
@@ -77,7 +102,8 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 
 ### Pending Todos
 
-None yet.
+- Plan 01-02 must record the baseline against **243** tests, not 230 (230 was the pre-plan count).
+- Plan 01-02's gate must tolerate PRI175/PRI252 when present, not require them.
 
 ### Blockers/Concerns
 
@@ -86,6 +112,10 @@ None yet.
 - SPIKE-03 is the evidence base for the D6 fork decision.
 - `ElevationService` impersonation is thread-affine — any change making an impersonated path async
   silently breaks elevated writes. Audit at every call site touched.
+- Phase 5's CORE-04 badge-primitive extraction must leave `SettingBadgeCalculatorTests` passing
+  unchanged. That suite is the guard; six of its assertions encode behaviour that reads like a
+  defect (the definition-vs-parameter `Action` guard, the always-added `Custom` pill, AND-folded
+  evidence). They are frozen deliberately — do not "fix" them to tidy the extraction.
 
 ## Deferred Items
 
@@ -100,6 +130,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-05T16:06:23.493Z
-Stopped at: Phase 1 context gathered
-Resume file: .planning/phases/01-baseline-spikes-test-harness/01-CONTEXT.md
+Last session: 2026-10-05T21:52:00.000Z
+Stopped at: Completed 01-01-PLAN.md - the build+test loop, the App test project, and the badge characterization suite. Next: 01-02.
+Resume file: .planning/phases/01-baseline-spikes-test-harness/01-02-PLAN.md

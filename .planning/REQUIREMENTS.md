@@ -140,7 +140,7 @@ Established before any restructure, so the restructure can prove it regressed no
 
 ### Tests
 
-- [ ] **TEST-01**: An App-layer test project exists, so UI-adjacent logic is testable at all
+- [x] **TEST-01**: An App-layer test project exists, so UI-adjacent logic is testable at all
 - [ ] **TEST-02**: An integration test verifies the DI container resolves every registered service
 - [ ] **TEST-03**: A test asserts Core references neither Infrastructure nor UI
 - [ ] **TEST-04**: Tests cover Builder-mode recording of numeric-range and AC/DC edits
@@ -243,7 +243,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PREF-01 | Phase 6 | Pending |
 | PREF-02 | Phase 6 | Pending |
 | SCR-01 | Phase 7 | Pending |
-| TEST-01 | Phase 1 | Pending |
+| TEST-01 | Phase 1 | Complete (01-01) |
 | TEST-02 | Phase 3 | Pending |
 | TEST-03 | Phase 3 | Pending |
 | TEST-04 | Phase 8 | Pending |
