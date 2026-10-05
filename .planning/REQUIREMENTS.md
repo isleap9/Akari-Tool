@@ -100,34 +100,37 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| HUB-01 | TBD | Pending |
-| HUB-02 | TBD | Pending |
-| HUB-03 | TBD | Pending |
-| REPAIR-01 | TBD | Pending |
-| SHORT-01 | TBD | Pending |
-| UNINST-01 | TBD | Pending |
-| UNINST-02 | TBD | Pending |
-| UNINST-03 | TBD | Pending |
-| UNINST-04 | TBD | Pending |
-| CLEAN-01 | TBD | Pending |
-| CLEAN-02 | TBD | Pending |
-| CLEAN-03 | TBD | Pending |
-| CLEAN-04 | TBD | Pending |
-| LGFILE-01 | TBD | Pending |
-| DUPE-01 | TBD | Pending |
-| DUPE-02 | TBD | Pending |
-| DUPE-03 | TBD | Pending |
-| NIC-01 | TBD | Pending |
-| NIC-02 | TBD | Pending |
-| NIC-03 | TBD | Pending |
-| NIC-04 | TBD | Pending |
-| NIC-05 | TBD | Pending |
+| HUB-01 | Phase 1 | Pending |
+| HUB-02 | Phase 6 | Pending |
+| HUB-03 | Phase 6 | Pending |
+| REPAIR-01 | Phase 1 | Pending |
+| SHORT-01 | Phase 1 | Pending |
+| UNINST-01 | Phase 2 | Pending |
+| UNINST-02 | Phase 2 | Pending |
+| UNINST-03 | Phase 2 | Pending |
+| UNINST-04 | Phase 2 | Pending |
+| CLEAN-01 | Phase 3 | Pending |
+| CLEAN-02 | Phase 3 | Pending |
+| CLEAN-03 | Phase 3 | Pending |
+| CLEAN-04 | Phase 3 | Pending |
+| LGFILE-01 | Phase 3 | Pending |
+| DUPE-01 | Phase 4 | Pending |
+| DUPE-02 | Phase 4 | Pending |
+| DUPE-03 | Phase 4 | Pending |
+| NIC-01 | Phase 5 | Pending |
+| NIC-02 | Phase 5 | Pending |
+| NIC-03 | Phase 5 | Pending |
+| NIC-04 | Phase 5 | Pending |
+| NIC-05 | Phase 5 | Pending |
 
 **Coverage:**
 - v1 requirements: 22 total
-- Mapped to phases: 0
-- Unmapped: 22 ⚠️ (roadmap creation fills this in next)
+- Mapped to phases: 22
+- Unmapped: 0 ✓
+
+v2 requirements (UNINST-05, UNINST-06, LGFILE-02, DUPE-04, NIC-06) are intentionally unphased —
+see .planning/ROADMAP.md "Deliberately Not Phased".
 
 ---
 *Requirements defined: 2026-08-27*
-*Last updated: 2026-10-05 after formalizing as milestone v1.0 (scope carried forward unchanged)*
+*Last updated: 2026-10-05 — roadmap created, all 22 v1 requirements mapped to Phases 1-6*
