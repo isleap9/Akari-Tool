@@ -30,3 +30,5 @@ AKARI_TODO.md
 Winhance Store.md
 AKARI_TOOL.md
 AkariToolUI.md
+# GSD runtime lockfile - per-machine, carries a stale PID
+.planning/milestone.lock
