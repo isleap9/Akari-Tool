@@ -1,12 +1,63 @@
 {
   "contract": "1.0.0",
   "flavor": "core",
-  "milestone": null,
-  "phases": [],
+  "milestone": "v1.0",
+  "phases": [
+    {
+      "number": "1",
+      "name": "Baseline, Spikes & Test Harness",
+      "status": "in_progress"
+    },
+    {
+      "number": "2",
+      "name": "Dead Subsystems & Defect Repairs",
+      "status": "pending"
+    },
+    {
+      "number": "3",
+      "name": "Namespace Alignment & Composition Root",
+      "status": "pending"
+    },
+    {
+      "number": "4",
+      "name": "Vertical Slices Across All Three Layers",
+      "status": "pending"
+    },
+    {
+      "number": "5",
+      "name": "Common Machinery & Shared Rendering",
+      "status": "pending"
+    },
+    {
+      "number": "6",
+      "name": "Preferences & Localization",
+      "status": "pending"
+    },
+    {
+      "number": "7",
+      "name": "Advanced Tools Split",
+      "status": "pending"
+    },
+    {
+      "number": "8",
+      "name": "Builder & Config Review Modes",
+      "status": "pending"
+    },
+    {
+      "number": "9",
+      "name": "Software & Apps Machinery",
+      "status": "pending"
+    },
+    {
+      "number": "10",
+      "name": "Customize Slice Completion",
+      "status": "pending"
+    }
+  ],
   "next": {
-    "command": "/gsd:discuss-phase",
-    "label": "Discuss the first phase",
-    "reason": "Project initialized — plan your first phase"
+    "command": "/gsd:progress --next",
+    "label": "Advance to the next step",
+    "reason": "Phase 01 of 10 · executing"
   },
-  "updated_at": "2026-10-05T14:14:37.643Z"
+  "updated_at": "2026-10-05T19:07:07.774Z"
 }

@@ -74,7 +74,7 @@ created: "2026-10-05"
 
 | Obligation | Fails when |
 |---|---|
-| 01-01-01 | **Exit code ≠ 0**, or a printed diff line naming the metric that moved (`warnings 118 -> 121`). Silent pass prints `PASS (warnings 118<=118, errors 2 allowlisted, tests 232>=230)`. |
+| 01-01-01 | **Exit code ≠ 0**, or a printed diff line naming the metric that moved. The line must name the metric and both values, e.g. the shape `warnings <before> -> <after>` — **never** literal example numbers; the real figures are whatever `/t:Rebuild` produces, and they are recorded for the first time by this phase. |
 | 01-01-02 | An error line appears that is **not** in the allowlist. Note: **do not** gate on `$LASTEXITCODE -eq 0` — the build is *expected* to exit non-zero while PRI175/PRI252 are tolerated and assemblies still emit. |
 | 01-01-03 | MSBuild exit ≠ 0, or `MC`/XAML-compiler `error XLSQ…` / `error WMC…` naming the unresolved control. |
 | 01-01-04 | Process exits within 5 s — almost certainly a `XamlParseException` / `TypeLoadException` / theming failure at load. |

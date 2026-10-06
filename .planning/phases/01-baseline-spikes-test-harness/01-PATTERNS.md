@@ -511,7 +511,11 @@ Write-Host "Done -> $out" -ForegroundColor Green
 ```
 
 The gate's `PASS (...)` / `FAIL (...)` lines should use this idiom, since RESEARCH's Validation
-Architecture specifies their exact text (`PASS (warnings 118<=118, errors 2 allowlisted, tests 232>=230)`).
+Architecture specifies their **shape** — each metric with its comparator and value, e.g.
+`PASS (warnings <n><=<n>, errors <n> allowlisted, tests <n> >= <n>)`. Use **placeholder tokens, never
+literal example figures**: the real warning and test counts are produced by the first `/t:Rebuild` and
+recorded for the first time by this phase, so any concrete number written here would be fabricated. The
+plans state the same prohibition.
 
 **Existing-artifact assertion idiom** (`build-installer.ps1:86-91`) - `Test-Path` on the exact expected
 path, then `Write-Error` with the path interpolated into the message. This is the pattern for the

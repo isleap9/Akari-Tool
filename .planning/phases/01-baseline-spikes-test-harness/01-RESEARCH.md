@@ -1351,7 +1351,12 @@ which are imported into the consuming project. D-05 (delete the spike) bounds th
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED — all six dispositions recorded inline)
+
+> **Resolution status:** closed. Every question below carries its disposition inline as
+> **`→ RESOLVED`**, naming the plan task that answers it. None was left open for planning to proceed
+> against: where a question is a build-time fact, the disposition is "this phase measures it, at task
+> X" — the honest answer rather than a guess.
 
 1. **Does a clean `/t:Rebuild` succeed, and with exactly which errors?**
    - *What we know:* ROADMAP says six assemblies are emitted and that PRI175/PRI252 are tolerated
@@ -1364,6 +1369,12 @@ which are imported into the consuming project. D-05 (delete the spike) bounds th
      escalate** — widening it is explicitly forbidden and would indicate a real problem.
    - *Why I did not answer it:* the instructions assign the baseline numbers to the phase, and a full
      rebuild is a build-time cost. This is the one question I would most want answered first.
+   - **→ RESOLVED by measurement, not by research.** This is a build-time fact and cannot be answered
+     from the filesystem. `01-02` Task 2 (`-Mode Record`) captures the exit code and the complete error
+     list verbatim, and its **Escalation branch** stops before committing if any code other than
+     `PRI175`/`PRI252` from `WINAPPSDKGENERATEPROJECTPRIFILE` appears. `01-02` Task 3 then drives a
+     synthetic `CS1002` line through the same classifier to prove the allowlist rejects it. The
+     recommendation is adopted as written; the escalation branch is its planned expression.
 
 2. **Can a `UseWinUI=true` test library reference `AkariTool.App` at all — and does it add new PRI errors?**
    - *What we know:* `PriIndexName` is assigned for any `OutputType != 'winmdobj'`, so the PRI machinery
@@ -1374,6 +1385,13 @@ which are imported into the consuming project. D-05 (delete the spike) bounds th
    - *Recommendation:* make this the phase's first task. Test D-01 as literally written; if it fails or
      perturbs the baseline, fall back to dropping `UseWinUI=true` (which the badge test does not need)
    and record the deviation. **This is cheap to test and expensive to get wrong late.**
+   - **→ RESOLVED by measurement, not by research.** Also build-time only. `01-01` Task 3 builds the
+     project exactly as D-01 specifies, records the observed outcome in the commit message, and takes
+     the documented fallback (remove `UseWinUI`, preserving D-01's rationale) if the build fails or new
+     PRI175/PRI252 errors appear. The solution-scope half of the question — does the error-code set or
+     the warning count move — is a hard assertion at the per-wave rate in `01-01`'s `<verification>`
+     block, so it is a recorded observation rather than an assumption. The recommendation is adopted as
+     written and is, as advised, the first thing the phase does once the runner exists.
 
 3. **Should SPIKE-02's CsWinRT be 2.3.1 or 2.2.0?**
    - *What we know:* WCT 8.2 needs ≥ 2.2.0 per Winhance's comment (a csproj comment, not a nuspec
@@ -1382,6 +1400,11 @@ which are imported into the consuming project. D-05 (delete the spike) bounds th
      component metadata. Genuinely unknowable without trying.
    - *Recommendation:* try 2.3.1 first (current stable), then 2.2.0. Treat a swap as a **substitute
      observation** for the verdict, not root-cause diagnosis — D-07-compliant.
+   - **→ RESOLVED by decision.** `01-03` pins `Microsoft.Windows.CsWinRT 2.3.1`, and its Task 3
+     substitute step records `2.2.0` as the first substitution to attempt if the 2.3.1 pairing
+     misbehaves. Under D-07 a swap is explicitly a substitute observation rather than root-cause
+     diagnosis, so the fallback already sits inside the task's remit and needs no extra allowance. The
+     recommendation is adopted as written; 2.3.1 is the planned value.
 
 4. **Is Akari's `customize-*` ID prefix scheme a deliberate earlier decision?**
    - *What we know:* Akari uses `customize-explorer-*`; Winhance uses `explorer-customization-*`.
@@ -1393,6 +1416,13 @@ which are imported into the consuming project. D-05 (delete the spike) bounds th
      answer), and the generator's header states the rule. If the planner wants the *intent* recorded,
      `docs/import-review-proposal.html` and `AKARI_ARCHITECTURE_PLAN.md` at the repo root are the places
      to look. I did not read them — out of scope for a toolchain-verification pass.
+   - **→ RESOLVED by design, and the answer is deliberately not required.** `01-04` Task 3 emits the raw
+     pass, the normalised pass and a per-domain token-overlap percentage with both rules printed in the
+     header — the presentation that is correct under either answer. No task states whether the scheme is
+     *intentional*, because no plan in this phase is entitled to that claim and no measurement of the
+     catalogue can establish intent. The report therefore reports the divergence and annotates the
+     mechanism, never the motive; a reader who needs the intent must look it up in the two documents
+     named above.
 
 5. **Does the baseline need to be machine-pinned, and to what?**
    - *What we know:* no CI exists; the gate is a local command; there is no lock file; `project.assets.json`
@@ -1403,6 +1433,13 @@ which are imported into the consuming project. D-05 (delete the spike) bounds th
    - *Recommendation:* **record it, do not gate it** (consistent with D-14's tolerance for recording
      per-project detail). A gated toolchain version would make the gate fail for a reason that is not a
      regression. The deferred-ideas list already puts CI out of scope.
+   - **→ RESOLVED by decision, consistent with D-14.** `01-02` Task 1 records toolchain identity as
+     provenance (`toolchain.msbuildVersion`, `vstestVersion`, `visualStudioInstallPath`,
+     `sdkBuildToolsVersion`) and never as a gate; `01-02` carries the negative case as its own
+     prohibition row, on the grounds that a gated toolchain version would fail the gate for something
+     that is not a regression — the same class of false green D-13 exists to prevent. `01-02` Task 2's
+     `01-BASELINE.md` states the single-machine-reference caveat in its first paragraph, per
+     `01-VALIDATION.md`'s "Genuinely not automatable" note. The recommendation is adopted as written.
 
 6. **Should `SettingCatalogValidator` be wired into the SPIKE-03 generator, or left entirely to Phase 2?**
    - *What we know:* it is `public static` in Core with `Validate(IEnumerable<SettingGroup>)`, and it
@@ -1413,6 +1450,14 @@ which are imported into the consuming project. D-05 (delete the spike) bounds th
    - *Recommendation:* **do not call it in Phase 1.** D-04 keeps Phase 1 to four requirements and a
      stable test count; calling the validator turns the report into a partial BUG-02. Note in the
      generator header that the `SettingGroup` walk is validator-ready for Phase 2.
+   - **→ RESOLVED by decision, consistent with D-04 and D-10.** `01-04` Task 1 carries "MUST NOT call
+     `SettingCatalogValidator`" as a prohibition *and* carries the hand-over as a requirement:
+     `WalkSettingGroups` emits `(GroupName, Id)`-shaped output with a comment stating it is
+     validator-ready for Phase 2's BUG-02 test to consume unchanged. The uniqueness signal Phase 2
+     needs is preserved rather than deferred — the enumerator keeps duplicate multiplicity in its
+     emitted lists and reports every duplicate under the JSON `duplicates` key and the report's
+     **duplicate-IDs** section, which is the input Phase 2's uniqueness assertion will consume. The
+     recommendation is adopted as written.
 
 ---
 
