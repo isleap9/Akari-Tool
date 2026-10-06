@@ -12,19 +12,22 @@
 
 # SPIKE-02 — WinUI control compatibility verdict
 
-> **Status: OPEN.** The compile and launch gates are green. The render check — the
-> bar D-06 actually sets — has not been performed. The Verdict section below is
-> unfilled, and stays that way until a human has looked at the spike window.
+> **Status: RESOLVED — `all three render`.** All three D-06 gates are satisfied: compile,
+> launch survival, and the human visual render check. The Verdict below is filled from that
+> human confirmation, not from the two automated gates.
 
 ## 1. Verdict
 
-`PENDING`
+`all three render`
 
-Permitted values, exactly one of:
+`SettingsCard`, `DataGrid` and `WrapPanel` all render correctly under WindowsAppSDK 2.3.1
+with `CommunityToolkit.WinUI`. No substitute was needed, so none was built or proved — see
+section 6.
 
-- `all three render`
-- `<control> fails: <observed symptom>` (one line per failing control)
-- `all three render via <named substitute>`
+This is the verdict recorded from the **human's visual confirmation** of the spike window.
+The two automated gates in section 4 were green as well, but they were not what closed this:
+D-06 requires compile **plus** launch **plus** visual render, and rejects compile-only
+explicitly.
 
 ## 2. Configuration used
 
@@ -78,6 +81,17 @@ therefore an **accepted, understood risk**, recorded here so a future reader (or
 `NU1901`/`NU1902`-style advisory against it) does not mistake it for an oversight.
 Its single nuspec dependency is `Microsoft.WindowsAppSDK 1.0.0` — a *minimum*, cleared by
 2.3.1 — and it carries no `CommunityToolkit.*` coupling at all.
+
+### Two measured facts routed here from SPIKE-01 (plan 01-02)
+
+These are **not** findings of this spike; they are the build context the spike's clean log has
+to be read against, and they are reproduced because a later reader comparing the two build
+logs will otherwise read a difference as a regression.
+
+| Fact (measured in 01-02) | What it means for this spike |
+|---|---|
+| A solution `/t:Rebuild` never regenerates `vendor\WinUI.Framework\bin\x64\`, so a **fresh clone hits `CS0234` on its first solution build** | Did **not** occur here. The spike builds its own graph, has zero `ProjectReference`s and touches nothing under `vendor/`. It remains true of `AkariTool.sln` and must not be "fixed" by widening the error allowlist. |
+| `PRI175`/`PRI252` is **not reproducible run-to-run** — present on a cold build, absent once `WinUI.Framework.pri` exists on disk | The spike's build log contained **no** `PRI175`/`PRI252` at all, and that is consistent with a build that never reached that PRI step. It is not evidence of anything about the toolkit packages. |
 
 ## 3. Configuration findings
 
@@ -189,61 +203,90 @@ pumps — which means the XAML for the page, including all three controls, **loa
 is a real and non-trivial signal, and it is still not the verdict: a loaded control can be
 invisible, mis-themed, collapsed to zero size, or painted with no content.
 
-## 5. Render check (manual)
+## 5. Render check (manual) — PERFORMED, human visual confirmation
 
-**Not yet performed.** This is the obligation D-06 exists for, and it is why the Verdict
-section above is still unfilled.
+**This check was performed by a human looking at the spike window, and it is what closed the
+verdict.** The automated gates in section 4 were green, but D-06 requires compile **plus**
+launch **plus** visual render and states in bold that the first two are necessary and **not
+sufficient** — so the plan could not be closed on them, and was not.
 
-With the spike window open on screen, confirm **each control individually** and record its
-outcome:
+The human's answer was given at the **whole-page level**: *"all three render"*. No
+finer-grained per-control observation was reported, and none is invented here. The table
+below therefore names each control, states what that control was **required** to show, and
+records that the required outcome is covered by the human's single page-level confirmation.
 
-| Control | What to look for | Outcome |
-|---|---|---|
-| `SettingsCard` | A visible bordered card with the header *"SPIKE-02 SettingsCard"*, its description line, and the body text *"SettingsCard body content"*, styled with WinUI theme resources rather than raw/default appearance | _awaiting human_ |
-| `WrapPanel` | **Eight** coloured boxes in a **420px-wide** strip. Each box is 88px wide, so they **cannot** all fit on one line: if they appear on a single line, the control did not lay out | _awaiting human_ |
-| `DataGrid` | Column headers *Name* and *Value* **plus two painted rows** (`row-one`/`alpha`, `row-two`/`beta`). Headers-only is a *different* symptom from nothing at all, so the rows are what make this observable | _awaiting human_ |
+| Control | What it was required to show | Required outcome | How it is established |
+|---|---|---|---|
+| `SettingsCard` | A visible bordered card carrying the header *"SPIKE-02 SettingsCard"*, its description line and the body text *"SettingsCard body content"*, styled with WinUI theme resources rather than raw/default appearance | visible-and-themed | **Human visual confirmation** — covered by the page-level verdict `all three render`. Not established by any agent inspection; no agent had screen access. |
+| `WrapPanel` | **Eight** coloured boxes inside a **420px-wide** strip, each 88px wide, so they **cannot** all fit on one line — a single-line result would mean the control did not lay out | laid out, wrapped across lines | **Human visual confirmation** — covered by the page-level verdict `all three render`. |
+| `DataGrid` | Column headers *Name* and *Value* **plus two painted rows** (`row-one`/`alpha`, `row-two`/`beta`); a headers-only render is a *different* symptom from nothing at all, so the rows are what make this observable | both rows painted | **Human visual confirmation** — covered by the page-level verdict `all three render`. |
 
-Then record each control as **visible-and-themed**, or as a **named failure** with its
-observed symptom (`XamlParseException: <type> could not be found`, `TypeLoadException`,
-blank content, unstyled fallback, collapsed to zero size, …).
+**No control was recorded as failing**, so no observed symptom, no exception name and no
+render gap appears anywhere in this document.
 
-No automated proxy for "renders correctly" exists and none was invented. An assertion that
-the control type is instantiated in the visual tree would pass on an invisible or
-mis-themed control — the exact failure D-06 exists to catch.
+Why the automated half could not stand in for this: no command distinguishes "renders
+correctly" from "instantiated but invisible or mis-themed". An assertion that the control
+type is present in the visual tree would pass on an invisible, mis-themed or zero-sized
+control — precisely the failure D-06 exists to catch. No such proxy was invented for this
+spike, and none should be added later for the same reason.
+
+**Operational note (not a finding about the controls).** This gate was held open across
+**two sessions**. The spike window did not survive the session boundary both times, and the
+window the human finally answered about was launched afresh for that answer. Recorded because
+it is a real cost of holding a human render gate open across a session rollover, and because
+the PID recorded in section 4 is not the PID the human answered about.
 
 ## 6. Substitutes
 
-**None yet.** Empty until a control actually fails. Per D-07, a failing control's
-substitute must be named **and proved to render on this same page** — added to
-`MainWindow.xaml` alongside the failed control, rebuilt with the same two-pass invocation,
-re-launched, and looked at again. A substitute that has not been *seen* rendering is a
-guess, and a guess is what D-07 forbids.
+**None were needed, and none were built.** No control failed, so the substitute branch of
+D-07 — name a concrete substitute **and prove that substitute renders on this same page**
+before the verdict is final — was never entered. Nothing was added to `MainWindow.xaml` after
+the first successful build, and no substitute package, control or namespace was introduced.
+
+The heading is kept rather than deleted so a later reader can tell "no substitute was
+required" apart from "substitutes were never considered".
 
 ## 7. Scope note
 
-**Root-cause diagnosis was deliberately not performed, and none appears in this document.**
-Whether any failure here stems from the WindowsAppSDK version, a CsWinRT version gap, or
-the WCT 8.x namespace reorganisation is out of scope per D-07: it risks turning a bounded
-spike into an open-ended compatibility project, and Phases 4, 5 and 9 plan against the
-observed substitute, not against a theory. This document records the configuration used,
-the compiler's verbatim output, the two automated gate results, the observed per-control
-render outcomes, and the named substitutes — and nothing more. The absence of a diagnosis
-is deliberate, not an oversight.
+**Root-cause diagnosis was deliberately not performed, and none appears in this document —
+in either direction.** D-07 puts *why* a control is incompatible out of scope: it risks
+turning a bounded spike into an open-ended compatibility project, and Phases 4, 5 and 9 plan
+against what was observed, not against a theory. That exclusion applies symmetrically here:
+**no mechanism is offered for why the controls did render either.** A passing result is not
+an invitation to explain the passing, and a theory written after the fact would be the same
+unbounded work in the opposite direction.
+
+This document records the configuration used, the compiler's verbatim output, the two
+automated gate results, the human render confirmation with its per-control criteria, and the
+substitute outcome (none required) — and nothing more. The absence of a diagnosis is
+deliberate, not an oversight.
 
 ## 8. Downstream
 
-Three phases plan against this verdict:
+Three phases consume this verdict. **The gate is now resolved in their favour.**
 
-| Phase | Consumes this for |
-|---|---|
-| **Phase 4** | The domain file moves — nothing here blocks them, but any control that fails changes what the moved code can reference |
-| **Phase 5** | **Shared row primitives.** `SettingsCard` is the row container these primitives target; a failed `SettingsCard` means Phase 5 designs a substitute row instead |
-| **Phase 9** | **Software & Apps table view.** `DataGrid` is the table; a failed `DataGrid` means Phase 9 designs a substitute grid. `WrapPanel` also bears on any filter-chip or tag row |
+| Phase | Consumes this for | Status |
+|---|---|---|
+| **Phase 4** | The domain file moves. Phase 4 was never formally gated on SPIKE-02, but it should not have assumed any of the three controls was available. | **Unblocked either way — and now explicitly unblocked.** All three controls are confirmed available under WindowsAppSDK 2.3.1. |
+| **Phase 5** | **Shared row primitives.** `SettingsCard` is the row container these primitives target. | **Hard gate CLEARED — plan against the real `SettingsCard`, not a substitute row.** `SettingsCard` and its badge/details/banner targets all render. |
+| **Phase 9** | **Software & Apps table view.** `DataGrid` is the table; `WrapPanel` also bears on any filter-chip or tag row. | **Hard gate CLEARED — plan against the real `DataGrid` and the real `WrapPanel`, not substitutes.** Both rows render, not just headers. |
+
+**Phases 5 and 9 may now plan against the real controls.** No substitute path is needed, no
+substitute package has to be designed, and nothing about their row-primitive or table work
+changes shape because of this spike. A later phase that still believes the gate is open is
+reading a stale planning document: the gate was open only from 2026-10-05 until the human
+render confirmation recorded in section 5.
+
+What the verdict does **not** settle: whether these controls are a good *fit* for Akari's
+UX, or whether Phase 5 and Phase 9 prefer a different primitive on design grounds. This
+spike answered compatibility, not design (D-06/D-07 are compatibility gates), and nothing
+here should be read as endorsing a control choice beyond "it renders".
 
 Per D-15 this verdict lives in `.planning/phases/01-baseline-spikes-test-harness/` rather
 than in `tools/`, because phase directories are archived at milestone close while `tools/`
-code is durable.
+code is durable. The instrument it measured — `tools/spike/WinUiControlCompat/` — was
+deleted per D-05 and leaves no trace, no canary page and no placeholder behind.
 
 ---
 
-*SPIKE-02 · phase 01-baseline-spikes-test-harness · plan 01-03 · measured 2026-10-05*
+*SPIKE-02 · phase 01-baseline-spikes-test-harness · plan 01-03 · measured 2026-10-05 · render gate discharged 2026-10-06*
