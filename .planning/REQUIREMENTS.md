@@ -19,9 +19,13 @@ Established before any restructure, so the restructure can prove it regressed no
       — *Recorded 2026-10-05 by `-Mode Record`: 16 distinct warnings, 0 errors, 243 tests,
       12 emitted assemblies. `tools/baseline.json` + `01-BASELINE.md`; verified by
       `-Mode Baseline`, observed red three ways and green once.*
-- [ ] **SPIKE-02**: A spike confirms Winhance's `SettingsCard`, `DataGrid`, and `WrapPanel` render
+- [x] **SPIKE-02**: A spike confirms Winhance's `SettingsCard`, `DataGrid`, and `WrapPanel` render
       correctly under WindowsAppSDK 2.3.1 with `CommunityToolkit.WinUI`, or names the substitutes
-      to use instead
+      to use instead — *Confirmed 2026-10-06: **all three render**.* Closed by a human visual
+      confirmation of the spike page, which is the third of D-06's three gates; the two automated
+      gates (clean compile, launch survival) were green throughout and explicitly not sufficient.
+      No substitute was needed or built, and the probe was deleted per D-05.
+      `01-SPIKE-02-VERDICT.md`.*
 - [ ] **SPIKE-03**: A generated report diffs every Akari setting ID against Winhance's, so
       config-format divergence is measured rather than assumed
 
@@ -193,7 +197,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | SPIKE-01 | Phase 1 | Complete |
-| SPIKE-02 | Phase 1 | Pending |
+| SPIKE-02 | Phase 1 | Complete — `all three render`, confirmed 2026-10-06 (human visual render check; probe deleted per D-05). Unblocks Phase 4, Phase 5 and Phase 9. |
 | SPIKE-03 | Phase 1 | Pending |
 | ARCH-01 | Phase 4 | Pending |
 | ARCH-02 | Phase 4 | Pending |

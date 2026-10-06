@@ -88,19 +88,21 @@ warning/error counts recorded as the Phase 1 reference.
 **Plans**: 4 plans
 - [x] 01-01-PLAN.md – **Tracer (TEST-01 + D-03).** `tools/run-tests.ps1` proves the loop end to end (vswhere discovery → MSBuild → vstest → a measured count); `AkariTool.App.Tests` joins `AkariTool.sln` with D-01's `UseWinUI` buildability probed and any deviation recorded; `SettingBadgeCalculatorTests` characterises `Compute` as Phase 5's CORE-04 baseline. Wave 1. Carries the `checkpoint:decision` that fixes the runner's path and name.
 - [x] 01-02-PLAN.md – **SPIKE-01.** `-Mode Record | Baseline | Allowlist` turns the runner into the machine-checked gate: forced `/t:Rebuild`, error-list-matched PRI175/PRI252 allowlist, no-increase solution-wide tolerance. Records `tools/baseline.json` and `01-BASELINE.md`, then proves the gate red three ways before recording it green. Wave 2. **Recorded: 16 distinct warnings, 0 errors, 243 tests (93/137/13), 12 emitted assemblies.**
-- [ ] 01-03-PLAN.md — **SPIKE-02 — HALTED at the render gate.** A throwaway spike outside the solution renders `SettingsCard`, `DataGrid` and `WrapPanel` under WindowsAppSDK 2.3.1 with the registry-verified pinned package set; the human render check produces the verdict (any substitute proved on the same page), then the spike is deleted. Wave 2. Hard gate for Phases 4, 5 and 9. **Tasks 1–2 done (3 commits): the probe builds clean against the five exact pins and launches with a visible, responding window — both automated gates green and both explicitly NOT sufficient. `01-SPIKE-02-VERDICT.md` opened with all eight sections and Verdict `PENDING`. Task 3 cannot close by machine: the window is OPEN on screen (PID 10320) and `tools/spike/` is intentionally not deleted until a human looks. All three XAML namespaces resolved differently from the predicted set — the 8.2 train declares `SettingsCard` and `WrapPanel` directly in `CommunityToolkit.WinUI.Controls`, and `DataGrid 7.1.2` in `CommunityToolkit.WinUI.UI.Controls`; recorded as configuration findings C-1..C-3, explicitly not rendering verdicts.**
+- [x] 01-03-PLAN.md — **SPIKE-02 — RESOLVED: `all three render`.** A throwaway spike outside the solution rendered `SettingsCard`, `DataGrid` and `WrapPanel` under WindowsAppSDK 2.3.1 with the registry-verified pinned package set; the human render check produced the verdict; the spike was then deleted. Wave 2. Hard gate for Phases 4, 5 and 9 — **now CLEARED. (7 commits.)** The probe built clean against the five exact pins and launched with a visible, responding window — both automated gates green and both explicitly NOT sufficient, so the plan sat at Verdict `PENDING` across **two sessions** while the human gate was open (the spike window did not survive a session rollover). Closed 2026-10-06 by a human visual confirmation of the page: **all three render**. `tools/spike/WinUiControlCompat/` then deleted per D-05 in its own commit made *before* the verdict, so no canary, placeholder or dangling reference survives. All three XAML namespaces resolved differently from the predicted set — the 8.2 train declares `SettingsCard` and `WrapPanel` directly in `CommunityToolkit.WinUI.Controls`, and `DataGrid 7.1.2` in `CommunityToolkit.WinUI.UI.Controls`; recorded as configuration findings C-1..C-3, explicitly not rendering verdicts. Verdict: `01-SPIKE-02-VERDICT.md`.
 - [ ] 01-04-PLAN.md — **SPIKE-03.** A reflection-based enumerator over the **15** static catalog factories plus a committed read-only Winhance snapshot feed a generator emitting a raw **and** normalised divergence report — the D6 config-format fork evidence base. Wave 3.
 **Rationale**: Nothing here is referenced by production code, so the app is byte-for-byte unaffected
 and keeps working; every artifact produced is a document or a test that only *observes*. This is the
 only phase that can change the definition of "did it build" without consequence, so it goes first.
-The SPIKE-02 finding is a hard gate: if `SettingsCard`/`DataGrid`/`WrapPanel` do not resolve under
-2.3.1, the Phase 5 row primitives and the Phase 9 table view are planned against substitutes instead,
-and finding that out after planning those phases wastes the planning.
-**⚠ As of 2026-10-06 this gate is OPEN.** The compile and launch halves of SPIKE-02 are green and the
-verdict still reads `PENDING`. **Phases 4, 5 and 9 must not be planned against those two gates** — D-06
-requires compile *plus* launch *plus* visual render, and the third is a human obligation with no
-automated proxy. Phases 5 and 9 are hard-blocked; Phase 4 should not assume any of the three controls is
-available. Phase 2 is unaffected, and 01-04 (SPIKE-03) does not depend on this verdict.
+The SPIKE-02 finding was a hard gate: if `SettingsCard`/`DataGrid`/`WrapPanel` had not resolved under
+2.3.1, the Phase 5 row primitives and the Phase 9 table view would have been planned against
+substitutes instead, and finding that out after planning those phases wastes the planning.
+**✅ As of 2026-10-06 this gate is CLOSED, resolved in their favour.** `01-SPIKE-02-VERDICT.md` reads
+**`all three render`**, confirmed by a human looking at the spike page — the third of D-06's three
+gates, and the only one that counts. **Phases 5 and 9 may plan against the real `SettingsCard` and the
+real `DataGrid`; no substitute is needed anywhere.** Phase 4 was never formally gated but should not
+have assumed availability; it is now explicitly unblocked too. They must read the Verdict and
+Configuration sections — never the automated gates, which were green while the verdict was still
+`PENDING` and were explicitly not sufficient.
 
 ### Phase 2: Dead Subsystems & Defect Repairs
 
@@ -447,7 +449,7 @@ failure has exactly one cause.
 
 | Item | Source | How this roadmap handles it |
 |------|--------|----------------------------|
-| WinAppSDK 2.3.1 + `CommunityToolkit.WinUI` / DataGrid compatibility | Winhance pins 1.8.x and warns the metapackage is mandatory; there is no documented "2.3.1 + toolkit 8.2.x" statement | Phase 1 SPIKE-02 is a **hard gate**; Phase 5's row primitives and Phase 9's table view plan against substitutes if the controls do not resolve |
+| WinAppSDK 2.3.1 + `CommunityToolkit.WinUI` / DataGrid compatibility | Winhance pins 1.8.x and warns the metapackage is mandatory; there is no documented "2.3.1 + toolkit 8.2.x" statement | **MEASURED, not assumed — SPIKE-02 measured `all three render` under 2.3.1** (`01-SPIKE-02-VERDICT.md`, human visual confirmation). Phase 5's row primitives and Phase 9's table view plan against the real controls. Two items stay open and are *not* answered by that verdict: the XAML namespaces are flattened (`CommunityToolkit.WinUI.Controls`, `CommunityToolkit.WinUI.UI.Controls`) rather than per-package, and `DataGrid 7.1.2` is unmaintained (2021-11-18, the only DataGrid in existence) — an accepted risk, not a blocker |
 | Builder-mode edit recording | Winhance's own docs: `NumericRange` and AC/DC edits are **not** recorded and fall back to system-seeded values | Akari **fixes** it (D10) as MODE-03/MODE-04 with TEST-04, rather than replicating a mode that appears to work and silently drops numeric edits |
 | WinGet COM under self-contained | `WindowsPackageManagerElevatedFactory` hangs (microsoft/winget-cli#4377); Winhance is forced onto `WindowsPackageManagerStandardFactory` with `allowLowerTrustRegistration: true` | Phase 9 must confirm Akari's `WinGetComSession` made the same choice before building the install chain on it |
 | Shared setting-ViewModel bases | Winhance's own anti-pattern: `Common` imports `Optimize.ViewModels`, so deleting Optimize would break Customize's type system | Phase 4 lands the shared bases in `Features/Common/ViewModels/`; Phase 5's `ISettingsFeatureViewModel` references only Common types |
@@ -462,7 +464,7 @@ after 6 and may interleave with 7 and 8.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Baseline, Spikes & Test Harness | 2/4 (+1 halted) | In Progress — 01-03 HALTED at the SPIKE-02 render gate; window open, verdict `PENDING` | - |
+| 1. Baseline, Spikes & Test Harness | 3/4 | In Progress — 01-03 complete (SPIKE-02 `all three render`; the spike is deleted); 01-04 remains | - |
 | 2. Dead Subsystems & Defect Repairs | 0/TBD | Not started | - |
 | 3. Namespace Alignment & Composition Root | 0/TBD | Not started | - |
 | 4. Vertical Slices Across All Three Layers | 0/TBD | Not started | - |

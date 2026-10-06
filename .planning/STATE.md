@@ -4,16 +4,16 @@ milestone: v1.0
 current_phase: 01
 current_phase_name: Baseline, Spikes & Test Harness
 status: executing
-stopped_at: "HALTED at 01-03 Task 3's human gate - the SPIKE-02 render check. The spike window (PID 10320) is OPEN on screen awaiting a human verdict; tools/spike/ is deliberately NOT deleted until then."
-last_updated: "2026-10-06T00:05:00.000Z"
+stopped_at: "Completed 01-03 (SPIKE-02) - Verdict: `all three render`, recorded from a human visual render confirmation. Phase 1 continues with 01-04 (SPIKE-03), which never depended on this verdict."
+last_updated: "2026-10-06T00:40:00.000Z"
 last_activity: 2026-10-06
-last_activity_desc: "Plan 01-03 halted at the render gate (3 commits, 6 files) - compile and launch gates green, Verdict PENDING"
-state_head: 0547140
+last_activity_desc: "Plan 01-03 complete - SPIKE-02 resolved as `all three render`; tools/spike/ deleted per D-05; Phases 4, 5 and 9 unblocked"
+state_head: 34fabe2
 progress:
   total_phases: 10
   completed_phases: 0
   total_plans: 4
-  completed_plans: 2
+  completed_plans: 3
 milestone_name: Winhance Parity
 ---
 
@@ -32,26 +32,58 @@ folder.
 ## Current Position
 
 Phase: 01 (Baseline, Spikes & Test Harness) — EXECUTING
-Plan: 3 of 4 — **HALTED at the SPIKE-02 render gate**
-Status: Blocked on a human render check; 01-04 is not blocked by it
-Last activity: 2026-10-06 — Plan 01-03 halted: the probe builds and launches, the verdict awaits a human
+Plan: 3 of 4 complete — next is 01-04 (SPIKE-03)
+Status: On track. SPIKE-02 is resolved and its hard gate on Phases 5 and 9 is cleared.
+Last activity: 2026-10-06 — Plan 01-03 complete: SPIKE-02 resolved, the spike instrument deleted
 
-Progress: [█████░░░░░] 50%
+Progress: [███████░░░] 75%
 
-**SPIKE-02 is at its human gate, and this is the only thing standing between it and a verdict.**
-The throwaway probe at `tools/spike/WinUiControlCompat/` was built against the five exact-pinned
-packages and **launched**: `PASS: spike still running after 5s`, window visible, un-minimized,
-720×640, responding. **Both automated gates are green and both are explicitly NOT sufficient**
-(D-06 rejects compile-only: a version-skewed toolkit resolves at compile time and fails at
-XAML-load or theming time). `01-SPIKE-02-VERDICT.md` carries all eight sections with
-**Verdict = `PENDING`**. No automated proxy for "renders correctly" was invented, because one would
-pass on an invisible or mis-themed control — the exact failure D-06 exists to catch.
+**SPIKE-02 is RESOLVED: `all three render`.** `SettingsCard`, `DataGrid` and `WrapPanel` all
+render under WindowsAppSDK 2.3.1 with `CommunityToolkit.WinUI`. `01-SPIKE-02-VERDICT.md` carries all
+eight sections with the Verdict section filled with one of the three permitted strings.
 
-**The spike window is still OPEN on screen (PID 10320) and `tools/spike/` is deliberately NOT
-deleted.** Deleting the instrument while the human is looking at it would destroy the evidence.
-Task 3's remaining obligations — record each control's outcome, prove any substitute renders on the
-same page, fill the verdict, close the window, delete the project, commit the verdict after the
-deletion — are enumerated in `01-03-SUMMARY.md`.
+The gate was closed by **a human visual confirmation of the spike window**, at the whole-page
+level — which is the only thing D-06 accepts. Both automated gates (clean two-pass compile; a
+launch that survived 5s with a visible, responding 720×640 window) were green throughout and were
+**explicitly not sufficient** on their own; a version-skewed toolkit resolves at compile time and
+fails at XAML-load or theming time. No automated proxy for "renders correctly" was invented, and
+none should be: asserting a control type is in the visual tree passes on an invisible or mis-themed
+control, which is the exact failure the render gate exists to catch. **Phases 4, 5 and 9 must read
+the Verdict section — not the Automated gates section.**
+
+**`tools/spike/WinUiControlCompat/` has been deleted** per D-05, in its own commit made *before* the
+verdict document so the record of what was tried survives the thing that was tried. No canary page,
+placeholder, `.gitkeep` or dangling reference remains anywhere in the repository. The probe was
+never a solution member and had zero `ProjectReference`s, so `git diff --exit-code -- AkariTool.sln
+src/` stayed clean for the probe's entire life. **Do not recreate it as a permanent canary** — D-05
+rejects one explicitly, because a later package bump would silently re-open this question.
+
+Two measured facts routed here from 01-02 still travel with the verdict's context, and neither is
+a regression: a solution `/t:Rebuild` **never regenerates `vendor\WinUI.Framework\bin\x64\`**, so a
+fresh clone hits `CS0234` on its first build; and the `PRI175`/`PRI252` pair is **not reproducible
+run-to-run** — present on a cold build, absent once `WinUI.Framework.pri` exists on disk, which is
+why the gate *tolerates* those codes when present and never *requires* them.
+
+**A human render gate that depends on a live window is a session-boundary hazard.** SPIKE-02's
+gate had to be held open across **two sessions**: the spike window did not survive a session
+rollover and had to be launched afresh to present the gate again, and the plan was correctly parked
+(Verdict `PENDING`, instrument retained) in the meantime. What made recovery cheap was committing
+the instrument to git in Task 1 — relaunching was a one-command `Start-Process`, not a rebuild. If
+a future spike holds a gate open, **write the document down to `PENDING` first and keep the
+instrument committed**, so the outstanding question survives even when the window does not.
+
+**All three XAML namespaces resolved DIFFERENTLY from the plan's prediction**, and this is a
+finding, not a mishap. The 8.2 train declares `SettingsCard` and `WrapPanel` **directly in the
+flattened namespace** `CommunityToolkit.WinUI.Controls`; the per-package names that appear in those
+assemblies are *assembly* names, and an `xmlns:using:` prefix must name a namespace. Frozen
+`DataGrid 7.1.2` sits in `CommunityToolkit.WinUI.UI.Controls`, not the legacy
+`Microsoft.Toolkit.Uwp.UI.Controls.DataGrid`. Every prefix was read from each package's own XML doc
+`T:` member list, never guessed, and each superseded prefix's verbatim `CS0234` / `CS0426` /
+`WMC0001` is preserved in the verdict's Configuration findings section. These are
+**namespace-resolution findings, explicitly not rendering verdicts** — no `NU1102`/`NU1605`/
+`NU1608`/`MSB4011` occurred, and the WCT nuspec `Microsoft.WindowsAppSDK 1.6.250108002` proved to be
+a *minimum* 2.3.1 satisfies. **Phases 5 and 9 must copy that namespace mapping from section 3, not
+from the package ids.**
 
 **All three XAML namespaces resolved DIFFERENTLY from the plan's prediction**, and this is a
 finding, not a mishap. The 8.2 train declares `SettingsCard` and `WrapPanel` **directly in the
@@ -97,18 +129,19 @@ than *require* them.
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2 (01-03 halted, not complete)
-- Average duration: 55 min
-- Total execution time: 109 min
+- Total plans completed: 3
+- Average duration: 47 min
+- Total execution time: 141 min (109 min on 01-01/01-02 + 32 min of automated work on 01-03; its
+  render gate added calendar time across two sessions, not agent time)
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01 | 2 complete + 1 halted | 109 min + 32 min (halted) | 55 min |
+| 01 | 3 complete | 141 min | 47 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (47 min), 01-02 (62 min), 01-03 (32 min, HALTED at the human gate)
+- Last 3 plans: 01-01 (47 min), 01-02 (62 min), 01-03 (32 min automated + a two-session human gate)
 - Trend: —
 
 *Updated after each plan completion*
@@ -120,11 +153,29 @@ than *require* them.
 Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecting current work:
 
 - **SPIKE-02 closes on compile + launch + VISUAL RENDER, and the first two are not sufficient**
-  (D-06, re-confirmed 2026-10-06). A green build and a green launch are necessary inputs to the
-  verdict, never the verdict. No automated proxy for "renders correctly" was invented for 01-03,
+  (D-06, re-confirmed 2026-10-06 when the gate was actually discharged). A green build and a green
+  launch are necessary inputs to the verdict, never the verdict — and this was not theoretical: the
+  plan sat at `PENDING` for two sessions with both automated gates green because only a human
+  looking at the window could close it. No automated proxy for "renders correctly" was invented,
   and none should be: asserting a control type is in the visual tree passes on an invisible or
   mis-themed control, which is the exact failure the render gate exists to catch. Phase 5 and
   Phase 9 must read `01-SPIKE-02-VERDICT.md`'s **Verdict section**, never its Automated gates.
+- **SPIKE-02's answer is `all three render` — the gate is CLOSED, resolved in Phases 4/5/9's
+  favour.** Recorded from a human visual confirmation of the spike window, given at the whole-page
+  level. Phases 5 (`SettingsCard` row primitives) and 9 (`DataGrid` table view) may plan against
+  the real controls; no substitute is needed anywhere. **The gate was open only from 2026-10-05
+  until 2026-10-06 — a later phase reading a stale planning document must not conclude it is still
+  open.**
+- **A human render gate that depends on a live window is a SESSION-BOUNDARY HAZARD.** SPIKE-02's
+  gate spanned two sessions because the spike window did not survive the session rollover. What
+  made recovery cheap: **commit the instrument to git, and write the verdict document down to
+  `PENDING` before presenting the gate**, so the outstanding question survives even when the
+  window does not — the second session had the whole question on disk and needed only a relaunch.
+  Do this for any future gate that needs a running app on screen.
+- **Root-cause exclusion (D-07) is symmetric, and must stay that way.** SPIKE-02 recorded neither a
+  theory for why a control would be incompatible **nor a theory for why the controls did render**.
+  A passing result is not an invitation to explain the passing; a post-hoc mechanism is the same
+  unbounded compatibility work pointed the other way.
 - **WCT 8.2 XAML prefixes are a FLATTENED namespace, and the per-package names are a trap.**
   `SettingsCard` and `WrapPanel` are both declared directly in `CommunityToolkit.WinUI.Controls`.
   `…Controls.SettingsControls` and `…Controls.Primitives` appear in those assemblies as *assembly*
@@ -187,32 +238,40 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 
 ### Pending Todos
 
-- **SPIKE-02 is HALTED at its render gate and must not be closed by an agent.** Record each control's
-  outcome from the open window, prove any substitute renders on the same page, fill the Verdict, close
-  the window, delete `tools/spike/WinUiControlCompat/`, then commit the verdict document **after** the
-  deletion. Full checklist in `01-03-SUMMARY.md`.
-- Plan 01-04 (SPIKE-03) does **not** depend on SPIKE-02's verdict and may proceed. But Phase 4, Phase 5
-  and Phase 9 all must, and none of them may be planned against the two green automated gates.
-- Plan 01-03 (SPIKE-02) must **re-record the baseline** if the spike project is ever added to
-  `AkariTool.sln` — a new project moves the warning count and the twelve-path inventory. (It never was;
-  the spike has zero `ProjectReference`s and no solution membership.)
-- Plan 01-03 must NOT wire the gate into CI (deferred idea; a single-machine baseline must not become
+- **Plan 01-04 (SPIKE-03) is the only remaining Phase 1 work.** It never depended on SPIKE-02 and is
+  unblocked now that 01-03 is complete.
+- **Phases 4, 5 and 9 may be planned — the SPIKE-02 gate is cleared.** They must read
+  `01-SPIKE-02-VERDICT.md`'s **Verdict section** (`all three render`) and its **Configuration used /
+  Configuration findings** for the XAML namespaces, and must NOT plan against the two green automated
+  gates or assume any control was unavailable.
+- **`tools/spike/` is deleted and must not come back as a canary** (D-05). A permanent control-compat
+  page would silently re-open this question on every future package bump. If a package bump needs
+  re-testing, rebuild the probe from the configuration recorded in the verdict.
+- Plan 01-03 must **re-record the baseline** if anything from the spike is ever added to
+  `AkariTool.sln` — a new project moves the warning count and the twelve-path inventory. (Nothing was;
+  the spike had zero `ProjectReference`s, no solution membership, and is now deleted.)
+- The gate must NOT be wired into CI (deferred idea; a single-machine baseline must not become
   authoritative on machines it was never measured on).
 
 ### Blockers/Concerns
 
-- **OPEN: the SPIKE-02 render verdict does not exist yet.** `01-SPIKE-02-VERDICT.md` reads
-  `PENDING`. A probe window titled "SPIKE-02 - WinUI control compatibility probe" is **open on screen**
-  (PID 10320) and `tools/spike/WinUiControlCompat/` is deliberately **still present** — deleting it
-  before the human looks would destroy the instrument. Phase 5 and Phase 9 plan against substitutes
-  if `SettingsCard`/`DataGrid`/`WrapPanel` do not render; neither may start until this reads a verdict.
+- **RESOLVED: the SPIKE-02 render verdict exists.** `01-SPIKE-02-VERDICT.md` reads
+  **`all three render`**, recorded from a human visual confirmation of the probe window on
+  2026-10-06. `tools/spike/WinUiControlCompat/` has been **deleted** per D-05 in its own commit made
+  before the verdict document, and no canary, placeholder or dangling reference survives. Phase 5 and
+  Phase 9 plan against the **real** `SettingsCard` and `DataGrid`. This is no longer a blocker —
+  if a planning document still says the gate is open, that document is stale.
+- **Accepted risk that travels with the verdict:** `CommunityToolkit.WinUI.UI.Controls.DataGrid 7.1.2`
+  is **unmaintained** — last published 2021-11-18, six versions ever, the only DataGrid in existence.
+  It renders; whether it still receives fixes is a separate question this spike does not answer.
 - **The `CS0234` on a fresh clone is a known pre-existing condition, not a regression** (routed from
   01-02): a solution `/t:Rebuild` never regenerates `vendor\WinUI.Framework\bin\x64\`, so the App's
   PRI step finds nothing and `AkariTool.App.Tests` fails `CS0234` — correctly RED, since `CS0234` is
   not allowlisted. The restore is one direct-csproj build with `/p:Platform=x64`
-  (`01-BASELINE.md` §3.1). It did **not** occur during 01-03: the spike builds its own graph, touches
+  (`01-BASELINE.md` §3.1). It did **not** occur during 01-03: the spike built its own graph, touched
   nothing under `vendor/`, and its log carried no `PRI175`/`PRI252` at all. Do not "fix" it by widening
-  the allowlist.
+  the allowlist. Both facts are now also carried into the verdict's Configuration used section so a
+  later reader comparing the two build logs does not read the difference as a regression.
 - SPIKE-03 is the evidence base for the D6 fork decision.
 - `ElevationService` impersonation is thread-affine — any change making an impersonated path async
   silently breaks elevated writes. Audit at every call site touched.
@@ -236,6 +295,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-06T00:05:00.000Z
-Stopped at: HALTED at 01-03 Task 3's human gate - the SPIKE-02 render check. Probe window OPEN (PID 10320); Verdict PENDING; tools/spike/ intentionally still present.
-Resume file: .planning/phases/01-baseline-spikes-test-harness/01-03-SUMMARY.md
+Last session: 2026-10-06T00:40:00.000Z
+Stopped at: Completed 01-03-PLAN.md (SPIKE-02). Verdict `all three render`, recorded from a human visual render confirmation; the probe window is closed and `tools/spike/` is deleted. Phase 1 next plan: 01-04 (SPIKE-03).
+Resume file: .planning/phases/01-baseline-spikes-test-harness/01-04-PLAN.md
