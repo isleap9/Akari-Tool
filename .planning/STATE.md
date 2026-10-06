@@ -295,6 +295,65 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-06T00:40:00.000Z
-Stopped at: Completed 01-03-PLAN.md (SPIKE-02). Verdict `all three render`, recorded from a human visual render confirmation; the probe window is closed and `tools/spike/` is deleted. Phase 1 next plan: 01-04 (SPIKE-03).
+**HALTED FOR A WINDOWS REINSTALL — 2026-10-06.** Everything needed to resume is pushed to
+`origin/main`. Start a fresh session with `/gsd-resume-work`.
+
+Last session: 2026-10-06 (halted for OS reinstall)
+Stopped at: **Plan 01-04 (SPIKE-03) — Task 3 of 3 incomplete.** Tasks 1 and 2 are done and pushed
+(`1f1f5fa` Akari-side enumeration, `c8babd4` Winhance snapshot). Task 3's report generator
+(`tools/gen-setting-id-diff.ps1`) was mid-flight when the session was cut; it is committed at
+`94de609` so the plan resumes from there rather than restarting.
+
+### What is already done (do not redo)
+
+| Plan | Status |
+|------|--------|
+| 01-01 Tracer / TEST-01 | ✓ complete — `tools/run-tests.ps1`, **243 tests / 242 passed / 1 notExecuted** |
+| 01-02 SPIKE-01 baseline gate | ✓ complete — `PASS (warnings 16<=16, errors 0 allowlisted, tests 243>=243)` |
+| 01-03 SPIKE-02 control compat | ✓ complete — verdict **`all three render`**, spike deleted per D-05 |
+| 01-04 SPIKE-03 setting-ID diff | ◐ Tasks 1–2 done; **Task 3 outstanding** |
+
+### Exactly where 01-04 resumes
+
+**Task 3 — generate the divergence report.** Remaining work:
+1. Run `tools\gen-setting-id-diff.ps1` to produce
+   `.planning/phases/01-baseline-spikes-test-harness/01-SETTING-ID-DIFF.md` (**does not exist yet**)
+2. Verify the five-bucket classification sums to the union of both sides
+3. Verify re-running leaves committed output byte-identical (`git diff --exit-code`)
+4. Write `01-04-SUMMARY.md` (**does not exist yet**)
+5. Update `STATE.md` / `ROADMAP.md` / `REQUIREMENTS.md` for SPIKE-03
+
+Already verified at the cut: `entryPoints=15`, `componentCoverage.equal=true`, `nestedFactories=16`,
+eight `akari-<domain>.ids.txt` committed, Winhance snapshot present for all three ID-bearing domains.
+
+### ⚠ Reinstall-sensitive facts — these will NOT survive a reinstall
+
+- **There is no Visual Studio IDE.** Only VS Build Tools 2026 at
+  `C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools`. **The MSBuild path in `AGENTS.md`
+  does not exist and never did.** After reinstall, confirm this path exists before running
+  `tools\run-tests.ps1`; the runner discovers it via `vswhere` and will fail loudly if absent.
+- **`pwsh` (PowerShell 7) is not installed** and Windows PowerShell 5.1 cannot load a
+  `net10.0-windows` assembly. That is why the SPIKE-03 enumerator is a compiled `Exe`, not a `.ps1`
+  reflection script.
+- **The Winhance reference checkout at `C:\Users\isleap\Documents\GitHub\Winhance` is required and
+  read-only.** If the reinstall wipes it, clone it again from the original source. SPIKE-03's
+  generator reads it for the setting-ID snapshot. **Never write under it.**
+- **A solution `/t:Rebuild` never regenerates `vendor\WinUI.Framework\bin\x64\`** (measured by
+  01-02). On a fresh clone the first build hits `CS0234`, which is *not* allowlisted. Run the gate
+  twice, or build the vendor project once, before treating a `CS0234` as a real regression.
+- **`PRI175`/`PRI252` is not reproducible run-to-run** — present on a cold build, absent once
+  `WinUI.Framework.pri` exists. The gate *tolerates* these codes when present; it never requires
+  them.
+- `tools/baseline.json` records the Phase 1 reference: **243 tests, 16 warnings, 0 non-allowlisted
+  errors, 12 assemblies**. Re-record rather than hand-edit if the toolchain shifts.
+
+### Housekeeping left undone (safe to ignore or clean up)
+
+- 9 uncommitted `.planning/` files carried from a pre-Phase-1 session (four PLANs, `01-PATTERNS.md`,
+  `01-RESEARCH.md`, `01-VALIDATION.md`, `config.json`, `state.json`). These are planning-quality
+  fixes; committing them is safe and desirable, but nothing depends on them being committed.
+- Four stray untracked root files — `GSD-PHASE1-SUMMARY.md`, `GSD-Phase1-Execution-Ready.md`,
+  `GSD-Phase1-Planning-Complete.md`, `resume-status.md`. Transient console dumps from an earlier
+  session; the real artifacts live in `.planning/`. Recommend deleting rather than committing.
+
 Resume file: .planning/phases/01-baseline-spikes-test-harness/01-04-PLAN.md
