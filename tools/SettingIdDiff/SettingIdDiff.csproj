@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    SettingIdDiff - the Akari side of the SPIKE-03 setting-ID divergence report.
+
+    WHY THIS IS A COMPILED HOST AND NOT A POWERSHELL SCRIPT:
+    Windows PowerShell 5.1 (the only PowerShell on this machine - pwsh is not
+    installed) cannot load a `net10.0-windows` assembly. So any committed script
+    that needs to *execute* .NET 10 code against AkariTool.Core.dll needs a
+    compiled host. This project is that host.
+
+    WHY THERE IS NO project reference AND NO package reference:
+    This tool has no compile-time coupling to the catalog at all. It loads the
+    already-built AkariTool.Core.dll BY PATH with Assembly.LoadFrom and reflects
+    over it (per D-09). Consequences, all of them deliberate:
+      - it needs no rebuild of AkariTool.Core, so it cannot race a solution build;
+      - a discovery rule can never be "validated" by the compiler, so the seam
+        genuinely reflects whatever the assembly declares rather than whatever a
+        hand-written list says it should declare;
+      - nothing here needs NuGet, so `dotnet restore` has no third-party surface.
+    Adding either element would make this tool a build-ordering hazard for a
+    measurement that must never fail on build state.
+
+    NOT a member of AkariTool.sln, by design. See the plan's Task 1.
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>SettingIdDiff</RootNamespace>
+    <AssemblyName>SettingIdDiff</AssemblyName>
+    <!-- The output is a measurement artefact; keep the build quiet about it. -->
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+</Project>
